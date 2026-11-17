@@ -2490,14 +2490,21 @@ dependencies = [
 name = "versmc-gen"
 version = "0.1.0"
 dependencies = [
+ "flate2",
  "rayon",
+ "simdnbt",
  "steel-core",
  "steel-registry",
  "steel-utils",
  "steel-worldgen",
  "tokio",
  "toml",
+ "vgen",
 ]
+
+[[package]]
+name = "vgen"
+version = "0.1.0"
 
 [[package]]
 name = "walkdir"

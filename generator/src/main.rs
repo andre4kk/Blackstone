@@ -3,18 +3,22 @@
 //! Per ora contiene solo la prova:
 //! `versmc-gen probe --seed 13579 --x 0 --z 0 [--size N] [--dim overworld|nether|end] [--repeat K]`
 
+mod bedrock_hash;
+mod nbt;
 mod steel;
+mod translate;
 
 use std::collections::HashSet;
 use std::process::ExitCode;
 use std::time::Instant;
 
 use steel::{Dim, Generator, JavaChunk};
+use translate::{Translator, to_bedrock};
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
-        Some("probe") => match probe(&args[1..]) {
+        Some("probe") => match run_with_big_stack(move || probe(&args[1..])) {
             Ok(()) => ExitCode::SUCCESS,
             Err(e) => {
                 eprintln!("errore: {e}");
@@ -79,12 +83,20 @@ fn probe(args: &[String]) -> Result<(), String> {
     let start = Instant::now();
     let generator = Generator::new(a.seed, a.dim);
     println!("avvio (registri + generatore): {:.0} ms", ms(start));
+    let start = Instant::now();
+    let translator = Translator::new();
+    println!("traduttore Bedrock: {:.0} ms, {} stati Bedrock nella palette", ms(start), translator.palette_entries().len());
 
     for round in 1..=a.repeat {
         let start = Instant::now();
         let chunks = if a.size == 1 { vec![generator.generate(a.x, a.z)] } else { generator.generate_region(a.x, a.z, a.x + a.size - 1, a.z + a.size - 1) };
         let elapsed = ms(start);
         report(round, &chunks, elapsed);
+        let start = Instant::now();
+        let bedrock: Vec<_> = chunks.iter().map(|c| to_bedrock(c, &translator)).collect();
+        let sections: usize = bedrock.iter().map(|c| c.sections.len()).sum();
+        let entities: usize = bedrock.iter().map(|c| c.block_entities.len()).sum();
+        println!("traduzione: {:.1} ms; sezioni Bedrock {sections}, block entity {entities}, stati senza traduzione {}", ms(start), translator.unmapped());
     }
     if let Some(peak) = peak_memory_mib() {
         println!("memoria di picco: {peak:.0} MiB");
@@ -150,4 +162,15 @@ fn peak_memory_mib() -> Option<f64> {
 #[cfg(not(windows))]
 fn peak_memory_mib() -> Option<f64> {
     None
+}
+
+/// Esegue `f` in un thread con stack ampio: in debug la costruzione del generatore supera lo stack del thread principale.
+fn run_with_big_stack<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> T {
+    std::thread::Builder::new()
+        .name("versmc-gen-main".into())
+        .stack_size(64 * 1024 * 1024)
+        .spawn(f)
+        .expect("il thread principale deve avviarsi")
+        .join()
+        .unwrap_or_else(|e| std::panic::resume_unwind(e))
 }

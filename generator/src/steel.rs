@@ -7,6 +7,7 @@
 use std::sync::Arc;
 
 use rayon::ThreadPool;
+use simdnbt::owned::NbtCompound;
 use steel_core::bootstrap::init_globals;
 use steel_core::chunk::chunk_holder::ChunkHolder;
 use steel_core::chunk::status::ChunkStatus;
@@ -17,25 +18,25 @@ use steel_core::worldgen::{ChunkGeneratorType, EndGenerator, NetherGenerator, Ov
 use steel_registry::dimension_type::DimensionTypeRef;
 use steel_registry::vanilla_dimension_types;
 use steel_utils::types::{Difficulty, GameType};
-use steel_utils::{BlockStateId, ChunkPos, Identifier};
+use steel_utils::{BlockPos, BlockStateId, ChunkPos, Identifier};
 use steel_worldgen::biomes::BiomeSourceKind;
 use steel_worldgen::density_functions::end::EndNoiseSettings;
 use steel_worldgen::density_functions::nether::NetherNoiseSettings;
 use steel_worldgen::density_functions::overworld::OverworldNoiseSettings;
 use tokio::runtime::{Builder as RuntimeBuilder, Runtime};
+pub use vgen::Dim;
 
 /// Stack dei thread di generazione: la ricorsione delle density function è profonda.
 const STACK_SIZE: usize = 16 * 1024 * 1024;
 
-/// Dimensione da generare. Provvisorio: sarà sostituito da `vgen::Dim`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Dim {
-    Overworld,
-    Nether,
-    End,
+/// Dati di Steel per una dimensione del protocollo.
+trait DimExt {
+    fn dimension_type(self) -> DimensionTypeRef;
+    fn short_name(self) -> &'static str;
+    fn sea_level(self) -> i32;
 }
 
-impl Dim {
+impl DimExt for Dim {
     /// Tipo di dimensione vanilla di Steel.
     fn dimension_type(self) -> DimensionTypeRef {
         match self {
@@ -71,10 +72,17 @@ pub struct JavaSection {
     pub biomes: Box<[u16; 64]>,
 }
 
+/// Block entity Java: posizione assoluta, tipo (`minecraft:chest`...) e NBT senza id/x/y/z.
+pub type JavaBlockEntity = (BlockPos, Identifier, NbtCompound);
+
 /// Un chunk Java completo (stato Full), sezioni dal basso verso l'alto.
 pub struct JavaChunk {
+    pub dim: Dim,
+    pub x: i32,
+    pub z: i32,
     pub min_y: i32,
     pub sections: Vec<JavaSection>,
+    pub block_entities: Vec<JavaBlockEntity>,
 }
 
 /// Generatore di chunk per un seme e una dimensione.
@@ -130,7 +138,7 @@ impl Generator {
             .runtime
             .block_on(chunk_map.generate_region(ChunkPos::new(min_x, min_z), ChunkPos::new(max_x, max_z)))
             .unwrap_or_else(|e| panic!("generazione della regione fallita: {e}"));
-        holders.iter().map(|h| java_chunk(h)).collect()
+        holders.iter().map(|h| java_chunk(h, self.dim)).collect()
     }
 
     /// Crea un mondo solo in RAM che usa il generatore condiviso.
@@ -176,7 +184,7 @@ impl Generator {
 }
 
 /// Copia stati e biomi di un chunk Full, come `ChunkContents::of` nei test di Steel.
-fn java_chunk(holder: &ChunkHolder) -> JavaChunk {
+fn java_chunk(holder: &ChunkHolder, dim: Dim) -> JavaChunk {
     let Some(chunk) = holder.try_chunk(ChunkStatus::Full) else {
         panic!("{:?} dovrebbe essere Full", holder.get_pos());
     };
@@ -207,5 +215,8 @@ fn java_chunk(holder: &ChunkHolder) -> JavaChunk {
             }
         }
     }
-    JavaChunk { min_y: holder.min_y(), sections: out }
+    // Block entity: il bottino resta nell'NBT ma la traduzione lo ignora.
+    let block_entities = chunk.get_block_entities().iter().map(|e| (e.get_block_pos(), e.get_type().key.clone(), e.save_custom_only())).collect();
+    let pos = holder.get_pos();
+    JavaChunk { dim, x: pos.0.x, z: pos.0.y, min_y: holder.min_y(), sections: out, block_entities }
 }
