@@ -1,2 +1,25 @@
-target/
+# Compilazione
+/target/
+/generator/target/
+
+# Identità del server: chiave privata, mai nel repository (ovunque si trovi)
 identity.key
+*.key
+
+# Mondi salvati e configurazione locale
+/worlds/
+server.toml
+
+# Log e file temporanei
+*.log
+*.tmp
+
+# Editor e sistema operativo
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Impostazioni locali di Claude Code
+.claude/settings.local.json
