@@ -3,8 +3,8 @@ use crate::{world, Server};
 use bedrock_net::log;
 use bedrock_protocol::{
     generated::{
-        enums, AvailableActorIdentifiers, BiomeDefinitionData, BiomeDefinitionList, BiomeStringList, BlockPos, ChunkPos, ChunkRadiusUpdated, CreativeContent, ItemData,
-        ItemRegistry, JigsawStructureData, LevelChunk, LevelSettings, NetworkChunkPublisherUpdate, SpawnSettings, StartGame, Vec3, VoxelShapes,
+        enums, AvailableActorIdentifiers, BiomeDefinitionData, BiomeDefinitionList, BiomeStringList, BlockPos, ChunkPos, ChunkRadiusUpdated, CreativeContent,
+        ItemData, ItemRegistry, JigsawStructureData, LevelChunk, LevelSettings, NetworkChunkPublisherUpdate, SpawnSettings, StartGame, Vec3, VoxelShapes,
     },
     id,
     packets::{play_status, text_type, PlayStatus, RequestChunkRadius, Text},
@@ -127,7 +127,9 @@ impl Server {
         // Biomi e identificatori arrivano dopo che il client si è inizializzato (`initialized`).
         let mut packets = Vec::new();
         if !skip("jigsaw") {
-            packets.push(JigsawStructureData { jigsaw_structure_data_tag: nbt_empty_lists(&["processors", "template_pools", "jigsaws", "structure_sets"]) }.packet());
+            packets.push(
+                JigsawStructureData { jigsaw_structure_data_tag: nbt_empty_lists(&["processors", "template_pools", "jigsaws", "structure_sets"]) }.packet(),
+            );
         }
         if !skip("voxel") {
             packets.push(VoxelShapes::default().packet());
@@ -148,7 +150,8 @@ impl Server {
         if let Some(p) = self.players.get_mut(&pid) {
             p.radius = radius;
         }
-        let mut packets = vec![ChunkRadiusUpdated { chunk_radius: radius }.packet(), Packet::new(id::PLAY_STATUS, PlayStatus { status: play_status::PLAYER_SPAWN }.encode())];
+        let mut packets =
+            vec![ChunkRadiusUpdated { chunk_radius: radius }.packet(), Packet::new(id::PLAY_STATUS, PlayStatus { status: play_status::PLAYER_SPAWN }.encode())];
         if !skip("creative") {
             packets.push(CreativeContent::default().packet());
         }
@@ -182,8 +185,12 @@ impl Server {
         }
         if !skip("publisher") {
             packets.push(
-                NetworkChunkPublisherUpdate { new_position_for_view: BlockPos { x: 0, y: world::GROUND_Y, z: 0 }, new_radius_for_view: radius as u32 * 16, ..Default::default() }
-                    .packet(),
+                NetworkChunkPublisherUpdate {
+                    new_position_for_view: BlockPos { x: 0, y: world::GROUND_Y, z: 0 },
+                    new_radius_for_view: radius as u32 * 16,
+                    ..Default::default()
+                }
+                .packet(),
             );
         }
         self.send(pid, &packets);
@@ -196,7 +203,13 @@ impl Server {
             .flat_map(|x| (-radius..=radius).map(move |z| (x, z)))
             .filter(|(x, z)| x * x + z * z <= radius * radius + radius) // area quasi circolare
             .map(|(x, z)| {
-                LevelChunk { chunk_position: ChunkPos { x, z }, sub_chunks_count: 1, serialized_chunk_data: world::flat_chunk(v9).to_vec(), ..Default::default() }.packet()
+                LevelChunk {
+                    chunk_position: ChunkPos { x, z },
+                    sub_chunks_count: 1,
+                    serialized_chunk_data: world::flat_chunk(v9).to_vec(),
+                    ..Default::default()
+                }
+                .packet()
             })
             .collect();
         for group in chunks.chunks(CHUNKS_PER_MESSAGE) {

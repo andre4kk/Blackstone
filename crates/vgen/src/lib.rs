@@ -366,12 +366,22 @@ mod tests {
     }
 
     fn chunk() -> ChunkData {
-        ChunkData { dim: Dim::Nether, x: -3, z: 9, sections: vec![section(-4), section(5)], block_entities: vec![BlockEntity { x: 1, y: 2, z: 3, nbt: vec![1, 2, 3] }] }
+        ChunkData {
+            dim: Dim::Nether,
+            x: -3,
+            z: 9,
+            sections: vec![section(-4), section(5)],
+            block_entities: vec![BlockEntity { x: 1, y: 2, z: 3, nbt: vec![1, 2, 3] }],
+        }
     }
 
     #[test]
     fn roundtrip_every_message() {
-        let to = [ToGen::Hello { version: VERSION, seed: u64::MAX }, ToGen::Generate { req: 5, dim: Dim::End, x: -1, z: 2 }, ToGen::Spawn { req: 6, dim: Dim::Overworld }];
+        let to = [
+            ToGen::Hello { version: VERSION, seed: u64::MAX },
+            ToGen::Generate { req: 5, dim: Dim::End, x: -1, z: 2 },
+            ToGen::Spawn { req: 6, dim: Dim::Overworld },
+        ];
         for m in to {
             assert_eq!(ToGen::decode(&m.encode()), Some(m));
         }

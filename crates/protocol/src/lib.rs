@@ -83,7 +83,8 @@ impl Session {
             varint::write(&mut batch, p.id);
             batch.extend_from_slice(&p.body);
         }
-        if self.compression && batch.len() > COMPRESSION_THRESHOLD as usize { // il primo byte è il segnaposto
+        if self.compression && batch.len() > COMPRESSION_THRESHOLD as usize {
+            // il primo byte è il segnaposto
             let mut out = Vec::with_capacity(batch.len() / 2 + 1);
             out.push(ALGO_DEFLATE);
             out.extend_from_slice(&compress_to_vec(&batch[1..], 6));

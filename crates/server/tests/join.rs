@@ -60,8 +60,11 @@ fn verify_identity(sdp: &str) {
     let sig = Signature::from_slice(&B64U.decode(jwt[2]).unwrap()).unwrap();
     key.verify(format!("{}.{}", jwt[0], jwt[1]).as_bytes(), &sig).expect("firma del JWT non valida");
 
-    let fingerprints: Vec<_> =
-        sdp.lines().filter_map(|l| l.strip_prefix("a=fingerprint:")?.split_once(' ')).map(|(a, d)| serde_json::json!({"algorithm": a, "digest": d.trim()})).collect();
+    let fingerprints: Vec<_> = sdp
+        .lines()
+        .filter_map(|l| l.strip_prefix("a=fingerprint:")?.split_once(' '))
+        .map(|(a, d)| serde_json::json!({"algorithm": a, "digest": d.trim()}))
+        .collect();
     assert!(!fingerprints.is_empty());
     let payload = serde_json::json!({"fingerprint": fingerprints}).to_string();
     let (header, sig) = assertion["fingerprints"].as_str().unwrap().split_once("..").expect("JWS non detached");

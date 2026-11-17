@@ -8,7 +8,8 @@ use bedrock_protocol::{
 };
 
 /// Comandi disponibili: nome e descrizione (usati anche da /help).
-const COMMANDS: &[(&str, &str)] = &[("help", "elenco dei comandi"), ("list", "giocatori online"), ("tps", "prestazioni del server"), ("say <testo>", "messaggio a tutti")];
+const COMMANDS: &[(&str, &str)] =
+    &[("help", "elenco dei comandi"), ("list", "giocatori online"), ("tps", "prestazioni del server"), ("say <testo>", "messaggio a tutti")];
 
 /// Lunghezza massima di un messaggio di chat (come in vanilla).
 pub(crate) const MAX_CHAT_LEN: usize = 512;

@@ -4,8 +4,8 @@ use bedrock_net::log;
 use bedrock_protocol::{
     id, login,
     packets::{
-        disconnect_reason, pack_response, play_status, text_type, Disconnect, Login, NetworkSettings, PacketViolationWarning, PlayStatus, RequestNetworkSettings,
-        ResourcePackClientResponse, ResourcePackStack, ResourcePacksInfo, Text,
+        disconnect_reason, pack_response, play_status, text_type, Disconnect, Login, NetworkSettings, PacketViolationWarning, PlayStatus,
+        RequestNetworkSettings, ResourcePackClientResponse, ResourcePackStack, ResourcePacksInfo, Text,
     },
     Packet, PROTOCOL, VERSION,
 };
@@ -94,7 +94,13 @@ impl Server {
         }
         match login::parse(&request) {
             Ok(info) => {
-                log!("[#{pid}] giocatore {} (XUID {:?}, autenticazione {:?}, dispositivo {:?}, NON verificato)", info.name, info.xuid, info.authentication_type, info.device_os);
+                log!(
+                    "[#{pid}] giocatore {} (XUID {:?}, autenticazione {:?}, dispositivo {:?}, NON verificato)",
+                    info.name,
+                    info.xuid,
+                    info.authentication_type,
+                    info.device_os
+                );
                 if info.xuid.is_none() {
                     log!("[#{pid}] XUID non trovato: chiavi del Token = {:?}", info.token_claim_keys);
                 }
@@ -121,7 +127,13 @@ impl Server {
     fn packet_violation(&self, pid: u64, body: &[u8]) {
         match PacketViolationWarning::decode(body) {
             Some(w) => {
-                log!("[#{pid}] !! IL CLIENT SEGNALA UN PACCHETTO MALFORMATO: id {} (tipo {}, gravità {}), contesto: {:?}", w.packet_id, w.violation_type, w.severity, w.context)
+                log!(
+                    "[#{pid}] !! IL CLIENT SEGNALA UN PACCHETTO MALFORMATO: id {} (tipo {}, gravità {}), contesto: {:?}",
+                    w.packet_id,
+                    w.violation_type,
+                    w.severity,
+                    w.context
+                )
             }
             None => log!("[#{pid}] !! violazione segnalata dal client, ma illeggibile: {body:02x?}"),
         }

@@ -144,13 +144,18 @@ mod tests {
 
     /// Byte occupati dalla palette (gli ID sono hash a 32 bit: in ZigZag quasi sempre 5 byte).
     fn palette_bytes() -> usize {
-        [("minecraft:air", vec![]), ("minecraft:bedrock", vec![("infiniburn_bit", State::Byte(0))]), ("minecraft:dirt", vec![]), ("minecraft:grass_block", vec![])]
-            .iter()
-            .map(|(name, states)| {
-                let mut w = Writer::default();
-                w.var_i32(block_hash(name, states));
-                w.0.len()
-            })
-            .sum()
+        [
+            ("minecraft:air", vec![]),
+            ("minecraft:bedrock", vec![("infiniburn_bit", State::Byte(0))]),
+            ("minecraft:dirt", vec![]),
+            ("minecraft:grass_block", vec![]),
+        ]
+        .iter()
+        .map(|(name, states)| {
+            let mut w = Writer::default();
+            w.var_i32(block_hash(name, states));
+            w.0.len()
+        })
+        .sum()
     }
 }
