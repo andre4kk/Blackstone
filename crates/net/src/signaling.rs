@@ -1,9 +1,17 @@
 //! Signaling HTTP di NetherNet: GET /v1/join (info del server) e POST /v1/join/{id} (offerta SDP -> risposta SDP).
 use crate::{media::Client, Shared};
 use serde_json::json;
-use std::{net::{IpAddr, SocketAddr}, sync::{atomic::Ordering::Relaxed, Arc}, time::Instant};
+use std::{
+    net::{IpAddr, SocketAddr},
+    sync::{atomic::Ordering::Relaxed, Arc},
+    time::Instant,
+};
 use str0m::{change::SdpOffer, Candidate, Rtc};
-use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, sync::mpsc::UnboundedSender};
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::{TcpListener, TcpStream},
+    sync::mpsc::UnboundedSender,
+};
 
 const MAX_HEADERS: usize = 64 * 1024;
 const MAX_BODY: usize = 1 << 20;
@@ -39,9 +47,7 @@ async fn read_request(s: &mut TcpStream) -> Option<Request> {
     let mut lines = head.lines();
     let mut first = lines.next()?.split(' ');
     let (method, path) = (first.next()?.to_owned(), first.next()?.to_owned());
-    let len = lines
-        .find_map(|l| l.split_once(':').filter(|(k, _)| k.eq_ignore_ascii_case("content-length"))?.1.trim().parse().ok())
-        .unwrap_or(0);
+    let len = lines.find_map(|l| l.split_once(':').filter(|(k, _)| k.eq_ignore_ascii_case("content-length"))?.1.trim().parse().ok()).unwrap_or(0);
     if len > MAX_BODY {
         return None;
     }

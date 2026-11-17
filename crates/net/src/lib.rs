@@ -6,8 +6,19 @@ mod media;
 mod signaling;
 
 use identity::Identity;
-use std::{io, net::IpAddr, sync::{atomic::{AtomicU64, AtomicUsize}, Arc, OnceLock}, time::Instant};
-use tokio::{net::{TcpListener, UdpSocket}, sync::mpsc};
+use std::{
+    io,
+    net::IpAddr,
+    sync::{
+        atomic::{AtomicU64, AtomicUsize},
+        Arc, OnceLock,
+    },
+    time::Instant,
+};
+use tokio::{
+    net::{TcpListener, UdpSocket},
+    sync::mpsc,
+};
 
 pub use signaling::lan_ip;
 

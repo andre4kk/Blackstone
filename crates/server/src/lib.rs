@@ -6,7 +6,11 @@ mod world;
 
 use bedrock_net::{Config, Event, Sender};
 use bedrock_protocol::{login::PlayerInfo, Packet, Session};
-use std::{collections::{HashMap, VecDeque}, io, time::{Duration, Instant}};
+use std::{
+    collections::{HashMap, VecDeque},
+    io,
+    time::{Duration, Instant},
+};
 use tokio::time::{interval, MissedTickBehavior};
 
 /// Configurazione di default. L'IP pubblico (per giocare da Internet) si imposta con la variabile PUBLIC_IP.

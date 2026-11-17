@@ -8,12 +8,7 @@ use bedrock_protocol::{
 };
 
 /// Comandi disponibili: nome e descrizione (usati anche da /help).
-const COMMANDS: &[(&str, &str)] = &[
-    ("help", "elenco dei comandi"),
-    ("list", "giocatori online"),
-    ("tps", "prestazioni del server"),
-    ("say <testo>", "messaggio a tutti"),
-];
+const COMMANDS: &[(&str, &str)] = &[("help", "elenco dei comandi"), ("list", "giocatori online"), ("tps", "prestazioni del server"), ("say <testo>", "messaggio a tutti")];
 
 fn packet(text: Text) -> Packet {
     Packet::new(id::TEXT, text.encode())

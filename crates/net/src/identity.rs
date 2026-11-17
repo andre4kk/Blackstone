@@ -1,6 +1,9 @@
 //! Identità dell'operatore del server (spec NetherNet): chiave P-384 persistente, JWT autofirmato
 //! e firma delle fingerprint DTLS da inserire nella risposta SDP.
-use base64::{engine::general_purpose::{STANDARD as B64, URL_SAFE_NO_PAD as B64U}, Engine};
+use base64::{
+    engine::general_purpose::{STANDARD as B64, URL_SAFE_NO_PAD as B64U},
+    Engine,
+};
 use p384::ecdsa::{signature::Signer, Signature, SigningKey};
 use serde_json::json;
 use std::time::{SystemTime, UNIX_EPOCH};

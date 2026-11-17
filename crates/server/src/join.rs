@@ -3,8 +3,8 @@ use crate::{world, Server};
 use bedrock_net::log;
 use bedrock_protocol::{
     generated::{
-        enums, AvailableActorIdentifiers, BiomeDefinitionData, BiomeDefinitionList, BiomeStringList, BlockPos, ChunkPos, ChunkRadiusUpdated, CreativeContent,
-        ItemData, ItemRegistry, JigsawStructureData, LevelChunk, LevelSettings, NetworkChunkPublisherUpdate, SpawnSettings, StartGame, Vec3, VoxelShapes,
+        enums, AvailableActorIdentifiers, BiomeDefinitionData, BiomeDefinitionList, BiomeStringList, BlockPos, ChunkPos, ChunkRadiusUpdated, CreativeContent, ItemData,
+        ItemRegistry, JigsawStructureData, LevelChunk, LevelSettings, NetworkChunkPublisherUpdate, SpawnSettings, StartGame, Vec3, VoxelShapes,
     },
     id,
     packets::{play_status, text_type, PlayStatus, RequestChunkRadius, Text},
@@ -148,10 +148,7 @@ impl Server {
         if let Some(p) = self.players.get_mut(&pid) {
             p.radius = radius;
         }
-        let mut packets = vec![
-            ChunkRadiusUpdated { chunk_radius: radius }.packet(),
-            Packet::new(id::PLAY_STATUS, PlayStatus { status: play_status::PLAYER_SPAWN }.encode()),
-        ];
+        let mut packets = vec![ChunkRadiusUpdated { chunk_radius: radius }.packet(), Packet::new(id::PLAY_STATUS, PlayStatus { status: play_status::PLAYER_SPAWN }.encode())];
         if !skip("creative") {
             packets.push(CreativeContent::default().packet());
         }
@@ -181,12 +178,10 @@ impl Server {
             packets.push(AvailableActorIdentifiers { identifier_list: nbt_empty_lists(&["idlist"]) }.packet());
         }
         if !skip("publisher") {
-            packets.push(NetworkChunkPublisherUpdate {
-                new_position_for_view: BlockPos { x: 0, y: world::GROUND_Y, z: 0 },
-                new_radius_for_view: radius as u32 * 16,
-                ..Default::default()
-            }
-            .packet());
+            packets.push(
+                NetworkChunkPublisherUpdate { new_position_for_view: BlockPos { x: 0, y: world::GROUND_Y, z: 0 }, new_radius_for_view: radius as u32 * 16, ..Default::default() }
+                    .packet(),
+            );
         }
         self.send(pid, &packets);
 

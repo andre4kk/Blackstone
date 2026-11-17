@@ -1,27 +1,41 @@
 //! Test end-to-end: un client WebRTC che si comporta come Minecraft contro il server vero
 //! (signaling HTTP, identità firmata, ICE/DTLS, data channel, frammentazione, compressione, login, resource pack,
 //! StartGame, registro oggetti, chunk e spawn).
-use base64::{engine::general_purpose::{STANDARD as B64, URL_SAFE_NO_PAD as B64U}, Engine};
+use base64::{
+    engine::general_purpose::{STANDARD as B64, URL_SAFE_NO_PAD as B64U},
+    Engine,
+};
 use bedrock_protocol::{
-    generated::{
-        ChunkRadiusUpdated, CreativeContent, ItemRegistry, JigsawStructureData, LevelChunk,
-        NetworkChunkPublisherUpdate, StartGame, VoxelShapes,
-    },
+    generated::{ChunkRadiusUpdated, CreativeContent, ItemRegistry, JigsawStructureData, LevelChunk, NetworkChunkPublisherUpdate, StartGame, VoxelShapes},
     id,
     packets::{pack_response, text_type, CommandRequest, Login, RequestChunkRadius, RequestNetworkSettings, ResourcePackClientResponse, Text},
     wire::ServerPacket,
     Packet, Session, PROTOCOL,
 };
 use p384::ecdsa::{signature::Verifier, Signature, VerifyingKey};
-use std::{io::{Read, Write}, net::{TcpStream, UdpSocket}, time::{Duration, Instant}};
-use str0m::{change::SdpAnswer, channel::{ChannelConfig, Reliability}, net::{Protocol, Receive}, Candidate, Event, Input, Output, Rtc};
+use std::{
+    io::{Read, Write},
+    net::{TcpStream, UdpSocket},
+    time::{Duration, Instant},
+};
+use str0m::{
+    change::SdpAnswer,
+    channel::{ChannelConfig, Reliability},
+    net::{Protocol, Receive},
+    Candidate, Event, Input, Output, Rtc,
+};
 
 const PORT: u16 = 29132;
 
 /// Richiesta HTTP minimale. Ritorna (status line, corpo).
 fn http(method: &str, path: &str, body: &str) -> (String, String) {
     let mut s = (0..50)
-        .find_map(|_| TcpStream::connect(("127.0.0.1", PORT)).ok().or_else(|| { std::thread::sleep(Duration::from_millis(100)); None }))
+        .find_map(|_| {
+            TcpStream::connect(("127.0.0.1", PORT)).ok().or_else(|| {
+                std::thread::sleep(Duration::from_millis(100));
+                None
+            })
+        })
         .expect("il server non si è avviato");
     write!(s, "{method} {path} HTTP/1.1\r\nHost: x\r\nContent-Length: {}\r\n\r\n{body}", body.len()).unwrap();
     let mut r = String::new();
@@ -46,11 +60,8 @@ fn verify_identity(sdp: &str) {
     let sig = Signature::from_slice(&B64U.decode(jwt[2]).unwrap()).unwrap();
     key.verify(format!("{}.{}", jwt[0], jwt[1]).as_bytes(), &sig).expect("firma del JWT non valida");
 
-    let fingerprints: Vec<_> = sdp
-        .lines()
-        .filter_map(|l| l.strip_prefix("a=fingerprint:")?.split_once(' '))
-        .map(|(a, d)| serde_json::json!({"algorithm": a, "digest": d.trim()}))
-        .collect();
+    let fingerprints: Vec<_> =
+        sdp.lines().filter_map(|l| l.strip_prefix("a=fingerprint:")?.split_once(' ')).map(|(a, d)| serde_json::json!({"algorithm": a, "digest": d.trim()})).collect();
     assert!(!fingerprints.is_empty());
     let payload = serde_json::json!({"fingerprint": fingerprints}).to_string();
     let (header, sig) = assertion["fingerprints"].as_str().unwrap().split_once("..").expect("JWS non detached");
