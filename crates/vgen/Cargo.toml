@@ -1,0 +1,8 @@
+[package]
+name = "vgen"
+version.workspace = true
+edition.workspace = true
+license = "MIT"
+description = "Protocollo tra il server Bedrock e il processo generatore del mondo"
+
+[dependencies]

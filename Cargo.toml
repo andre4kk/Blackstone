@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/protocol", "crates/net", "crates/server"]
+members = ["crates/protocol", "crates/net", "crates/server", "crates/vgen"]
 default-members = ["crates/server"] # `cargo run` e `cargo test` partono dal server
 
 [workspace.package]
@@ -10,6 +10,7 @@ edition = "2021"
 [workspace.dependencies]
 bedrock-protocol = { path = "crates/protocol" }
 bedrock-net = { path = "crates/net" }
+vgen = { path = "crates/vgen" }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "io-util", "time", "sync"] }
 str0m = { version = "0.25", default-features = false, features = ["rust-crypto"] }
 p384 = { version = "0.13", features = ["ecdsa", "sha384"] }
