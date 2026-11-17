@@ -55,7 +55,9 @@ pub enum Event {
     Close(u64),
 }
 
-pub(crate) enum Command {
+/// Cosa il gioco chiede al trasporto. Pubblico solo per i test di chi usa `Sender::for_tests`.
+#[derive(Debug, PartialEq)]
+pub enum Command {
     Send(u64, Vec<u8>),
     Kick(u64),
 }
@@ -71,6 +73,12 @@ impl Sender {
 
     pub fn kick(&self, id: u64) {
         let _ = self.0.send(Command::Kick(id));
+    }
+
+    /// Un `Sender` senza rete: i comandi finiscono nel ricevitore restituito. Serve ai test della logica di gioco.
+    pub fn for_tests() -> (Self, mpsc::UnboundedReceiver<Command>) {
+        let (tx, rx) = mpsc::unbounded_channel();
+        (Self(tx), rx)
     }
 }
 

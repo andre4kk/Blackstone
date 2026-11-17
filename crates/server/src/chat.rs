@@ -10,12 +10,15 @@ use bedrock_protocol::{
 /// Comandi disponibili: nome e descrizione (usati anche da /help).
 const COMMANDS: &[(&str, &str)] = &[("help", "elenco dei comandi"), ("list", "giocatori online"), ("tps", "prestazioni del server"), ("say <testo>", "messaggio a tutti")];
 
+/// Lunghezza massima di un messaggio di chat (come in vanilla).
+pub(crate) const MAX_CHAT_LEN: usize = 512;
+
 fn packet(text: Text) -> Packet {
     Packet::new(id::TEXT, text.encode())
 }
 
 impl Server {
-    /// Nome (verificato dal login, non dichiarato dal client) del giocatore.
+    /// Nome del giocatore preso dal login, non dal pacchetto di chat. Il login però non è ancora verificato (vedi login.rs).
     pub(crate) fn name(&self, pid: u64) -> String {
         self.players.get(&pid).and_then(|p| p.info.as_ref()).map_or_else(|| "giocatore".into(), |i| i.name.clone())
     }
@@ -39,6 +42,9 @@ impl Server {
         let message = text.message.trim();
         if text.kind != text_type::CHAT || message.is_empty() {
             return;
+        }
+        if message.chars().count() > MAX_CHAT_LEN {
+            return self.tell(pid, &format!("§cMessaggio troppo lungo (massimo {MAX_CHAT_LEN} caratteri)."));
         }
         let name = self.name(pid);
         log!("[chat] {name}: {message}");

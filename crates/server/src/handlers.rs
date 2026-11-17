@@ -36,6 +36,18 @@ impl Server {
     }
 
     fn handle(&mut self, pid: u64, packet: Packet) {
+        // Ogni pacchetto è ammesso solo nella fase giusta: prima del login non si chiedono chunk, prima di entrare nel
+        // mondo non si scrive in chat. Così un client modificato non può saltare passaggi.
+        let (logged_in, spawned) = self.players.get(&pid).map_or((false, false), |p| (p.info.is_some(), p.spawned));
+        let allowed = match packet.id {
+            id::LOGIN => !logged_in,
+            id::RESOURCE_PACK_CLIENT_RESPONSE | id::REQUEST_CHUNK_RADIUS | id::SET_LOCAL_PLAYER_AS_INITIALIZED => logged_in,
+            id::TEXT | id::COMMAND_REQUEST => spawned,
+            _ => true,
+        };
+        if !allowed {
+            return log!("[#{pid}] pacchetto {} fuori sequenza (login: {logged_in}, nel mondo: {spawned}): ignorato", packet.id);
+        }
         match packet.id {
             id::REQUEST_NETWORK_SETTINGS => self.request_network_settings(pid, &packet.body),
             id::LOGIN => self.login(pid, &packet.body),

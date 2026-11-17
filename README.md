@@ -31,7 +31,7 @@ La sequenza segue quella dei server di riferimento (gophertunnel / Dragonfly).
 ## Cosa fa il server oggi
 
 - Ciclo di gioco a 20 tick al secondo (`Server::tick`), con misura di TPS e durata media del tick (`/tps`).
-- Chat tra i giocatori (il nome è quello verificato dal login: il client non può spacciarsi per un altro).
+- Chat tra i giocatori. Il nome viene dal login e non dal messaggio, ma le firme del login non sono ancora verificate (vedi "Sicurezza").
 - Comandi: `/help`, `/list`, `/tps`, `/say <testo>`.
 - Annunci di ingresso e uscita.
 - Ancora NON gestiti (ignorati in silenzio): movimento (`PlayerAuthInput`), rottura/posa di blocchi, inventario,

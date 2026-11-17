@@ -160,7 +160,10 @@ impl Server {
 
     /// Il client ha finito di caricare ed è nel mondo: ora si mandano biomi, identificatori e chunk.
     pub(crate) fn initialized(&mut self, pid: u64) {
-        let Some(radius) = self.players.get(&pid).map(|p| p.radius).filter(|&r| r > 0) else {
+        if self.players.get(&pid).is_some_and(|p| p.spawned) {
+            return log!("[#{pid}] SetLocalPlayerAsInitialized ripetuto: ignorato");
+        }
+        let Some(radius) = self.players.get(&pid).filter(|p| p.info.is_some()).map(|p| p.radius).filter(|&r| r > 0) else {
             return log!("[#{pid}] SetLocalPlayerAsInitialized prima della richiesta del raggio: ignorato");
         };
         log!("[#{pid}] il client è inizializzato: invio i chunk");

@@ -2,6 +2,8 @@
 mod chat;
 mod handlers;
 mod join;
+#[cfg(test)]
+mod tests;
 mod world;
 
 use bedrock_net::{Config, Event, Sender};
@@ -53,6 +55,10 @@ struct Server {
 }
 
 impl Server {
+    fn new(sender: Sender) -> Self {
+        Self { sender, players: HashMap::new(), ticks: VecDeque::new(), mspt: 0.0 }
+    }
+
     /// Codifica i pacchetti per quel giocatore (con la sua compressione) e li invia in un solo messaggio.
     fn send(&self, id: u64, packets: &[Packet]) {
         if let Some(p) = self.players.get(&id) {
@@ -83,7 +89,7 @@ impl Server {
 /// Avvia il trasporto e fa girare il gioco: gli eventi di rete arrivano quando capitano, il tick ogni 50 ms.
 pub async fn run(cfg: Config) -> io::Result<()> {
     let mut net = bedrock_net::start(cfg).await?;
-    let mut server = Server { sender: net.sender.clone(), players: HashMap::new(), ticks: VecDeque::new(), mspt: 0.0 };
+    let mut server = Server::new(net.sender.clone());
     let mut ticker = interval(TICK);
     ticker.set_missed_tick_behavior(MissedTickBehavior::Skip); // se un tick tarda, non si "recupera" a raffica
     loop {
