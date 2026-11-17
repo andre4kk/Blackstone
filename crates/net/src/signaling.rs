@@ -4,7 +4,7 @@ use serde_json::json;
 use std::{
     net::{IpAddr, SocketAddr},
     sync::{atomic::Ordering::Relaxed, Arc},
-    time::Instant,
+    time::{Duration, Instant},
 };
 use str0m::{change::SdpOffer, Candidate, Rtc};
 use tokio::{
@@ -15,6 +15,8 @@ use tokio::{
 
 const MAX_HEADERS: usize = 64 * 1024;
 const MAX_BODY: usize = 1 << 20;
+/// Tempo massimo per ricevere una richiesta completa: chi si connette e tace non tiene occupato il server.
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
 
 pub(crate) async fn serve(tcp: TcpListener, shared: Arc<Shared>, new_clients: UnboundedSender<Client>) {
     while let Ok((stream, _)) = tcp.accept().await {
@@ -31,6 +33,10 @@ struct Request {
 
 /// Mini-parser HTTP/1.1: basta per il signaling. Ritorna `None` per qualunque cosa non sia HTTP valido
 /// (in particolare i tentativi TLS: il client ripiega su HTTP).
+async fn read_request_within(s: &mut TcpStream, limit: Duration) -> Option<Request> {
+    tokio::time::timeout(limit, read_request(s)).await.ok()?
+}
+
 async fn read_request(s: &mut TcpStream) -> Option<Request> {
     let (mut buf, mut tmp) = (Vec::new(), [0u8; 4096]);
     let end = loop {
@@ -69,7 +75,7 @@ async fn respond(s: &mut TcpStream, status: &str, content_type: &str, body: &str
 
 async fn handle(mut s: TcpStream, shared: &Shared, new_clients: &UnboundedSender<Client>) -> Option<()> {
     let local = s.local_addr().ok()?;
-    let req = read_request(&mut s).await?;
+    let req = read_request_within(&mut s, REQUEST_TIMEOUT).await?;
     match (req.method.as_str(), req.path.as_str()) {
         ("GET", "/v1/join") => {
             let c = &shared.cfg;
@@ -121,4 +127,29 @@ pub fn lan_ip() -> Option<IpAddr> {
     let s = std::net::UdpSocket::bind("0.0.0.0:0").ok()?;
     s.connect("8.8.8.8:80").ok()?;
     Some(s.local_addr().ok()?.ip())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn silent_connections_are_dropped_after_the_timeout() {
+        let tcp = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let _client = TcpStream::connect(tcp.local_addr().unwrap()).await.unwrap(); // si connette e tace
+        let (mut server_side, _) = tcp.accept().await.unwrap();
+        let started = std::time::Instant::now();
+        assert!(read_request_within(&mut server_side, Duration::from_millis(100)).await.is_none());
+        assert!(started.elapsed() < Duration::from_secs(2), "deve arrendersi al timeout, non aspettare per sempre");
+    }
+
+    #[tokio::test]
+    async fn reads_a_complete_request() {
+        let tcp = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let mut client = TcpStream::connect(tcp.local_addr().unwrap()).await.unwrap();
+        client.write_all(b"POST /v1/join/1 HTTP/1.1\r\nContent-Length: 3\r\n\r\nabc").await.unwrap();
+        let (mut server_side, _) = tcp.accept().await.unwrap();
+        let req = read_request_within(&mut server_side, Duration::from_secs(1)).await.unwrap();
+        assert_eq!((req.method.as_str(), req.path.as_str(), &req.body[..]), ("POST", "/v1/join/1", &b"abc"[..]));
+    }
 }

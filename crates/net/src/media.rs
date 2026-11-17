@@ -18,6 +18,29 @@ use tokio::{
 
 const RELIABLE: &str = "ReliableDataChannel";
 const FRAGMENT: usize = 10_000; // dimensione massima di un frammento (header di 1 byte escluso)
+/// Messaggio più grande ammesso: l'header di un byte conta al massimo 256 frammenti.
+const MAX_MESSAGE: usize = 256 * FRAGMENT;
+
+/// Il messaggio in arrivo supera `MAX_MESSAGE`: il client sta mandando dati non validi.
+#[derive(Debug, PartialEq)]
+struct TooLarge;
+
+/// Riassembla i frammenti del data channel. Header di 1 byte: N>0 = ne mancano ancora N; 0 = ultimo (o unico).
+#[derive(Default)]
+struct Reassembler(Vec<u8>);
+
+impl Reassembler {
+    /// Aggiunge un frammento; ritorna il messaggio quando è completo. Oltre `MAX_MESSAGE` scarta tutto.
+    fn push(&mut self, data: &[u8]) -> Result<Option<Vec<u8>>, TooLarge> {
+        let Some((&header, payload)) = data.split_first() else { return Ok(None) };
+        if self.0.len() + payload.len() > MAX_MESSAGE {
+            self.0 = Vec::new();
+            return Err(TooLarge);
+        }
+        self.0.extend_from_slice(payload);
+        Ok((header == 0).then(|| std::mem::take(&mut self.0)))
+    }
+}
 
 /// Una connessione WebRTC (un giocatore) con il suo data channel affidabile.
 pub(crate) struct Client {
@@ -26,13 +49,13 @@ pub(crate) struct Client {
     addr: SocketAddr,
     rel: Option<ChannelId>,
     opened: bool,
-    frag: Vec<u8>,
+    frag: Reassembler,
     next: Instant,
 }
 
 impl Client {
     pub fn new(id: u64, rtc: Rtc, addr: SocketAddr) -> Self {
-        Self { id, rtc, addr, rel: None, opened: false, frag: Vec::new(), next: Instant::now() }
+        Self { id, rtc, addr, rel: None, opened: false, frag: Reassembler::default(), next: Instant::now() }
     }
 
     /// Svuota gli output di str0m (pacchetti UDP da inviare, eventi) e memorizza la prossima scadenza.
@@ -62,14 +85,16 @@ impl Client {
                 self.opened = true;
                 let _ = events.send(Event::Open(self.id));
             }
-            RtcEvent::ChannelData(d) => {
-                // Header di 1 byte: N>0 = frammento, ne mancano ancora N; 0 = messaggio completo (o ultimo frammento).
-                let Some((&header, payload)) = d.data.split_first() else { return };
-                self.frag.extend_from_slice(payload);
-                if header == 0 {
-                    let _ = events.send(Event::Message(self.id, std::mem::take(&mut self.frag)));
+            RtcEvent::ChannelData(d) => match self.frag.push(&d.data) {
+                Ok(Some(message)) => {
+                    let _ = events.send(Event::Message(self.id, message));
                 }
-            }
+                Ok(None) => {}
+                Err(TooLarge) => {
+                    crate::log!("[#{}] messaggio oltre {MAX_MESSAGE} byte: disconnetto", self.id);
+                    self.rtc.disconnect();
+                }
+            },
             RtcEvent::ChannelClose(_) => crate::log!("[#{}] data channel chiuso", self.id),
             RtcEvent::IceConnectionStateChange(state) => {
                 crate::log!("[#{}] ICE: {state:?}", self.id);
@@ -85,8 +110,9 @@ impl Client {
     fn send(&mut self, data: &[u8]) {
         let Some(ch) = self.rel else { return };
         let chunks: Vec<_> = data.chunks(FRAGMENT).collect();
-        if chunks.len() > 256 {
-            return; // l'header conta fino a 255 frammenti: oltre è un errore del chiamante
+        if data.len() > MAX_MESSAGE {
+            // L'header conta al massimo 256 frammenti: è un errore del chiamante, che deve dividere i batch.
+            return crate::log!("[#{}] messaggio di {} byte non inviato: il limite è {MAX_MESSAGE}", self.id, data.len());
         }
         for (i, c) in chunks.iter().enumerate() {
             let msg = [&[(chunks.len() - 1 - i) as u8][..], c].concat();
@@ -161,4 +187,37 @@ async fn command(clients: &mut [Client], cmd: Command, sock: &UdpSocket, events:
         Command::Kick(_) => c.rtc.disconnect(),
     }
     c.drive(sock, events).await;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reassembles_fragments_in_order() {
+        let mut r = Reassembler::default();
+        assert_eq!(r.push(&[1, b'a', b'b']), Ok(None));
+        assert_eq!(r.push(&[0, b'c']), Ok(Some(b"abc".to_vec())));
+        assert_eq!(r.push(&[0, b'x']), Ok(Some(b"x".to_vec())), "dopo un messaggio completo si riparte da zero");
+    }
+
+    #[test]
+    fn rejects_messages_larger_than_the_limit() {
+        let mut r = Reassembler::default();
+        let fragment = [&[255u8][..], &[0u8; FRAGMENT]].concat();
+        let mut result = Ok(None);
+        for _ in 0..=MAX_MESSAGE / FRAGMENT {
+            result = r.push(&fragment);
+            if result.is_err() {
+                break;
+            }
+        }
+        assert_eq!(result, Err(TooLarge), "un client non deve poter riempire la memoria con frammenti infiniti");
+        assert_eq!(r.push(&[0, 1]), Ok(Some(vec![1])), "dopo l'errore il buffer è vuoto");
+    }
+
+    #[test]
+    fn ignores_empty_datagrams() {
+        assert_eq!(Reassembler::default().push(&[]), Ok(None));
+    }
 }
