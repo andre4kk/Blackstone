@@ -1,0 +1,3 @@
+# Stesso toolchain di SteelMC (rev 62fd936e): steel-core richiede nightly.
+[toolchain]
+channel = "nightly-2026-10-14"
