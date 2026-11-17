@@ -44,19 +44,10 @@ struct ProbeArgs {
 }
 
 fn parse_probe(args: &[String]) -> Result<ProbeArgs, String> {
-    let mut out = ProbeArgs {
-        seed: 13579,
-        x: 0,
-        z: 0,
-        size: 1,
-        dim: Dim::Overworld,
-        repeat: 1,
-    };
+    let mut out = ProbeArgs { seed: 13579, x: 0, z: 0, size: 1, dim: Dim::Overworld, repeat: 1 };
     let mut it = args.iter();
     while let Some(flag) = it.next() {
-        let value = it
-            .next()
-            .ok_or_else(|| format!("manca il valore di {flag}"))?;
+        let value = it.next().ok_or_else(|| format!("manca il valore di {flag}"))?;
         let bad = |_| format!("valore non valido per {flag}: {value}");
         match flag.as_str() {
             "--seed" => out.seed = value.parse().map_err(bad)?,
@@ -83,10 +74,7 @@ fn parse_probe(args: &[String]) -> Result<ProbeArgs, String> {
 
 fn probe(args: &[String]) -> Result<(), String> {
     let a = parse_probe(args)?;
-    println!(
-        "prova: seme {} dimensione {:?} chunk ({}, {}) regione {}x{}",
-        a.seed, a.dim, a.x, a.z, a.size, a.size
-    );
+    println!("prova: seme {} dimensione {:?} chunk ({}, {}) regione {}x{}", a.seed, a.dim, a.x, a.z, a.size, a.size);
 
     let start = Instant::now();
     let generator = Generator::new(a.seed, a.dim);
@@ -94,11 +82,7 @@ fn probe(args: &[String]) -> Result<(), String> {
 
     for round in 1..=a.repeat {
         let start = Instant::now();
-        let chunks = if a.size == 1 {
-            vec![generator.generate(a.x, a.z)]
-        } else {
-            generator.generate_region(a.x, a.z, a.x + a.size - 1, a.z + a.size - 1)
-        };
+        let chunks = if a.size == 1 { vec![generator.generate(a.x, a.z)] } else { generator.generate_region(a.x, a.z, a.x + a.size - 1, a.z + a.size - 1) };
         let elapsed = ms(start);
         report(round, &chunks, elapsed);
     }
@@ -155,16 +139,9 @@ fn peak_memory_mib() -> Option<f64> {
     #[link(name = "kernel32")]
     unsafe extern "system" {
         fn GetCurrentProcess() -> isize;
-        fn K32GetProcessMemoryInfo(
-            process: isize,
-            counters: *mut ProcessMemoryCounters,
-            cb: u32,
-        ) -> i32;
+        fn K32GetProcessMemoryInfo(process: isize, counters: *mut ProcessMemoryCounters, cb: u32) -> i32;
     }
-    let mut counters = ProcessMemoryCounters {
-        cb: size_of::<ProcessMemoryCounters>() as u32,
-        ..Default::default()
-    };
+    let mut counters = ProcessMemoryCounters { cb: size_of::<ProcessMemoryCounters>() as u32, ..Default::default() };
     // SAFETY: struttura PROCESS_MEMORY_COUNTERS con dimensione corretta in `cb`.
     let ok = unsafe { K32GetProcessMemoryInfo(GetCurrentProcess(), &mut counters, counters.cb) };
     (ok != 0).then(|| counters.peak_working_set_size as f64 / (1024.0 * 1024.0))

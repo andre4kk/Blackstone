@@ -99,47 +99,19 @@ impl Generator {
                 .build()
                 .expect("il pool di generazione deve avviarsi"),
         );
-        let runtime = Arc::new(
-            RuntimeBuilder::new_multi_thread()
-                .thread_stack_size(STACK_SIZE)
-                .enable_all()
-                .build()
-                .expect("il runtime di generazione deve avviarsi"),
-        );
+        let runtime =
+            Arc::new(RuntimeBuilder::new_multi_thread().thread_stack_size(STACK_SIZE).enable_all().build().expect("il runtime di generazione deve avviarsi"));
         let generator = Arc::new(match dim {
-            Dim::Overworld => ChunkGeneratorType::Overworld(OverworldGenerator::new(
-                None,
-                BiomeSourceKind::overworld(seed),
-                seed,
-                &pool,
-            )),
-            Dim::Nether => ChunkGeneratorType::Nether(NetherGenerator::new(
-                None,
-                BiomeSourceKind::nether(seed),
-                seed,
-                &pool,
-            )),
-            Dim::End => ChunkGeneratorType::End(EndGenerator::new(
-                None,
-                BiomeSourceKind::end(seed),
-                seed,
-                &pool,
-            )),
+            Dim::Overworld => ChunkGeneratorType::Overworld(OverworldGenerator::new(None, BiomeSourceKind::overworld(seed), seed, &pool)),
+            Dim::Nether => ChunkGeneratorType::Nether(NetherGenerator::new(None, BiomeSourceKind::nether(seed), seed, &pool)),
+            Dim::End => ChunkGeneratorType::End(EndGenerator::new(None, BiomeSourceKind::end(seed), seed, &pool)),
         });
-        Generator {
-            seed,
-            dim,
-            pool,
-            runtime,
-            generator,
-        }
+        Generator { seed, dim, pool, runtime, generator }
     }
 
     /// Genera il chunk `(x, z)` con tutte le sue dipendenze.
     pub fn generate(&self, x: i32, z: i32) -> JavaChunk {
-        self.generate_region(x, z, x, z)
-            .pop()
-            .expect("la regione contiene esattamente un chunk")
+        self.generate_region(x, z, x, z).pop().expect("la regione contiene esattamente un chunk")
     }
 
     /// Genera i chunk da `(min_x, min_z)` a `(max_x, max_z)` inclusi, in ordine X poi Z.
@@ -156,10 +128,7 @@ impl Generator {
 
         let holders = self
             .runtime
-            .block_on(chunk_map.generate_region(
-                ChunkPos::new(min_x, min_z),
-                ChunkPos::new(max_x, max_z),
-            ))
+            .block_on(chunk_map.generate_region(ChunkPos::new(min_x, min_z), ChunkPos::new(max_x, max_z)))
             .unwrap_or_else(|e| panic!("generazione della regione fallita: {e}"));
         holders.iter().map(|h| java_chunk(h)).collect()
     }
@@ -224,10 +193,7 @@ fn java_chunk(holder: &ChunkHolder) -> JavaChunk {
                     }
                 }
             }
-            JavaSection {
-                states: Box::new([0u16; 4096]),
-                biomes,
-            }
+            JavaSection { states: Box::new([0u16; 4096]), biomes }
         })
         .collect();
     // `ChunkSection::states()` è pub(crate): si legge per colonne con l'API pubblica.
@@ -241,8 +207,5 @@ fn java_chunk(holder: &ChunkHolder) -> JavaChunk {
             }
         }
     }
-    JavaChunk {
-        min_y: holder.min_y(),
-        sections: out,
-    }
+    JavaChunk { min_y: holder.min_y(), sections: out }
 }
