@@ -11,6 +11,7 @@ pub const MAX_FRAME: usize = 16 * 1024 * 1024;
 
 const BLOCKS_PER_SECTION: usize = 4096;
 const BIOMES_PER_SECTION: usize = 64;
+const WATER_WORDS: usize = 4096 / 64;
 
 /// Dimensione del mondo; il valore numerico è quello sul filo.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -45,12 +46,15 @@ impl TryFrom<u8> for Dim {
 }
 
 /// Sezione 16x16x16. `blocks`: indici nella palette, ordine `(x*16 + z)*16 + y`; `biomes`: ordine `(x*4 + z)*4 + y`.
+/// `water`: maschera di 4096 bit dei blocchi con acqua nel secondo strato (stesso ordine dei blocchi; bit `i` = parola `i/64`,
+/// bit `i%64`), `None` se nessun blocco della sezione ne ha.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Section {
     pub index: i8,
     pub palette: Vec<i32>,
     pub blocks: Box<[u16; 4096]>,
     pub biomes: Box<[u32; 64]>,
+    pub water: Option<Box<[u64; 64]>>,
 }
 
 /// Block entity con NBT di rete Bedrock (little-endian con varint).
@@ -134,6 +138,15 @@ fn put_chunk(out: &mut Vec<u8>, c: &ChunkData) {
         for b in s.biomes.iter() {
             out.extend_from_slice(&b.to_le_bytes());
         }
+        match &s.water {
+            Some(mask) => {
+                out.push(1);
+                for w in mask.iter() {
+                    out.extend_from_slice(&w.to_le_bytes());
+                }
+            }
+            None => out.push(0),
+        }
     }
     put_len(out, c.block_entities.len());
     for e in &c.block_entities {
@@ -199,7 +212,7 @@ fn read_chunk(r: &mut Reader) -> Option<ChunkData> {
     let dim = r.dim()?;
     let x = r.i32()?;
     let z = r.i32()?;
-    let n = r.count(1 + 4 + BLOCKS_PER_SECTION * 2 + BIOMES_PER_SECTION * 4)?;
+    let n = r.count(1 + 4 + BLOCKS_PER_SECTION * 2 + BIOMES_PER_SECTION * 4 + 1)?;
     let mut sections = Vec::with_capacity(n);
     for _ in 0..n {
         let index = r.u8()? as i8;
@@ -216,7 +229,18 @@ fn read_chunk(r: &mut Reader) -> Option<ChunkData> {
         for b in biomes.iter_mut() {
             *b = r.u32()?;
         }
-        sections.push(Section { index, palette, blocks, biomes });
+        let water = match r.u8()? {
+            0 => None,
+            1 => {
+                let mut mask = Box::new([0u64; WATER_WORDS]);
+                for w in mask.iter_mut() {
+                    *w = r.u64()?;
+                }
+                Some(mask)
+            }
+            _ => return None,
+        };
+        sections.push(Section { index, palette, blocks, biomes, water });
     }
     let ne = r.count(16)?;
     let mut block_entities = Vec::with_capacity(ne);
@@ -362,7 +386,15 @@ mod tests {
         blocks[4095] = 2;
         let mut biomes = Box::new([0u32; 64]);
         biomes[63] = 7;
-        Section { index, palette: vec![10, -20, 30], blocks, biomes }
+        Section { index, palette: vec![10, -20, 30], blocks, biomes, water: None }
+    }
+
+    /// Sezione con acqua nel secondo strato in alcuni blocchi.
+    fn watery(index: i8) -> Section {
+        let mut water = Box::new([0u64; 64]);
+        water[0] = 1 << 5;
+        water[63] = 1 << 63;
+        Section { water: Some(water), ..section(index) }
     }
 
     fn chunk() -> ChunkData {
@@ -370,7 +402,7 @@ mod tests {
             dim: Dim::Nether,
             x: -3,
             z: 9,
-            sections: vec![section(-4), section(5)],
+            sections: vec![section(-4), watery(5)],
             block_entities: vec![BlockEntity { x: 1, y: 2, z: 3, nbt: vec![1, 2, 3] }],
         }
     }
@@ -441,6 +473,31 @@ mod tests {
         let off = 1 + 4 + 1 + 4 + 4 + 4 + 1;
         b.drain(off + 4 + 12..off + 4 + 12 + 2); // rimuove un u16 di blocks
         assert!(FromGen::decode(&b).is_none());
+    }
+
+    #[test]
+    fn water_mask_roundtrips_with_and_without_water() {
+        let FromGen::Chunk { data, .. } = FromGen::decode(&FromGen::Chunk { req: 1, data: chunk() }.encode()).unwrap() else { panic!() };
+        assert_eq!(data.sections[0].water, None);
+        let water = data.sections[1].water.as_ref().expect("maschera dell'acqua");
+        assert_eq!((water[0], water[63]), (1 << 5, 1 << 63));
+    }
+
+    #[test]
+    fn decode_rejects_truncated_water_mask_and_bad_presence_byte() {
+        let mut c = chunk();
+        c.sections.remove(0);
+        c.block_entities.clear();
+        let bytes = FromGen::Chunk { req: 1, data: c }.encode();
+        // In fondo: maschera (512 byte) + numero di block entity (4 byte).
+        let mask_end = bytes.len() - 4;
+        let mut cut = bytes[..mask_end - 8].to_vec();
+        cut.extend_from_slice(&0u32.to_le_bytes());
+        assert!(FromGen::decode(&cut).is_none());
+        let mut bad = bytes.clone();
+        bad[mask_end - 64 * 8 - 1] = 2; // byte di presenza non valido
+        assert!(FromGen::decode(&bad).is_none());
+        assert!(FromGen::decode(&bytes).is_some());
     }
 
     #[test]

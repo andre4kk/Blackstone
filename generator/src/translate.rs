@@ -72,6 +72,8 @@ pub struct Translator {
     bedrock: Vec<BedrockState>,
     /// Per stato Java: block entity Bedrock richiesto.
     kinds: Vec<Kind>,
+    /// Per stato Java: il blocco Bedrock ha acqua nel secondo strato (waterlogged, alghe, praterie, colonne di bolle).
+    water: Vec<bool>,
     /// Per bioma Java (ID di registro): ID Bedrock.
     biomes: Vec<u32>,
     fallback: i32,
@@ -127,12 +129,14 @@ impl Translator {
             java_to_bedrock,
             bedrock,
             kinds: Vec::new(),
+            water: Vec::new(),
             biomes: Vec::new(),
             fallback,
             air: block_hash("minecraft:air", &[]),
             unmapped: AtomicU64::new(0),
         };
         t.kinds = (0..lookup.len()).map(|id| t.kind_of(id as u16)).collect();
+        t.water = (0..lookup.len()).map(|id| water_of(id as u16)).collect();
         t.biomes = (0..REGISTRY.biomes.len())
             .map(|id| {
                 let key = REGISTRY.biomes.by_id(id).expect("bioma registrato").key.to_string();
@@ -173,6 +177,11 @@ impl Translator {
                 (b.hash, nbt)
             })
             .collect()
+    }
+
+    /// Vero se lo stato Java su Bedrock va accompagnato da acqua nel secondo strato del sotto-chunk.
+    pub fn has_water(&self, java_state: u16) -> bool {
+        self.water.get(java_state as usize).copied().unwrap_or(false)
     }
 
     fn kind(&self, java_state: u16) -> Kind {
@@ -362,10 +371,72 @@ impl Default for Translator {
     }
 }
 
-/// Testo semplice di un componente di testo Java in NBT (stringa o compound con `text`).
+/// Blocchi Java che su Bedrock hanno acqua nel secondo strato, come in Geyser: `waterlogged=true`
+/// e le piante acquatiche, che su Java sono acqua di per sé.
+fn water_of(id: u16) -> bool {
+    let block = REGISTRY.blocks.state_to_block_lookup[id as usize];
+    property(id, "waterlogged") == Some("true")
+        || (block.key.namespace == "minecraft" && matches!(&*block.key.path, "kelp" | "kelp_plant" | "seagrass" | "tall_seagrass" | "bubble_column"))
+}
+
+/// Legge una stringa JSON all'inizio di `s` (dopo spazi); restituisce il testo e il resto.
+fn json_string(s: &str) -> Option<(String, &str)> {
+    let mut chars = s.trim_start().char_indices();
+    let start = s.len() - s.trim_start().len();
+    if chars.next()?.1 != '"' {
+        return None;
+    }
+    let mut out = String::new();
+    while let Some((i, c)) = chars.next() {
+        match c {
+            '"' => return Some((out, &s[start + i + 1..])),
+            '\\' => match chars.next()?.1 {
+                'n' => out.push('\n'),
+                't' => out.push('\t'),
+                'u' => {
+                    let hex: String = (0..4).filter_map(|_| chars.next().map(|(_, c)| c)).collect();
+                    out.push(u32::from_str_radix(&hex, 16).ok().and_then(char::from_u32).unwrap_or('?'));
+                }
+                c => out.push(c),
+            },
+            c => out.push(c),
+        }
+    }
+    None
+}
+
+/// Testo semplice di un messaggio JSON (`"ciao"` o `{"text": "ciao", ...}`); il testo non JSON resta com'è.
+fn json_text(s: &str) -> String {
+    let trimmed = s.trim();
+    if trimmed.starts_with('"') {
+        if let Some((text, rest)) = json_string(trimmed)
+            && rest.trim().is_empty()
+        {
+            return text;
+        }
+    } else if let Some(mut rest) = trimmed.strip_prefix('{') {
+        // Primo valore della chiave "text" al livello del compound.
+        while let Some((key, after)) = json_string(rest) {
+            let after = after.trim_start().strip_prefix(':').unwrap_or(after);
+            if key == "text" {
+                return json_string(after).map(|(t, _)| t).unwrap_or_default();
+            }
+            // Salta il valore: basta arrivare alla virgola successiva se è una stringa o un valore semplice.
+            let skip = match json_string(after) {
+                Some((_, r)) => r,
+                None => after.find(',').map_or("", |p| &after[p..]),
+            };
+            rest = skip.trim_start().strip_prefix(',').unwrap_or("");
+        }
+        return String::new();
+    }
+    s.to_string()
+}
+
+/// Testo semplice di un componente di testo Java in NBT (stringa, eventualmente JSON, o compound con `text`).
 fn plain_text(tag: &NbtTag) -> String {
     match tag {
-        NbtTag::String(s) => s.to_str().into_owned(),
+        NbtTag::String(s) => json_text(&s.to_str()),
         NbtTag::Compound(c) => c.string("text").map(|t| t.to_str().into_owned()).unwrap_or_default(),
         _ => String::new(),
     }
@@ -385,6 +456,7 @@ pub fn to_bedrock(chunk: &JavaChunk, t: &Translator) -> ChunkData {
         let mut seen: Vec<u16> = Vec::new();
         let mut has_entities = false;
         let mut blocks = Box::new([0u16; 4096]);
+        let mut water = Box::new([0u64; 64]);
         for y in 0..16 {
             for z in 0..16 {
                 for x in 0..16 {
@@ -405,7 +477,11 @@ pub fn to_bedrock(chunk: &JavaChunk, t: &Translator) -> ChunkData {
                             index
                         }
                     };
-                    blocks[(x * 16 + z) * 16 + y] = index;
+                    let i = (x * 16 + z) * 16 + y;
+                    blocks[i] = index;
+                    if t.has_water(state) {
+                        water[i / 64] |= 1 << (i % 64);
+                    }
                 }
             }
         }
@@ -442,7 +518,8 @@ pub fn to_bedrock(chunk: &JavaChunk, t: &Translator) -> ChunkData {
                 }
             }
         }
-        sections.push(Section { index: (first_section + i as i32) as i8, palette, blocks, biomes });
+        let water = water.iter().any(|&w| w != 0).then_some(water);
+        sections.push(Section { index: (first_section + i as i32) as i8, palette, blocks, biomes, water });
     }
     ChunkData { dim: chunk.dim, x: chunk.x, z: chunk.z, sections, block_entities }
 }
@@ -592,25 +669,91 @@ mod tests {
         assert_eq!(bed.name, "minecraft:bed");
         assert_eq!(t.block(java_id("minecraft:flower_pot")), block_hash("minecraft:flower_pot", &[("update_bit", State::Byte(0))]));
         assert!(t.bedrock.iter().all(|b| b.name.starts_with("minecraft:")), "nomi Bedrock senza spazio dei nomi");
+        // Ultimo stato del registro (firefly_bush) e i due prima (vasi con eyeblossom → flower_pot).
+        let last = REGISTRY.blocks.state_to_block_lookup.len() as u16 - 1;
+        assert_eq!(REGISTRY.blocks.state_to_block_lookup[last as usize].key.to_string(), "minecraft:firefly_bush");
+        assert_eq!(t.block(last), block_hash("minecraft:firefly_bush", &[]));
+        assert_eq!(t.block(last - 1), block_hash("minecraft:flower_pot", &[("update_bit", State::Byte(0))]));
+    }
+
+    #[test]
+    fn waterlogged_and_aquatic_plants_have_water() {
+        let t = Translator::new();
+        let key: Identifier = "minecraft:oak_stairs".parse().unwrap();
+        let wet = REGISTRY.blocks.state_id_from_properties(&key, &[("waterlogged", "true")]).unwrap().0;
+        let dry = REGISTRY.blocks.state_id_from_properties(&key, &[("waterlogged", "false")]).unwrap().0;
+        assert!(t.has_water(wet));
+        assert!(!t.has_water(dry));
+        for name in ["minecraft:seagrass", "minecraft:tall_seagrass", "minecraft:kelp", "minecraft:kelp_plant", "minecraft:bubble_column"] {
+            assert!(t.has_water(java_id(name)), "{name}");
+        }
+        assert!(!t.has_water(java_id("minecraft:stone")));
+        assert!(!t.has_water(java_id("minecraft:water")), "l'acqua stessa è nel primo strato");
+        assert!(!t.has_water(u16::MAX));
+    }
+
+    #[test]
+    fn water_mask_marks_waterlogged_blocks_in_bedrock_order() {
+        let t = Translator::new();
+        let key: Identifier = "minecraft:oak_stairs".parse().unwrap();
+        let wet = REGISTRY.blocks.state_id_from_properties(&key, &[("waterlogged", "true")]).unwrap().0;
+        let mut chunk = empty_chunk();
+        // Sezione 4: scala bagnata in x=1 y=2 z=3, erba marina in x=0 y=0 z=0; sezione 5: solo pietra.
+        chunk.sections[4].states[(2 * 16 + 3) * 16 + 1] = wet;
+        chunk.sections[4].states[0] = java_id("minecraft:seagrass");
+        chunk.sections[5].states[0] = java_id("minecraft:stone");
+        let data = to_bedrock(&chunk, &t);
+        let water = data.sections[0].water.as_ref().expect("maschera dell'acqua");
+        let bit = |i: usize| water[i / 64] >> (i % 64) & 1 == 1;
+        assert!(bit((16 + 3) * 16 + 2));
+        assert!(bit(0));
+        assert_eq!(water.iter().map(|w| w.count_ones()).sum::<u32>(), 2);
+        assert_eq!(data.sections[1].water, None, "la pietra non ha acqua");
+    }
+
+    #[test]
+    fn sign_json_messages_become_plain_text() {
+        assert_eq!(json_text("\"ciao\""), "ciao");
+        assert_eq!(json_text("{\"color\":\"red\",\"text\":\"a \\\"b\\\"\"}"), "a \"b\"");
+        assert_eq!(json_text("{\"bold\":true,\"text\":\"x\"}"), "x");
+        assert_eq!(json_text("testo semplice"), "testo semplice");
+        assert_eq!(json_text("\"\\u00e8\""), "è");
+        let mut nbt = NbtCompound::new();
+        let mut front = NbtCompound::new();
+        front.insert("messages", simdnbt::owned::NbtList::from(vec!["\"ciao\"".to_string(), "{\"text\":\"mondo\"}".to_string(), String::new(), String::new()]));
+        nbt.insert("front_text", front);
+        let sign = Translator::new().block_entity(Kind::Sign { hanging: false }, 0, 0, 0, Some(&nbt)).unwrap();
+        let sign = read_network(&sign).unwrap();
+        assert_eq!(sign.get("FrontText").and_then(|f| f.get("Text")), Some(&Tag::Str("ciao\nmondo".into())));
     }
 
     #[test]
     fn generated_chunk_translates_without_fallbacks() {
         let t = Translator::new();
         // In debug la generazione chiede più stack del thread di test predefinito.
-        let chunk = std::thread::Builder::new()
+        // (8, 1) col seme 13579 è oceano: lo ha trovato una scansione dei dintorni dell'origine.
+        let chunks = std::thread::Builder::new()
             .stack_size(64 * 1024 * 1024)
-            .spawn(|| crate::steel::Generator::new(13579, vgen::Dim::Overworld).generate(0, 0))
+            .spawn(|| {
+                let g = crate::steel::Generator::new(13579, vgen::Dim::Overworld);
+                [g.generate(0, 0), g.generate(8, 1)]
+            })
             .unwrap()
             .join()
             .unwrap();
-        let data = to_bedrock(&chunk, &t);
+        let data = to_bedrock(&chunks[0], &t);
         assert_eq!((data.x, data.z), (0, 0));
         assert!(data.sections.len() >= 5, "{} sezioni", data.sections.len());
         assert!(data.sections.iter().all(|s| (-4..20).contains(&s.index)));
-        assert_eq!(t.unmapped(), 0);
         let known: std::collections::HashSet<i32> = t.palette_entries().into_iter().map(|(h, _)| h).collect();
         assert!(data.sections.iter().flat_map(|s| &s.palette).all(|h| known.contains(h)));
+
+        let ocean = to_bedrock(&chunks[1], &t);
+        let bits: u32 = ocean.sections.iter().filter_map(|s| s.water.as_ref()).flat_map(|w| w.iter()).map(|w| w.count_ones()).sum();
+        let expected = chunks[1].sections.iter().flat_map(|s| s.states.iter()).filter(|&&s| t.has_water(s)).count();
+        assert!(bits > 0, "l'oceano deve avere blocchi con acqua nel secondo strato");
+        assert_eq!(bits as usize, expected);
+        assert_eq!(t.unmapped(), 0);
     }
 
     #[test]
