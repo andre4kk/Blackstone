@@ -72,19 +72,24 @@ impl Session {
 
     /// Raggruppa i pacchetti in un solo batch e lo comprime se supera la soglia.
     pub fn encode(&self, packets: &[Packet]) -> Vec<u8> {
-        let mut batch = Vec::new();
+        // Si scrive direttamente nel batch: lunghezza (id + corpo), id, corpo. Niente vettori intermedi.
+        let size: usize = packets.iter().map(|p| p.body.len() + 10).sum();
+        let mut batch = Vec::with_capacity(size + 1);
+        if self.compression {
+            batch.push(ALGO_NONE); // segnaposto: diventa ALGO_DEFLATE se si comprime
+        }
         for p in packets {
-            let mut inner = Vec::with_capacity(p.body.len() + 5);
-            varint::write(&mut inner, p.id);
-            inner.extend_from_slice(&p.body);
-            varint::write(&mut batch, inner.len() as u32);
-            batch.extend(inner);
+            varint::write(&mut batch, (varint::len(p.id) + p.body.len()) as u32);
+            varint::write(&mut batch, p.id);
+            batch.extend_from_slice(&p.body);
         }
-        match (self.compression, batch.len() >= COMPRESSION_THRESHOLD as usize) {
-            (false, _) => batch,
-            (true, true) => [&[ALGO_DEFLATE][..], &compress_to_vec(&batch, 6)].concat(),
-            (true, false) => [&[ALGO_NONE][..], &batch].concat(),
+        if self.compression && batch.len() > COMPRESSION_THRESHOLD as usize { // il primo byte è il segnaposto
+            let mut out = Vec::with_capacity(batch.len() / 2 + 1);
+            out.push(ALGO_DEFLATE);
+            out.extend_from_slice(&compress_to_vec(&batch[1..], 6));
+            return out;
         }
+        batch
     }
 }
 

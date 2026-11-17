@@ -22,6 +22,11 @@ pub fn write(out: &mut Vec<u8>, mut v: u32) {
     out.push(v as u8);
 }
 
+/// Byte occupati da `v` scritto come VarUInt32 (da 1 a 5).
+pub fn len(v: u32) -> usize {
+    (32 - (v | 1).leading_zeros() as usize).div_ceil(7)
+}
+
 /// Legge un VarInt32 con segno (ZigZag).
 pub fn read_signed(b: &mut &[u8]) -> Option<i32> {
     let v = read(b)?;
@@ -43,6 +48,15 @@ mod tests {
             let mut s = &out[..];
             assert_eq!(super::read(&mut s), Some(v));
             assert!(s.is_empty());
+        }
+    }
+
+    #[test]
+    fn len_matches_written_bytes() {
+        for v in [0, 1, 127, 128, 16_383, 16_384, 2_097_151, 2_097_152, u32::MAX] {
+            let mut out = Vec::new();
+            super::write(&mut out, v);
+            assert_eq!(super::len(v), out.len(), "valore {v}");
         }
     }
 
