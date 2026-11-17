@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VersMCBE generazione mondo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@500&family=Bricolage+Grotesque:wght@700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: una colonna stretta da leggere al telefono, schede per opzione con striscia colore per il verdetto */
+  --bg: #f4f6f2;
+  --surface: #ffffff;
+  --ink: #1d2320;
+  --muted: #5b665f;
+  --accent: #2f7d4f;
+  --line: #d9e0da;
+  --good: #2f7d4f;
+  --warn: #b7791f;
+  --bad: #b23b3b;
+  --display: "Bricolage Grotesque", "Segoe UI", sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141a17; --surface: #1c2420; --ink: #e6ece8; --muted: #9caaa2; --accent: #6cc58f;
+    --line: #2d3832; --good: #6cc58f; --warn: #e0b45a; --bad: #e57b7b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141a17; --surface: #1c2420; --ink: #e6ece8; --muted: #9caaa2; --accent: #6cc58f;
+  --line: #2d3832; --good: #6cc58f; --warn: #e0b45a; --bad: #e57b7b; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 var(--body); }
+main { max-width: 44rem; margin: 0 auto; padding: 24px 16px 64px; display: grid; gap: 28px; }
+h1, h2 { font-family: var(--display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: 1.9rem; }
+h2 { font-size: 1.35rem; }
+h3 { font-size: 1.05rem; margin: 0; }
+p { margin: 0; }
+section { display: grid; gap: 12px; }
+.lead { color: var(--muted); }
+code { font-family: var(--mono); font-size: .88em; background: var(--line); padding: 1px 5px; border-radius: 4px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-left: 5px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 8px; }
+.card.good { border-left-color: var(--good); }
+.card.warn { border-left-color: var(--warn); }
+.card.bad { border-left-color: var(--bad); }
+.tag { font: 600 .75rem/1 var(--body); text-transform: uppercase; letter-spacing: .05em; padding: 4px 8px; border-radius: 99px; justify-self: start; color: var(--surface); }
+.tag.good { background: var(--good); } .tag.warn { background: var(--warn); } .tag.bad { background: var(--bad); }
+ul { margin: 0; padding-left: 1.2rem; display: grid; gap: 4px; }
+.pc { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 480px) { .pc { grid-template-columns: 1fr; } }
+.pc b { display: block; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.facts { display: grid; gap: 8px; }
+.fact { display: grid; grid-template-columns: 9rem 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+@media (max-width: 480px) { .fact { grid-template-columns: 1fr; gap: 2px; } }
+.fact span:first-child { color: var(--muted); font-size: .9rem; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+.steps { counter-reset: s; list-style: none; padding: 0; display: grid; gap: 8px; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 2rem 1fr; gap: 6px; }
+.steps li::before { content: counter(s); font: 700 1rem var(--display); color: var(--accent); }
+a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+
+<header style="display:grid;gap:8px">
+  <h1>Generazione del mondo per VersMCBE</h1>
+  <p class="lead">Catalogo delle opzioni prima delle domande. Obiettivo: entrando dal client Bedrock 1.26.60 si vede un mondo Minecraft "vero", generato con l'algoritmo Java Edition.</p>
+</header>
+
+<section id="fatti">
+  <h2>Cosa ho trovato</h2>
+  <div class="facts">
+    <div class="fact"><span>SteelMC</span><span>Server Java in Rust, mira a <b>Java 26.3</b>. Il generatore confronta 7.500 chunk a caso con vanilla: tutti identici blocco per blocco. 10.201 chunk in circa 4 secondi su un Ryzen 9 9950X.</span></div>
+    <div class="fact"><span>Mappature Geyser</span><span>Tabelle Java → Bedrock di blocchi (<code>blocks.nbt</code>) e biomi (<code>biomes.json</code>, 67 biomi). Generate per <b>Java 26.3 e Bedrock 1.26.60</b>: le stesse versioni di SteelMC e di VersMCBE. Licenza MIT.</span></div>
+    <div class="fact"><span>BedrockData (pmmp)</span><span>Definizioni complete dei biomi Bedrock e altri dati. Licenza CC0 (libera). Servono a sbloccare <code>BiomeDefinitionList</code>, che oggi fa chiudere il client.</span></div>
+    <div class="fact"><span>Codice di Steel</span><span>Generatore: circa 70mila righe (29k in <code>steel-worldgen</code>, 41k in <code>steel-core/worldgen</code>). Dipende da <code>steel-registry</code> (79k), <code>steel-utils</code> (18k), <code>steel-math</code>. Esiste già <code>ChunkMap::generate_region</code>: genera un rettangolo di chunk fino allo stato finale.</span></div>
+    <div class="fact"><span>Toolchain</span><span>Steel usa Rust <b>nightly</b> fissato (<code>nightly-2026-10-14</code>) per SIMD e parking_lot. VersMCBE oggi è stable.</span></div>
+    <div class="fact"><span>Salvataggio Steel</span><span>Formato proprio "STLR", non Anvil né LevelDB Bedrock.</span></div>
+  </div>
+</section>
+
+<section id="trappole">
+  <h2>Trappole da sapere subito</h2>
+  <div class="card bad">
+    <h3>AGPL + API per plugin</h3>
+    <p>Copiando Steel, VersMCBE diventa AGPL-3.0. Hai detto che va bene. Però i plugin caricati dentro il server sono molto probabilmente "opere derivate": anche loro dovrebbero essere AGPL, e chi gestisce un server con plugin modificati deve offrirne il codice ai giocatori. PocketMine-MP usa LGPL proprio per lasciare liberi i plugin. Soluzioni:</p>
+    <ul>
+      <li><b>Plugin fuori processo</b> (WASM o processo separato con protocollo): l'isolamento rende più difendibile la libertà di licenza dei plugin.</li>
+      <li><b>Accettare plugin AGPL</b>: semplice, ma scoraggia plugin commerciali.</li>
+      <li><b>Generatore in processo separato</b> (opzione D sotto): il server resta MIT e solo il generatore è AGPL.</li>
+    </ul>
+    <p>Non sono un avvocato: è un'indicazione, da verificare se il progetto diventerà pubblico o commerciale.</p>
+  </div>
+  <div class="card warn">
+    <h3>Nightly per tutto il progetto</h3>
+    <p>Usando Steel come libreria, l'intero workspace passa a Rust nightly. Gli aggiornamenti di nightly a volte rompono la compilazione: si fissa la stessa data di Steel e la si aggiorna insieme a lui.</p>
+  </div>
+  <div class="card warn">
+    <h3>Il mondo non sarà quello di Bedrock vanilla</h3>
+    <p>Con un seed avrai lo stesso mondo che vedresti in Java Edition, non quello di Bedrock (il generatore di Bedrock è chiuso e diverso). È quello che hai chiesto, lo scrivo solo per chiarezza.</p>
+  </div>
+</section>
+
+<section id="opzioni">
+  <h2>Domanda 1: come portare dentro il generatore di Steel</h2>
+
+  <div class="card good">
+    <span class="tag good">Consigliata</span>
+    <h3>A. Steel come libreria, con un adattatore nostro</h3>
+    <p>Dipendenza git da <code>steel-core</code> fissata a un commit. Un nostro crate <code>versmc-worldgen</code> chiama <code>generate_region</code> e restituisce i blocchi Java già tradotti in Bedrock. Il resto di VersMCBE non vede Steel.</p>
+    <div class="pc">
+      <div><b>Pro</b>Tutto incluso subito: terreno, grotte, acquiferi, alberi, minerali, strutture, villaggi, luce. Per aggiornare basta cambiare commit. Parità già verificata da loro.</div>
+      <div><b>Contro</b>Si compila tutto steel-core (circa 380k righe, anche la loro rete Java). Le loro API interne cambiano e l'adattatore va sistemato. Serve nightly.</div>
+    </div>
+    <p><b>Tempi:</b> prima prova (compila e genera un chunk) in 1 sessione; mondo visibile nel client in circa 2-4 sessioni.</p>
+  </div>
+
+  <div class="card warn">
+    <h3>B. Copiare solo il generatore dentro VersMCBE</h3>
+    <p>Si copiano <code>steel-worldgen</code>, <code>steel-registry</code>, <code>steel-utils</code>, <code>steel-math</code> e la cartella <code>worldgen</code> di steel-core, staccandola dal loro chunk, mondo ed entità.</p>
+    <div class="pc">
+      <div><b>Pro</b>Solo il codice che serve, controllo totale, compilazione più leggera.</div>
+      <div><b>Contro</b>Circa 150-200k righe da mantenere da soli. Ogni miglioramento di Steel va ricopiato a mano. Staccare le dipendenze interne richiede molto lavoro.</div>
+    </div>
+    <p><b>Tempi:</b> parecchie sessioni solo per farlo compilare. Ha senso dopo A, se A diventa scomodo: l'adattatore rende il passaggio locale.</p>
+  </div>
+
+  <div class="card warn">
+    <h3>C. Solo il terreno, per gradi</h3>
+    <p>Si prende solo <code>steel-worldgen</code>: rumore, funzioni di densità, biomi, regole di superficie, acquiferi. Alberi, minerali e strutture arrivano dopo.</p>
+    <div class="pc">
+      <div><b>Pro</b>Pezzo piccolo e capibile. Montagne, oceani, fiumi e biomi arrivano presto.</div>
+      <div><b>Contro</b>Il mondo resta "nudo" (niente alberi né villaggi) a lungo. Le parti mancanti sono proprio quelle legate a steel-core: alla fine il lavoro è quello di B.</div>
+    </div>
+  </div>
+
+  <div class="card warn">
+    <h3>D. Generatore in un processo separato</h3>
+    <p>Un piccolo programma basato su Steel (oppure un server Java vanilla con Chunky) genera i chunk. VersMCBE li riceve o li legge da disco.</p>
+    <div class="pc">
+      <div><b>Pro</b>Il server resta MIT e stable: i plugin non sono toccati dall'AGPL. Si possono anche importare mondi Java veri.</div>
+      <div><b>Contro</b>Due programmi da avviare, un protocollo tra loro, latenza in più. Con vanilla Java serve Java installato e il mondo va pregenerato.</div>
+    </div>
+  </div>
+</section>
+
+<section id="domanda-2">
+  <h2>Domanda 2: quale generatore gira nel processo separato</h2>
+  <p class="lead">Hai scelto D. In tutte le varianti il server VersMCBE resta MIT e su Rust stable. Se Steel aggiorna, cambia solo il generatore.</p>
+
+  <div class="card good">
+    <span class="tag good">Consigliata</span>
+    <h3>D1. Un nostro piccolo generatore basato su Steel, su richiesta</h3>
+    <p>Un programma <code>versmc-gen</code> (AGPL, nightly) usa <code>steel-core</code> come libreria. VersMCBE lo avvia da solo all'accensione e gli chiede i chunk ("dimensione, x, z") su un canale locale. Riceve i chunk già tradotti in blocchi e biomi Bedrock, con le mappature Geyser.</p>
+    <div class="pc">
+      <div><b>Pro</b>Mondo infinito, generato mentre cammini. Seed scelto dal server. Un solo comando per avviare. Il protocollo tra i due è nostro e stabile, quindi aggiornare Steel non tocca il server.</div>
+      <div><b>Contro</b>Due binari da compilare (uno nightly). La compilazione del generatore è pesante. Un piccolo ritardo per ogni chunk nuovo, coperto da una coda e dalla cache.</div>
+    </div>
+    <p><b>Tempi:</b> prova (genera un chunk e lo stampa) in 1 sessione; mondo nel client in circa 3-5 sessioni.</p>
+  </div>
+
+  <div class="card warn">
+    <h3>D2. Server Java vanilla + Chunky, poi leggiamo i file Anvil</h3>
+    <p>Un server Java ufficiale con il plugin Chunky pregenera un'area. VersMCBE legge i file <code>.mca</code>, un formato stabile da anni.</p>
+    <div class="pc">
+      <div><b>Pro</b>È il generatore originale di Mojang, quindi parità garantita. Il lettore Anvil serve comunque per importare mondi Java esistenti.</div>
+      <div><b>Contro</b>Area finita: oltre il bordo non c'è niente. Richiede Java e il server di Mojang (EULA da accettare). Pregenerare richiede tempo: indicativamente minuti per 1.000 blocchi di raggio, ore per raggi grandi.</div>
+    </div>
+    <p>Utile più avanti come <b>importatore</b> di mondi Java, accanto a D1.</p>
+  </div>
+
+  <div class="card bad">
+    <h3>D3. SteelMC originale pregenera e leggiamo i suoi file</h3>
+    <p>Scartata: il formato "STLR" di Steel è alla versione 23 e cambia spesso (strutture serializzate con wincode). Il lettore si romperebbe a ogni aggiornamento.</p>
+  </div>
+
+  <div class="card bad">
+    <h3>D4. VersMCBE si collega a SteelMC come un client Java</h3>
+    <p>Scartata: servirebbe tutto il protocollo Java (in pratica un Geyser), e i chunk arrivano solo attorno a un "giocatore" finto.</p>
+  </div>
+
+  <div class="card">
+    <h3>Scelte che faccio io (correggimi se vuoi)</h3>
+    <ul>
+      <li>La traduzione Java → Bedrock avviene nel generatore: il server non vede mai ID Java.</li>
+      <li>Canale locale: socket TCP su 127.0.0.1 con messaggi binari a lunghezza fissa, avviato e fermato dal server.</li>
+      <li>Se il generatore cade, il server lo riavvia e intanto manda chunk vuoti invece di bloccarsi.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="domanda-3">
+  <h2>Domanda 3: come si salva il mondo</h2>
+  <p class="lead">Scelta D1. Oggi nessuno modifica i blocchi, ma serviranno rottura e posa dei blocchi e i plugin. Il generatore D1 rifà sempre lo stesso chunk dallo stesso seed: va salvato solo ciò che cambia, o tutto per velocità. Il salvataggio lo fa il server (MIT), non il generatore.</p>
+
+  <div class="card good">
+    <span class="tag good">Consigliata</span>
+    <h3>S1. Formato mondo Bedrock (LevelDB)</h3>
+    <p>Lo stesso formato di BDS e del gioco: cartella <code>worlds/Mondo/db</code>. In Rust c'è <code>rusty-leveldb</code> (MIT, 4.0.2, aggiornato a ottobre 2026), che supporta la compressione personalizzata necessaria per Bedrock (deflate, id 4).</p>
+    <div class="pc">
+      <div><b>Pro</b>Il mondo si apre in Bedrock, BDS, Amulet e Chunker. Puoi importare mondi Bedrock esistenti. Formato documentato da anni (PocketMine e Dragonfly lo usano).</div>
+      <div><b>Contro</b>Tante chiavi e piccoli dettagli (sotto-chunk, biomi 3D, entità, versione). Più lavoro iniziale: circa 2-3 sessioni.</div>
+    </div>
+  </div>
+
+  <div class="card warn">
+    <h3>S2. Formato nostro, semplice</h3>
+    <p>File regione 32×32 chunk, ognuno salvato con i byte che già mandiamo al client.</p>
+    <div class="pc">
+      <div><b>Pro</b>Velocissimo da scrivere (1 sessione) e da caricare: il chunk salvato è già pronto da inviare.</div>
+      <div><b>Contro</b>Solo VersMCBE lo legge. Per aprire il mondo nel gioco servirà poi un convertitore.</div>
+    </div>
+  </div>
+
+  <div class="card warn">
+    <h3>S3. Per ora non salvare niente</h3>
+    <p>Ogni avvio rigenera dal seed; il salvataggio arriva insieme alla modifica dei blocchi.</p>
+    <div class="pc">
+      <div><b>Pro</b>Zero lavoro adesso: si arriva prima al mondo visibile.</div>
+      <div><b>Contro</b>Ogni chunk va rigenerato a ogni avvio. La decisione è solo rimandata.</div>
+    </div>
+  </div>
+</section>
+
+<section id="domanda-4">
+  <h2>Domanda 4: dove finisce questo primo traguardo</h2>
+  <p class="lead">Scelte fatte: D1 (generatore nostro su Steel) e S1 (LevelDB Bedrock). Ora decidiamo cosa deve funzionare quando diciamo "fatto". Il resto finisce in una lista per dopo.</p>
+
+  <div class="card good">
+    <span class="tag good">Consigliata</span>
+    <h3>T1. Camminare in un Overworld infinito e salvato</h3>
+    <ul>
+      <li>Generatore D1 avviato dal server, con seed nel file di configurazione.</li>
+      <li>Blocchi e biomi tradotti, <code>BiomeDefinitionList</code> completa (niente più crash).</li>
+      <li>Movimento: i chunk arrivano mentre cammini o voli, in modalità creativa.</li>
+      <li>Spawn calcolato come in Java, su terra asciutta.</li>
+      <li>Chunk salvati in LevelDB e ricaricati al riavvio.</li>
+    </ul>
+    <p><b>Tempi:</b> circa 6-9 sessioni in tutto. Prima l'audit, poi la prova del generatore.</p>
+  </div>
+
+  <div class="card warn">
+    <h3>T2. T1 + rompere e posare blocchi</h3>
+    <p>Aggiunge lettura dei pacchetti di interazione, aggiornamento dei chunk agli altri giocatori e salvataggio delle modifiche. È la base minima per i plugin.</p>
+    <p><b>Tempi:</b> circa 3-4 sessioni in più.</p>
+  </div>
+
+  <div class="card warn">
+    <h3>T3. T1 + Nether ed End</h3>
+    <p>Steel li genera già. Servono il cambio di dimensione (portali o comando) e altezze diverse: il Nether di Bedrock è alto 128 blocchi, quello di Java 256, anche se il terreno sta sotto 128.</p>
+    <p><b>Tempi:</b> circa 2-3 sessioni in più.</p>
+  </div>
+
+  <div class="card">
+    <h3>Fuori in ogni caso (per ora)</h3>
+    <ul>
+      <li>Entità generate (abitanti dei villaggi, animali): Steel non le include nel confronto con vanilla.</li>
+      <li>Contenuto di casse e altri blocchi con dati: le casse compaiono, il bottino arriva dopo.</li>
+      <li>Luce calcolata dal server: in Bedrock la calcola il client.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="domanda-5">
+  <h2>Domanda 5: rompere i blocchi in creativa o in sopravvivenza</h2>
+  <p class="lead">Traguardo scelto: T1 + T2 + T3. Per T2 cambia molto se il giocatore è in creativa o in sopravvivenza.</p>
+
+  <div class="card good">
+    <span class="tag good">Consigliata</span>
+    <h3>M1. Solo creativa</h3>
+    <p>Rottura istantanea, posa da qualsiasi oggetto in mano. Il server controlla che il blocco sia raggiungibile, aggiorna, salva e avvisa gli altri.</p>
+    <div class="pc">
+      <div><b>Pro</b>Circa 3-4 sessioni. Il mondo generato si può già esplorare e modificare per intero.</div>
+      <div><b>Contro</b>Non è ancora un gioco: niente drop, niente inventario vero.</div>
+    </div>
+  </div>
+
+  <div class="card warn">
+    <h3>M2. Anche sopravvivenza</h3>
+    <p>Tempi di rottura per blocco e attrezzo, oggetti che cadono e si raccolgono, inventario con transazioni (<code>ItemStackRequest</code>), fame e danno da caduta minimi.</p>
+    <div class="pc">
+      <div><b>Pro</b>Si gioca davvero.</div>
+      <div><b>Contro</b>Raddoppia T2 (circa 7-10 sessioni). Servono entità oggetto, tabelle dei drop e il sistema di inventario di Bedrock, che è complesso. Mescola il lavoro sul mondo con quello sul gameplay.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Nota</h3>
+    <p>Oggi i giocatori non si vedono tra loro. Con M1 aggiungo solo ciò che serve perché vedano i blocchi cambiati dagli altri. Vedere gli altri giocatori resta un lavoro separato.</p>
+  </div>
+</section>
+
+<section id="scartate">
+  <h2>Scartate</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Idea</th><th>Perché no</th></tr></thead>
+    <tbody>
+      <tr><td>Scrivere un generatore Java da zero dai JSON di Mojang</td><td>Steel l'ha già fatto con parità verificata: rifarlo richiede anni.</td></tr>
+      <tr><td>Generatore Bedrock vanilla</td><td>Codice chiuso, nessuna implementazione pubblica fedele.</td></tr>
+      <tr><td>Pumpkin, Valence (altri server Rust)</td><td>Non approfonditi: nessuno dichiara una parità verificata come Steel. Valence non ha un generatore vanilla.</td></tr>
+      <tr><td>Rumore Perlin fatto in casa</td><td>Non darebbe un mondo "reale" come hai chiesto.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="pipeline">
+  <h2>Il lavoro che serve con qualsiasi opzione</h2>
+  <ol class="steps">
+    <li><span>Tabella blocchi Java → hash Bedrock, ricavata da <code>blocks.nbt</code> di Geyser al momento della compilazione.</span></li>
+    <li><span>Biomi: tabella Java → ID Bedrock e <code>BiomeDefinitionList</code> completa da BedrockData. Risolve il crash attuale.</span></li>
+    <li><span>Serializzatore di chunk reale: 24 sezioni con palette variabili (oggi c'è un solo chunk fisso, 2 bit per blocco).</span></li>
+    <li><span>Movimento (<code>PlayerAuthInput</code>) e invio dei chunk attorno al giocatore mentre cammina, con una coda per non bloccare il tick.</span></li>
+    <li><span>Generazione fuori dal tick (thread pool) e cache dei chunk.</span></li>
+    <li><span>Salvataggio su disco: formato da decidere (prossime domande).</span></li>
+  </ol>
+</section>
+
+<section id="dopo">
+  <h2>Dopo le domande</h2>
+  <p>Audit del progetto esistente: bug, ottimizzazioni e <code>.gitignore</code>. Già notato: <code>crates/server/identity.key</code> è pubblico su GitHub e va rigenerato ed escluso.</p>
+  <p>Costi in denaro: nessuno, sono tutte librerie e dati gratuiti.</p>
+</section>
+
+</main>
+</body>
+</html>
