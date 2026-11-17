@@ -4,11 +4,11 @@
 use base64::{engine::general_purpose::{STANDARD as B64, URL_SAFE_NO_PAD as B64U}, Engine};
 use bedrock_protocol::{
     generated::{
-        AvailableActorIdentifiers, BiomeDefinitionList, ChunkRadiusUpdated, CreativeContent, ItemRegistry, JigsawStructureData, LevelChunk,
+        ChunkRadiusUpdated, CreativeContent, ItemRegistry, JigsawStructureData, LevelChunk,
         NetworkChunkPublisherUpdate, StartGame, VoxelShapes,
     },
     id,
-    packets::{pack_response, Login, RequestChunkRadius, RequestNetworkSettings, ResourcePackClientResponse},
+    packets::{pack_response, text_type, CommandRequest, Login, RequestChunkRadius, RequestNetworkSettings, ResourcePackClientResponse, Text},
     wire::ServerPacket,
     Packet, Session, PROTOCOL,
 };
@@ -74,6 +74,11 @@ fn login_body() -> Vec<u8> {
     Login { protocol: PROTOCOL as i32, identity: &identity, client_data: &client_data }.encode()
 }
 
+fn command(line: &str) -> Packet {
+    let request = CommandRequest { command: line.into(), origin_type: "player".into(), version: "latest".into(), ..Default::default() };
+    Packet::new(id::COMMAND_REQUEST, request.encode())
+}
+
 fn response(tag: u32) -> Packet {
     Packet::new(id::RESOURCE_PACK_CLIENT_RESPONSE, ResourcePackClientResponse::new(tag).encode())
 }
@@ -109,7 +114,7 @@ fn client() {
 
     // 3. Ciclo di rete del client: RequestNetworkSettings (in 2 frammenti) -> NetworkSettings -> Login ->
     //    PlayStatus + ResourcePacksInfo -> "ho tutto" -> ResourcePackStack -> "completato" -> StartGame + oggetti ->
-    //    richiesta chunk -> raggio + PlayerSpawn + contenuto creativo -> "inizializzato" -> biomi, identificatori e chunk.
+    //    richiesta chunk -> raggio + PlayerSpawn + contenuto creativo -> "inizializzato" -> chunk -> chat -> /list -> /tps.
     const RADIUS: i32 = 4;
     const EXPECTED_CHUNKS: usize = 69; // punti interi con x² + z² <= r² + r in [-4, 4]²
     let (start, mut buf, mut session, mut stage, mut chunks) = (Instant::now(), vec![0u8; 2048], Session::default(), 0, 0);
@@ -158,18 +163,35 @@ fn client() {
                         Packet::new(id::SET_LOCAL_PLAYER_AS_INITIALIZED, vec![1])
                     }
                     (5, _) => {
-                        // Dopo l'inizializzazione arrivano biomi, identificatori, pubblicazione dei chunk e i chunk.
+                        // Dopo l'inizializzazione: benvenuto e annuncio di ingresso (testo), pubblicazione e chunk.
                         for p in &packets {
                             match p.id {
-                                x if x == BiomeDefinitionList::ID || x == AvailableActorIdentifiers::ID || x == NetworkChunkPublisherUpdate::ID => {}
+                                x if x == NetworkChunkPublisherUpdate::ID => {}
+                                id::TEXT => {}
                                 x if x == LevelChunk::ID => chunks += 1,
                                 other => panic!("pacchetto inatteso durante lo streaming: {other}"),
                             }
                         }
-                        if chunks == EXPECTED_CHUNKS {
-                            return;
+                        if chunks != EXPECTED_CHUNKS {
+                            continue;
                         }
-                        continue;
+                        // Chat: il client si spaccia per "Hacker", ma il server usa il nome verificato dal login.
+                        Packet::new(id::TEXT, Text::chat("Hacker", "ciao").encode())
+                    }
+                    (6, ids) if ids == [id::TEXT] => {
+                        let text = Text::decode(&packets[0].body).expect("testo illeggibile");
+                        assert_eq!((text.kind, text.source.as_str(), text.message.as_str()), (text_type::CHAT, "Tester", "ciao"));
+                        command("/list")
+                    }
+                    (7, ids) if ids == [id::TEXT] => {
+                        let text = Text::decode(&packets[0].body).expect("testo illeggibile");
+                        assert!(text.message.contains("Giocatori online (1): Tester"), "{}", text.message);
+                        command("/tps")
+                    }
+                    (8, ids) if ids == [id::TEXT] => {
+                        let text = Text::decode(&packets[0].body).expect("testo illeggibile");
+                        assert!(text.message.starts_with("TPS: "), "{}", text.message);
+                        return;
                     }
                     _ => panic!("al passo {stage} sono arrivati pacchetti inattesi: {ids:?}"),
                 };

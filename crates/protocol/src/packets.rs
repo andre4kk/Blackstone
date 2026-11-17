@@ -5,10 +5,18 @@ use crate::{varint, COMPRESSION_THRESHOLD};
 pub mod id {
     pub const LOGIN: u32 = 1;
     pub const PLAY_STATUS: u32 = 2;
+    pub const TEXT: u32 = 9;
+    pub const COMMAND_REQUEST: u32 = 77;
     pub const DISCONNECT: u32 = 5;
     pub const CLIENT_CACHE_STATUS: u32 = 129;
     pub const PLAYER_AUTH_INPUT: u32 = 144;
     pub const REQUEST_CHUNK_RADIUS: u32 = 69;
+    pub const MOB_EQUIPMENT: u32 = 31;
+    pub const INTERACT: u32 = 33;
+    pub const PLAYER_ACTION: u32 = 36;
+    pub const ANIMATE: u32 = 44;
+    pub const EMOTE_LIST: u32 = 152;
+    pub const SERVERBOUND_LOADING_SCREEN: u32 = 312;
     pub const SET_LOCAL_PLAYER_AS_INITIALIZED: u32 = 113;
     pub const PACKET_VIOLATION_WARNING: u32 = 156;
     pub const RESOURCE_PACKS_INFO: u32 = 6;
@@ -143,6 +151,122 @@ impl RequestChunkRadius {
         let mut b = Vec::new();
         varint::write_signed(&mut b, self.chunk_radius);
         b.push(self.max_radius);
+        b
+    }
+}
+
+/// Tipi di messaggio di `Text`.
+pub mod text_type {
+    pub const RAW: u8 = 0;
+    pub const CHAT: u8 = 1;
+    pub const TRANSLATE: u8 = 2;
+    pub const POPUP: u8 = 3;
+    pub const JUKEBOX_POPUP: u8 = 4;
+    pub const TIP: u8 = 5;
+    pub const SYSTEM: u8 = 6;
+    pub const WHISPER: u8 = 7;
+    pub const ANNOUNCEMENT: u8 = 8;
+}
+
+/// Messaggio di testo, nei due versi. Dalla 1.26.60 il formato è: localize (bool), variante (varint: 0 solo messaggio,
+/// 1 autore + messaggio, 2 messaggio + parametri), tipo (u8), campi della variante, XUID, id piattaforma, messaggio
+/// filtrato (opzionale). Le varianti 0 e 2 non hanno autore: `source` resta vuoto.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Text {
+    pub kind: u8,
+    pub source: String,
+    pub message: String,
+    pub xuid: String,
+    pub platform_id: String,
+}
+
+impl Text {
+    pub fn new(kind: u8, message: impl Into<String>) -> Self {
+        Self { kind, message: message.into(), ..Default::default() }
+    }
+
+    pub fn chat(source: impl Into<String>, message: impl Into<String>) -> Self {
+        Self { kind: text_type::CHAT, source: source.into(), message: message.into(), ..Default::default() }
+    }
+
+    fn variant(kind: u8) -> u32 {
+        match kind {
+            text_type::CHAT | text_type::WHISPER | text_type::ANNOUNCEMENT => 1,
+            text_type::TRANSLATE | text_type::POPUP | text_type::JUKEBOX_POPUP => 2,
+            _ => 0,
+        }
+    }
+
+    pub fn encode(&self) -> Vec<u8> {
+        let variant = Self::variant(self.kind);
+        let mut b = vec![0]; // localize: no
+        varint::write(&mut b, variant);
+        b.push(self.kind);
+        if variant == 1 {
+            put_string(&mut b, &self.source);
+        }
+        put_string(&mut b, &self.message);
+        if variant == 2 {
+            varint::write(&mut b, 0); // nessun parametro
+        }
+        put_string(&mut b, &self.xuid);
+        put_string(&mut b, &self.platform_id);
+        b.push(0); // messaggio filtrato: assente
+        b
+    }
+
+    pub fn decode(body: &[u8]) -> Option<Self> {
+        let mut b = body.get(1..)?; // salta localize
+        let variant = varint::read(&mut b)?;
+        let (&kind, mut b) = b.split_first()?;
+        let source = if variant == 1 { take_varint_string(&mut b)? } else { String::new() };
+        let message = take_varint_string(&mut b)?;
+        if variant == 2 {
+            for _ in 0..varint::read(&mut b)? {
+                take_varint_string(&mut b)?;
+            }
+        }
+        Some(Self { kind, source, message, xuid: take_varint_string(&mut b)?, platform_id: take_varint_string(&mut b)? })
+    }
+}
+
+/// Client -> server: un comando scritto in chat (`/help`...).
+/// Formato (verificato con il vero client): comando, origine (tipo come stringa, UUID, id richiesta, id giocatore),
+/// flag interno, versione.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct CommandRequest {
+    pub command: String,
+    pub origin_type: String,
+    pub uuid: [u8; 16],
+    pub request_id: String,
+    pub player_id: i64,
+    pub is_internal: bool,
+    pub version: String,
+}
+
+impl CommandRequest {
+    pub fn decode(body: &[u8]) -> Option<Self> {
+        let mut b = body;
+        let command = take_varint_string(&mut b)?;
+        let origin_type = take_varint_string(&mut b)?;
+        let uuid = b.get(..16)?.try_into().ok()?;
+        b = &b[16..];
+        let request_id = take_varint_string(&mut b)?;
+        let player_id = i64::from_le_bytes(b.get(..8)?.try_into().ok()?);
+        b = &b[8..];
+        let (&internal, mut b) = b.split_first()?;
+        Some(Self { command, origin_type, uuid, request_id, player_id, is_internal: internal != 0, version: take_varint_string(&mut b)? })
+    }
+
+    pub fn encode(&self) -> Vec<u8> {
+        let mut b = Vec::new();
+        put_string(&mut b, &self.command);
+        put_string(&mut b, &self.origin_type);
+        b.extend_from_slice(&self.uuid);
+        put_string(&mut b, &self.request_id);
+        b.extend_from_slice(&self.player_id.to_le_bytes());
+        b.push(self.is_internal as u8);
+        put_string(&mut b, &self.version);
         b
     }
 }
@@ -354,6 +478,32 @@ mod tests {
         let r = RequestChunkRadius::decode(&RequestChunkRadius { chunk_radius: 12, max_radius: 16 }.encode()).unwrap();
         assert_eq!((r.chunk_radius, r.max_radius), (12, 16));
         assert!(RequestChunkRadius::decode(&[24]).is_none());
+    }
+
+    #[test]
+    fn command_request_matches_what_the_real_client_sent() {
+        // 50 byte reali ricevuti da Minecraft 26.63 quando il giocatore ha scritto `/gamemode`.
+        let real = [
+            0x09, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x6d, 0x6f, 0x64, 0x65, 0x06, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0xa3, 0x4a, 0x97, 0xb4, 0x29, 0x08,
+            0x6b, 0xa2, 0x58, 0x3e, 0x9d, 0xc6, 0x6b, 0x7a, 0x35, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x6c, 0x61,
+            0x74, 0x65, 0x73, 0x74,
+        ];
+        let r = CommandRequest::decode(&real).unwrap();
+        assert_eq!((r.command.as_str(), r.origin_type.as_str(), r.version.as_str()), ("/gamemode", "player", "latest"));
+        assert_eq!((r.request_id.as_str(), r.player_id, r.is_internal), ("", 0, false));
+        assert_eq!(r.encode(), real);
+        assert!(CommandRequest::decode(&real[..40]).is_none());
+    }
+
+    #[test]
+    fn text_roundtrip_for_every_variant() {
+        for kind in [text_type::RAW, text_type::CHAT, text_type::SYSTEM, text_type::WHISPER, text_type::POPUP] {
+            let source = if matches!(kind, text_type::CHAT | text_type::WHISPER) { "Steve" } else { "" };
+            let t = Text { kind, source: source.into(), message: "ciao §e!".into(), xuid: "42".into(), platform_id: "p".into() };
+            assert_eq!(Text::decode(&t.encode()), Some(t), "tipo {kind}");
+        }
+        assert_eq!(Text::chat("A", "b").encode(), [&[0u8, 1, 1, 1][..], b"A", &[1], b"b", &[0, 0, 0]].concat());
+        assert!(Text::decode(&[0, 1, 1, 5]).is_none());
     }
 
     #[test]

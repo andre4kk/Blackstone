@@ -22,11 +22,20 @@ RequestNetworkSettings -> NetworkSettings                          verificato co
 Login                  -> PlayStatus + ResourcePacksInfo           verificato con Minecraft
 ResourcePackClientResponse(DownloadingFinished) -> ResourcePackStack   verificato con Minecraft
 ResourcePackClientResponse(StackFinished) -> JigsawStructureData, VoxelShapes, StartGame, ItemRegistry   accettati dal client
-RequestChunkRadius -> ChunkRadiusUpdated, PlayStatus(PlayerSpawn), CreativeContent   DA VERIFICARE
-SetLocalPlayerAsInitialized -> BiomeDefinitionList, AvailableActorIdentifiers, NetworkChunkPublisherUpdate, LevelChunk...   DA VERIFICARE
+RequestChunkRadius -> ChunkRadiusUpdated, PlayStatus(PlayerSpawn), CreativeContent   verificato con Minecraft
+SetLocalPlayerAsInitialized -> NetworkChunkPublisherUpdate, LevelChunk...   VERIFICATO: il giocatore entra nel mondo piatto
 ```
 
 La sequenza segue quella dei server di riferimento (gophertunnel / Dragonfly).
+
+## Cosa fa il server oggi
+
+- Ciclo di gioco a 20 tick al secondo (`Server::tick`), con misura di TPS e durata media del tick (`/tps`).
+- Chat tra i giocatori (il nome è quello verificato dal login: il client non può spacciarsi per un altro).
+- Comandi: `/help`, `/list`, `/tps`, `/say <testo>`.
+- Annunci di ingresso e uscita.
+- Ancora NON gestiti (ignorati in silenzio): movimento (`PlayerAuthInput`), rottura/posa di blocchi, inventario,
+  animazioni, visibilità tra giocatori, salvataggio del mondo.
 
 Mondo: piatto (bedrock a y=-64, terra a -63/-62, erba a -61), identico in ogni chunk. Gli ID di rete dei blocchi sono
 hash FNV-1a dello stato (`crates/server/src/world.rs`): non serve nessuna tabella dei blocchi.
@@ -65,7 +74,9 @@ Variabili d'ambiente (PowerShell: `$env:NO_CHUNKS="1"; cargo run`, poi `Remove-I
 - `NO_CHUNKS=1`: dopo PlayerSpawn non invia nessun chunk (serve a capire se i chunk causano la disconnessione).
 - `SUBCHUNK_V8=1`: serializza i sotto-chunk in versione 8 (senza indice di sezione) invece della 9, che è il default.
 - `CHUNKS_EARLY=1`: manda biomi e chunk subito dopo PlayerSpawn, senza aspettare `SetLocalPlayerAsInitialized`.
-- `SKIP=jigsaw,voxel,items,biomes,actors,creative`: non invia i pacchetti elencati (si possono combinare).
+- `SKIP=jigsaw,voxel,items,creative,publisher`: non invia i pacchetti elencati (si possono combinare).
+- `SEND=biomes,actors`: invia anche `BiomeDefinitionList` e `AvailableActorIdentifiers`, spenti di default perché con i dati
+  minimi che inventiamo (un solo bioma, nessuna entità) il client crolla. Da riabilitare con dati completi.
 - `PUBLIC_IP=x.x.x.x`: IP pubblico da pubblicare come candidato ICE (gioco da Internet).
 
 Ogni riga del log ha davanti i secondi dall'avvio. Il log mostra gli stati ICE, la chiusura dei data channel e il contenuto dei pacchetti non gestiti (se brevi).

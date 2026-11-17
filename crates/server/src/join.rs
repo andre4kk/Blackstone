@@ -7,7 +7,7 @@ use bedrock_protocol::{
         ItemData, ItemRegistry, JigsawStructureData, LevelChunk, LevelSettings, NetworkChunkPublisherUpdate, SpawnSettings, StartGame, Vec3, VoxelShapes,
     },
     id,
-    packets::{play_status, PlayStatus, RequestChunkRadius},
+    packets::{play_status, text_type, PlayStatus, RequestChunkRadius, Text},
     varint,
     wire::ServerPacket,
     Packet, VERSION,
@@ -24,13 +24,20 @@ const EMPTY_NBT: [u8; 3] = [0x0a, 0, 0];
 /// Interruttori di diagnostica (variabili d'ambiente), per isolare un problema senza ricompilare:
 /// NO_CHUNKS=1 non invia chunk; SUBCHUNK_V8=1 sotto-chunk in versione 8 invece della 9;
 /// CHUNKS_EARLY=1 manda biomi e chunk subito dopo PlayerSpawn, senza aspettare SetLocalPlayerAsInitialized;
-/// SKIP=jigsaw,voxel,items,biomes,actors,creative non invia i pacchetti elencati.
+/// SKIP=jigsaw,voxel,items,creative,publisher non invia i pacchetti elencati;
+/// SEND=biomes,actors invia anche i pacchetti spenti di default (vedi `send`).
 fn flag(name: &str) -> bool {
     std::env::var(name).is_ok_and(|v| v == "1")
 }
 
 fn skip(packet: &str) -> bool {
     std::env::var("SKIP").is_ok_and(|v| v.split(',').any(|s| s.trim() == packet))
+}
+
+/// Pacchetti da abilitare esplicitamente con SEND=biomes,actors. Biomi e identificatori sono spenti di default: con i
+/// dati minimi che inventiamo (un solo bioma, nessuna entità) il client crolla; torneranno con dati completi.
+fn send(packet: &str) -> bool {
+    std::env::var("SEND").is_ok_and(|v| v.split(',').any(|s| s.trim() == packet))
 }
 
 /// NBT di rete: un compound che contiene solo liste vuote di compound, una per nome.
@@ -155,24 +162,32 @@ impl Server {
     }
 
     /// Il client ha finito di caricare ed è nel mondo: ora si mandano biomi, identificatori e chunk.
-    pub(crate) fn initialized(&self, pid: u64) {
+    pub(crate) fn initialized(&mut self, pid: u64) {
         let Some(radius) = self.players.get(&pid).map(|p| p.radius).filter(|&r| r > 0) else {
             return log!("[#{pid}] SetLocalPlayerAsInitialized prima della richiesta del raggio: ignorato");
         };
-        log!("[#{pid}] il client è inizializzato: invio biomi e chunk");
+        log!("[#{pid}] il client è inizializzato: invio i chunk");
+        if let Some(p) = self.players.get_mut(&pid) {
+            p.spawned = true;
+        }
+        let name = self.name(pid);
+        self.tell(pid, "§aBenvenuto sul server Rust! Scrivi /help per i comandi.");
+        self.broadcast(Text::new(text_type::RAW, format!("§e{name} è entrato nel gioco")));
         let mut packets = Vec::new();
-        if !skip("biomes") {
+        if send("biomes") {
             packets.push(biome_definitions().packet());
         }
-        if !skip("actors") {
+        if send("actors") {
             packets.push(AvailableActorIdentifiers { identifier_list: nbt_empty_lists(&["idlist"]) }.packet());
         }
-        packets.push(NetworkChunkPublisherUpdate {
-            new_position_for_view: BlockPos { x: 0, y: world::GROUND_Y, z: 0 },
-            new_radius_for_view: radius as u32 * 16,
-            ..Default::default()
+        if !skip("publisher") {
+            packets.push(NetworkChunkPublisherUpdate {
+                new_position_for_view: BlockPos { x: 0, y: world::GROUND_Y, z: 0 },
+                new_radius_for_view: radius as u32 * 16,
+                ..Default::default()
+            }
+            .packet());
         }
-        .packet());
         self.send(pid, &packets);
 
         if flag("NO_CHUNKS") {

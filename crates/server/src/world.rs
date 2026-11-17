@@ -92,6 +92,15 @@ fn build_flat_chunk(v9: bool) -> Vec<u8> {
 mod tests {
     use super::*;
 
+    /// Scrive il chunk v9 in un file (per confrontarlo con altre implementazioni): `DUMP=/percorso cargo test dump -- --ignored`.
+    #[test]
+    #[ignore]
+    fn dump_flat_chunk() {
+        if let Ok(path) = std::env::var("DUMP") {
+            std::fs::write(path, flat_chunk(true)).unwrap();
+        }
+    }
+
     #[test]
     fn air_hash_matches_known_value() {
         assert_eq!(block_hash("minecraft:air", &[]), -604_749_536);

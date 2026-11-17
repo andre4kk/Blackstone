@@ -4,7 +4,7 @@ use bedrock_net::log;
 use bedrock_protocol::{
     id, login,
     packets::{
-        disconnect_reason, pack_response, play_status, Disconnect, Login, NetworkSettings, PacketViolationWarning, PlayStatus,
+        text_type, Text, disconnect_reason, pack_response, play_status, Disconnect, Login, NetworkSettings, PacketViolationWarning, PlayStatus,
         RequestNetworkSettings,
         ResourcePackClientResponse, ResourcePackStack, ResourcePacksInfo,
     },
@@ -19,7 +19,10 @@ impl Server {
 
     pub(crate) fn close(&mut self, pid: u64) {
         log!("[#{pid}] disconnesso");
-        self.players.remove(&pid);
+        let name = self.name(pid);
+        if self.players.remove(&pid).is_some_and(|p| p.spawned) {
+            self.broadcast(Text::new(text_type::RAW, format!("§e{name} ha lasciato il gioco")));
+        }
     }
 
     pub(crate) fn message(&mut self, pid: u64, data: &[u8]) {
@@ -40,8 +43,12 @@ impl Server {
             id::RESOURCE_PACK_CLIENT_RESPONSE => self.resource_pack_response(pid, &packet.body),
             id::REQUEST_CHUNK_RADIUS => self.request_chunk_radius(pid, &packet.body),
             id::SET_LOCAL_PLAYER_AS_INITIALIZED => self.initialized(pid),
-            id::PLAYER_AUTH_INPUT => {} // il movimento del giocatore, 20 volte al secondo: ancora non gestito
-            id::CLIENT_CACHE_STATUS => {} // il client dichiara se usa la cache dei chunk: per ora non serve
+            id::TEXT => self.chat(pid, &packet.body),
+            id::COMMAND_REQUEST => self.command(pid, &packet.body),
+            // Pacchetti di gioco che il client manda di continuo e che arriveranno con movimento, blocchi e inventario:
+            // per ora si ignorano in silenzio, altrimenti il log si riempie.
+            id::PLAYER_AUTH_INPUT | id::ANIMATE | id::PLAYER_ACTION | id::MOB_EQUIPMENT | id::INTERACT | id::EMOTE_LIST => {}
+            id::SERVERBOUND_LOADING_SCREEN | id::CLIENT_CACHE_STATUS => {} // il client dichiara se usa la cache dei chunk: per ora non serve
             id::PACKET_VIOLATION_WARNING => self.packet_violation(pid, &packet.body),
             other => {
                 let body = &packet.body;
