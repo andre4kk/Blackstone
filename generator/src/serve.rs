@@ -181,7 +181,16 @@ impl Service {
                 // Connessione chiusa (o rotta): si esce.
                 Err(_) => return Ok(()),
             };
-            match ToGen::decode(&frame) {
+            let decoded = ToGen::decode(&frame);
+            // Il generatore della dimensione si crea qui, fuori dal pool: se nascesse dentro un lavoro, gli altri lavori
+            // della stessa dimensione occuperebbero tutti i thread aspettandolo e la creazione resterebbe bloccata.
+            match &decoded {
+                Some(ToGen::Generate { dim, .. }) | Some(ToGen::Spawn { dim: dim @ Dim::Overworld, .. }) => {
+                    service.generator(*dim);
+                }
+                _ => {}
+            }
+            match decoded {
                 Some(ToGen::Generate { req, dim, x, z }) => {
                     service.spawn_job(req, &tx, move |s| s.chunk(dim, x, z).map(|c| FromGen::Chunk { req, data: c.data.clone() }))
                 }

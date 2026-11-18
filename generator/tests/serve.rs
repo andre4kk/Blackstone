@@ -160,3 +160,26 @@ fn same_region_requests_generate_once() {
     s.child.stderr.take().unwrap().read_to_string(&mut log).unwrap();
     assert_eq!(log.matches("regione generata").count(), 1, "log del generatore:\n{log}");
 }
+
+/// Un generatore appena avviato riceve subito molte richieste di chunk, senza una richiesta di spawn prima (mondo con
+/// lo spawn già salvato): devono arrivare tutte le risposte. Prima il generatore nasceva dentro il pool e si bloccava.
+#[test]
+fn burst_of_chunk_requests_on_a_fresh_generator_all_answer() {
+    let mut s = start();
+    s.hello();
+    let t = std::time::Instant::now();
+    let mut n = 0u32;
+    for x in -8..0 {
+        for z in -8..0 {
+            n += 1;
+            s.send(&ToGen::Generate { req: n, dim: Dim::Overworld, x, z });
+        }
+    }
+    s.stream.set_read_timeout(Some(std::time::Duration::from_secs(60))).unwrap();
+    for i in 0..n {
+        match read_frame(&mut s.stream) {
+            Ok(body) => assert!(matches!(FromGen::decode(&body), Some(FromGen::Chunk { .. })), "risposta {i} non è un chunk"),
+            Err(e) => panic!("risposta {i}/{n} non arrivata dopo {:?}: {e}", t.elapsed()),
+        }
+    }
+}
