@@ -1,5 +1,5 @@
 //! Test della logica di gioco senza rete: i pacchetti inviati si leggono dal `Sender` di prova.
-use crate::{registry, GameMode, Server};
+use crate::{registry, GameMode, Player, Server};
 use bedrock_net::{Command, Sender};
 use bedrock_protocol::{
     generated::{CreativeContent, InventoryContent, MobEquipment, PlayerHotbar, SetPlayerGameType, StartGame, UpdateAbilities},
@@ -450,4 +450,197 @@ fn mob_equipment_selects_a_hotbar_slot() {
     assert_eq!(h.server.players[&1].inventory.selected, 3, "fuori dalla barra: ignorato");
     h.receive(1, &[Packet::new(id::MOB_EQUIPMENT, vec![1, 2])]);
     assert_eq!(h.server.players[&1].inventory.selected, 3, "corpo malformato: ignorato");
+}
+
+// ---------- modifica dei blocchi ----------
+
+mod blocks {
+    use super::*;
+    use crate::{
+        events::{BlockChange, WorldAction},
+        world::{block_hash, Chunk, State},
+    };
+    use bedrock_protocol::generated::UpdateBlock;
+    use vgen::Dim;
+
+    fn stone() -> i32 {
+        block_hash("minecraft:stone", &[])
+    }
+
+    fn air() -> i32 {
+        block_hash("minecraft:air", &[])
+    }
+
+    fn water() -> i32 {
+        block_hash("minecraft:water", &[("liquid_depth", State::Int(0))])
+    }
+
+    fn grass() -> i32 {
+        block_hash("minecraft:grass_block", &[])
+    }
+
+    /// Tutti i pacchetti `UpdateBlock` inviati da quando si è letto l'ultima volta: (destinatario, posizione, hash, flag, strato).
+    fn updates(sent: &mut UnboundedReceiver<Command>) -> Vec<(u64, [i32; 3], u32, u32, u32)> {
+        let mut out = Vec::new();
+        while let Ok(cmd) = sent.try_recv() {
+            if let Command::Send(to, data) = cmd {
+                for p in Session::default().decode(&data).unwrap().into_iter().filter(|p| p.id == UpdateBlock::ID) {
+                    let mut r = Reader(&p.body);
+                    let pos = r.block_pos().unwrap();
+                    out.push((to, pos, r.var_u32().unwrap(), r.var_u32().unwrap(), r.var_u32().unwrap()));
+                }
+            }
+        }
+        out
+    }
+
+    fn harness_with_chunk() -> Harness {
+        let mut h = Harness::new();
+        h.server.chunks.insert((0, 0, 0), Chunk::flat(Dim::Overworld, 0, 0));
+        h
+    }
+
+    fn change(pos: [i32; 3], hash: i32, water: bool) -> BlockChange {
+        BlockChange { pos, hash, water }
+    }
+
+    #[test]
+    fn set_blocks_sends_update_only_to_viewers() {
+        let mut h = harness_with_chunk();
+        h.join(1, "Alice");
+        h.join(2, "Bob");
+        h.server.players.get_mut(&1).unwrap().sent.insert((0, 0));
+        h.packets_to(1);
+        h.server.set_blocks(Dim::Overworld, &[change([3, 10, 4], stone(), false), change([1, 11, 2], stone(), true)]);
+        let got = updates(&mut h.sent);
+        assert_eq!(
+            got,
+            vec![
+                (1, [3, 10, 4], stone() as u32, 3, 0),
+                (1, [3, 10, 4], air() as u32, 3, 1),
+                (1, [1, 11, 2], stone() as u32, 3, 0),
+                (1, [1, 11, 2], water() as u32, 3, 1),
+            ],
+            "solo Alice ha il chunk in `sent`"
+        );
+        assert_eq!(h.server.block_at(Dim::Overworld, [3, 10, 4]), Some((stone(), false)));
+        assert_eq!(h.server.block_at(Dim::Overworld, [1, 11, 2]), Some((stone(), true)));
+    }
+
+    #[test]
+    fn block_at_out_of_world_or_unloaded_is_none() {
+        let h = harness_with_chunk();
+        let bedrock = block_hash("minecraft:bedrock", &[("infiniburn_bit", State::Byte(0))]);
+        assert_eq!(h.server.block_at(Dim::Overworld, [0, -64, 0]), Some((bedrock, false)));
+        assert_eq!(h.server.block_at(Dim::Overworld, [0, -65, 0]), None, "sotto il mondo");
+        assert_eq!(h.server.block_at(Dim::Overworld, [0, 320, 0]), None, "sopra il mondo");
+        assert_eq!(h.server.block_at(Dim::Overworld, [0, 319, 0]), Some((air(), false)));
+        assert_eq!(h.server.block_at(Dim::Overworld, [16, 0, 0]), None, "chunk non in memoria");
+        assert_eq!(h.server.block_at(Dim::Overworld, [-1, 0, 0]), None, "chunk (-1, 0) non in memoria");
+        assert_eq!(h.server.block_at(Dim::Nether, [0, 0, 0]), None, "altra dimensione");
+        assert_eq!(h.server.block_at(Dim::Overworld, [i32::MIN, 0, i32::MAX]), None, "coordinate estreme senza overflow");
+    }
+
+    #[test]
+    fn set_blocks_outside_loaded_chunks_or_world_changes_nothing() {
+        let mut h = harness_with_chunk();
+        h.join(1, "Alice");
+        h.server.players.get_mut(&1).unwrap().sent.insert((0, 0));
+        h.packets_to(1);
+        h.server.set_blocks(Dim::Overworld, &[change([100, 10, 4], stone(), false), change([0, 400, 0], stone(), false)]);
+        assert!(updates(&mut h.sent).is_empty());
+        assert!(!h.server.chunks[&(0, 0, 0)].dirty);
+    }
+
+    #[test]
+    fn negative_coordinates_map_to_the_right_chunk_cell() {
+        let mut h = harness_with_chunk();
+        h.server.chunks.insert((0, -1, -1), Chunk::flat(Dim::Overworld, -1, -1));
+        h.server.set_blocks(Dim::Overworld, &[change([-1, 5, -16], stone(), false)]);
+        assert_eq!(h.server.chunks[&(0, -1, -1)].block(15, 5, 0), stone());
+        assert_eq!(h.server.block_at(Dim::Overworld, [-1, 5, -16]), Some((stone(), false)));
+    }
+
+    #[test]
+    fn resend_blocks_sends_the_true_state_to_one_player() {
+        let mut h = harness_with_chunk();
+        h.join(1, "Alice");
+        h.join(2, "Bob");
+        h.packets_to(1);
+        h.server.resend_blocks(2, Dim::Overworld, &[[0, -61, 0], [100, 0, 0]]);
+        let got = updates(&mut h.sent);
+        assert_eq!(got, vec![(2, [0, -61, 0], grass() as u32, 3, 0), (2, [0, -61, 0], air() as u32, 3, 1)], "niente per il chunk non caricato");
+    }
+
+    #[test]
+    fn cancelled_action_changes_nothing() {
+        let mut h = harness_with_chunk();
+        let seen = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let log = seen.clone();
+        h.server.hooks.push(Box::new(move |a| {
+            log.lock().unwrap().push(a.clone());
+            !matches!(a, WorldAction::Break { .. })
+        }));
+        let break_it = WorldAction::Break { pid: 1, pos: [0, -61, 0], old: grass() };
+        let place = WorldAction::Place { pid: 1, changes: vec![change([0, -60, 0], stone(), false)] };
+        assert!(!h.server.allow(&break_it), "il gancio annulla la rottura");
+        assert!(h.server.allow(&place));
+        assert_eq!(seen.lock().unwrap().len(), 2);
+        // chi chiama non applica nulla se `allow` dice no: il mondo non cambia
+        if h.server.allow(&break_it) {
+            h.server.set_blocks(Dim::Overworld, &[change([0, -61, 0], air(), false)]);
+        }
+        assert_eq!(h.server.block_at(Dim::Overworld, [0, -61, 0]), Some((grass(), false)));
+        assert!(!h.server.chunks[&(0, 0, 0)].dirty);
+        h.server.hooks.clear();
+        assert!(h.server.allow(&break_it), "senza ganci passa tutto");
+    }
+
+    #[test]
+    fn one_cancelling_hook_among_many_cancels() {
+        let mut h = Harness::new();
+        h.server.hooks.push(Box::new(|_| true));
+        h.server.hooks.push(Box::new(|_| false));
+        assert!(!h.server.allow(&WorldAction::Place { pid: 1, changes: vec![] }));
+    }
+
+    #[test]
+    fn autosave_writes_dirty_chunks_every_1200_ticks() {
+        use crate::storage::World;
+        let dir = std::env::temp_dir().join(format!("versmc-test-autosave-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let (sender, _sent) = Sender::for_tests();
+        let (events, _events) = tokio::sync::mpsc::unbounded_channel();
+        let mut server = Server::with_world(sender, World::open_with(&dir, "Prova", Some(7)).unwrap(), events);
+        server.flat = false; // chunk "veri": si salvano
+                             // un giocatore lì vicino, altrimenti `stream_tick` scarica il chunk al primo tick
+        server.players.insert(1, Player { spawned: true, radius: 2, last_chunk: (2, 3), ..Player::default() });
+        let mut chunk = Chunk::flat(Dim::Overworld, 2, 3);
+        chunk.fallback = false;
+        server.chunks.insert((0, 2, 3), chunk);
+        server.set_blocks(Dim::Overworld, &[change([32, 0, 48], stone(), false)]);
+        assert!(server.chunks[&(0, 2, 3)].dirty);
+        for _ in 0..1199 {
+            server.tick();
+        }
+        assert!(server.chunks[&(0, 2, 3)].dirty, "prima del 1200° tick non si salva");
+        server.tick();
+        assert!(!server.chunks[&(0, 2, 3)].dirty, "salvato e pulito");
+        server.disk.as_ref().unwrap().flush_blocking();
+        drop(server);
+        let mut world = World::open(&dir).unwrap();
+        assert_eq!(world.load(Dim::Overworld, 2, 3).expect("salvato").block(0, 0, 0), stone());
+        drop(world);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn fallback_flat_chunks_are_never_marked_for_saving() {
+        let mut h = harness_with_chunk();
+        assert!(h.server.flat && !h.server.flat_warned);
+        h.server.set_blocks(Dim::Overworld, &[change([0, 10, 0], stone(), false)]);
+        assert_eq!(h.server.block_at(Dim::Overworld, [0, 10, 0]), Some((stone(), false)), "la modifica c'è in memoria");
+        assert!(!h.server.chunks[&(0, 0, 0)].dirty, "ma non si salva");
+        assert!(h.server.flat_warned, "avviso nel log dato");
+    }
 }

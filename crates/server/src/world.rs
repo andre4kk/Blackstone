@@ -115,6 +115,9 @@ pub(crate) struct Chunk {
     pub(crate) sections: Vec<Option<Section>>,
     pub(crate) block_entities: Vec<BlockEntity>,
     pub dirty: bool,
+    /// Vero per il mondo piatto di ripiego (`Chunk::flat`): le sue modifiche non si salvano mai.
+    #[allow(dead_code)] // lo legge `Server::set_blocks`
+    pub(crate) fallback: bool,
 }
 
 impl Chunk {
@@ -133,7 +136,7 @@ impl Chunk {
                 sections[slot as usize] = Some(s);
             }
         }
-        Chunk { dim: data.dim, x: data.x, z: data.z, sections, block_entities: data.block_entities, dirty: false }
+        Chunk { dim: data.dim, x: data.x, z: data.z, sections, block_entities: data.block_entities, dirty: false, fallback: false }
     }
 
     /// Mondo piatto di ripiego: solo la sezione più bassa, con bedrock, due strati di terra e erba; biomi pianura.
@@ -157,7 +160,73 @@ impl Chunk {
         let section = Section { index: lowest as i8, palette, blocks, biomes: Box::new([PLAINS as u32; 64]), water: None };
         let mut sections = vec![None; count];
         sections[0] = Some(section);
-        Chunk { dim, x, z, sections, block_entities: Vec::new(), dirty: false }
+        Chunk { dim, x, z, sections, block_entities: Vec::new(), dirty: false, fallback: true }
+    }
+
+    /// Posizione di (y) nel chunk: indice nel vettore delle sezioni e y locale; `None` fuori dall'altezza della dimensione.
+    #[allow(dead_code)] // lo usano la rottura e il piazzamento dei blocchi
+    fn locate(&self, y: i32) -> Option<(usize, usize)> {
+        let (lowest, count) = Self::section_range(self.dim);
+        let slot = y.div_euclid(16) - lowest;
+        (0..count as i32).contains(&slot).then_some((slot as usize, y.rem_euclid(16) as usize))
+    }
+
+    /// Hash del blocco alle coordinate locali `lx`, `lz` (0..16) e `y` assoluta; aria se la sezione manca o `y` è fuori dal mondo.
+    #[allow(dead_code)] // lo usano la rottura e il piazzamento dei blocchi
+    pub fn block(&self, lx: usize, y: i32, lz: usize) -> i32 {
+        match self.locate(y).and_then(|(slot, ly)| self.sections[slot].as_ref().map(|s| (s, ly))) {
+            Some((s, ly)) => s.palette[s.blocks[(lx * 16 + lz) * 16 + ly] as usize],
+            None => block_hash("minecraft:air", &[]),
+        }
+    }
+
+    /// Vero se nel secondo strato (liquido) di quella cella c'è acqua.
+    #[allow(dead_code)] // lo usano la rottura e il piazzamento dei blocchi
+    pub fn water(&self, lx: usize, y: i32, lz: usize) -> bool {
+        match self.locate(y).and_then(|(slot, ly)| self.sections[slot].as_ref().map(|s| (s, ly))) {
+            Some((s, ly)) => s.water.as_ref().is_some_and(|m| {
+                let n = (lx * 16 + lz) * 16 + ly;
+                m[n / 64] >> (n % 64) & 1 == 1
+            }),
+            None => false,
+        }
+    }
+
+    /// Cambia il blocco (e l'acqua del secondo strato) di una cella. Crea la sezione se manca, aggiunge `hash` alla palette
+    /// se serve e segna il chunk come modificato. Fuori dall'altezza della dimensione non fa nulla.
+    #[allow(dead_code)] // lo usano la rottura e il piazzamento dei blocchi
+    pub fn set_block(&mut self, lx: usize, y: i32, lz: usize, hash: i32, water: bool) {
+        let Some((slot, ly)) = self.locate(y) else { return };
+        let air = block_hash("minecraft:air", &[]);
+        if self.sections[slot].is_none() {
+            if hash == air && !water {
+                return; // aria in una sezione di sola aria: non cambia nulla
+            }
+            let (lowest, _) = Self::section_range(self.dim);
+            self.sections[slot] = Some(Section {
+                index: (lowest + slot as i32) as i8,
+                palette: vec![air],
+                blocks: Box::new([0u16; 4096]),
+                biomes: Box::new([PLAINS as u32; 64]),
+                water: None,
+            });
+        }
+        let s = self.sections[slot].as_mut().expect("sezione appena creata");
+        let n = (lx * 16 + lz) * 16 + ly;
+        let idx = s.palette.iter().position(|&p| p == hash).unwrap_or_else(|| (s.palette.push(hash), s.palette.len() - 1).1);
+        s.blocks[n] = idx as u16;
+        let has_water = s.water.as_ref().is_some_and(|m| m[n / 64] >> (n % 64) & 1 == 1);
+        if water != has_water {
+            if water {
+                s.water.get_or_insert_with(|| Box::new([0u64; 64]))[n / 64] |= 1 << (n % 64);
+            } else if let Some(m) = s.water.as_mut() {
+                m[n / 64] &= !(1 << (n % 64));
+                if m.iter().all(|&w| w == 0) {
+                    s.water = None;
+                }
+            }
+        }
+        self.dirty = true;
     }
 
     /// Numero di sotto-chunk da annunciare: dalla sezione più bassa fino all'ultima non vuota (0 se il chunk è vuoto).
@@ -371,5 +440,78 @@ mod tests {
         w.var_i32(block_hash("minecraft:air", &[]));
         w.var_i32(block_hash("minecraft:water", &[("liquid_depth", State::Int(0))]));
         assert_eq!(&b[p + 1..p + 1 + w.0.len()], &w.0[..]);
+    }
+
+    /// Decodifica i blocchi (strato 0) della prima sezione presente di `network_bytes`: 4096 hash, ordine (x*16 + z)*16 + y.
+    fn decode_layer0(bytes: &[u8]) -> Vec<i32> {
+        let mut r = bedrock_protocol::reader::Reader(bytes);
+        assert_eq!(r.u8(), Some(9), "sotto-chunk v9");
+        r.u8().unwrap(); // numero di strati
+        r.i8().unwrap(); // indice della sezione
+        decode_storage(&mut r)
+    }
+
+    fn decode_storage(r: &mut bedrock_protocol::reader::Reader) -> Vec<i32> {
+        let head = r.u8().unwrap();
+        let bits = (head >> 1) as usize;
+        if bits == 0 {
+            return vec![r.var_i32().unwrap(); 4096];
+        }
+        let per_word = 32 / bits;
+        let words: Vec<u32> = (0..4096usize.div_ceil(per_word)).map(|_| r.u32().unwrap()).collect();
+        let n = r.var_i32().unwrap() as usize;
+        let palette: Vec<i32> = (0..n).map(|_| r.var_i32().unwrap()).collect();
+        (0..4096).map(|i| palette[(words[i / per_word] >> ((i % per_word) * bits) & ((1 << bits) - 1)) as usize]).collect()
+    }
+
+    #[test]
+    fn set_block_in_missing_section_creates_it() {
+        let mut c = Chunk::flat(Dim::Overworld, 0, 0);
+        let stone = block_hash("minecraft:stone", &[]);
+        assert!(c.sections[5].is_none());
+        assert_eq!(c.block(3, 20, 4), block_hash("minecraft:air", &[]), "sezione assente = aria");
+        c.set_block(3, 20, 4, stone, false); // y=20 sta nella sezione 1, slot 5
+        let s = c.sections[5].as_ref().expect("sezione creata");
+        assert_eq!(s.index, 1);
+        assert_eq!(s.palette[0], block_hash("minecraft:air", &[]));
+        assert_eq!(c.block(3, 20, 4), stone);
+        assert_eq!(c.block(3, 21, 4), block_hash("minecraft:air", &[]));
+        assert!(c.dirty);
+        assert_eq!(s.blocks[(3 * 16 + 4) * 16 + 4], 1, "indice (x*16 + z)*16 + y con y locale 4");
+    }
+
+    #[test]
+    fn set_block_grows_palette_and_bits() {
+        let mut c = Chunk::flat(Dim::Overworld, 0, 0);
+        assert_eq!(bits_byte(&c), 2, "4 voci: 2 bit");
+        for k in 0..13 {
+            c.set_block(k, -50, 0, 1000 + k as i32, false); // 4 + 13 = 17 voci
+        }
+        assert_eq!(c.sections[0].as_ref().unwrap().palette.len(), 17);
+        assert_eq!(bits_byte(&c), 5, "17 voci: 5 bit");
+        let decoded = decode_layer0(&c.network_bytes());
+        for k in 0..13usize {
+            assert_eq!(decoded[(k * 16) * 16 + 14], 1000 + k as i32);
+        }
+        assert_eq!(decoded[3], block_hash("minecraft:grass_block", &[]), "il resto è intatto");
+        c.set_block(0, -50, 0, 1000, false); // un valore già in palette non la allunga
+        assert_eq!(c.sections[0].as_ref().unwrap().palette.len(), 17);
+    }
+
+    #[test]
+    fn waterlogged_block_keeps_water() {
+        let mut c = Chunk::flat(Dim::Overworld, 0, 0);
+        let slab = block_hash("minecraft:stone", &[]);
+        c.set_block(1, -62, 3, slab, true);
+        assert_eq!((c.block(1, -62, 3), c.water(1, -62, 3)), (slab, true));
+        assert!(!c.water(1, -61, 3));
+        c.set_block(1, -62, 3, block_hash("minecraft:dirt", &[]), true); // cambia il blocco: l'acqua resta
+        assert!(c.water(1, -62, 3));
+        let b = c.network_bytes();
+        assert_eq!(b[1], 2, "due strati");
+        c.set_block(1, -62, 3, slab, false);
+        assert!(!c.water(1, -62, 3));
+        assert!(c.sections[0].as_ref().unwrap().water.is_none(), "senza più acqua la maschera sparisce");
+        assert_eq!(c.network_bytes()[1], 1);
     }
 }

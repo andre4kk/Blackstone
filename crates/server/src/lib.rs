@@ -3,6 +3,7 @@ mod biomes;
 mod chat;
 pub mod config;
 mod disk;
+mod events;
 mod gen_client;
 mod handlers;
 mod inventory;
@@ -16,8 +17,13 @@ mod tests;
 mod world;
 
 use bedrock_net::{log, Config, Event, Sender};
+use bedrock_protocol::{
+    generated::{BlockPos, UpdateBlock},
+    wire::ServerPacket,
+};
 use bedrock_protocol::{login::PlayerInfo, Packet, Session};
 use disk::{Disk, DiskEvent};
+use events::{BlockChange, Hook, WorldAction};
 use gen_client::{GenClient, GenConfig, GenEvent, Launch};
 use std::{
     collections::{HashMap, HashSet, VecDeque},
@@ -98,6 +104,9 @@ const TICK: Duration = Duration::from_millis(50);
 /// Quanti tick ricordare per calcolare i TPS reali.
 const TPS_WINDOW: usize = 100;
 
+/// Ogni quanti tick i chunk modificati vanno al disco (1200 tick = 60 s).
+const AUTOSAVE_TICKS: u64 = 1200;
+
 /// Chiave di un chunk in memoria: (dimensione, x, z).
 type ChunkKey = (u8, i32, i32);
 
@@ -139,6 +148,14 @@ struct Server {
     spawn_retry_at: Option<Instant>,
     /// Raggio massimo di chunk concesso ai giocatori.
     max_radius: i32,
+    /// Ganci che possono annullare le azioni dei giocatori sul mondo (vedi [`Server::allow`]).
+    #[allow(dead_code)] // i ganci li registrerà chi vorrà annullare le azioni
+    hooks: Vec<Hook>,
+    /// Tick eseguiti finora: scandiscono il salvataggio automatico.
+    tick_count: u64,
+    /// Già detto nel log che le modifiche al mondo piatto di ripiego non si salvano.
+    #[allow(dead_code)] // lo usa `set_blocks`
+    flat_warned: bool,
 }
 
 impl Server {
@@ -165,6 +182,9 @@ impl Server {
             spawn_fails: 0,
             spawn_retry_at: None,
             max_radius: join::MAX_RADIUS,
+            hooks: Vec::new(),
+            tick_count: 0,
+            flat_warned: false,
         }
     }
 
@@ -174,16 +194,27 @@ impl Server {
         Self { disk: Some(Disk::start(world, events)), ..Self::new(sender) }
     }
 
-    /// Chiusura ordinata: salva i chunk modificati e scarica il database.
-    fn shutdown(&mut self) {
-        let Some(disk) = self.disk.as_ref() else { return };
+    /// Manda al disco i chunk modificati e li segna puliti; restituisce quanti. Senza disco non fa nulla.
+    fn save_dirty(&mut self) -> usize {
+        let Some(disk) = self.disk.as_ref() else { return 0 };
         let mut saved = 0;
         for chunk in self.chunks.values_mut().filter(|c| c.dirty) {
             disk.save(chunk.clone());
             chunk.dirty = false;
             saved += 1;
         }
-        disk.flush_blocking();
+        saved
+    }
+
+    /// Chiusura ordinata: salva i chunk modificati e scarica il database.
+    fn shutdown(&mut self) {
+        if self.disk.is_none() {
+            return;
+        }
+        let saved = self.save_dirty();
+        if let Some(disk) = &self.disk {
+            disk.flush_blocking();
+        }
         log!("[mondo] chiusura: {saved} chunk salvati");
     }
 
@@ -194,15 +225,79 @@ impl Server {
         }
     }
 
-    /// Un tick di gioco: per ora lo streaming dei chunk. Qui andranno anche gli aggiornamenti di entità e mondo.
+    /// Un tick di gioco: lo streaming dei chunk e, ogni `AUTOSAVE_TICKS`, il salvataggio dei chunk modificati.
     fn tick(&mut self) {
         let start = Instant::now();
         self.stream_tick();
+        self.tick_count += 1;
+        if self.tick_count.is_multiple_of(AUTOSAVE_TICKS) {
+            let saved = self.save_dirty();
+            if saved > 0 {
+                log!("[mondo] salvataggio automatico: {saved} chunk");
+            }
+        }
         self.mspt = self.mspt * 0.9 + start.elapsed().as_secs_f64() * 1000.0 * 0.1;
         self.ticks.push_back(start);
         if self.ticks.len() > TPS_WINDOW {
             self.ticks.pop_front();
         }
+    }
+
+    /// Blocco alla posizione `pos` (x, y, z) della dimensione: hash dello stato e se nel secondo strato c'è acqua.
+    /// `None` se il chunk non è in memoria o `y` è fuori dall'altezza del mondo.
+    #[allow(dead_code)] // lo usano la rottura e il piazzamento dei blocchi
+    pub(crate) fn block_at(&self, dim: Dim, pos: [i32; 3]) -> Option<(i32, bool)> {
+        let (min, max) = dim.height_range();
+        if !(min..max).contains(&pos[1]) {
+            return None;
+        }
+        let chunk = self.chunks.get(&(dim as u8, pos[0].div_euclid(16), pos[2].div_euclid(16)))?;
+        let (lx, lz) = (pos[0].rem_euclid(16) as usize, pos[2].rem_euclid(16) as usize);
+        Some((chunk.block(lx, pos[1], lz), chunk.water(lx, pos[1], lz)))
+    }
+
+    /// Applica le modifiche ai chunk in memoria (quelle fuori dal mondo o in chunk non caricati si scartano) e le manda
+    /// a chi ha quel chunk in `sent`: `UpdateBlock` per lo strato 0 (blocco) e per lo strato 1 (acqua o aria).
+    #[allow(dead_code)] // lo usano la rottura e il piazzamento dei blocchi
+    pub(crate) fn set_blocks(&mut self, dim: Dim, changes: &[BlockChange]) {
+        let (min, max) = dim.height_range();
+        let mut applied = Vec::with_capacity(changes.len());
+        for c in changes.iter().filter(|c| (min..max).contains(&c.pos[1])) {
+            let (cx, cz) = (c.pos[0].div_euclid(16), c.pos[2].div_euclid(16));
+            let Some(chunk) = self.chunks.get_mut(&(dim as u8, cx, cz)) else { continue };
+            chunk.set_block(c.pos[0].rem_euclid(16) as usize, c.pos[1], c.pos[2].rem_euclid(16) as usize, c.hash, c.water);
+            if self.flat && chunk.fallback {
+                // il mondo piatto di ripiego si perde alla chiusura: la modifica resta in memoria ma il chunk non si salva
+                chunk.dirty = false;
+                if !std::mem::replace(&mut self.flat_warned, true) {
+                    log!("[mondo] mondo piatto di ripiego: le modifiche non si salvano");
+                }
+            }
+            applied.push(((cx, cz), c));
+        }
+        for (&pid, player) in &self.players {
+            let packets: Vec<Packet> =
+                applied.iter().filter(|(chunk, _)| player.sent.contains(chunk)).flat_map(|(_, c)| update_packets(c.pos, c.hash, c.water)).collect();
+            if !packets.is_empty() {
+                self.send(pid, &packets);
+            }
+        }
+    }
+
+    /// Rimanda a un solo giocatore lo stato vero dei blocchi in `positions` (per annullare ciò che il suo client ha già fatto).
+    #[allow(dead_code)] // lo usano la rottura e il piazzamento dei blocchi
+    pub(crate) fn resend_blocks(&self, pid: u64, dim: Dim, positions: &[[i32; 3]]) {
+        let packets: Vec<Packet> =
+            positions.iter().filter_map(|&pos| self.block_at(dim, pos).map(|(hash, water)| update_packets(pos, hash, water))).flatten().collect();
+        if !packets.is_empty() {
+            self.send(pid, &packets);
+        }
+    }
+
+    /// Mostra l'azione ai ganci: `false` se almeno uno la annulla (allora chi chiama non deve cambiare nulla).
+    #[allow(dead_code)] // lo usano la rottura e il piazzamento dei blocchi
+    pub(crate) fn allow(&mut self, action: &WorldAction) -> bool {
+        self.hooks.iter_mut().all(|hook| hook(action))
     }
 
     /// Tick al secondo reali (al massimo 20), sugli ultimi `TPS_WINDOW` tick.
@@ -212,6 +307,16 @@ impl Server {
             _ => 20.0,
         }
     }
+}
+
+/// `UpdateBlock` per lo strato 0 (il blocco) e per lo strato 1 (acqua se `water`, altrimenti aria); flag 3 = vicini + rete.
+#[allow(dead_code)] // lo usano `set_blocks` e `resend_blocks`
+fn update_packets(pos: [i32; 3], hash: i32, water: bool) -> [Packet; 2] {
+    let layer = |runtime_id: i32, layer: u32| {
+        UpdateBlock { block_position: BlockPos { x: pos[0], y: pos[1], z: pos[2] }, block_runtime_id: runtime_id as u32, flags: 3, layer }.packet()
+    };
+    let liquid = if water { world::block_hash("minecraft:water", &[("liquid_depth", world::State::Int(0))]) } else { world::block_hash("minecraft:air", &[]) };
+    [layer(hash, 0), layer(liquid, 1)]
 }
 
 /// Come [`run`], ma con il mondo e le impostazioni di `server.toml`: apre `worlds/<world>`, avvia il generatore e salva alla chiusura.
