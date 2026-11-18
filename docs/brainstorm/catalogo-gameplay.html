@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VersMCBE – Catalogo: il gioco normale di Minecraft</title>
+<style>
+  :root { --bg:#fbfaf7; --fg:#1f1d1a; --muted:#6b665e; --line:#e4e0d8; --accent:#2f6f4f; --warn:#9a5b00; --bad:#9b2c2c; --card:#ffffff; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1a1917; --fg:#ecE8e1; --muted:#a39d93; --line:#34312c; --accent:#7cc39c; --warn:#e0a54a; --bad:#e58a8a; --card:#22211e; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.55 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:20px 16px 60px; }
+  h1 { font-size:1.5rem; line-height:1.25; margin:.2em 0 .3em; }
+  h2 { font-size:1.15rem; margin:2em 0 .5em; padding-top:.6em; border-top:1px solid var(--line); }
+  h3 { font-size:1rem; margin:1.2em 0 .3em; }
+  p, li { margin:.35em 0; }
+  ul { padding-left:1.2em; }
+  .sub { color:var(--muted); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin:10px 0; }
+  .tag { display:inline-block; font-size:.78rem; padding:1px 8px; border-radius:99px; border:1px solid var(--line); color:var(--muted); margin-right:4px; white-space:nowrap; }
+  .rec { color:var(--accent); font-weight:600; }
+  .warn { color:var(--warn); font-weight:600; }
+  .no { color:var(--bad); font-weight:600; }
+  table { width:100%; border-collapse:collapse; font-size:.92rem; margin:8px 0; }
+  th, td { text-align:left; padding:6px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; }
+  nav a { color:var(--accent); text-decoration:none; margin-right:10px; white-space:nowrap; }
+  code { font-size:.88em; background:rgba(127,127,127,.12); padding:0 4px; border-radius:4px; }
+</style>
+</head>
+<body>
+<main>
+<h1>Il gioco normale di Minecraft su VersMCBE</h1>
+<p class="sub">Catalogo delle opzioni prima delle domande · 18/11/2026 · stime grezze, da rivedere dopo le prime risposte</p>
+<nav><a href="#oggi">Oggi</a><a href="#pezzi">I pezzi</a><a href="#scelte">Scelte di fondo</a><a href="#tappe">Tappe</a><a href="#trappole">Trappole</a><a href="#scartato">Scartato</a></nav>
+
+<h2 id="oggi">Cosa c'è oggi</h2>
+<ul>
+  <li>Entri nel mondo vero generato (Overworld), i chunk arrivano camminando e si salvano.</li>
+  <li>Sei in <b>creativo</b>, ma il menu creativo è <b>vuoto</b> (il server manda una lista vuota): non hai blocchi da piazzare.</li>
+  <li>Quando rompi o piazzi, il client lo manda al server (il pacchetto 30 nel log), ma il server lo <b>ignora</b>: il cambiamento resta solo sul tuo schermo e non si salva.</li>
+  <li><b>Salto, camminata, volo</b> funzionano già: il movimento lo calcola il client e il server non lo corregge. Il server legge la posizione (ora verificata) solo per i chunk.</li>
+  <li>Non ci sono salute, fame, danno da caduta, oggetti a terra, altri giocatori visibili.</li>
+</ul>
+
+<h2 id="pezzi">I pezzi del "gioco normale"</h2>
+<p class="sub">Sono collegati: l'inventario serve per piazzare, il drop serve per raccogliere, la sopravvivenza ha bisogno di tutti.</p>
+
+<div class="card">
+<h3>1. Rompere blocchi <span class="tag">medio</span></h3>
+<ul>
+  <li>Creativo: rottura istantanea, il server aggiorna il chunk, lo salva e lo comunica agli altri.</li>
+  <li>Sopravvivenza: tempo di rottura per durezza del blocco e attrezzo, attrezzo giusto per avere il drop, usura degli attrezzi.</li>
+  <li>Controlli anti-trucco: distanza dal blocco, blocco davvero presente, tempo minimo.</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>2. Piazzare blocchi <span class="tag">grande</span></h3>
+<ul>
+  <li>Il client dice solo "ho cliccato questa faccia con questo oggetto": <b>lo stato del blocco lo deve decidere il server</b> (direzione delle scale, asse dei tronchi, mezzo blocco sopra o sotto, porte di due blocchi, letti, torce a muro…).</li>
+  <li>Sono centinaia di regole, raggruppate in qualche decina di famiglie. Base semplice (stato predefinito) subito, famiglie a poco a poco.</li>
+  <li>Interazioni col tasto destro: aprire porte e botole, leve, pulsanti (piccole, si aggiungono per famiglia).</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>3. Inventario <span class="tag">grande</span></h3>
+<ul>
+  <li>Menu creativo pieno (tutti gli oggetti), barra degli oggetti, 36 caselle, armatura, mano secondaria.</li>
+  <li>Bedrock usa il sistema <code>ItemStackRequest</code>: ogni spostamento di oggetti lo chiede il client e il server lo approva o rifiuta. È il pezzo più delicato del protocollo.</li>
+  <li>Salvataggio dell'inventario del giocatore (insieme a posizione, salute…).</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>4. Oggetti a terra e raccolta <span class="tag">medio</span></h3>
+<ul>
+  <li>Il blocco rotto fa cadere l'oggetto (entità), che si raccoglie camminandoci sopra; lanciare oggetti con Q.</li>
+  <li>Serve la prima "entità" del server: è la base anche per mob e altri giocatori.</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>5. Sopravvivenza di base <span class="tag">medio</span></h3>
+<ul>
+  <li>Modalità sopravvivenza, salute, fame, danno da caduta, annegamento, lava, morte e rinascita.</li>
+  <li>Comandi <code>/gamemode</code>, <code>/give</code>, <code>/tp</code> per provare.</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>6. Dopo (fuori da questo giro) <span class="tag">molto grande</span></h3>
+<ul>
+  <li>Banco da lavoro e ricette, forni, bauli e contenitori, mob e combattimento, redstone, acqua e lava che scorrono, altri giocatori visibili.</li>
+</ul>
+</div>
+
+<h2 id="scelte">Scelte di fondo</h2>
+
+<h3>Da dove prendere la logica di gioco</h3>
+<table>
+<tr><th>Opzione</th><th>Pro</th><th>Contro</th></tr>
+<tr><td class="rec">A. Portare in Rust la logica di Dragonfly (Go, licenza MIT) — consigliata</td><td>Server Bedrock completo e testato: regole di piazzamento per ogni blocco, tempi di rottura, drop, inventario <code>ItemStackRequest</code>. MIT: si può copiare senza vincoli. Stesso protocollo Bedrock, niente traduzione Java.</td><td>Va tradotto da Go a Rust, non è un copia-incolla. Dobbiamo seguire i loro aggiornamenti a mano.</td></tr>
+<tr><td>B. Portare la logica di PocketMine-MP (PHP)</td><td>Completo, è il modello a cui ti ispiri.</td><td>Licenza LGPL-3: il codice derivato resta LGPL. Il PHP si traduce peggio in Rust del Go.</td></tr>
+<tr><td>C. Usare la logica Java di Steel (nel generatore)</td><td>Già nel progetto, comportamento "Java".</td><td>Le regole Java non sono quelle Bedrock (stati diversi), ogni azione passerebbe per il processo del generatore (ritardo), licenza AGPL nel server.</td></tr>
+<tr><td>D. Scrivere tutto da zero</td><td>Codice tutto nostro.</td><td>Mesi in più per riscoprire regole già scritte altrove.</td></tr>
+</table>
+
+<h3>Chi decide: server o client</h3>
+<table>
+<tr><th>Opzione</th><th>Pro</th><th>Contro</th></tr>
+<tr><td class="rec">A. Server autoritativo (consigliata)</td><td>Il server controlla ogni rottura e piazzamento: niente trucchi, i plugin possono annullare le azioni. È la direzione di Mojang (c'è un'opzione in StartGame per la rottura decisa dal server).</td><td>Più lavoro: va letto tutto <code>PlayerAuthInput</code> (oggi ne leggiamo solo la posizione).</td></tr>
+<tr><td>B. Fidarsi del client</td><td>Più semplice e veloce da fare.</td><td>Un client modificato rompe e piazza ciò che vuole. Andrebbe rifatto per sopravvivenza e plugin.</td></tr>
+</table>
+
+<h3>Da dove prendere i dati (oggetti, durezze, ricette)</h3>
+<table>
+<tr><th>Opzione</th><th>Pro</th><th>Contro</th></tr>
+<tr><td class="rec">A. pmmp/BedrockData (CC0) — consigliata</td><td>Già usato per i biomi. Libero (CC0): menu creativo, oggetti, ricette, stati dei blocchi.</td><td>Segue Mojang con qualche settimana di ritardo.</td></tr>
+<tr><td>B. Mojang bedrock-samples</td><td>Ufficiale e aggiornato.</td><td>Licenza EULA: non sempre ridistribuibile nel repository.</td></tr>
+<tr><td>C. Dati Java di Steel</td><td>Durezze e drop completi.</td><td>Nomi e stati Java: andrebbero tradotti come per i chunk.</td></tr>
+</table>
+
+<h2 id="tappe">Tappe proposte</h2>
+<table>
+<tr><th>Tappa</th><th>Cosa ottieni</th><th>Tempo stimato</th></tr>
+<tr><td class="rec">1. Creativo vero</td><td>Menu creativo pieno, rompi e piazzi con l'orientamento giusto, porte e leve si aprono, tutto si salva. <code>/gamemode</code>.</td><td>circa 1 notte di lavoro degli agenti</td></tr>
+<tr><td>2. Sopravvivenza di base</td><td>Tempi di rottura e attrezzi, drop e raccolta, inventario vero e salvato, salute, fame, cadute, morte.</td><td>1–2 notti</td></tr>
+<tr><td>3. Costruire e conservare</td><td>Banco da lavoro e ricette, forni, bauli.</td><td>1–2 notti</td></tr>
+<tr><td>Poi</td><td>Altri giocatori visibili, mob, API dei plugin sopra a tutto questo.</td><td>da pianificare</td></tr>
+</table>
+<p class="sub">Il costo in token cresce con le tappe più o meno come quello del generatore (stesso metodo: Sonnet scrive, revisori separati, Opus solo per la revisione finale).</p>
+
+<h2 id="trappole">Trappole da sapere subito</h2>
+<ul>
+  <li class="warn">Gli schemi del protocollo Mojang (bedrock-protocol-docs) che usavamo per generare i pacchetti non sono più sul disco: vanno riscaricati (licenza EULA, non si mettono nel repository).</li>
+  <li class="warn">Il piazzamento è il pezzo più lungo: centinaia di regole. Senza, le scale e i tronchi vengono messi tutti nello stesso verso.</li>
+  <li class="warn">L'inventario Bedrock (<code>ItemStackRequest</code>) è il punto dove i server Bedrock sbagliano più spesso: va provato nel gioco presto.</li>
+  <li class="warn">La sopravvivenza ha bisogno dell'inventario e dei drop: non si può fare prima.</li>
+  <li>Le correzioni di oggi (lista biomi spenta, generatore bloccato) non sono ancora committate.</li>
+</ul>
+
+<h2 id="scartato">Scartato e perché</h2>
+<ul>
+  <li><span class="no">Movimento controllato dal server (anti-volo, anti-velocità)</span>: oggi salto e camminata funzionano già; i controlli servono contro i trucchi, non per giocare. Più avanti.</li>
+  <li><span class="no">Fisica di acqua, lava e sabbia che cade</span>: richiede il tick dei blocchi, viene dopo la sopravvivenza di base.</li>
+  <li><span class="no">Logica Java di Steel per il gameplay</span>: vedi sopra (stati diversi, ritardo, licenza).</li>
+</ul>
+</main>
+</body>
+</html>
