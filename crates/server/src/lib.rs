@@ -165,8 +165,7 @@ struct Player {
     last_damage: f32,
     /// Vero da quando la vita è arrivata a 0 e finché il giocatore non rinasce.
     dead: bool,
-    /// Altezza dei piedi da cui è iniziata la caduta in corso (per il danno da caduta: la legge il Task 4).
-    #[allow(dead_code)]
+    /// Altezza dei piedi da cui è iniziata la caduta in corso (il punto più alto prima della discesa); `None` se non sta cadendo.
     fall_start_y: Option<f32>,
 }
 
@@ -394,6 +393,7 @@ impl Server {
         self.items_tick();
         self.pickup_tick();
         self.movement_tick();
+        self.void_tick();
         self.tick_count += 1;
         self.run_scheduled();
         if self.tick_count.is_multiple_of(AUTOSAVE_TICKS) {

@@ -3,7 +3,8 @@ use crate::{
     entity::{armor_of, EntityKind},
     events::WorldAction,
     inventory::{window, HOTBAR_SLOTS},
-    playerdata, GameMode, Player, Server, HEX_LOGS,
+    playerdata::{self, EYE_HEIGHT},
+    GameMode, Player, Server, HEX_LOGS,
 };
 use bedrock_net::log;
 use bedrock_protocol::{
@@ -175,6 +176,9 @@ impl Server {
         };
         // Limite del mondo di Minecraft: 30 milioni di blocchi per lato.
         if position.iter().all(|v| v.is_finite() && v.abs() <= 30_000_000.0) {
+            // la caduta si valuta prima di `on_move`: serve ancora la posizione del tick precedente
+            let on_ground = input.as_ref().is_some_and(|i| i.has(flag::VERTICAL_COLLISION));
+            self.fall_tick(pid, position[1] - EYE_HEIGHT, on_ground);
             self.on_move(pid, position);
             self.update_entity_motion(pid, input.as_ref());
         }

@@ -3332,8 +3332,9 @@ mod bot {
 
 mod survival {
     use super::*;
-    use crate::{events::WorldAction, join::vitals_attributes, survival::DamageCause};
+    use crate::{events::WorldAction, join::vitals_attributes, survival::DamageCause, world::Chunk};
     use bedrock_protocol::entity::{actor_event, actor_event_type};
+    use vgen::Dim;
 
     /// Alice (1) in `mode`, Bob (2) che la vede, Carol (3) che non la vede.
     fn setup(mode: GameMode) -> Harness {
@@ -3394,6 +3395,141 @@ mod survival {
         h.server.tick_count += 10;
         assert!(h.server.hurt(1, 2.0, DamageCause::Fall));
         assert_eq!(health(&h), 12.0);
+    }
+
+    /// `PlayerAuthInput` minimo con gli occhi in (0.5, `eyes_y`, 0.5) e i flag di input dati.
+    fn pai_fall(eyes_y: f32, flags: &[i32]) -> Packet {
+        let mut w = Writer::default();
+        for v in [0.0, 0.0, 0.5, eyes_y, 0.5, 0.0, 0.0, 0.0] {
+            w.f32(v);
+        }
+        w.var_u32(flags.len() as u32);
+        flags.iter().for_each(|&f| w.var_i32(f));
+        w.var_u32(1); // modalità di input
+        w.var_u32(0);
+        w.var_i32(2);
+        (0..2).for_each(|_| w.f32(0.0));
+        w.var_u64(10);
+        (0..3).for_each(|_| w.f32(0.0));
+        (0..5).for_each(|_| w.u8(0)); // niente transazione, richiesta, azioni di blocco, veicolo
+        (0..7).for_each(|_| w.f32(0.0));
+        Packet::new(id::PLAYER_AUTH_INPUT, w.0)
+    }
+
+    const VERTICAL_COLLISION: i32 = 50;
+
+    /// Il giocatore 1 manda un input con i piedi a `feet` (a terra se `ground`).
+    fn feet_at(h: &mut Harness, feet: f32, ground: bool) {
+        let flags: &[i32] = if ground { &[VERTICAL_COLLISION] } else { &[] };
+        h.receive(1, &[pai_fall(feet + 1.62, flags)]);
+    }
+
+    /// Fa cadere il giocatore 1 da `from` a `to` (piedi) a un blocco per tick, atterrando in `to`.
+    fn fall(h: &mut Harness, from: f32, to: f32) {
+        feet_at(h, from, true);
+        let mut y = from;
+        while y > to {
+            y = (y - 1.0).max(to);
+            feet_at(h, y, y == to);
+            h.server.tick_count += 1;
+        }
+    }
+
+    #[test]
+    fn falling_ten_blocks_in_survival_deals_seven() {
+        let mut h = setup(GameMode::Survival);
+        fall(&mut h, 80.0, 70.0);
+        assert_eq!(health(&h), 13.0);
+        assert_eq!(h.server.players[&1].fall_start_y, None, "l'atterraggio azzera la caduta");
+    }
+
+    #[test]
+    fn falling_three_blocks_deals_nothing() {
+        let mut h = setup(GameMode::Survival);
+        fall(&mut h, 73.0, 70.0);
+        assert_eq!(health(&h), 20.0);
+        fall(&mut h, 74.0, 70.0);
+        assert_eq!(health(&h), 19.0, "oltre 3 blocchi si arrotonda per eccesso: 4 blocchi = 1");
+    }
+
+    #[test]
+    fn falling_in_creative_deals_nothing() {
+        let mut h = setup(GameMode::Creative);
+        fall(&mut h, 90.0, 70.0);
+        assert_eq!(health(&h), 20.0);
+    }
+
+    #[test]
+    fn landing_in_water_deals_nothing() {
+        let mut h = setup(GameMode::Survival);
+        let mut chunk = Chunk::flat(Dim::Overworld, 0, 0);
+        chunk.set_block(0, 50, 0, crate::world::block_hash("minecraft:air", &[]), true);
+        h.server.chunks.insert((0, 0, 0), chunk);
+        feet_at(&mut h, 80.0, true);
+        for y in (51..80).rev() {
+            feet_at(&mut h, y as f32, false);
+        }
+        feet_at(&mut h, 50.0, true);
+        assert_eq!(health(&h), 20.0);
+    }
+
+    #[test]
+    fn jumping_up_resets_the_fall() {
+        let mut h = setup(GameMode::Survival);
+        feet_at(&mut h, 80.0, true);
+        feet_at(&mut h, 76.0, false);
+        feet_at(&mut h, 77.0, false); // risale: la caduta riparte da qui
+        feet_at(&mut h, 76.0, false);
+        feet_at(&mut h, 75.0, true);
+        assert_eq!(health(&h), 20.0, "solo 2 blocchi dall'ultimo punto più alto");
+    }
+
+    #[test]
+    fn flight_then_switching_to_survival_in_air_falls_only_from_there() {
+        let mut h = setup(GameMode::Creative);
+        feet_at(&mut h, 100.0, false);
+        h.server.players.get_mut(&1).unwrap().flying = true;
+        feet_at(&mut h, 100.0, false);
+        // cambio di modalità in aria: in survival non si vola più (chat.rs azzera `flying`)
+        h.server.players.get_mut(&1).unwrap().mode = GameMode::Survival;
+        h.server.players.get_mut(&1).unwrap().flying = false;
+        feet_at(&mut h, 100.0, false);
+        for y in (95..100).rev() {
+            feet_at(&mut h, y as f32, y == 95);
+        }
+        assert_eq!(health(&h), 18.0, "5 blocchi - 3 = 2");
+    }
+
+    #[test]
+    fn gliding_clears_the_fall() {
+        let mut h = setup(GameMode::Survival);
+        feet_at(&mut h, 100.0, false);
+        feet_at(&mut h, 90.0, false);
+        h.server.players.get_mut(&1).unwrap().gliding = true;
+        feet_at(&mut h, 80.0, false);
+        assert_eq!(h.server.players[&1].fall_start_y, None);
+        h.server.players.get_mut(&1).unwrap().gliding = false;
+        feet_at(&mut h, 79.0, true);
+        assert_eq!(health(&h), 20.0, "niente danno da quota 100");
+    }
+
+    #[test]
+    fn below_the_world_hurts_every_ten_ticks_even_in_creative_but_not_spectator() {
+        for (mode, hurts) in [(GameMode::Survival, true), (GameMode::Creative, true), (GameMode::Spectator, false)] {
+            let mut h = setup(mode);
+            h.server.players.get_mut(&1).unwrap().pos = [0.5, -64.0 - 0.5 + 1.62, 0.5]; // piedi a -64.5
+            for tick in 1..=20 {
+                h.server.tick_count = tick;
+                h.server.void_tick();
+                let expected = if hurts { 20.0 - 4.0 * (tick / 10) as f32 } else { 20.0 };
+                assert_eq!(health(&h), expected, "{mode:?} tick {tick}");
+            }
+        }
+        let mut h = setup(GameMode::Survival);
+        h.server.players.get_mut(&1).unwrap().pos = [0.5, -64.0 + 1.62, 0.5]; // piedi esattamente al fondo: dentro il mondo
+        h.server.tick_count = 10;
+        h.server.void_tick();
+        assert_eq!(health(&h), 20.0);
     }
 
     #[test]

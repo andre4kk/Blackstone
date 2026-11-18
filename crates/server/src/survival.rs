@@ -1,13 +1,14 @@
 //! Vita, danno e cura del giocatore, sul modello di Dragonfly (`player.go`: `Hurt`, `Heal`, `addHealth`).
-// finché i task successivi (caduta, morte, fame, combattimento) non lo chiamano, è usato solo dai test
+// finché i task successivi (morte, fame, combattimento) non lo chiamano, è usato solo dai test
 #![allow(dead_code)]
-use crate::{events::WorldAction, join::vitals_attributes, GameMode, Server};
+use crate::{events::WorldAction, join::vitals_attributes, playerdata::EYE_HEIGHT, GameMode, Server};
 use bedrock_net::log;
 use bedrock_protocol::{
     entity::{actor_event, actor_event_type},
     generated::UpdateAttributes,
     wire::ServerPacket,
 };
+use vgen::Dim;
 
 /// Vita massima (20 = dieci cuori) e fame massima.
 pub(crate) const MAX_HEALTH: f32 = 20.0;
@@ -85,6 +86,58 @@ impl Server {
             self.die(pid, cause);
         }
         true
+    }
+
+    /// Aggiorna la caduta di `pid` dopo un `PlayerAuthInput` con i piedi a `feet_y`. Va chiamato prima di aggiornare `p.pos`:
+    /// la posizione precedente serve a capire se sta scendendo.
+    ///
+    /// Idea di Dragonfly (`updateFallState`/`fall`): scendendo si accumula la distanza; salendo o fermi in aria la si azzera; all'atterraggio
+    /// il danno è `ceil(distanza - 3)` se `distanza - 3 >= 0.5`. Qui la distanza è dal punto più alto della discesa (`fall_start_y`).
+    /// Il client non dice "sono a terra" in modo esplicito, ma manda `VERTICAL_COLLISION` quando urta in verticale: è a terra se il
+    /// flag c'è e non sta salendo (il flag vale anche per la testa contro un soffitto, ma lì si sale). Si azzera anche in acqua,
+    /// in volo, in planata e fuori da sopravvivenza/avventura.
+    pub(crate) fn fall_tick(&mut self, pid: u64, feet_y: f32, on_ground: bool) {
+        let in_water = self.feet_in_water(pid, feet_y);
+        let Some(p) = self.players.get_mut(&pid) else { return };
+        let before = p.pos[1] - EYE_HEIGHT;
+        let falls = matches!(p.mode, GameMode::Survival | GameMode::Adventure) && !p.dead && !p.flying && !p.gliding && !in_water;
+        if !falls {
+            p.fall_start_y = None;
+            return;
+        }
+        if on_ground && feet_y <= before {
+            let distance = p.fall_start_y.take().unwrap_or(before) - feet_y;
+            let damage = distance - 3.0;
+            if damage >= 0.5 {
+                self.hurt(pid, damage.ceil(), DamageCause::Fall);
+            }
+        } else if feet_y < before {
+            p.fall_start_y.get_or_insert(before);
+        } else {
+            p.fall_start_y = None;
+        }
+    }
+
+    /// Vero se la cella dei piedi di `pid` (a `feet_y`) contiene acqua: nello strato dei liquidi o come blocco d'acqua.
+    fn feet_in_water(&self, pid: u64, feet_y: f32) -> bool {
+        let Some(p) = self.players.get(&pid) else { return false };
+        let cell = [p.pos[0].floor() as i32, feet_y.floor() as i32, p.pos[2].floor() as i32];
+        self.block_at(Dim::Overworld, cell).is_some_and(|(hash, layer)| {
+            layer || crate::registry::blocks().state(hash).is_some_and(|s| s.name == "minecraft:water" || s.name == "minecraft:flowing_water")
+        })
+    }
+
+    /// Chi ha i piedi sotto il fondo del mondo (come Dragonfly: `y < range[0]`, -64 nel mondo) subisce 4 di danno, anche in creativa
+    /// (non da spettatore). Ogni 10 tick: il vuoto ignora l'invulnerabilità, quindi il ritmo lo dà questo controllo.
+    pub(crate) fn void_tick(&mut self) {
+        if !self.tick_count.is_multiple_of(IMMUNITY_TICKS) {
+            return;
+        }
+        let bottom = Dim::Overworld.height_range().0 as f32;
+        let below: Vec<u64> = self.players.iter().filter(|(_, p)| p.spawned && p.pos[1] - EYE_HEIGHT < bottom).map(|(&pid, _)| pid).collect();
+        for pid in below {
+            self.hurt(pid, 4.0, DamageCause::Void);
+        }
     }
 
     /// Cura `pid` di `amount` (senza superare la vita massima). Come Dragonfly `Heal`: nulla per i morti, per chi non può subire
