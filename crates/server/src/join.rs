@@ -2,9 +2,10 @@
 use crate::{
     biomes,
     inventory::window,
+    playerdata::{self, PlayerData, EYE_HEIGHT},
     registry::{self, CreativeItem},
     streaming::chunk_of,
-    GameMode, Server,
+    DataState, GameMode, Server,
 };
 use bedrock_net::log;
 use bedrock_protocol::{
@@ -13,7 +14,7 @@ use bedrock_protocol::{
         AvailableActorIdentifiers, BlockPos, ChunkRadiusUpdated, CreativeContent, CreativeGroupInfoPayload, CreativeItemEntryPayload, FullContainerName,
         InventoryContent, ItemData, ItemRegistry, JigsawStructureData, LevelSettings, NetworkChunkPublisherUpdate, NetworkItemInstanceDescriptorData,
         PlayerHotbar, SerializedAbilitiesData, SerializedAbilitiesDataSerializedLayer, SetPlayerGameType, SpawnSettings, StartGame,
-        SyncedPlayerMovementSettings, UpdateAbilities, Vec3, VoxelShapes,
+        SyncedPlayerMovementSettings, UpdateAbilities, Vec2, Vec3, VoxelShapes,
     },
     id,
     item::ItemStack,
@@ -186,8 +187,54 @@ pub(crate) fn warm_up() {
 }
 
 impl Server {
+    /// Il disco ha risposto con i dati salvati del giocatore (o senza): si applicano e il login riprende da `StartGame`.
+    pub(crate) fn on_player_loaded(&mut self, pid: u64, data: Option<Vec<u8>>) {
+        let Some(p) = self.players.get_mut(&pid).filter(|p| p.data == DataState::Loading) else {
+            return log!("[#{pid}] dati del giocatore arrivati per chi non li aspetta più: scartati");
+        };
+        p.data = DataState::Loaded;
+        match data.as_deref().map(PlayerData::from_nbt) {
+            None => log!("[#{pid}] nessun dato salvato: giocatore nuovo"),
+            Some(None) => log!("[#{pid}] dati salvati illeggibili: si parte da capo"),
+            Some(Some(d)) => {
+                log!("[#{pid}] dati salvati caricati: modalità {:?}, posizione {:?}", d.mode, d.feet);
+                // un'altra dimensione o una posizione impossibile non si possono usare: si parte dallo spawn, il resto resta
+                if d.dim == 0 && d.feet.iter().all(|v| v.abs() <= 30_000_000.0) {
+                    p.saved_feet = Some(d.feet);
+                } else {
+                    log!("[#{pid}] posizione salvata non utilizzabile (dimensione {}): parte dallo spawn", d.dim);
+                }
+                (p.mode, p.yaw, p.pitch, p.inventory) = (d.mode, d.yaw, d.pitch, d.inventory);
+            }
+        }
+        self.start_game(pid);
+    }
+
+    /// Prima di `StartGame` servono i dati salvati del giocatore: si chiedono al disco e il login aspetta la risposta
+    /// (`on_player_loaded`). Vero se ci sono già (o non c'è un disco da cui leggerli).
+    fn player_data_ready(&mut self, pid: u64) -> bool {
+        let Some(p) = self.players.get_mut(&pid) else { return false };
+        match (p.data, &self.disk, &p.info) {
+            (DataState::Loaded, ..) => true,
+            (DataState::Loading, ..) => false, // già chiesti: arriveranno
+            (DataState::Unrequested, Some(disk), Some(info)) => {
+                log!("[#{pid}] StartGame aspetta i dati salvati del giocatore");
+                disk.load_player(pid, playerdata::identity(info));
+                p.data = DataState::Loading;
+                false
+            }
+            (DataState::Unrequested, ..) => {
+                p.data = DataState::Loaded; // senza mondo su disco si parte vuoti
+                true
+            }
+        }
+    }
+
     /// Il client ha applicato i resource pack: gli diciamo che mondo è e dove si trova.
     pub(crate) fn start_game(&mut self, pid: u64) {
+        if !self.player_data_ready(pid) {
+            return;
+        }
         let Some((sx, sy, sz)) = self.spawn else {
             log!("[#{pid}] lo spawn non è ancora noto: StartGame aspetta il generatore");
             self.waiting_start.push(pid);
@@ -195,17 +242,21 @@ impl Server {
         };
         let spawn = BlockPos { x: sx, y: sy, z: sz };
         // Gli occhi stanno 1.62 sopra i piedi, al centro del blocco di spawn.
-        let eyes = [sx as f32 + 0.5, sy as f32 + 1.62, sz as f32 + 0.5];
-        if let Some(p) = self.players.get_mut(&pid) {
-            p.pos = eyes;
-            p.last_chunk = chunk_of(eyes[0], eyes[2]);
+        let mut eyes = [sx as f32 + 0.5, sy as f32 + EYE_HEIGHT, sz as f32 + 0.5];
+        let Some(p) = self.players.get_mut(&pid) else { return };
+        if let Some(feet) = p.saved_feet.take() {
+            eyes = [feet[0], feet[1] + EYE_HEIGHT, feet[2]]; // la posizione salvata vale più dello spawn
         }
-        let mode = self.players.get(&pid).map_or_else(GameMode::default, |p| p.mode);
+        p.pos = eyes;
+        p.last_chunk = chunk_of(eyes[0], eyes[2]);
+        p.started = true; // da qui posizione e inventario sono quelli veri: all'uscita si salvano
+        let (mode, rotation) = (p.mode, Vec2 { x: p.pitch, y: p.yaw });
         let start = StartGame {
             entity_id: pid as i64,
             runtime_id: pid,
             game_type: mode as i32,
             position: Vec3 { x: eyes[0], y: eyes[1], z: eyes[2] }, // occhi del giocatore
+            rotation,
             settings: LevelSettings {
                 spawn_settings: SpawnSettings { dimension: 0, ..Default::default() },
                 generator_type: if self.flat { enums::generator_type::FLAT } else { enums::generator_type::OVERWORLD },

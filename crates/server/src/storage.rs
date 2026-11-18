@@ -31,6 +31,8 @@ use vgen::{BlockEntity, ChunkData, Dim, Section};
 /// (commit bdb44a48, "Updated from 1.26.30"): tutti i 16913 stati hanno `version` = 18168865 = 0x01153C21 (1.21.60.33).
 /// Il gioco aggiorna da sé le versioni più vecchie al caricamento.
 pub const BLOCK_STATE_VERSION: i32 = 18_168_865;
+/// Inizio delle chiavi dei dati veri di un giocatore (il record `player_<id>` punta a una di queste).
+const SERVER_PREFIX: &str = "player_server_";
 /// Valore del tag `0x2C` (versione del chunk, 1.18.30+).
 const CHUNK_VERSION: u8 = 40;
 /// Versione dei sotto-chunk scritti (con indice di sezione nel corpo).
@@ -171,7 +173,7 @@ fn chunk_key(dim: Dim, x: i32, z: i32, tag: u8) -> Vec<u8> {
 
 /// Nome e hash di rete di un compound `{name, states, ...}` (il resto, `version` compresa, è ignorato). Gli stati sono
 /// ordinati da `block_hash`, quindi l'ordine su disco non conta.
-fn block_from_tag(tag: &Tag) -> Option<(String, i32)> {
+pub(crate) fn block_from_tag(tag: &Tag) -> Option<(String, i32)> {
     let name = tag.get("name")?.as_str()?;
     let Tag::Compound(items) = tag.get("states")? else { return None };
     let mut states = Vec::with_capacity(items.len());
@@ -270,6 +272,16 @@ impl<'a> Cur<'a> {
         }
         Ok((indices, count))
     }
+}
+
+/// UUID casuale (versione 4) in forma testuale.
+fn uuid_v4() -> String {
+    let mut b = [0u8; 16];
+    getrandom::fill(&mut b).expect("generatore casuale non disponibile");
+    b[6] = b[6] & 0x0f | 0x40;
+    b[8] = b[8] & 0x3f | 0x80;
+    let hex: String = b.iter().map(|x| format!("{x:02x}")).collect();
+    format!("{}-{}-{}-{}-{}", &hex[..8], &hex[8..12], &hex[12..16], &hex[16..20], &hex[20..])
 }
 
 /// Secondi dall'epoca Unix, per `LastPlayed`.
@@ -444,6 +456,58 @@ impl World {
     /// Scarica le scritture sul disco.
     pub fn flush(&mut self) -> io::Result<()> {
         self.db.call(Op::Flush)
+    }
+
+    // ---------- dati dei giocatori ----------
+
+    /// `ServerId` del record `player_<identity>`; `None` se il record manca. `Err` se esiste ma non si legge.
+    fn player_server_id(&self, identity: &str) -> Result<Option<String>, String> {
+        let Some(bytes) = self.db_get(format!("player_{identity}").as_bytes()).map_err(|e| format!("database: {e}"))? else { return Ok(None) };
+        let (_, record) = Reader::new(&bytes, Enc::Disk).root().ok_or("record del giocatore illeggibile")?;
+        // la chiave dei dati deve essere una `player_server_*`: un record alterato non può puntare ai chunk o ad altro
+        match record.get("ServerId").and_then(Tag::as_str) {
+            Some(id) if id.starts_with(SERVER_PREFIX) => Ok(Some(id.to_string())),
+            _ => Err("record del giocatore senza ServerId valido".into()),
+        }
+    }
+
+    /// Dati salvati di un giocatore (NBT su disco, tali e quali). `None` se non ne ha mai salvati o non si leggono (con una riga di log).
+    pub fn load_player(&mut self, identity: &str) -> Option<Vec<u8>> {
+        let result = self.player_server_id(identity).and_then(|id| match id {
+            Some(id) => self.db_get(id.as_bytes()).map_err(|e| format!("database: {e}")),
+            None => Ok(None),
+        });
+        result.unwrap_or_else(|e| {
+            log!("[mondo] dati di {identity} illeggibili, si parte da capo: {e}");
+            None
+        })
+    }
+
+    /// Salva i dati del giocatore come i server dedicati: il record `player_<identity>` (`MsaId`, `SelfSignedId`, `ServerId`) punta a
+    /// `player_server_<uuid>` con i dati veri. L'UUID si genera la prima volta e poi si riusa.
+    pub fn save_player(&mut self, identity: &str, nbt: &[u8]) -> io::Result<()> {
+        let existing = self.player_server_id(identity).unwrap_or_else(|e| {
+            log!("[mondo] record di {identity} da rifare: {e}");
+            None
+        });
+        let mut ops = Vec::with_capacity(2);
+        let server_id = match existing {
+            Some(id) => id,
+            None => {
+                let id = format!("{SERVER_PREFIX}{}", uuid_v4());
+                // L'XUID è l'`MsaId`; senza account Xbox l'identità è una `name:<nome>` e va in `SelfSignedId` (non verificato su un mondo vero).
+                let (msa, self_signed) = if identity.starts_with("name:") { ("", identity) } else { (identity, "") };
+                let record = Tag::Compound(vec![
+                    ("MsaId".into(), Tag::String(msa.into())),
+                    ("SelfSignedId".into(), Tag::String(self_signed.into())),
+                    ("ServerId".into(), Tag::String(id.clone())),
+                ]);
+                ops.push((format!("player_{identity}").into_bytes(), Some(nbt::write_root("", &record, Enc::Disk))));
+                id
+            }
+        };
+        ops.push((server_id.into_bytes(), Some(nbt.to_vec())));
+        self.db.call(|reply| Op::Write(ops, reply))
     }
 
     // ---------- scrittura dei chunk ----------
@@ -991,5 +1055,60 @@ mod tests {
         let raw = db.get(&key).expect("sotto-chunk presente");
         assert_eq!(raw[0], 9);
         assert_eq!(db.get(&chunk_key(Dim::Overworld, 2, 3, 0x2c)).unwrap().to_vec(), [40]);
+    }
+
+    #[test]
+    fn save_load_player_in_world() {
+        let dir = TempDir::new("player");
+        let mut w = open(&dir);
+        assert_eq!(w.load_player("2535"), None, "mai salvato");
+        let nbt = nbt::write_root("", &Tag::Compound(vec![("Pos".into(), Tag::Int(1))]), Enc::Disk);
+        w.save_player("2535", &nbt).unwrap();
+        assert_eq!(w.load_player("2535"), Some(nbt.clone()));
+
+        let map = w.db_get(b"player_2535").unwrap().expect("chiave player_<id>");
+        let (_, map) = Reader::new(&map, Enc::Disk).root().unwrap();
+        let server_id = map.get("ServerId").and_then(Tag::as_str).unwrap().to_string();
+        assert!(server_id.starts_with("player_server_"), "{server_id}");
+        assert_eq!(map.get("MsaId").and_then(Tag::as_str), Some("2535"));
+        assert!(map.get("SelfSignedId").is_some());
+        assert_eq!(w.db_get(server_id.as_bytes()).unwrap(), Some(nbt.clone()), "dati in player_server_<uuid>");
+        let uuid = &server_id["player_server_".len()..];
+        assert_eq!(uuid.len(), 36, "UUID testuale");
+        assert_eq!(uuid.matches('-').count(), 4);
+
+        // sopravvive alla riapertura
+        w.flush().unwrap();
+        drop(w);
+        let mut w = open(&dir);
+        assert_eq!(w.load_player("2535"), Some(nbt));
+    }
+
+    #[test]
+    fn same_identity_reuses_server_id() {
+        let dir = TempDir::new("player-id");
+        let mut w = open(&dir);
+        let server_id = |w: &World, id: &str| {
+            let map = w.db_get(format!("player_{id}").as_bytes()).unwrap().unwrap();
+            Reader::new(&map, Enc::Disk).root().unwrap().1.get("ServerId").and_then(Tag::as_str).unwrap().to_string()
+        };
+        w.save_player("2535", &[0x0a, 0, 0]).unwrap();
+        let first = server_id(&w, "2535");
+        w.save_player("2535", &nbt::write_root("", &Tag::Compound(vec![("A".into(), Tag::Int(1))]), Enc::Disk)).unwrap();
+        assert_eq!(server_id(&w, "2535"), first, "stesso giocatore, stesso ServerId");
+        assert_eq!(w.load_player("2535").map(|b| b.len()), Some(nbt::write_root("", &Tag::Compound(vec![("A".into(), Tag::Int(1))]), Enc::Disk).len()));
+        w.save_player("name:Bob", &[0x0a, 0, 0]).unwrap();
+        assert_ne!(server_id(&w, "name:Bob"), first, "un altro giocatore ha il suo");
+        assert_eq!(w.load_player("2535").map(|b| b.len()), Some(nbt::write_root("", &Tag::Compound(vec![("A".into(), Tag::Int(1))]), Enc::Disk).len()));
+    }
+
+    #[test]
+    fn broken_player_record_is_ignored() {
+        let dir = TempDir::new("player-bad");
+        let mut w = open(&dir);
+        w.db_put(b"player_7", b"non nbt").unwrap();
+        assert_eq!(w.load_player("7"), None, "mappatura illeggibile: si parte da capo");
+        w.save_player("7", &[0x0a, 0, 0]).unwrap(); // e si può risalvare
+        assert!(w.load_player("7").is_some());
     }
 }

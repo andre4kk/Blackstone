@@ -13,11 +13,15 @@ use vgen::Dim;
 pub(crate) enum DiskEvent {
     /// Chunk letto (`None` se non è mai stato salvato o è illeggibile).
     Loaded(Dim, i32, i32, Option<Chunk>),
+    /// Dati salvati di un giocatore (`None` se non ne ha o sono illeggibili); il numero è l'ID della connessione.
+    PlayerLoaded(u64, Option<Vec<u8>>),
 }
 
 enum Cmd {
     Load(Dim, i32, i32),
     Save(Box<Chunk>),
+    LoadPlayer(u64, String),
+    SavePlayer(String, Vec<u8>),
     Palette(Vec<(i32, Vec<u8>)>),
     Spawn(i32, i32, i32),
     Flush(mpsc::Sender<()>),
@@ -44,6 +48,15 @@ impl Disk {
                         Cmd::Save(chunk) => {
                             if let Err(e) = world.save(&chunk) {
                                 log!("[mondo] salvataggio del chunk {},{} fallito: {e}", chunk.x, chunk.z);
+                            }
+                        }
+                        Cmd::LoadPlayer(pid, identity) => {
+                            let data = world.load_player(&identity);
+                            let _ = events.send(DiskEvent::PlayerLoaded(pid, data));
+                        }
+                        Cmd::SavePlayer(identity, nbt) => {
+                            if let Err(e) = world.save_player(&identity, &nbt) {
+                                log!("[mondo] salvataggio dei dati di {identity} fallito: {e}");
                             }
                         }
                         Cmd::Palette(entries) => world.set_palette(entries),
@@ -73,6 +86,15 @@ impl Disk {
 
     pub(crate) fn save(&self, chunk: Chunk) {
         self.send(Cmd::Save(Box::new(chunk)));
+    }
+
+    /// Chiede i dati salvati del giocatore `identity`: la risposta arriva come `DiskEvent::PlayerLoaded(pid, ..)`.
+    pub(crate) fn load_player(&self, pid: u64, identity: String) {
+        self.send(Cmd::LoadPlayer(pid, identity));
+    }
+
+    pub(crate) fn save_player(&self, identity: String, nbt: Vec<u8>) {
+        self.send(Cmd::SavePlayer(identity, nbt));
     }
 
     pub(crate) fn set_palette(&self, entries: Vec<(i32, Vec<u8>)>) {

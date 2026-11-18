@@ -1,5 +1,5 @@
 //! Un handler per ogni pacchetto che il server sa gestire.
-use crate::{inventory::HOTBAR_SLOTS, Player, Server, HEX_LOGS};
+use crate::{inventory::HOTBAR_SLOTS, playerdata, Player, Server, HEX_LOGS};
 use bedrock_net::log;
 use bedrock_protocol::{
     generated::MobEquipment,
@@ -23,8 +23,11 @@ impl Server {
         log!("[#{pid}] disconnesso");
         let name = self.name(pid);
         self.waiting_start.retain(|&w| w != pid);
-        if self.players.remove(&pid).is_some_and(|p| p.spawned) {
-            self.broadcast(Text::new(text_type::RAW, format!("§e{name} ha lasciato il gioco")));
+        if let Some(mut p) = self.players.remove(&pid) {
+            playerdata::persist(self.disk.as_ref(), &mut p);
+            if p.spawned {
+                self.broadcast(Text::new(text_type::RAW, format!("§e{name} ha lasciato il gioco")));
+            }
         }
     }
 

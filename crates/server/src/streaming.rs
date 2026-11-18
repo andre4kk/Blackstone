@@ -312,7 +312,10 @@ impl Server {
     }
 
     pub(crate) fn on_disk_event(&mut self, event: DiskEvent) {
-        let DiskEvent::Loaded(dim, x, z, chunk) = event;
+        let (dim, x, z, chunk) = match event {
+            DiskEvent::Loaded(dim, x, z, chunk) => (dim, x, z, chunk),
+            DiskEvent::PlayerLoaded(pid, data) => return self.on_player_loaded(pid, data),
+        };
         let key = (dim as u8, x, z);
         self.loading.remove(&key);
         match chunk {

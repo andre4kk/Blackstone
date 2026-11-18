@@ -12,6 +12,7 @@ mod inventory;
 mod join;
 mod nbt;
 mod placement;
+mod playerdata;
 mod registry;
 mod storage;
 mod streaming;
@@ -65,6 +66,11 @@ pub(crate) enum GameMode {
 }
 
 impl GameMode {
+    /// Dal numero salvato nei dati del giocatore; `None` per quelli che il server non conosce.
+    pub(crate) fn from_i32(v: i32) -> Option<GameMode> {
+        [GameMode::Survival, GameMode::Creative, GameMode::Adventure, GameMode::Spectator].into_iter().find(|&m| m as i32 == v)
+    }
+
     /// Vero se il giocatore può prendere oggetti dal menu creativo e cestinarli.
     pub(crate) fn creative_inventory(self) -> bool {
         matches!(self, GameMode::Creative | GameMode::Spectator)
@@ -106,6 +112,24 @@ struct Player {
     sneaking: bool,
     /// Ultimo blocco di cui si è tentata la rottura, col tick: la stessa rottura chiesta due volte nello stesso tick vale una.
     last_break: Option<(u64, [i32; 3])>,
+    /// A che punto sono i dati salvati del giocatore (vedi [`DataState`]).
+    data: DataState,
+    /// Posizione dei piedi salvata nel mondo, in attesa di `StartGame`.
+    saved_feet: Option<[f32; 3]>,
+    /// Vero da quando `StartGame` ha fissato posizione e inventario: solo allora i dati sono quelli veri e si possono salvare.
+    started: bool,
+}
+
+/// Il caricamento dei dati salvati di un giocatore (vedi `playerdata`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum DataState {
+    /// Non ancora chiesti al disco.
+    #[default]
+    Unrequested,
+    /// Chiesti al disco, risposta non arrivata: l'inventario in memoria è vuoto e non va mai salvato.
+    Loading,
+    /// Arrivati (o non c'è un disco da cui leggerli).
+    Loaded,
 }
 
 /// Quanti pacchetti per giocatore si registrano in esadecimale (richieste di pila e input con azioni).
@@ -223,10 +247,13 @@ impl Server {
         saved
     }
 
-    /// Chiusura ordinata: salva i chunk modificati e scarica il database.
+    /// Chiusura ordinata: salva i giocatori ancora connessi e i chunk modificati, poi scarica il database.
     fn shutdown(&mut self) {
         if self.disk.is_none() {
             return;
+        }
+        for p in self.players.values_mut() {
+            playerdata::persist(self.disk.as_ref(), p);
         }
         let saved = self.save_dirty();
         if let Some(disk) = &self.disk {

@@ -28,11 +28,11 @@ pub(crate) const MAIN_SLOTS: usize = 36;
 /// Caselle della barra rapida.
 pub(crate) const HOTBAR_SLOTS: u8 = 9;
 /// Caselle di armatura (elmo, corpetto, gambali, stivali).
-const ARMOR_SLOTS: usize = 4;
+pub(crate) const ARMOR_SLOTS: usize = 4;
 /// Casella di `CreatedOutput` dove sta l'oggetto appena preso dal menu creativo (P§5.3).
 const CREATED_SLOT: u8 = 50;
 /// Massimo di una pila. Il server non conosce ancora il massimo di ogni oggetto: 64 vale come tetto per tutti.
-const MAX_STACK: u16 = 64;
+pub(crate) const MAX_STACK: u16 = 64;
 /// Richieste con modifiche non ancora confermate dal client (D§8.2): oltre, le richieste si rifiutano.
 const MAX_PENDING: usize = 256;
 /// Dopo questo tempo una modifica non confermata si dimentica.
@@ -268,6 +268,42 @@ impl Inventory {
             }
             .packet(),
         )
+    }
+
+    /// Oggetto della casella `i` dell'inventario principale (0-8 barra).
+    pub fn main(&self, i: usize) -> &Item {
+        &self.contents.main[i].item
+    }
+
+    pub fn offhand(&self) -> &Item {
+        &self.contents.offhand.item
+    }
+
+    /// Oggetto dell'armatura: 0 elmo, 1 corpetto, 2 gambali, 3 stivali.
+    pub fn armor(&self, i: usize) -> &Item {
+        &self.contents.armor[i].item
+    }
+
+    /// Mette un oggetto in una casella (dati caricati dal disco): una casella piena prende un ID di pila nuovo.
+    fn fill(&mut self, loc: Loc, item: Item) {
+        let stack_id = if item.is_empty() { 0 } else { self.new_id() };
+        *self.contents.get_mut(loc) = Slot { item: if stack_id == 0 { Item::default() } else { item }, stack_id };
+    }
+
+    pub fn set_main(&mut self, i: usize, item: Item) {
+        if i < MAIN_SLOTS {
+            self.fill(Loc::Main(i as u8), item);
+        }
+    }
+
+    pub fn set_offhand(&mut self, item: Item) {
+        self.fill(Loc::Offhand, item);
+    }
+
+    pub fn set_armor(&mut self, i: usize, item: Item) {
+        if i < ARMOR_SLOTS {
+            self.fill(Loc::Armor(i as u8), item);
+        }
     }
 
     fn stack_of(&self, loc: Loc) -> ItemStack {
