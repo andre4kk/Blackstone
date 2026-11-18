@@ -19,8 +19,8 @@ fn nbt_name(b: &mut Vec<u8>, s: &str) {
     b.extend_from_slice(s.as_bytes());
 }
 
-/// Hash dello stato di un blocco, usato come ID di rete. Gli stati vanno in ordine alfabetico.
-pub fn block_hash(name: &str, states: &[(&str, State)]) -> i32 {
+/// NBT su disco little-endian `{name, states}` di uno stato di blocco. Gli stati vanno in ordine alfabetico.
+pub fn block_nbt(name: &str, states: &[(&str, State)]) -> Vec<u8> {
     let mut states = states.to_vec();
     states.sort_by_key(|s| s.0);
     let mut nbt = vec![0x0a, 0, 0, 0x08]; // compound radice senza nome, stringa "name"
@@ -36,7 +36,12 @@ pub fn block_hash(name: &str, states: &[(&str, State)]) -> i32 {
         };
     }
     nbt.extend_from_slice(&[0, 0]); // fine di "states" e della radice
-    nbt.iter().fold(0x811c_9dc5u32, |h, &b| (h ^ b as u32).wrapping_mul(0x0100_0193)) as i32
+    nbt
+}
+
+/// Hash dello stato di un blocco, usato come ID di rete (FNV-1a di [`block_nbt`]).
+pub fn block_hash(name: &str, states: &[(&str, State)]) -> i32 {
+    block_nbt(name, states).iter().fold(0x811c_9dc5u32, |h, &b| (h ^ b as u32).wrapping_mul(0x0100_0193)) as i32
 }
 
 /// ID numerico del bioma "pianura" (dai dati ufficiali di Mojang).
@@ -46,32 +51,34 @@ pub const PLAINS: u16 = 1;
 pub const GROUND_Y: i32 = -60; // y del primo blocco d'aria sopra l'erba
 
 /// Larghezze in bit per blocco ammesse da Bedrock.
-const BIT_WIDTHS: [u8; 8] = [1, 2, 3, 4, 5, 6, 8, 16];
+pub(crate) const BIT_WIDTHS: [u8; 8] = [1, 2, 3, 4, 5, 6, 8, 16];
 
 /// Bit per blocco per una palette di `len` voci: 0 se ce n'è una sola, altrimenti la più piccola larghezza ammessa che basta.
-fn bits_for_palette(len: usize) -> u8 {
+pub(crate) fn bits_for_palette(len: usize) -> u8 {
     if len <= 1 {
         return 0;
     }
     BIT_WIDTHS.iter().copied().find(|&b| len <= 1usize << b).unwrap_or(16)
 }
 
-/// Scrive uno storage con palette: intestazione, parole impacchettate (`32 / bits` voci per parola, senza spezzarle),
-/// numero di voci della palette e voci. Con una sola voce (0 bit) non si scrivono né parole né numero di voci: segue la voce
-/// unica (come nel vecchio mondo piatto, verificato col client).
+/// Parole impacchettate di uno storage a `bits` bit per voce (`32 / bits` voci per parola, senza spezzarle); nessuna se `bits` è 0.
+pub(crate) fn pack_words(bits: u8, index_at: impl Fn(usize) -> usize) -> Vec<u32> {
+    if bits == 0 {
+        return Vec::new();
+    }
+    let per_word = 32 / bits as usize;
+    (0..4096usize.div_ceil(per_word))
+        .map(|word| (0..per_word.min(4096 - word * per_word)).fold(0u32, |v, k| v | (index_at(word * per_word + k) as u32) << (k * bits as usize)))
+        .collect()
+}
+
+/// Scrive uno storage con palette: intestazione, parole impacchettate, numero di voci della palette e voci.
+/// Con una sola voce (0 bit) non si scrivono né parole né numero di voci: segue la voce unica
+/// (come nel vecchio mondo piatto, verificato col client).
 fn write_storage(w: &mut Writer, palette: &[i32], index_at: impl Fn(usize) -> usize) {
     let bits = bits_for_palette(palette.len());
     w.u8((bits << 1) | 1); // bit basso = ID di rete (non NBT)
-    if bits > 0 {
-        let per_word = 32 / bits as usize;
-        for word in 0..4096usize.div_ceil(per_word) {
-            let mut v = 0u32;
-            for k in 0..per_word.min(4096 - word * per_word) {
-                v |= (index_at(word * per_word + k) as u32) << (k * bits as usize);
-            }
-            w.u32(v);
-        }
-    }
+    pack_words(bits, index_at).into_iter().for_each(|word| w.u32(word));
     if bits > 0 {
         w.var_i32(palette.len() as i32);
     }
@@ -80,19 +87,19 @@ fn write_storage(w: &mut Writer, palette: &[i32], index_at: impl Fn(usize) -> us
 
 /// Chunk in memoria: sezioni indicate dalla più bassa della dimensione (`None` = sezione di sola aria).
 #[derive(Clone, Debug)]
-#[allow(dead_code)] // x, z e dirty serviranno con streaming e salvataggio
+#[allow(dead_code)] // x, z e dirty serviranno con lo streaming
 pub(crate) struct Chunk {
     pub dim: Dim,
     pub x: i32,
     pub z: i32,
-    sections: Vec<Option<Section>>,
-    block_entities: Vec<BlockEntity>,
+    pub(crate) sections: Vec<Option<Section>>,
+    pub(crate) block_entities: Vec<BlockEntity>,
     pub dirty: bool,
 }
 
 impl Chunk {
     /// Indice della sezione più bassa della dimensione e numero di sezioni.
-    fn section_range(dim: Dim) -> (i32, usize) {
+    pub(crate) fn section_range(dim: Dim) -> (i32, usize) {
         let (min, max) = dim.height_range();
         (min.div_euclid(16), ((max - min) / 16) as usize)
     }

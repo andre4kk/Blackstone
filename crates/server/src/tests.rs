@@ -121,3 +121,29 @@ fn overlong_chat_messages_are_rejected() {
     h.receive(2, &[chat("ok")]);
     assert_eq!(h.texts_to(1).iter().filter(|t| t.kind == text_type::CHAT && t.message == "ok").count(), 1);
 }
+
+#[test]
+fn flush_on_shutdown_writes_dirty_chunks() {
+    use crate::{storage::World, world::Chunk};
+    use vgen::Dim;
+
+    let dir = std::env::temp_dir().join(format!("versmc-test-shutdown-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    let (sender, _sent) = Sender::for_tests();
+    let mut server = Server::with_world(sender, World::open_with(&dir, "Prova", Some(7)).unwrap());
+    let mut dirty = Chunk::flat(Dim::Overworld, 2, 3);
+    dirty.dirty = true;
+    let clean = Chunk::flat(Dim::Overworld, 4, 4); // non modificato: non va riscritto
+    let expected = dirty.network_bytes();
+    server.chunks.insert((0, 2, 3), dirty);
+    server.chunks.insert((0, 4, 4), clean);
+    server.shutdown();
+    assert!(!server.chunks[&(0, 2, 3)].dirty, "salvato e ripulito");
+    drop(server);
+
+    let mut world = World::open(&dir).unwrap();
+    assert_eq!(world.load(Dim::Overworld, 2, 3).expect("chunk modificato salvato").network_bytes(), expected);
+    assert!(world.load(Dim::Overworld, 4, 4).is_none(), "il chunk pulito non viene scritto");
+    drop(world);
+    let _ = std::fs::remove_dir_all(&dir);
+}

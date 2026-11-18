@@ -1,0 +1,18 @@
+# Configurazione di VersMCBE. Copia questo file in `server.toml` (nella cartella da cui avvii il server):
+# se `server.toml` manca, il server lo crea da solo con questi valori.
+
+# Nome del mondo: i dati stanno in `worlds/<world>`.
+world = "Mondo"
+
+# Seme del mondo. Se manca viene scelto a caso alla prima creazione e salvato in `level.dat`;
+# per un mondo già esistente vale sempre il seme salvato. Valore massimo: 9223372036854775807.
+# seed = 12345
+
+# Programma del generatore. Su Windows il suffisso `.exe` si aggiunge da solo se manca.
+generator = "generator/target/release/versmc-gen"
+
+# Raggio di chunk inviato a ogni giocatore.
+view_distance = 6
+
+# Porta TCP (signaling) e UDP (gioco).
+port = 19132
