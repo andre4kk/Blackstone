@@ -15,12 +15,13 @@ pub mod key {
     pub const BOUNDING_BOX_HEIGHT: u32 = 54;
 }
 
-/// Bit della chiave `FLAGS` (PocketMine `EntityMetadataFlags`, gophertunnel `EntityDataFlag*`).
+/// Bit della chiave `FLAGS` (`ActorFlags`). Dal protocollo 560 CAN_DASH(46) ha spostato di uno tutti i successivi
+/// (changelog_560 di bedrock-protocol-docs): gravità 49, collisioni 48. Con 48 il giocatore restava senza gravità.
 pub mod flag {
     pub const CAN_CLIMB: u32 = 19;
     pub const BREATHING: u32 = 35;
-    pub const HAS_COLLISION: u32 = 47;
-    pub const HAS_GRAVITY: u32 = 48;
+    pub const HAS_COLLISION: u32 = 48;
+    pub const HAS_GRAVITY: u32 = 49;
 }
 
 /// Un valore sincronizzato; il numero è sia l'indice di variante sia il `DataItemType`.
@@ -75,11 +76,11 @@ mod tests {
 
     #[test]
     fn flags_entry_is_tagged_variant_then_zigzag_value() {
-        let p = set_actor_data(1, &[(key::FLAGS, DataValue::Int64(1 << 48))]);
+        let p = set_actor_data(1, &[(key::FLAGS, DataValue::Int64(1 << 49))]);
         assert_eq!(p.id, 39);
         let mut expected = vec![1, 1, 0, 7, 7];
         let mut v = Writer::default();
-        v.var_i64(1 << 48);
+        v.var_i64(1 << 49);
         expected.extend(v.0);
         expected.extend([0, 0, 0]);
         assert_eq!(p.body, expected);
@@ -89,7 +90,7 @@ mod tests {
     fn player_data_has_gravity_and_collision() {
         let body = player_data(5).body;
         let mut flags = Writer::default();
-        flags.var_i64((1 << 48) | (1 << 47) | (1 << 19) | (1 << 35));
+        flags.var_i64((1 << 49) | (1 << 48) | (1 << 19) | (1 << 35)); // gravità 49 e collisioni 48 (changelog_560)
         assert_eq!(body[..5], [5, 3, 0, 7, 7]);
         assert_eq!(body[5..5 + flags.0.len()], flags.0[..]);
     }
