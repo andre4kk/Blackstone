@@ -95,6 +95,15 @@ struct Server {
     requested: HashSet<ChunkKey>,
     /// Chunk in lettura dal disco.
     loading: HashSet<ChunkKey>,
+    /// Chunk da chiedere al generatore, in attesa che ci sia posto tra le richieste in volo (`MAX_GEN_IN_FLIGHT`).
+    queue: HashSet<ChunkKey>,
+    /// Richieste fallite per chunk (il generatore ha risposto con un errore).
+    chunk_fails: HashMap<ChunkKey, u8>,
+    /// Chunk falliti da richiedere di nuovo, con l'istante del nuovo tentativo.
+    retry_after: HashMap<ChunkKey, Instant>,
+    /// Richieste dello spawn fallite e istante del prossimo tentativo.
+    spawn_fails: u8,
+    spawn_retry_at: Option<Instant>,
     /// Raggio massimo di chunk concesso ai giocatori.
     max_radius: i32,
 }
@@ -116,6 +125,11 @@ impl Server {
             chunks: HashMap::new(),
             requested: HashSet::new(),
             loading: HashSet::new(),
+            queue: HashSet::new(),
+            chunk_fails: HashMap::new(),
+            retry_after: HashMap::new(),
+            spawn_fails: 0,
+            spawn_retry_at: None,
             max_radius: join::MAX_RADIUS,
         }
     }

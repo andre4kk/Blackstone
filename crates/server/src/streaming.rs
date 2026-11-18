@@ -6,11 +6,22 @@ use bedrock_protocol::{
     wire::ServerPacket,
     Packet,
 };
-use std::collections::HashSet;
+use std::{
+    collections::HashSet,
+    time::{Duration, Instant},
+};
 use vgen::{ChunkData, Dim};
 
 /// Chunk inviati al massimo a ogni giocatore per tick.
 pub(crate) const CHUNKS_PER_TICK: usize = 8;
+/// Richieste al generatore in volo (inviate e senza risposta) al massimo: le altre aspettano nella coda del server.
+pub(crate) const MAX_GEN_IN_FLIGHT: usize = 64;
+/// Attesa prima di richiedere di nuovo al generatore un chunk (o lo spawn) finito con un errore.
+const GEN_RETRY_DELAY: Duration = Duration::from_secs(5);
+/// Tentativi per chunk o spawn (il primo compreso); dopo l'ultimo errore si ripiega.
+const GEN_MAX_ATTEMPTS: u8 = 3;
+/// Spawn usato quando il generatore non riesce a calcolarlo.
+pub(crate) const FALLBACK_SPAWN: (i32, i32, i32) = (0, 100, 0);
 /// Chunk tenuti in memoria oltre il raggio dei giocatori, per non ricaricare chi fa avanti e indietro al bordo.
 const UNLOAD_MARGIN: i32 = 2;
 
@@ -56,6 +67,7 @@ impl Server {
     /// chiedono al disco e, se non ci sono, al generatore. Poi si scaricano i chunk lontani da tutti.
     pub(crate) fn stream_tick(&mut self) {
         let pids: Vec<u64> = self.players.iter().filter(|(_, p)| p.spawned && p.streaming).map(|(&id, _)| id).collect();
+        let wanted_all: HashSet<(i32, i32)> = pids.iter().filter_map(|id| self.players.get(id)).flat_map(|p| wanted(p.last_chunk, p.radius)).collect();
         for pid in pids {
             let Some(p) = self.players.get(&pid) else { continue };
             let (mut ready, mut missing) = (Vec::new(), Vec::new());
@@ -93,7 +105,46 @@ impl Server {
                 p.sent.extend(ready);
             }
         }
+        self.pump_generator(&wanted_all);
         self.unload_far();
+    }
+
+    /// Richieste al generatore: riprende i tentativi scaduti (chunk e spawn), toglie dalla coda i chunk che nessun giocatore
+    /// vuole piu e manda i piu vicini finche ci sono meno di `MAX_GEN_IN_FLIGHT` richieste in volo.
+    fn pump_generator(&mut self, wanted_all: &HashSet<(i32, i32)>) {
+        let now = Instant::now();
+        if self.spawn.is_none() && self.spawn_retry_at.is_some_and(|t| now >= t) {
+            self.spawn_retry_at = None;
+            if let Some(gen) = &self.gen {
+                gen.request_spawn(Dim::Overworld);
+            }
+        }
+        let due: Vec<ChunkKey> = self.retry_after.iter().filter(|(_, &t)| now >= t).map(|(&k, _)| k).collect();
+        for key in due {
+            self.retry_after.remove(&key);
+            self.queue.insert(key);
+        }
+        let stale: Vec<ChunkKey> = self.queue.iter().chain(self.retry_after.keys()).filter(|k| !wanted_all.contains(&(k.1, k.2))).copied().collect();
+        for key in stale {
+            self.queue.remove(&key);
+            self.retry_after.remove(&key);
+            self.chunk_fails.remove(&key);
+        }
+        let free = MAX_GEN_IN_FLIGHT.saturating_sub(self.requested.len());
+        let Some(gen) = &self.gen else { return };
+        if free == 0 || self.queue.is_empty() {
+            return;
+        }
+        let centers: Vec<(i32, i32)> = self.players.values().filter(|p| p.spawned && p.streaming).map(|p| p.last_chunk).collect();
+        let distance = |k: &ChunkKey| centers.iter().map(|c| (k.1 - c.0).pow(2) + (k.2 - c.1).pow(2)).min().unwrap_or(0);
+        let mut next: Vec<ChunkKey> = self.queue.iter().copied().collect();
+        next.sort_by_key(|k| (distance(k), k.1, k.2));
+        for key in next.into_iter().take(free) {
+            let Ok(dim) = Dim::try_from(key.0) else { continue };
+            self.queue.remove(&key);
+            self.requested.insert(key);
+            gen.request_chunk(dim, key.1, key.2);
+        }
     }
 
     /// Toglie dalla memoria i chunk fuori dal raggio + `UNLOAD_MARGIN` di tutti i giocatori, salvando quelli modificati.
@@ -117,7 +168,7 @@ impl Server {
     /// Chiede un chunk che manca in memoria: prima al disco, poi al generatore. Non fa nulla se è già in arrivo.
     fn fetch(&mut self, dim: Dim, x: i32, z: i32) {
         let key = (dim as u8, x, z);
-        if self.requested.contains(&key) || self.loading.contains(&key) {
+        if self.requested.contains(&key) || self.loading.contains(&key) || self.queue.contains(&key) || self.retry_after.contains_key(&key) {
             return;
         }
         match &self.disk {
@@ -133,9 +184,8 @@ impl Server {
     fn generate(&mut self, dim: Dim, x: i32, z: i32) {
         let key = (dim as u8, x, z);
         match (&self.gen, self.flat) {
-            (Some(gen), false) => {
-                self.requested.insert(key);
-                gen.request_chunk(dim, x, z);
+            (Some(_), false) => {
+                self.queue.insert(key); // la coda la svuota `pump_generator`
             }
             _ => {
                 self.chunks.entry(key).or_insert_with(|| Chunk::flat(dim, x, z));
@@ -148,6 +198,8 @@ impl Server {
     pub(crate) fn on_chunk(&mut self, data: ChunkData) {
         let key = (data.dim as u8, data.x, data.z);
         self.requested.remove(&key);
+        self.queue.remove(&key);
+        self.chunk_fails.remove(&key);
         if self.chunks.contains_key(&key) {
             return; // già in memoria (anche modificato): non si sovrascrive
         }
@@ -174,12 +226,27 @@ impl Server {
             GenEvent::Spawn(Dim::Overworld, x, y, z) => {
                 log!("[mondo] spawn calcolato dal generatore e salvato: {x}, {y}, {z}");
                 self.spawn = Some((x, y, z));
+                self.spawn_retry_at = None;
                 if let Some(disk) = &self.disk {
                     disk.set_spawn(x, y, z);
                 }
                 self.resume_waiting_logins();
             }
             GenEvent::Spawn(dim, ..) => log!("[gen] spawn di {dim:?} ignorato"),
+            GenEvent::ChunkFailed(dim, x, z, reason) => self.on_chunk_failed(dim, x, z, &reason),
+            GenEvent::SpawnFailed(Dim::Overworld, reason) => {
+                self.spawn_fails += 1;
+                if self.spawn_fails >= GEN_MAX_ATTEMPTS {
+                    log!("[gen] spawn non calcolabile dopo {} tentativi ({reason}): uso {FALLBACK_SPAWN:?} senza salvarlo", self.spawn_fails);
+                    self.spawn = Some(FALLBACK_SPAWN);
+                    self.spawn_retry_at = None;
+                    self.resume_waiting_logins();
+                } else {
+                    log!("[gen] spawn non calcolabile ({reason}): riprovo tra {} s", GEN_RETRY_DELAY.as_secs());
+                    self.spawn_retry_at = Some(Instant::now() + GEN_RETRY_DELAY);
+                }
+            }
+            GenEvent::SpawnFailed(dim, reason) => log!("[gen] errore per lo spawn di {dim:?} ignorato: {reason}"),
             GenEvent::Down(reason) if !self.gen_ready && !self.flat => {
                 log!("[gen] generatore assente ({reason}): uso il mondo piatto di ripiego; riavvia il server dopo aver sistemato il generatore");
                 self.fall_back_to_flat();
@@ -188,15 +255,35 @@ impl Server {
         }
     }
 
-    /// Passa al mondo piatto: i chunk attesi diventano piatti, lo spawn è quello piatto (non si salva), i login in coda partono.
+    /// Errore del generatore su un chunk: nuovo tentativo dopo `GEN_RETRY_DELAY`; al terzo errore il chunk e piatto (non si salva).
+    fn on_chunk_failed(&mut self, dim: Dim, x: i32, z: i32, reason: &str) {
+        let key = (dim as u8, x, z);
+        self.requested.remove(&key);
+        let fails = self.chunk_fails.entry(key).or_insert(0);
+        *fails += 1;
+        if *fails >= GEN_MAX_ATTEMPTS {
+            log!("[gen] chunk {x},{z} ({dim:?}) fallito {GEN_MAX_ATTEMPTS} volte ({reason}): uso il chunk piatto, non salvato");
+            self.chunk_fails.remove(&key);
+            self.chunks.entry(key).or_insert_with(|| Chunk::flat(dim, x, z));
+        } else {
+            log!("[gen] chunk {x},{z} ({dim:?}) fallito ({reason}): riprovo tra {} s", GEN_RETRY_DELAY.as_secs());
+            self.retry_after.insert(key, Instant::now() + GEN_RETRY_DELAY);
+        }
+    }
+
+    /// Passa al mondo piatto: i chunk attesi diventano piatti; lo spawn gia noto resta, altrimenti e quello piatto (non si salva); i login in coda partono.
     fn fall_back_to_flat(&mut self) {
         self.flat = true;
         self.gen = None;
-        for (dim, x, z) in std::mem::take(&mut self.requested) {
+        let waiting =
+            std::mem::take(&mut self.requested).into_iter().chain(std::mem::take(&mut self.queue)).chain(std::mem::take(&mut self.retry_after).into_keys());
+        for (dim, x, z) in waiting.collect::<Vec<_>>() {
             let dim = Dim::try_from(dim).unwrap_or(Dim::Overworld);
             self.chunks.entry((dim as u8, x, z)).or_insert_with(|| Chunk::flat(dim, x, z));
         }
-        self.spawn = Some(crate::world::FLAT_SPAWN);
+        self.chunk_fails.clear();
+        self.spawn_retry_at = None;
+        self.spawn.get_or_insert(crate::world::FLAT_SPAWN); // uno spawn gia noto (level.dat) resta quello
         self.resume_waiting_logins();
     }
 
@@ -357,12 +444,15 @@ mod tests {
     fn moving_one_chunk_requests_only_the_new_edge() {
         let mut rig = Rig::new();
         rig.add_player(1, R, (0, 0));
-        rig.server.stream_tick();
-        let first = rig.requested();
-        assert_eq!(first.iter().copied().collect::<HashSet<_>>(), wanted((0, 0), R).into_iter().collect(), "al primo giro tutta l'area");
-        for c in first {
-            rig.answer(c);
+        let mut first = Vec::new();
+        for _ in 0..3 {
+            rig.server.stream_tick(); // 69 chunk, ma al massimo MAX_GEN_IN_FLIGHT richieste in volo: il resto al giro dopo
+            let batch = rig.requested();
+            batch.iter().for_each(|&c| rig.answer(c));
+            first.extend(batch);
         }
+        assert_eq!(first.len(), 69, "nessun duplicato");
+        assert_eq!(first.iter().copied().collect::<HashSet<_>>(), wanted((0, 0), R).into_iter().collect(), "alla fine tutta l'area");
         for _ in 0..10 {
             rig.server.stream_tick(); // 69 chunk a 8 per tick
         }
@@ -393,16 +483,17 @@ mod tests {
             let new = rig.requested();
             all.extend(new.iter().copied());
             slow.push_back(new);
-            if slow.len() > 5 {
+            assert!(rig.server.requested.len() <= MAX_GEN_IN_FLIGHT);
+            if slow.len() > 2 {
                 slow.pop_front().unwrap().into_iter().for_each(|c| rig.answer(c));
-                // il generatore risponde con 5 mosse di ritardo
+                // il generatore risponde con 2 mosse di ritardo
             }
         }
         for c in slow.into_iter().flatten() {
             rig.answer(c);
         }
         assert_eq!(all.iter().collect::<HashSet<_>>().len(), all.len(), "nessun chunk chiesto due volte");
-        assert!(all.len() > 500);
+        assert!(all.len() > 300, "{}", all.len());
         let p = &rig.server.players[&1];
         assert!(p.sent.iter().all(|c| wanted(p.last_chunk, R).contains(c)), "sent contiene solo chunk nel raggio");
         rig.server.stream_tick();
@@ -469,12 +560,14 @@ mod tests {
         let n = rig.server.loading.len();
         assert_eq!(n, wanted((0, 0), 1).len());
         rig.pump_disk(n);
+        rig.server.stream_tick(); // le richieste partono dalla coda al tick successivo
         assert_eq!(rig.requested().len(), n, "il disco è vuoto: tutti al generatore");
         rig.answer((0, 0)); // salvato
         rig.server.chunks.clear();
         rig.server.requested.clear();
         rig.server.stream_tick();
         rig.pump_disk(wanted((0, 0), 1).len());
+        rig.server.stream_tick();
         let again = rig.requested();
         assert!(!again.contains(&(0, 0)), "(0, 0) viene dal disco, non dal generatore");
         assert_eq!(again.len(), wanted((0, 0), 1).len() - 1);
@@ -533,5 +626,124 @@ mod tests {
         assert_eq!(p.last_chunk, (0, -1));
         drop(rig);
         assert_eq!(World::open(&dir.0).unwrap().spawn(), Some((10, 70, -5)), "spawn salvato in level.dat");
+    }
+
+    /// Il generatore risponde con un errore per quel chunk.
+    fn fail(rig: &mut Rig, (x, z): (i32, i32)) {
+        rig.server.on_gen_event(GenEvent::ChunkFailed(Dim::Overworld, x, z, "boom".into()));
+    }
+
+    /// Anticipa il prossimo tentativo di tutti i chunk falliti (invece di aspettare `GEN_RETRY_DELAY`).
+    fn make_retries_due(rig: &mut Rig) {
+        let now = Instant::now();
+        rig.server.retry_after.values_mut().for_each(|t| *t = now);
+    }
+
+    #[test]
+    fn failed_chunk_is_retried_then_filled() {
+        let dir = TempDir::new("failed-chunk");
+        let mut rig = Rig::with_world(&dir);
+        rig.add_player(1, 1, (0, 0));
+        rig.server.stream_tick();
+        let n = rig.server.loading.len();
+        rig.pump_disk(n); // il disco e vuoto
+        rig.server.stream_tick();
+        assert!(rig.requested().contains(&(0, 0)));
+
+        fail(&mut rig, (0, 0));
+        assert!(!rig.server.requested.contains(&(0, 0, 0)), "non resta in attesa per sempre");
+        rig.server.stream_tick();
+        assert!(!rig.requested().contains(&(0, 0)), "il nuovo tentativo aspetta GEN_RETRY_DELAY");
+        make_retries_due(&mut rig);
+        rig.server.stream_tick();
+        assert_eq!(rig.requested(), vec![(0, 0)], "secondo tentativo");
+
+        fail(&mut rig, (0, 0));
+        make_retries_due(&mut rig);
+        rig.server.stream_tick();
+        assert_eq!(rig.requested(), vec![(0, 0)], "terzo tentativo");
+
+        fail(&mut rig, (0, 0));
+        assert!(!rig.server.requested.contains(&(0, 0, 0)) && rig.server.retry_after.is_empty());
+        assert_eq!(rig.server.chunks[&(0, 0, 0)].network_bytes(), Chunk::flat(Dim::Overworld, 0, 0).network_bytes(), "dopo 3 errori il chunk e piatto");
+        make_retries_due(&mut rig);
+        rig.server.stream_tick();
+        assert!(rig.requested().is_empty(), "niente quarto tentativo");
+        drop(rig);
+        assert!(World::open(&dir.0).unwrap().load(Dim::Overworld, 0, 0).is_none(), "il chunk piatto di ripiego non si salva");
+    }
+
+    #[test]
+    fn spawn_failure_eventually_releases_logins() {
+        let mut rig = Rig::new();
+        rig.server.spawn = None;
+        rig.server.players.insert(1, Player::default());
+        rig.server.start_game(1);
+        assert_eq!(rig.server.waiting_start, vec![1]);
+        for attempt in 1..=3 {
+            rig.server.on_gen_event(GenEvent::SpawnFailed(Dim::Overworld, "boom".into()));
+            if attempt < 3 {
+                assert_eq!(rig.server.spawn, None);
+                assert_eq!(rig.server.waiting_start, vec![1], "il login aspetta ancora");
+                rig.server.stream_tick();
+                assert!(rig.requests.try_recv().is_err(), "il nuovo tentativo aspetta GEN_RETRY_DELAY");
+                rig.server.spawn_retry_at = Some(Instant::now());
+                rig.server.stream_tick();
+                assert_eq!(rig.requests.try_recv().ok(), Some(Pending::Spawn(Dim::Overworld)), "nuovo tentativo {}", attempt + 1);
+            }
+        }
+        assert_eq!(rig.server.spawn, Some(FALLBACK_SPAWN));
+        assert!(rig.server.waiting_start.is_empty());
+        let Ok(Command::Send(1, data)) = rig.sent.try_recv() else { panic!("StartGame atteso") };
+        assert!(Session::default().decode(&data).unwrap().iter().any(|p| p.id == bedrock_protocol::generated::StartGame::ID));
+        assert_eq!(rig.server.players[&1].pos, [0.5, 101.62, 0.5]);
+    }
+
+    #[test]
+    fn generator_in_flight_is_capped() {
+        let mut rig = Rig::new();
+        rig.add_player(1, 6, (0, 0));
+        let total = wanted((0, 0), 6).len();
+        assert!(total > MAX_GEN_IN_FLIGHT + 10);
+        rig.server.stream_tick();
+        let first = rig.requested();
+        assert_eq!(first.len(), MAX_GEN_IN_FLIGHT);
+        assert_eq!(rig.server.queue.len(), total - MAX_GEN_IN_FLIGHT, "il resto aspetta nella coda del server");
+        let near: HashSet<_> = wanted((0, 0), 6).into_iter().take(MAX_GEN_IN_FLIGHT).collect();
+        assert_eq!(first.iter().copied().collect::<HashSet<_>>(), near, "partono i piu vicini");
+        rig.server.stream_tick();
+        assert!(rig.requested().is_empty(), "nessuna richiesta nuova finche il generatore non risponde");
+        first.iter().take(10).for_each(|&c| rig.answer(c));
+        rig.server.stream_tick();
+        assert_eq!(rig.requested().len(), 10, "ogni risposta libera un posto");
+        assert_eq!(rig.server.requested.len(), MAX_GEN_IN_FLIGHT);
+    }
+
+    #[test]
+    fn stale_queued_requests_are_dropped_when_player_moves_away() {
+        let mut rig = Rig::new();
+        rig.add_player(1, 6, (0, 0));
+        rig.server.stream_tick();
+        let first = rig.requested();
+        assert!(!rig.server.queue.is_empty());
+        let old_area: HashSet<_> = wanted((0, 0), 6).into_iter().collect();
+        rig.server.on_move(1, [200.0 * 16.0 + 0.5, 70.0, 0.5]); // teletrasporto
+        rig.server.stream_tick();
+        assert!(rig.server.queue.iter().all(|k| !old_area.contains(&(k.1, k.2))), "la coda non tiene chunk che nessuno vuole piu");
+        first.iter().for_each(|&c| rig.answer(c)); // le richieste gia partite arrivano comunque
+        rig.server.stream_tick();
+        let now = rig.requested();
+        assert_eq!(now.len(), MAX_GEN_IN_FLIGHT);
+        assert!(now.iter().all(|c| !old_area.contains(c) && wanted((200, 0), 6).contains(c)), "solo chunk attorno alla nuova posizione");
+        assert_eq!(now[0], (200, 0), "il piu vicino per primo");
+    }
+
+    #[test]
+    fn flat_fallback_keeps_known_spawn() {
+        let mut rig = Rig::new();
+        rig.server.spawn = Some((48, 70, 32));
+        rig.server.on_gen_event(GenEvent::Down("manca".into()));
+        assert!(rig.server.flat && rig.server.gen.is_none());
+        assert_eq!(rig.server.spawn, Some((48, 70, 32)), "lo spawn gia noto non si tocca");
     }
 }

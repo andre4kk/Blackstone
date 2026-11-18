@@ -36,6 +36,10 @@ pub(crate) enum GenEvent {
     Palette(Vec<(i32, Vec<u8>)>),
     Chunk(vgen::ChunkData),
     Spawn(Dim, i32, i32, i32),
+    /// Il generatore ha risposto con un errore alla richiesta di quel chunk.
+    ChunkFailed(Dim, i32, i32, String),
+    /// Il generatore ha risposto con un errore alla richiesta dello spawn.
+    SpawnFailed(Dim, String),
     Down(String),
 }
 
@@ -261,6 +265,15 @@ fn handle(msg: FromGen, st: &mut State, ev: &mpsc::UnboundedSender<GenEvent>) {
         FromGen::Error { req, message } => {
             let what = st.inflight.remove(&req);
             log!("[gen] errore dal generatore (richiesta {req}, {what:?}): {message}");
+            match what {
+                Some(Pending::Chunk(dim, x, z)) => {
+                    let _ = ev.send(GenEvent::ChunkFailed(dim, x, z, message));
+                }
+                Some(Pending::Spawn(dim)) => {
+                    let _ = ev.send(GenEvent::SpawnFailed(dim, message));
+                }
+                None => {}
+            }
         }
         FromGen::Hello { .. } | FromGen::Palette { .. } => {}
     }
@@ -320,6 +333,28 @@ mod tests {
         let ToGen::Spawn { req, .. } = next_req(&mut s).await else { panic!() };
         write_frame(&mut s, &FromGen::Spawn { req, x: 1, y: 2, z: 3 }.encode()).await.unwrap();
         assert!(matches!(ev(&mut rx).await, GenEvent::Spawn(Dim::Nether, 1, 2, 3)));
+    }
+
+    #[tokio::test]
+    async fn generator_errors_are_reported_per_request() {
+        let l = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let (client, mut rx) = GenClient::spawn(cfg(l.local_addr().unwrap()));
+        let mut s = accept(&l).await;
+        client.request_chunk(Dim::Overworld, 3, -4);
+        let ToGen::Generate { req, .. } = next_req(&mut s).await else { panic!() };
+        write_frame(&mut s, &FromGen::Error { req, message: "boom".into() }.encode()).await.unwrap();
+        client.request_spawn(Dim::Overworld);
+        let ToGen::Spawn { req, .. } = next_req(&mut s).await else { panic!() };
+        write_frame(&mut s, &FromGen::Error { req, message: "no spawn".into() }.encode()).await.unwrap();
+        let mut seen = Vec::new();
+        while seen.len() < 2 {
+            match ev(&mut rx).await {
+                GenEvent::ChunkFailed(dim, x, z, m) => seen.push(format!("chunk {dim:?} {x} {z} {m}")),
+                GenEvent::SpawnFailed(dim, m) => seen.push(format!("spawn {dim:?} {m}")),
+                _ => {}
+            }
+        }
+        assert_eq!(seen, ["chunk Overworld 3 -4 boom", "spawn Overworld no spawn"]);
     }
 
     #[tokio::test]
