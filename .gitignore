@@ -26,3 +26,6 @@ Thumbs.db
 
 # Dati esterni scaricati con licenze non ridistribuibili (schemi Mojang, ecc.)
 /vendor/
+
+# Python
+__pycache__/

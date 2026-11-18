@@ -212,7 +212,8 @@ fn client(port: u16, mode: Mode) {
                         if seen.len() < EXPECTED_CHUNKS {
                             continue;
                         }
-                        assert!(biomes, "manca la BiomeDefinitionList");
+                        // Spenta di default: il client 1.26.6x si disconnette con la nostra lista (prova del 18/11).
+                        assert!(!biomes, "la BiomeDefinitionList non va mandata senza SEND=biomes");
                         assert_eq!(seen.len(), EXPECTED_CHUNKS, "chunk attorno allo spawn");
                         assert!(seen.iter().all(|&(x, z)| x.abs() <= RADIUS && z.abs() <= RADIUS), "solo chunk vicini allo spawn: {seen:?}");
                         // Sposta il giocatore di 5 chunk in X (lo spawn finto è in 8, 61, 8).
