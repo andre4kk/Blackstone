@@ -18,7 +18,7 @@ import json, os, re, sys
 docs, out_path, roots = sys.argv[1], sys.argv[2], sys.argv[3:]
 RESERVED = set("as break const continue crate else enum extern false fn for if impl in let loop match mod move mut pub ref return self static struct super trait true type unsafe use where while async await dyn abstract become box do final macro override priv typeof unsized virtual yield try".split())
 
-load = lambda n: json.load(open(f"{docs}/{n}.json"))
+load = lambda n: json.load(open(f"{docs}/{n}.json", encoding="utf-8"))
 norm = lambda r: re.sub(r"^\./|\.json$", "", r)
 pascal = lambda n: "".join(p[:1].upper() + p[1:] for p in re.split(r"[^A-Za-z0-9]+", n) if p)
 
@@ -39,6 +39,9 @@ def int_kind(under, opts):
 
 # Campi che lo schema chiama "string" ma contengono byte arbitrari (non UTF-8): lunghezza varint + byte.
 BYTES = {"LevelChunkPacketPayload.Serialized Chunk Data"}
+# Tipi che il generatore non sa produrre (interi senza tipo sottostante, ecc.): si usa un tipo scritto a mano
+# nel crate (stesso nome Rust, già implementa `Encode`). Chiave = nome dello schema, valore = percorso del modulo.
+EXTERNAL = {"NetworkItemStackDescriptor": "crate::item::ItemStack"}
 
 structs, enums, order, warnings = {}, {}, [], []
 
@@ -49,7 +52,9 @@ def resolve(v, ctx):
     if "oneOf" in v:
         warnings.append(f"{ctx}: oneOf -> raw"); return ("raw",)
     if "$ref" in v:
-        name = norm(v["$ref"]); t = load(name)
+        name = norm(v["$ref"])
+        if name in EXTERNAL: return ("struct", EXTERNAL[name].rsplit("::", 1)[1])
+        t = load(name)
         opts |= set(t.get("x-serialization-options", []))
         under = v.get("x-underlying-type") or t.get("x-underlying-type")
         if "enum" in t:
@@ -74,6 +79,9 @@ def resolve(v, ctx):
         r, m = int_kind(v["x-underlying-type"], opts); return ("int", r, m)
     if t == "number": return ("f64",) if v.get("x-underlying-type") == "double" else ("f32",)
     if t == "boolean": return ("bool",)
+    if t == "string" and "enum" in v and "x-underlying-type" in v:  # enum stringa inline: sul filo è un intero
+        if "x-enum-binary-value" not in v: warnings.append(f"{ctx}: enum inline senza valori binari")
+        r, m = int_kind(v["x-underlying-type"], opts); return ("int", r, m)
     if t == "string": return ("str",)
     if t == "array": return ("vec", resolve(v["items"], ctx), "No size compression" in opts)
     warnings.append(f"{ctx}: tipo non gestito ({t}) -> raw"); return ("raw",)
@@ -112,9 +120,9 @@ def emit(k, e, ref, ind):
     if k[0] == "bytes": return [f"{p}w.bytes({e if ref else '&' + e});"]
     if k[0] == "struct": return [f"{p}{e}.encode(w);"]
     if k[0] == "map":
-        return [f"{p}w.var_u32({e}.len() as u32);", f"{p}for (k, v) in &{e} {{", *emit(k[1], "k", True, ind + 4), *emit(k[2], "v", True, ind + 4), f"{p}}}"]
+        return [f"{p}w.var_u32({e}.len() as u32);", f"{p}for (k, v) in {e if ref else "&" + e} {{", *emit(k[1], "k", True, ind + 4), *emit(k[2], "v", True, ind + 4), f"{p}}}"]
     inner = k[1]; cnt = f"w.u32({e}.len() as u32);" if k[2] else f"w.var_u32({e}.len() as u32);"
-    return [f"{p}{cnt}", f"{p}for v in &{e} {{", *emit(inner, "v", True, ind + 4), f"{p}}}"]
+    return [f"{p}{cnt}", f"{p}for v in {e if ref else "&" + e} {{", *emit(inner, "v", True, ind + 4), f"{p}}}"]
 
 # --- radici: un pacchetto = <Nome>PacketPayload + metadati in <Nome>Packet
 packets = []
@@ -126,7 +134,8 @@ for r in roots:
 version = load(f"{roots[0]}PacketPayload").get("x-protocol-version")
 o = [f"// Generato da tools/protocolgen.py dagli schemi Mojang (protocollo {version}). NON MODIFICARE A MANO: rigenerare.",
      "// Contiene solo la codifica dei pacchetti server -> client. Campi `Vec<u8>` = dati già codificati (NBT, oneOf).",
-     "#![allow(clippy::all, dead_code)]", "use crate::wire::{Encode, ServerPacket, Writer};", ""]
+     "#![allow(clippy::all, dead_code)]", "use crate::wire::{Encode, ServerPacket, Writer};",
+     *[f"use {path};" for path in EXTERNAL.values()], ""]
 for name in order:
     sname, fields = structs[name]
     o += ["#[derive(Clone, Debug, Default, PartialEq)]", f"pub struct {sname} {{"]
@@ -143,6 +152,6 @@ if enums:
     for name, (rust, items) in sorted(enums.items()):
         o += [f"    pub mod {snake(name)} {{"] + [f"        pub const {c}: {rust} = {v};" for c, v in items] + ["    }"]
     o.append("}")
-open(out_path, "w").write("\n".join(o) + "\n")
+open(out_path, "w", encoding="utf-8", newline="\n").write("\n".join(o) + "\n")
 print(f"{len(order)} struct, {len(enums)} enum, {len(packets)} pacchetti -> {out_path}")
 for w in dict.fromkeys(warnings): print("  avviso:", w)

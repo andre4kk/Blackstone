@@ -1,6 +1,7 @@
 // Generato da tools/protocolgen.py dagli schemi Mojang (protocollo 2225). NON MODIFICARE A MANO: rigenerare.
 // Contiene solo la codifica dei pacchetti server -> client. Campi `Vec<u8>` = dati già codificati (NBT, oneOf).
 #![allow(clippy::all, dead_code)]
+use crate::item::ItemStack;
 use crate::wire::{Encode, ServerPacket, Writer};
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -1399,14 +1400,14 @@ impl Encode for NetworkItemInstanceDescriptorData {
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct CreativeGroupInfoPayload {
-    pub creative_category: String,
+    pub creative_category: u8,
     pub name: String,
     pub group_icon_item: NetworkItemInstanceDescriptorData,
 }
 
 impl Encode for CreativeGroupInfoPayload {
     fn encode(&self, w: &mut Writer) {
-        w.string(&self.creative_category);
+        w.u8(self.creative_category);
         w.string(&self.name);
         self.group_icon_item.encode(w);
     }
@@ -1525,6 +1526,364 @@ impl Encode for JigsawStructureData {
     }
 }
 
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct FullContainerName {
+    pub container_name: u8,
+    pub dynamic_id: Option<u32>,
+}
+
+impl Encode for FullContainerName {
+    fn encode(&self, w: &mut Writer) {
+        w.u8(self.container_name);
+        match &self.dynamic_id {
+            Some(v) => {
+                w.u8(1);
+                w.u32(*v);
+            }
+            None => w.u8(0),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct InventoryContent {
+    pub container_id: u32,
+    pub slots: Vec<ItemStack>,
+    pub full_container_name: FullContainerName,
+    pub storage_item: ItemStack,
+}
+
+impl Encode for InventoryContent {
+    fn encode(&self, w: &mut Writer) {
+        w.var_u32(self.container_id);
+        w.var_u32(self.slots.len() as u32);
+        for v in &self.slots {
+            v.encode(w);
+        }
+        self.full_container_name.encode(w);
+        self.storage_item.encode(w);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct InventorySlot {
+    pub container_id: u8,
+    pub slot: u32,
+    pub full_container_name: Option<FullContainerName>,
+    pub storage_item: Option<ItemStack>,
+    pub item: ItemStack,
+}
+
+impl Encode for InventorySlot {
+    fn encode(&self, w: &mut Writer) {
+        w.u8(self.container_id);
+        w.var_u32(self.slot);
+        match &self.full_container_name {
+            Some(v) => {
+                w.u8(1);
+                v.encode(w);
+            }
+            None => w.u8(0),
+        }
+        match &self.storage_item {
+            Some(v) => {
+                w.u8(1);
+                v.encode(w);
+            }
+            None => w.u8(0),
+        }
+        self.item.encode(w);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct MobEquipment {
+    pub target_runtime_id: u64,
+    pub item: ItemStack,
+    pub slot: u8,
+    pub selected_slot: u8,
+    pub container_id: u8,
+}
+
+impl Encode for MobEquipment {
+    fn encode(&self, w: &mut Writer) {
+        w.var_u64(self.target_runtime_id);
+        self.item.encode(w);
+        w.u8(self.slot);
+        w.u8(self.selected_slot);
+        w.u8(self.container_id);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct PlayerHotbar {
+    pub selected_slot: u32,
+    pub container_id: u8,
+    pub should_select_slot: bool,
+}
+
+impl Encode for PlayerHotbar {
+    fn encode(&self, w: &mut Writer) {
+        w.var_u32(self.selected_slot);
+        w.u8(self.container_id);
+        w.bool(self.should_select_slot);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct UpdateBlock {
+    pub block_position: BlockPos,
+    pub block_runtime_id: u32,
+    pub flags: u32,
+    pub layer: u32,
+}
+
+impl Encode for UpdateBlock {
+    fn encode(&self, w: &mut Writer) {
+        self.block_position.encode(w);
+        w.var_u32(self.block_runtime_id);
+        w.var_u32(self.flags);
+        w.var_u32(self.layer);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct SetPlayerGameType {
+    pub player_game_type: i32,
+}
+
+impl Encode for SetPlayerGameType {
+    fn encode(&self, w: &mut Writer) {
+        w.var_i32(self.player_game_type);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct UpdatePlayerGameType {
+    pub player_game_type: i32,
+    pub target_player: i64,
+    pub tick: u64,
+}
+
+impl Encode for UpdatePlayerGameType {
+    fn encode(&self, w: &mut Writer) {
+        w.var_i32(self.player_game_type);
+        w.var_i64(self.target_player);
+        w.var_u64(self.tick);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct SerializedAbilitiesDataSerializedLayer {
+    pub serialized_layer: u16,
+    pub abilities_set: u32,
+    pub ability_values: u32,
+    pub fly_speed: f32,
+    pub vertical_fly_speed: f32,
+    pub walk_speed: f32,
+}
+
+impl Encode for SerializedAbilitiesDataSerializedLayer {
+    fn encode(&self, w: &mut Writer) {
+        w.u16(self.serialized_layer);
+        w.u32(self.abilities_set);
+        w.u32(self.ability_values);
+        w.f32(self.fly_speed);
+        w.f32(self.vertical_fly_speed);
+        w.f32(self.walk_speed);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct SerializedAbilitiesData {
+    pub target_player_raw_id: i64,
+    pub player_permissions: i8,
+    pub command_permissions: u8,
+    pub layers: Vec<SerializedAbilitiesDataSerializedLayer>,
+}
+
+impl Encode for SerializedAbilitiesData {
+    fn encode(&self, w: &mut Writer) {
+        w.i64(self.target_player_raw_id);
+        w.i8(self.player_permissions);
+        w.u8(self.command_permissions);
+        w.var_u32(self.layers.len() as u32);
+        for v in &self.layers {
+            v.encode(w);
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct UpdateAbilities {
+    pub data: SerializedAbilitiesData,
+}
+
+impl Encode for UpdateAbilities {
+    fn encode(&self, w: &mut Writer) {
+        self.data.encode(w);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct LevelEvent {
+    pub event_id: i32,
+    pub position: Vec3,
+    pub data: i32,
+}
+
+impl Encode for LevelEvent {
+    fn encode(&self, w: &mut Writer) {
+        w.var_i32(self.event_id);
+        self.position.encode(w);
+        w.var_i32(self.data);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct LevelSoundEvent {
+    pub sound_event: String,
+    pub position: Vec3,
+    pub data: i32,
+    pub actor_identifier: String,
+    pub is_baby: bool,
+    pub is_global: bool,
+    pub actor_unique_id: i64,
+    pub fire_at_position: Option<Vec3>,
+}
+
+impl Encode for LevelSoundEvent {
+    fn encode(&self, w: &mut Writer) {
+        w.string(&self.sound_event);
+        self.position.encode(w);
+        w.var_i32(self.data);
+        w.string(&self.actor_identifier);
+        w.bool(self.is_baby);
+        w.bool(self.is_global);
+        w.i64(self.actor_unique_id);
+        match &self.fire_at_position {
+            Some(v) => {
+                w.u8(1);
+                v.encode(w);
+            }
+            None => w.u8(0),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct BedrockSafetyRedactableString {
+    pub unredacted: String,
+    pub redacted: Option<String>,
+}
+
+impl Encode for BedrockSafetyRedactableString {
+    fn encode(&self, w: &mut Writer) {
+        w.string(&self.unredacted);
+        match &self.redacted {
+            Some(v) => {
+                w.u8(1);
+                w.string(v);
+            }
+            None => w.u8(0),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ItemStackResponseSlotInfo {
+    pub requested_slot: u8,
+    pub slot: u8,
+    pub amount: u8,
+    pub item_stack_net_id: Option<i32>,
+    pub custom_name: BedrockSafetyRedactableString,
+    pub durability_correction: i32,
+}
+
+impl Encode for ItemStackResponseSlotInfo {
+    fn encode(&self, w: &mut Writer) {
+        w.u8(self.requested_slot);
+        w.u8(self.slot);
+        w.u8(self.amount);
+        match &self.item_stack_net_id {
+            Some(v) => {
+                w.u8(1);
+                w.var_i32(*v);
+            }
+            None => w.u8(0),
+        }
+        self.custom_name.encode(w);
+        w.var_i32(self.durability_correction);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ItemStackResponseContainerInfo {
+    pub full_container_name: FullContainerName,
+    pub slots: Vec<ItemStackResponseSlotInfo>,
+}
+
+impl Encode for ItemStackResponseContainerInfo {
+    fn encode(&self, w: &mut Writer) {
+        self.full_container_name.encode(w);
+        w.var_u32(self.slots.len() as u32);
+        for v in &self.slots {
+            v.encode(w);
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ItemStackResponseInfo {
+    pub result: u8,
+    pub client_request_id: i32,
+    pub containers: Option<Vec<ItemStackResponseContainerInfo>>,
+}
+
+impl Encode for ItemStackResponseInfo {
+    fn encode(&self, w: &mut Writer) {
+        w.u8(self.result);
+        w.var_i32(self.client_request_id);
+        match &self.containers {
+            Some(v) => {
+                w.u8(1);
+                w.var_u32(v.len() as u32);
+                for v in v {
+                    v.encode(w);
+                }
+            }
+            None => w.u8(0),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ItemStackResponse {
+    pub responses: Vec<ItemStackResponseInfo>,
+}
+
+impl Encode for ItemStackResponse {
+    fn encode(&self, w: &mut Writer) {
+        w.var_u32(self.responses.len() as u32);
+        for v in &self.responses {
+            v.encode(w);
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct BlockActorData {
+    pub block_position: BlockPos,
+    pub actor_data_tags: Vec<u8>,
+}
+
+impl Encode for BlockActorData {
+    fn encode(&self, w: &mut Writer) {
+        self.block_position.encode(w);
+        w.raw(&self.actor_data_tags);
+    }
+}
+
 impl ServerPacket for StartGame {
     const ID: u32 = 11;
 }
@@ -1565,12 +1924,141 @@ impl ServerPacket for JigsawStructureData {
     const ID: u32 = 313;
 }
 
+impl ServerPacket for InventoryContent {
+    const ID: u32 = 49;
+}
+
+impl ServerPacket for InventorySlot {
+    const ID: u32 = 50;
+}
+
+impl ServerPacket for MobEquipment {
+    const ID: u32 = 31;
+}
+
+impl ServerPacket for PlayerHotbar {
+    const ID: u32 = 48;
+}
+
+impl ServerPacket for UpdateBlock {
+    const ID: u32 = 21;
+}
+
+impl ServerPacket for SetPlayerGameType {
+    const ID: u32 = 62;
+}
+
+impl ServerPacket for UpdatePlayerGameType {
+    const ID: u32 = 151;
+}
+
+impl ServerPacket for UpdateAbilities {
+    const ID: u32 = 187;
+}
+
+impl ServerPacket for LevelEvent {
+    const ID: u32 = 25;
+}
+
+impl ServerPacket for LevelSoundEvent {
+    const ID: u32 = 123;
+}
+
+impl ServerPacket for ItemStackResponse {
+    const ID: u32 = 148;
+}
+
+impl ServerPacket for BlockActorData {
+    const ID: u32 = 56;
+}
+
 /// Valori degli enum degli schemi (i campi sono interi: si usano queste costanti).
 pub mod enums {
     pub mod chat_restriction_level {
         pub const NONE: u8 = 0;
         pub const DROPPED: u8 = 1;
         pub const DISABLED: u8 = 2;
+    }
+    pub mod command_permission_level {
+        pub const ANY: u8 = 0;
+        pub const GAME_DIRECTORS: u8 = 1;
+        pub const ADMIN: u8 = 2;
+        pub const HOST: u8 = 3;
+        pub const OWNER: u8 = 4;
+        pub const INTERNAL: u8 = 5;
+    }
+    pub mod container_enum_name {
+        pub const ANVIL_INPUT_CONTAINER: u8 = 0;
+        pub const ANVIL_MATERIAL_CONTAINER: u8 = 1;
+        pub const ANVIL_RESULT_PREVIEW_CONTAINER: u8 = 2;
+        pub const SMITHING_TABLE_INPUT_CONTAINER: u8 = 3;
+        pub const SMITHING_TABLE_MATERIAL_CONTAINER: u8 = 4;
+        pub const SMITHING_TABLE_RESULT_PREVIEW_CONTAINER: u8 = 5;
+        pub const ARMOR_CONTAINER: u8 = 6;
+        pub const LEVEL_ENTITY_CONTAINER: u8 = 7;
+        pub const BEACON_PAYMENT_CONTAINER: u8 = 8;
+        pub const BREWING_STAND_INPUT_CONTAINER: u8 = 9;
+        pub const BREWING_STAND_RESULT_CONTAINER: u8 = 10;
+        pub const BREWING_STAND_FUEL_CONTAINER: u8 = 11;
+        pub const COMBINED_HOTBAR_AND_INVENTORY_CONTAINER: u8 = 12;
+        pub const CRAFTING_INPUT_CONTAINER: u8 = 13;
+        pub const CRAFTING_OUTPUT_PREVIEW_CONTAINER: u8 = 14;
+        pub const RECIPE_CONSTRUCTION_CONTAINER: u8 = 15;
+        pub const RECIPE_NATURE_CONTAINER: u8 = 16;
+        pub const RECIPE_ITEMS_CONTAINER: u8 = 17;
+        pub const RECIPE_FOOD_CONTAINER: u8 = 64;
+        pub const RECIPE_BLOCKS_CONTAINER: u8 = 65;
+        pub const RECIPE_FURNACE_ITEMS_CONTAINER: u8 = 66;
+        pub const RECIPE_SEARCH_CONTAINER: u8 = 18;
+        pub const RECIPE_SEARCH_BAR_CONTAINER: u8 = 19;
+        pub const RECIPE_EQUIPMENT_CONTAINER: u8 = 20;
+        pub const RECIPE_BOOK_CONTAINER: u8 = 21;
+        pub const ENCHANTING_INPUT_CONTAINER: u8 = 22;
+        pub const ENCHANTING_MATERIAL_CONTAINER: u8 = 23;
+        pub const FURNACE_FUEL_CONTAINER: u8 = 24;
+        pub const FURNACE_INGREDIENT_CONTAINER: u8 = 25;
+        pub const FURNACE_RESULT_CONTAINER: u8 = 26;
+        pub const HORSE_EQUIP_CONTAINER: u8 = 27;
+        pub const HOTBAR_CONTAINER: u8 = 28;
+        pub const INVENTORY_CONTAINER: u8 = 29;
+        pub const SHULKER_BOX_CONTAINER: u8 = 30;
+        pub const TRADE_INGREDIENT1_CONTAINER: u8 = 31;
+        pub const TRADE_INGREDIENT2_CONTAINER: u8 = 32;
+        pub const TRADE_RESULT_PREVIEW_CONTAINER: u8 = 33;
+        pub const OFFHAND_CONTAINER: u8 = 34;
+        pub const COMPOUND_CREATOR_INPUT: u8 = 35;
+        pub const COMPOUND_CREATOR_OUTPUT_PREVIEW: u8 = 36;
+        pub const ELEMENT_CONSTRUCTOR_OUTPUT_PREVIEW: u8 = 37;
+        pub const MATERIAL_REDUCER_INPUT: u8 = 38;
+        pub const MATERIAL_REDUCER_OUTPUT: u8 = 39;
+        pub const LAB_TABLE_INPUT: u8 = 40;
+        pub const LOOM_INPUT_CONTAINER: u8 = 41;
+        pub const LOOM_DYE_CONTAINER: u8 = 42;
+        pub const LOOM_MATERIAL_CONTAINER: u8 = 43;
+        pub const LOOM_RESULT_PREVIEW_CONTAINER: u8 = 44;
+        pub const BLAST_FURNACE_INGREDIENT_CONTAINER: u8 = 45;
+        pub const SMOKER_INGREDIENT_CONTAINER: u8 = 46;
+        pub const TRADE2_INGREDIENT1_CONTAINER: u8 = 47;
+        pub const TRADE2_INGREDIENT2_CONTAINER: u8 = 48;
+        pub const TRADE2_RESULT_PREVIEW_CONTAINER: u8 = 49;
+        pub const GRINDSTONE_INPUT_CONTAINER: u8 = 50;
+        pub const GRINDSTONE_ADDITIONAL_CONTAINER: u8 = 51;
+        pub const GRINDSTONE_RESULT_PREVIEW_CONTAINER: u8 = 52;
+        pub const STONECUTTER_INPUT_CONTAINER: u8 = 53;
+        pub const STONECUTTER_RESULT_PREVIEW_CONTAINER: u8 = 54;
+        pub const CARTOGRAPHY_INPUT_CONTAINER: u8 = 55;
+        pub const CARTOGRAPHY_ADDITIONAL_CONTAINER: u8 = 56;
+        pub const CARTOGRAPHY_RESULT_PREVIEW_CONTAINER: u8 = 57;
+        pub const BARREL_CONTAINER: u8 = 58;
+        pub const CURSOR_CONTAINER: u8 = 59;
+        pub const CREATED_OUTPUT_CONTAINER: u8 = 60;
+        pub const SMITHING_TABLE_TEMPLATE_CONTAINER: u8 = 61;
+        pub const CRAFTER_LEVEL_ENTITY_CONTAINER: u8 = 62;
+        pub const DYNAMIC_CONTAINER: u8 = 63;
+        pub const RESERVED_CONTAINER_A: u8 = 67;
+        pub const RESERVED_CONTAINER_B: u8 = 68;
+        pub const RESERVED_CONTAINER_C: u8 = 69;
+        pub const RESERVED_CONTAINER_D: u8 = 70;
     }
     pub mod coordinate_evaluation_order {
         pub const XYZ: i32 = 0;

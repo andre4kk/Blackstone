@@ -24,6 +24,20 @@ pub mod id {
     pub const RESOURCE_PACK_CLIENT_RESPONSE: u32 = 8;
     pub const NETWORK_SETTINGS: u32 = 143;
     pub const REQUEST_NETWORK_SETTINGS: u32 = 193;
+    pub const UPDATE_BLOCK: u32 = 21;
+    pub const LEVEL_EVENT: u32 = 25;
+    pub const INVENTORY_TRANSACTION: u32 = 30;
+    pub const PLAYER_HOTBAR: u32 = 48;
+    pub const INVENTORY_CONTENT: u32 = 49;
+    pub const INVENTORY_SLOT: u32 = 50;
+    pub const BLOCK_ACTOR_DATA: u32 = 56;
+    pub const SET_PLAYER_GAME_TYPE: u32 = 62;
+    pub const LEVEL_SOUND_EVENT: u32 = 123;
+    pub const CREATIVE_CONTENT: u32 = 145;
+    pub const ITEM_STACK_REQUEST: u32 = 147;
+    pub const ITEM_STACK_RESPONSE: u32 = 148;
+    pub const UPDATE_PLAYER_GAME_TYPE: u32 = 151;
+    pub const UPDATE_ABILITIES: u32 = 187;
 }
 
 /// Client -> server: primo pacchetto, dichiara il protocollo del client.

@@ -4,8 +4,10 @@ use miniz_oxide::{deflate::compress_to_vec, inflate::decompress_to_vec_with_limi
 use std::borrow::Cow;
 
 pub mod generated;
+pub mod item;
 pub mod login;
 pub mod packets;
+pub mod reader;
 pub mod varint;
 pub mod wire;
 pub use packets::id;
@@ -119,6 +121,25 @@ mod tests {
         assert!(m_large.len() < 1000, "il batch grande deve risultare compresso");
         assert_eq!(s.decode(&m_small), Some(small));
         assert_eq!(s.decode(&m_large), Some(sample()));
+    }
+
+    #[test]
+    fn creative_category_is_one_byte() {
+        use crate::generated::{CreativeContent, CreativeGroupInfoPayload};
+        use crate::wire::Encode;
+        let c = CreativeContent { groups: vec![CreativeGroupInfoPayload { creative_category: 1, name: "a".into(), ..Default::default() }], entries: vec![] };
+        let b = c.to_bytes();
+        // 1 gruppo, categoria u8 = 1 (non la stringa "1"), nome "a" con lunghezza 1
+        assert_eq!(&b[..4], [1, 1, 1, b'a']);
+    }
+
+    #[test]
+    fn item_stack_response_result_is_one_byte() {
+        use crate::generated::{ItemStackResponse, ItemStackResponseInfo};
+        use crate::wire::Encode;
+        let p = ItemStackResponse { responses: vec![ItemStackResponseInfo { result: 1, client_request_id: -1, containers: None }] };
+        // 1 risposta, result u8 = 1, request id zigzag(-1) = 1, contenitori assenti
+        assert_eq!(p.to_bytes(), [1, 1, 1, 0]);
     }
 
     #[test]
