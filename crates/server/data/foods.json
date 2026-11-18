@@ -1,0 +1,180 @@
+{
+ "_license": "Da Dragonfly (MIT, https://github.com/df-mc/dragonfly, 1.26.60) server/block, server/item. Generato da tools/extract_survival.py.",
+ "foods": {
+  "minecraft:apple": {
+   "points": 4,
+   "saturation": 2.4,
+   "always_edible": false
+  },
+  "minecraft:baked_potato": {
+   "points": 5,
+   "saturation": 6.0,
+   "always_edible": false
+  },
+  "minecraft:beef": {
+   "points": 3,
+   "saturation": 1.8,
+   "always_edible": false
+  },
+  "minecraft:beetroot": {
+   "points": 1,
+   "saturation": 1.2,
+   "always_edible": false
+  },
+  "minecraft:beetroot_soup": {
+   "points": 6,
+   "saturation": 7.2,
+   "always_edible": false
+  },
+  "minecraft:bread": {
+   "points": 5,
+   "saturation": 6.0,
+   "always_edible": false
+  },
+  "minecraft:chicken": {
+   "points": 2,
+   "saturation": 1.2,
+   "always_edible": false
+  },
+  "minecraft:cod": {
+   "points": 2,
+   "saturation": 0.4,
+   "always_edible": false
+  },
+  "minecraft:cooked_beef": {
+   "points": 8,
+   "saturation": 12.8,
+   "always_edible": false
+  },
+  "minecraft:cooked_chicken": {
+   "points": 6,
+   "saturation": 7.2,
+   "always_edible": false
+  },
+  "minecraft:cooked_cod": {
+   "points": 5,
+   "saturation": 6.0,
+   "always_edible": false
+  },
+  "minecraft:cooked_mutton": {
+   "points": 6,
+   "saturation": 9.6,
+   "always_edible": false
+  },
+  "minecraft:cooked_porkchop": {
+   "points": 8,
+   "saturation": 12.8,
+   "always_edible": false
+  },
+  "minecraft:cooked_rabbit": {
+   "points": 5,
+   "saturation": 6.0,
+   "always_edible": false
+  },
+  "minecraft:cooked_salmon": {
+   "points": 6,
+   "saturation": 9.6,
+   "always_edible": false
+  },
+  "minecraft:cookie": {
+   "points": 2,
+   "saturation": 0.4,
+   "always_edible": false
+  },
+  "minecraft:dried_kelp": {
+   "points": 1,
+   "saturation": 0.2,
+   "always_edible": false
+  },
+  "minecraft:enchanted_golden_apple": {
+   "points": 4,
+   "saturation": 9.6,
+   "always_edible": true
+  },
+  "minecraft:golden_apple": {
+   "points": 4,
+   "saturation": 9.6,
+   "always_edible": true
+  },
+  "minecraft:golden_carrot": {
+   "points": 6,
+   "saturation": 14.4,
+   "always_edible": false
+  },
+  "minecraft:honey_bottle": {
+   "points": 6,
+   "saturation": 1.2,
+   "always_edible": true
+  },
+  "minecraft:melon_slice": {
+   "points": 2,
+   "saturation": 1.2,
+   "always_edible": false
+  },
+  "minecraft:mushroom_stew": {
+   "points": 6,
+   "saturation": 7.2,
+   "always_edible": false
+  },
+  "minecraft:mutton": {
+   "points": 2,
+   "saturation": 1.2,
+   "always_edible": false
+  },
+  "minecraft:poisonous_potato": {
+   "points": 2,
+   "saturation": 1.2,
+   "always_edible": false
+  },
+  "minecraft:porkchop": {
+   "points": 3,
+   "saturation": 1.8,
+   "always_edible": false
+  },
+  "minecraft:pufferfish": {
+   "points": 1,
+   "saturation": 0.2,
+   "always_edible": false
+  },
+  "minecraft:pumpkin_pie": {
+   "points": 8,
+   "saturation": 4.8,
+   "always_edible": false
+  },
+  "minecraft:rabbit": {
+   "points": 3,
+   "saturation": 1.8,
+   "always_edible": false
+  },
+  "minecraft:rabbit_stew": {
+   "points": 10,
+   "saturation": 12.0,
+   "always_edible": false
+  },
+  "minecraft:rotten_flesh": {
+   "points": 4,
+   "saturation": 0.8,
+   "always_edible": false
+  },
+  "minecraft:salmon": {
+   "points": 2,
+   "saturation": 0.4,
+   "always_edible": false
+  },
+  "minecraft:spider_eye": {
+   "points": 2,
+   "saturation": 3.2,
+   "always_edible": false
+  },
+  "minecraft:suspicious_stew": {
+   "points": 6,
+   "saturation": 7.2,
+   "always_edible": true
+  },
+  "minecraft:tropical_fish": {
+   "points": 1,
+   "saturation": 0.2,
+   "always_edible": false
+  }
+ }
+}

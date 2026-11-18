@@ -134,6 +134,15 @@ git clone --depth 1 --branch v1.26.60.5 https://github.com/Mojang/bedrock-sample
 python tools/extract_items.py ../bedrock-samples crates/server/data/items.txt
 ```
 
+`crates/server/data/block_drops.json`, `tools.json` e `foods.json` (drop dei blocchi, strumenti e armi, cibi) si rigenerano da Dragonfly (MIT) con:
+
+```
+python -I tools/extract_survival.py vendor/dragonfly crates/server/data
+```
+
+Lo script stampa quante voci ha letto e quante eccezioni scritte a mano contiene; i livelli di raccolta sono quelli di Dragonfly
+(legno/oro 1, pietra 2, ferro 3, diamante e netherite 4).
+
 `crates/server/data/biomes.json` (biomi della `BiomeDefinitionList`) si rigenera con:
 
 ```

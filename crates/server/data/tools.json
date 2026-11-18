@@ -1,0 +1,185 @@
+{
+ "_license": "Da Dragonfly (MIT, https://github.com/df-mc/dragonfly, 1.26.60) server/block, server/item. Generato da tools/extract_survival.py.",
+ "tools": {
+  "minecraft:copper_axe": {
+   "kind": "axe",
+   "tier": 2,
+   "attack_damage": 4.0
+  },
+  "minecraft:copper_hoe": {
+   "kind": "hoe",
+   "tier": 2,
+   "attack_damage": 3.0
+  },
+  "minecraft:copper_pickaxe": {
+   "kind": "pickaxe",
+   "tier": 2,
+   "attack_damage": 3.0
+  },
+  "minecraft:copper_shovel": {
+   "kind": "shovel",
+   "tier": 2,
+   "attack_damage": 2.0
+  },
+  "minecraft:copper_sword": {
+   "kind": "sword",
+   "tier": 2,
+   "attack_damage": 5.0
+  },
+  "minecraft:diamond_axe": {
+   "kind": "axe",
+   "tier": 4,
+   "attack_damage": 6.0
+  },
+  "minecraft:diamond_hoe": {
+   "kind": "hoe",
+   "tier": 4,
+   "attack_damage": 5.0
+  },
+  "minecraft:diamond_pickaxe": {
+   "kind": "pickaxe",
+   "tier": 4,
+   "attack_damage": 5.0
+  },
+  "minecraft:diamond_shovel": {
+   "kind": "shovel",
+   "tier": 4,
+   "attack_damage": 4.0
+  },
+  "minecraft:diamond_sword": {
+   "kind": "sword",
+   "tier": 4,
+   "attack_damage": 7.0
+  },
+  "minecraft:golden_axe": {
+   "kind": "axe",
+   "tier": 1,
+   "attack_damage": 3.0
+  },
+  "minecraft:golden_hoe": {
+   "kind": "hoe",
+   "tier": 1,
+   "attack_damage": 2.0
+  },
+  "minecraft:golden_pickaxe": {
+   "kind": "pickaxe",
+   "tier": 1,
+   "attack_damage": 2.0
+  },
+  "minecraft:golden_shovel": {
+   "kind": "shovel",
+   "tier": 1,
+   "attack_damage": 1.0
+  },
+  "minecraft:golden_sword": {
+   "kind": "sword",
+   "tier": 1,
+   "attack_damage": 4.0
+  },
+  "minecraft:iron_axe": {
+   "kind": "axe",
+   "tier": 3,
+   "attack_damage": 5.0
+  },
+  "minecraft:iron_hoe": {
+   "kind": "hoe",
+   "tier": 3,
+   "attack_damage": 4.0
+  },
+  "minecraft:iron_pickaxe": {
+   "kind": "pickaxe",
+   "tier": 3,
+   "attack_damage": 4.0
+  },
+  "minecraft:iron_shovel": {
+   "kind": "shovel",
+   "tier": 3,
+   "attack_damage": 3.0
+  },
+  "minecraft:iron_sword": {
+   "kind": "sword",
+   "tier": 3,
+   "attack_damage": 6.0
+  },
+  "minecraft:netherite_axe": {
+   "kind": "axe",
+   "tier": 4,
+   "attack_damage": 7.0
+  },
+  "minecraft:netherite_hoe": {
+   "kind": "hoe",
+   "tier": 4,
+   "attack_damage": 6.0
+  },
+  "minecraft:netherite_pickaxe": {
+   "kind": "pickaxe",
+   "tier": 4,
+   "attack_damage": 6.0
+  },
+  "minecraft:netherite_shovel": {
+   "kind": "shovel",
+   "tier": 4,
+   "attack_damage": 5.0
+  },
+  "minecraft:netherite_sword": {
+   "kind": "sword",
+   "tier": 4,
+   "attack_damage": 8.0
+  },
+  "minecraft:shears": {
+   "kind": "shears",
+   "tier": 0,
+   "attack_damage": 1.0
+  },
+  "minecraft:stone_axe": {
+   "kind": "axe",
+   "tier": 2,
+   "attack_damage": 4.0
+  },
+  "minecraft:stone_hoe": {
+   "kind": "hoe",
+   "tier": 2,
+   "attack_damage": 3.0
+  },
+  "minecraft:stone_pickaxe": {
+   "kind": "pickaxe",
+   "tier": 2,
+   "attack_damage": 3.0
+  },
+  "minecraft:stone_shovel": {
+   "kind": "shovel",
+   "tier": 2,
+   "attack_damage": 2.0
+  },
+  "minecraft:stone_sword": {
+   "kind": "sword",
+   "tier": 2,
+   "attack_damage": 5.0
+  },
+  "minecraft:wooden_axe": {
+   "kind": "axe",
+   "tier": 1,
+   "attack_damage": 3.0
+  },
+  "minecraft:wooden_hoe": {
+   "kind": "hoe",
+   "tier": 1,
+   "attack_damage": 2.0
+  },
+  "minecraft:wooden_pickaxe": {
+   "kind": "pickaxe",
+   "tier": 1,
+   "attack_damage": 2.0
+  },
+  "minecraft:wooden_shovel": {
+   "kind": "shovel",
+   "tier": 1,
+   "attack_damage": 1.0
+  },
+  "minecraft:wooden_sword": {
+   "kind": "sword",
+   "tier": 1,
+   "attack_damage": 4.0
+  }
+ }
+}

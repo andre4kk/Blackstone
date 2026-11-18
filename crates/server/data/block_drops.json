@@ -1,0 +1,7036 @@
+{
+ "_license": "Da Dragonfly (MIT, https://github.com/df-mc/dragonfly, 1.26.60) server/block, server/item. Generato da tools/extract_survival.py.",
+ "blocks": {
+  "minecraft:acacia_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:acacia_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:acacia_leaves": {
+   "tool": "shears",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:acacia_leaves",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:amethyst_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:amethyst_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:ancient_debris": {
+   "tool": "pickaxe",
+   "min_tier": 4,
+   "drops": [
+    {
+     "item": "minecraft:ancient_debris",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:andesite": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:andesite",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:andesite_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:andesite_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:andesite_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:andesite_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:andesite_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:andesite_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:andesite_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:andesite_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:anvil": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:anvil",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:azalea_leaves": {
+   "tool": "shears",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:azalea_leaves",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:azalea_leaves_flowered": {
+   "tool": "shears",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:azalea_leaves_flowered",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:bamboo_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:bamboo_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:bamboo_mosaic_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:bamboo_mosaic_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:bamboo_sapling": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:bamboo",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:basalt": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:basalt",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:birch_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:birch_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:birch_leaves": {
+   "tool": "shears",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:birch_leaves",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:black_concrete": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:black_concrete",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:black_concrete_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:black_concrete_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:black_concrete_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:black_concrete_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:black_concrete_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:black_concrete_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:black_glazed_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:black_glazed_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:black_stained_glass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:black_stained_glass_pane": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:black_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:black_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:black_wool_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:black_wool_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:blackstone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:blackstone",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:blackstone_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:blackstone_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:blackstone_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:blackstone_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:blackstone_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:blackstone_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:blackstone_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:blackstone_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:blue_concrete": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:blue_concrete",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:blue_concrete_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:blue_concrete_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:blue_concrete_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:blue_concrete_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:blue_concrete_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:blue_concrete_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:blue_glazed_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:blue_glazed_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:blue_ice": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:blue_stained_glass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:blue_stained_glass_pane": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:blue_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:blue_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:blue_wool_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:blue_wool_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:bone_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:bone_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:bookshelf": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:book",
+     "min": 3,
+     "max": 3,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:brain_coral": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:brain_coral_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:dead_brain_coral_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:brick_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:brick_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:brick_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:brick_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:brick_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:brick_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:brick_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:brick_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:brick_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:brick_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:brown_concrete": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:brown_concrete",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:brown_concrete_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:brown_concrete_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:brown_concrete_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:brown_concrete_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:brown_concrete_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:brown_concrete_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:brown_glazed_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:brown_glazed_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:brown_stained_glass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:brown_stained_glass_pane": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:brown_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:brown_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:brown_wool_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:brown_wool_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:bubble_coral": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:bubble_coral_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:dead_bubble_coral_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:calcite": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:calcite",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cherry_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:cherry_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cherry_leaves": {
+   "tool": "shears",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:cherry_leaves",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:chipped_anvil": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:chipped_anvil",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:chiseled_cinnabar": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:chiseled_cinnabar",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:chiseled_copper": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:chiseled_copper",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:chiseled_nether_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:chiseled_nether_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:chiseled_quartz_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:chiseled_quartz_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:chiseled_red_sandstone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:chiseled_red_sandstone",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:chiseled_resin_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:chiseled_resin_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:chiseled_sandstone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:chiseled_sandstone",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:chiseled_stone_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:chiseled_stone_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:chiseled_sulfur": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:chiseled_sulfur",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:chiseled_tuff": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:chiseled_tuff",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:chiseled_tuff_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:chiseled_tuff_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cinnabar": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cinnabar",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cinnabar_brick_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cinnabar_brick_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cinnabar_brick_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cinnabar_brick_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cinnabar_brick_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cinnabar_brick_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cinnabar_brick_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cinnabar_brick_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cinnabar_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cinnabar_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cinnabar_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cinnabar_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cinnabar_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cinnabar_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cinnabar_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cinnabar_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cinnabar_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cinnabar_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:clay": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:clay_ball",
+     "min": 4,
+     "max": 4,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:coal_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:coal_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:coal_ore": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:coal",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cobbled_deepslate": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cobbled_deepslate",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cobbled_deepslate_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cobbled_deepslate_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cobbled_deepslate_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cobbled_deepslate_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cobbled_deepslate_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cobbled_deepslate_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cobbled_deepslate_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cobbled_deepslate_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cobblestone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cobblestone",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cobblestone_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cobblestone_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cobblestone_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cobblestone_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cobblestone_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cobblestone_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:copper_bars": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:copper_bars",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:copper_block": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:copper_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:copper_bulb": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:copper_bulb",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:copper_chain": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:copper_chain",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:copper_door": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:copper_door",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:copper_grate": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:copper_grate",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:copper_lantern": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:copper_lantern",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:copper_ore": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:raw_copper",
+     "min": 2,
+     "max": 5,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:copper_trapdoor": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:copper_trapdoor",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cracked_deepslate_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cracked_deepslate_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cracked_deepslate_tiles": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cracked_deepslate_tiles",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cracked_nether_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cracked_nether_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cracked_polished_blackstone_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cracked_polished_blackstone_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cracked_stone_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cracked_stone_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:crimson_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:crimson_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:crying_obsidian": {
+   "tool": "pickaxe",
+   "min_tier": 4,
+   "drops": [
+    {
+     "item": "minecraft:crying_obsidian",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cut_copper": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:cut_copper",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cut_copper_slab": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:cut_copper_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cut_copper_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:cut_copper_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cut_red_sandstone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cut_red_sandstone",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cut_red_sandstone_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cut_red_sandstone_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cut_red_sandstone_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cut_red_sandstone_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cut_sandstone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cut_sandstone",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cut_sandstone_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cut_sandstone_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cut_sandstone_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cut_sandstone_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cyan_concrete": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cyan_concrete",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cyan_concrete_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cyan_concrete_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cyan_concrete_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cyan_concrete_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cyan_concrete_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cyan_concrete_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cyan_glazed_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cyan_glazed_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cyan_stained_glass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:cyan_stained_glass_pane": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:cyan_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cyan_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cyan_wool_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:cyan_wool_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:damaged_anvil": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:damaged_anvil",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:dark_oak_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:dark_oak_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:dark_oak_leaves": {
+   "tool": "shears",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:dark_oak_leaves",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:dark_prismarine": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:dark_prismarine",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:dark_prismarine_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:dark_prismarine_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:dark_prismarine_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:dark_prismarine_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:dark_prismarine_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:dark_prismarine_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:dead_brain_coral": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:dead_brain_coral_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:dead_brain_coral_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:dead_bubble_coral": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:dead_bubble_coral_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:dead_bubble_coral_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:dead_fire_coral": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:dead_fire_coral_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:dead_fire_coral_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:dead_horn_coral": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:dead_horn_coral_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:dead_horn_coral_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:dead_tube_coral": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:dead_tube_coral_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:dead_tube_coral_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deadbush": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:stick",
+     "min": 0,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cobbled_deepslate",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_brick_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:deepslate_brick_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_brick_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:deepslate_brick_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_brick_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:deepslate_brick_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_brick_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:deepslate_brick_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:deepslate_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_coal_ore": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:coal",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_copper_ore": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:raw_copper",
+     "min": 2,
+     "max": 5,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_diamond_ore": {
+   "tool": "pickaxe",
+   "min_tier": 3,
+   "drops": [
+    {
+     "item": "minecraft:diamond",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_emerald_ore": {
+   "tool": "pickaxe",
+   "min_tier": 3,
+   "drops": [
+    {
+     "item": "minecraft:emerald",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_gold_ore": {
+   "tool": "pickaxe",
+   "min_tier": 3,
+   "drops": [
+    {
+     "item": "minecraft:raw_gold",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_iron_ore": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:raw_iron",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_lapis_ore": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:lapis_lazuli",
+     "min": 4,
+     "max": 9,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_redstone_ore": {
+   "tool": "pickaxe",
+   "min_tier": 3,
+   "drops": [
+    {
+     "item": "minecraft:redstone",
+     "min": 4,
+     "max": 5,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_tile_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:deepslate_tile_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_tile_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:deepslate_tile_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_tile_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:deepslate_tile_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_tile_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:deepslate_tile_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:deepslate_tiles": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:deepslate_tiles",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:diamond_block": {
+   "tool": "pickaxe",
+   "min_tier": 3,
+   "drops": [
+    {
+     "item": "minecraft:diamond_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:diamond_ore": {
+   "tool": "pickaxe",
+   "min_tier": 3,
+   "drops": [
+    {
+     "item": "minecraft:diamond",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:diorite": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:diorite",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:diorite_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:diorite_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:diorite_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:diorite_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:diorite_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:diorite_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:diorite_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:diorite_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:double_cut_copper_slab": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:cut_copper_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:dragon_egg": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:dragon_egg",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:dripstone_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:dripstone_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:emerald_block": {
+   "tool": "pickaxe",
+   "min_tier": 3,
+   "drops": [
+    {
+     "item": "minecraft:emerald_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:emerald_ore": {
+   "tool": "pickaxe",
+   "min_tier": 3,
+   "drops": [
+    {
+     "item": "minecraft:emerald",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:enchanting_table": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:enchanting_table",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:end_brick_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:end_brick_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:end_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:end_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:end_stone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:end_stone",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:end_stone_brick_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:end_stone_brick_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:end_stone_brick_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:end_stone_brick_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:end_stone_brick_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:end_stone_brick_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:ender_chest": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:obsidian",
+     "min": 8,
+     "max": 8,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:exposed_chiseled_copper": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:exposed_chiseled_copper",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:exposed_copper_bars": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:exposed_copper_bars",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:exposed_copper_bulb": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:exposed_copper_bulb",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:exposed_copper_chain": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:exposed_copper_chain",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:exposed_copper_door": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:exposed_copper_door",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:exposed_copper_grate": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:exposed_copper_grate",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:exposed_copper_lantern": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:exposed_copper_lantern",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:exposed_copper_trapdoor": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:exposed_copper_trapdoor",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:exposed_cut_copper": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:exposed_cut_copper",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:exposed_cut_copper_slab": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:exposed_cut_copper_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:exposed_cut_copper_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:exposed_cut_copper_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:exposed_double_cut_copper_slab": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:exposed_cut_copper_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:farmland": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:dirt",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:fern": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:wheat_seeds",
+     "min": 1,
+     "max": 1,
+     "chance": 0.125
+    }
+   ]
+  },
+  "minecraft:fire_coral": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:fire_coral_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:dead_fire_coral_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:gilded_blackstone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:gold_nugget",
+     "min": 2,
+     "max": 5,
+     "chance": 0.1
+    },
+    {
+     "item": "minecraft:gilded_blackstone",
+     "min": 1,
+     "max": 1,
+     "chance": 0.9
+    }
+   ]
+  },
+  "minecraft:glass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:glass_pane": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:glowstone": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:glowstone_dust",
+     "min": 2,
+     "max": 4,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:gold_block": {
+   "tool": "pickaxe",
+   "min_tier": 3,
+   "drops": [
+    {
+     "item": "minecraft:gold_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:gold_ore": {
+   "tool": "pickaxe",
+   "min_tier": 3,
+   "drops": [
+    {
+     "item": "minecraft:raw_gold",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:granite": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:granite",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:granite_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:granite_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:granite_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:granite_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:granite_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:granite_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:granite_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:granite_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:grass_block": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:dirt",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:grass_path": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:dirt",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:gravel": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:flint",
+     "min": 1,
+     "max": 1,
+     "chance": 0.1
+    },
+    {
+     "item": "minecraft:gravel",
+     "min": 1,
+     "max": 1,
+     "chance": 0.9
+    }
+   ]
+  },
+  "minecraft:gray_concrete": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:gray_concrete",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:gray_concrete_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:gray_concrete_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:gray_concrete_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:gray_concrete_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:gray_concrete_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:gray_concrete_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:gray_glazed_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:gray_glazed_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:gray_stained_glass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:gray_stained_glass_pane": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:gray_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:gray_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:gray_wool_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:gray_wool_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:green_concrete": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:green_concrete",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:green_concrete_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:green_concrete_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:green_concrete_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:green_concrete_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:green_concrete_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:green_concrete_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:green_glazed_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:green_glazed_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:green_stained_glass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:green_stained_glass_pane": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:green_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:green_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:green_wool_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:green_wool_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:grindstone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:grindstone",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:hardened_clay": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:hardened_clay",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:hopper": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:hopper",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:horn_coral": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:horn_coral_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:dead_horn_coral_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:ice": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:infested_chiseled_stone_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": []
+  },
+  "minecraft:infested_cobblestone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": []
+  },
+  "minecraft:infested_cracked_stone_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": []
+  },
+  "minecraft:infested_deepslate": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": []
+  },
+  "minecraft:infested_mossy_stone_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": []
+  },
+  "minecraft:infested_stone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": []
+  },
+  "minecraft:infested_stone_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": []
+  },
+  "minecraft:iron_bars": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:iron_bars",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:iron_block": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:iron_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:iron_chain": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:iron_chain",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:iron_ore": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:raw_iron",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:jungle_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:jungle_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:jungle_leaves": {
+   "tool": "shears",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:jungle_leaves",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:lantern": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:lantern",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:lapis_block": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:lapis_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:lapis_ore": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:lapis_lazuli",
+     "min": 4,
+     "max": 9,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:light_blue_concrete": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:light_blue_concrete",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:light_blue_concrete_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:light_blue_concrete_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:light_blue_concrete_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:light_blue_concrete_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:light_blue_concrete_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:light_blue_concrete_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:light_blue_glazed_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:light_blue_glazed_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:light_blue_stained_glass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:light_blue_stained_glass_pane": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:light_blue_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:light_blue_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:light_blue_wool_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:light_blue_wool_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:light_gray_concrete": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:light_gray_concrete",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:light_gray_concrete_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:light_gray_concrete_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:light_gray_concrete_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:light_gray_concrete_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:light_gray_concrete_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:light_gray_concrete_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:light_gray_stained_glass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:light_gray_stained_glass_pane": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:light_gray_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:light_gray_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:light_gray_wool_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:light_gray_wool_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:lime_concrete": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:lime_concrete",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:lime_concrete_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:lime_concrete_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:lime_concrete_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:lime_concrete_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:lime_concrete_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:lime_concrete_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:lime_glazed_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:lime_glazed_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:lime_stained_glass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:lime_stained_glass_pane": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:lime_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:lime_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:lime_wool_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:lime_wool_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:lit_blast_furnace": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:blast_furnace",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:lit_deepslate_redstone_ore": {
+   "tool": "pickaxe",
+   "min_tier": 3,
+   "drops": [
+    {
+     "item": "minecraft:redstone",
+     "min": 4,
+     "max": 5,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:lit_furnace": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:furnace",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:lit_redstone_ore": {
+   "tool": "pickaxe",
+   "min_tier": 3,
+   "drops": [
+    {
+     "item": "minecraft:redstone",
+     "min": 4,
+     "max": 5,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:lit_smoker": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:smoker",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:magenta_concrete": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:magenta_concrete",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:magenta_concrete_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:magenta_concrete_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:magenta_concrete_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:magenta_concrete_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:magenta_concrete_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:magenta_concrete_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:magenta_glazed_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:magenta_glazed_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:magenta_stained_glass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:magenta_stained_glass_pane": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:magenta_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:magenta_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:magenta_wool_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:magenta_wool_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:magma": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:magma",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:mangrove_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:mangrove_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:mangrove_leaves": {
+   "tool": "shears",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:mangrove_leaves",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:melon_block": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:melon_slice",
+     "min": 3,
+     "max": 7,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:mossy_cobblestone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:mossy_cobblestone",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:mossy_cobblestone_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:mossy_cobblestone_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:mossy_cobblestone_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:mossy_cobblestone_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:mossy_cobblestone_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:mossy_cobblestone_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:mossy_cobblestone_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:mossy_cobblestone_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:mossy_stone_brick_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:mossy_stone_brick_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:mossy_stone_brick_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:mossy_stone_brick_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:mossy_stone_brick_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:mossy_stone_brick_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:mossy_stone_brick_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:mossy_stone_brick_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:mossy_stone_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:mossy_stone_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:mud_brick_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:mud_brick_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:mud_brick_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:mud_brick_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:mycelium": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:dirt",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:nether_brick": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:nether_brick",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:nether_brick_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:nether_brick_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:nether_brick_fence": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:nether_brick_fence",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:nether_brick_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:nether_brick_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:nether_brick_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:nether_brick_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:nether_brick_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:nether_brick_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:nether_gold_ore": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:gold_nugget",
+     "min": 2,
+     "max": 6,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:nether_sprouts": {
+   "tool": "shears",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:nether_sprouts",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:netherite_block": {
+   "tool": "pickaxe",
+   "min_tier": 4,
+   "drops": [
+    {
+     "item": "minecraft:netherite_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:netherrack": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:netherrack",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:normal_stone_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:normal_stone_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:normal_stone_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:normal_stone_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:normal_stone_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:normal_stone_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:oak_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:oak_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:oak_leaves": {
+   "tool": "shears",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:oak_leaves",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:obsidian": {
+   "tool": "pickaxe",
+   "min_tier": 4,
+   "drops": [
+    {
+     "item": "minecraft:obsidian",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:orange_concrete": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:orange_concrete",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:orange_concrete_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:orange_concrete_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:orange_concrete_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:orange_concrete_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:orange_concrete_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:orange_concrete_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:orange_glazed_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:orange_glazed_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:orange_poplar_leaves": {
+   "tool": "shears",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:orange_poplar_leaves",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:orange_stained_glass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:orange_stained_glass_pane": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:orange_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:orange_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:orange_wool_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:orange_wool_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:oxidized_chiseled_copper": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:oxidized_chiseled_copper",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:oxidized_copper_bars": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:oxidized_copper_bars",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:oxidized_copper_bulb": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:oxidized_copper_bulb",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:oxidized_copper_chain": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:oxidized_copper_chain",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:oxidized_copper_door": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:oxidized_copper_door",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:oxidized_copper_grate": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:oxidized_copper_grate",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:oxidized_copper_lantern": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:oxidized_copper_lantern",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:oxidized_copper_trapdoor": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:oxidized_copper_trapdoor",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:oxidized_cut_copper": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:oxidized_cut_copper",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:oxidized_cut_copper_slab": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:oxidized_cut_copper_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:oxidized_cut_copper_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:oxidized_cut_copper_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:oxidized_double_cut_copper_slab": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:oxidized_cut_copper_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:packed_ice": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:pale_oak_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:pale_oak_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:pale_oak_leaves": {
+   "tool": "shears",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:pale_oak_leaves",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:petrified_oak_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:petrified_oak_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:petrified_oak_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:petrified_oak_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:pink_concrete": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:pink_concrete",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:pink_concrete_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:pink_concrete_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:pink_concrete_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:pink_concrete_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:pink_concrete_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:pink_concrete_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:pink_glazed_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:pink_glazed_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:pink_stained_glass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:pink_stained_glass_pane": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:pink_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:pink_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:pink_wool_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:pink_wool_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:podzol": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:dirt",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_andesite": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_andesite",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_andesite_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_andesite_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_andesite_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_andesite_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_andesite_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_andesite_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_basalt": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_basalt",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_blackstone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_blackstone",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_blackstone_brick_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_blackstone_brick_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_blackstone_brick_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_blackstone_brick_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_blackstone_brick_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_blackstone_brick_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_blackstone_brick_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_blackstone_brick_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_blackstone_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_blackstone_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_blackstone_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_blackstone_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_blackstone_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_blackstone_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_blackstone_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_blackstone_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_blackstone_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_blackstone_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_cinnabar": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_cinnabar",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_cinnabar_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_cinnabar_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_cinnabar_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_cinnabar_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_cinnabar_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_cinnabar_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_cinnabar_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_cinnabar_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_deepslate": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cobbled_deepslate",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_deepslate_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_deepslate_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_deepslate_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_deepslate_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_deepslate_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_deepslate_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_deepslate_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_deepslate_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_diorite": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_diorite",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_diorite_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_diorite_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_diorite_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_diorite_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_diorite_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_diorite_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_granite": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_granite",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_granite_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_granite_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_granite_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_granite_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_granite_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_granite_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_sulfur": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_sulfur",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_sulfur_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_sulfur_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_sulfur_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_sulfur_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_sulfur_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_sulfur_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_sulfur_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_sulfur_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_tuff": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_tuff",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_tuff_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_tuff_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_tuff_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_tuff_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_tuff_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_tuff_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:polished_tuff_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:polished_tuff_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:poplar_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:poplar_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:prismarine": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:prismarine",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:prismarine_brick_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:prismarine_brick_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:prismarine_brick_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:prismarine_brick_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:prismarine_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:prismarine_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:prismarine_bricks_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:prismarine_bricks_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:prismarine_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:prismarine_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:prismarine_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:prismarine_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:prismarine_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:prismarine_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:prismarine_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:prismarine_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:purple_concrete": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:purple_concrete",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:purple_concrete_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:purple_concrete_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:purple_concrete_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:purple_concrete_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:purple_concrete_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:purple_concrete_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:purple_glazed_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:purple_glazed_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:purple_stained_glass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:purple_stained_glass_pane": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:purple_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:purple_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:purple_wool_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:purple_wool_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:purpur_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:purpur_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:purpur_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:purpur_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:purpur_pillar": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:purpur_pillar",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:purpur_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:purpur_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:purpur_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:purpur_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:quartz_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:quartz_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:quartz_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:quartz_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:quartz_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:quartz_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:quartz_ore": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:quartz",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:quartz_pillar": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:quartz_pillar",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:quartz_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:quartz_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:quartz_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:quartz_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:raw_copper_block": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:raw_copper_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:raw_gold_block": {
+   "tool": "pickaxe",
+   "min_tier": 3,
+   "drops": [
+    {
+     "item": "minecraft:raw_gold_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:raw_iron_block": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:raw_iron_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_concrete": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:red_concrete",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_concrete_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:red_concrete_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_concrete_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:red_concrete_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_concrete_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:red_concrete_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_glazed_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:red_glazed_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_nether_brick": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:red_nether_brick",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_nether_brick_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:red_nether_brick_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_nether_brick_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:red_nether_brick_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_nether_brick_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:red_nether_brick_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_nether_brick_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:red_nether_brick_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_poplar_leaves": {
+   "tool": "shears",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:red_poplar_leaves",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_sandstone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:red_sandstone",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_sandstone_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:red_sandstone_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_sandstone_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:red_sandstone_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_sandstone_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:red_sandstone_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_sandstone_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:red_sandstone_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_stained_glass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:red_stained_glass_pane": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:red_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:red_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:red_wool_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:red_wool_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:redstone_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:redstone_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:redstone_ore": {
+   "tool": "pickaxe",
+   "min_tier": 3,
+   "drops": [
+    {
+     "item": "minecraft:redstone",
+     "min": 4,
+     "max": 5,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:resin_brick_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:resin_brick_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:resin_brick_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:resin_brick_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:resin_brick_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:resin_brick_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:resin_brick_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:resin_brick_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:resin_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:resin_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:sandstone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:sandstone",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:sandstone_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:sandstone_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:sandstone_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:sandstone_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:sandstone_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:sandstone_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:sandstone_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:sandstone_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:sea_lantern": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:prismarine_crystals",
+     "min": 2,
+     "max": 3,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:short_grass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:wheat_seeds",
+     "min": 1,
+     "max": 1,
+     "chance": 0.125
+    }
+   ]
+  },
+  "minecraft:silver_glazed_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:silver_glazed_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:smooth_basalt": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:smooth_basalt",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:smooth_quartz": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:smooth_quartz",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:smooth_quartz_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:smooth_quartz_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:smooth_quartz_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:smooth_quartz_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:smooth_quartz_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:smooth_quartz_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:smooth_red_sandstone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:smooth_red_sandstone",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:smooth_red_sandstone_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:smooth_red_sandstone_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:smooth_red_sandstone_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:smooth_red_sandstone_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:smooth_red_sandstone_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:smooth_red_sandstone_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:smooth_sandstone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:smooth_sandstone",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:smooth_sandstone_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:smooth_sandstone_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:smooth_sandstone_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:smooth_sandstone_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:smooth_sandstone_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:smooth_sandstone_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:smooth_stone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:smooth_stone",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:smooth_stone_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:smooth_stone_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:smooth_stone_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:smooth_stone_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:snow": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:snowball",
+     "min": 4,
+     "max": 4,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:soul_lantern": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:soul_lantern",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:spruce_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:spruce_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:spruce_leaves": {
+   "tool": "shears",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:spruce_leaves",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:stone": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:cobblestone",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:stone_brick_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:stone_brick_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:stone_brick_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:stone_brick_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:stone_brick_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:stone_brick_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:stone_brick_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:stone_brick_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:stone_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:stone_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:stone_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:stone_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:stonecutter_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:stonecutter_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:sulfur": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:sulfur",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:sulfur_brick_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:sulfur_brick_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:sulfur_brick_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:sulfur_brick_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:sulfur_brick_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:sulfur_brick_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:sulfur_brick_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:sulfur_brick_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:sulfur_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:sulfur_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:sulfur_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:sulfur_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:sulfur_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:sulfur_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:sulfur_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:sulfur_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:sulfur_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:sulfur_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:tall_grass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:wheat_seeds",
+     "min": 1,
+     "max": 1,
+     "chance": 0.125
+    }
+   ]
+  },
+  "minecraft:tube_coral": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:tube_coral_block": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:dead_tube_coral_block",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:tuff": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:tuff",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:tuff_brick_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:tuff_brick_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:tuff_brick_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:tuff_brick_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:tuff_brick_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:tuff_brick_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:tuff_brick_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:tuff_brick_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:tuff_bricks": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:tuff_bricks",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:tuff_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:tuff_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:tuff_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:tuff_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:tuff_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:tuff_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:tuff_wall": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:tuff_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:unlit_redstone_torch": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:redstone_torch",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:vine": {
+   "tool": "shears",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:vine",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:warped_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:warped_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_chiseled_copper": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_chiseled_copper",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_copper_bars": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:waxed_copper_bars",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_copper_bulb": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_copper_bulb",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_copper_chain": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:waxed_copper_chain",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_copper_door": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_copper_door",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_copper_grate": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_copper_grate",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_copper_lantern": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:waxed_copper_lantern",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_copper_trapdoor": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_copper_trapdoor",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_cut_copper": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_cut_copper",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_cut_copper_slab": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_cut_copper_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_cut_copper_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_cut_copper_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_double_cut_copper_slab": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_cut_copper_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_exposed_chiseled_copper": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_exposed_chiseled_copper",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_exposed_copper_bars": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:waxed_exposed_copper_bars",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_exposed_copper_bulb": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_exposed_copper_bulb",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_exposed_copper_chain": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:waxed_exposed_copper_chain",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_exposed_copper_door": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_exposed_copper_door",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_exposed_copper_grate": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_exposed_copper_grate",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_exposed_copper_lantern": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:waxed_exposed_copper_lantern",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_exposed_copper_trapdoor": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_exposed_copper_trapdoor",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_exposed_cut_copper": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_exposed_cut_copper",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_exposed_cut_copper_slab": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_exposed_cut_copper_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_exposed_cut_copper_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_exposed_cut_copper_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_exposed_double_cut_copper_slab": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_exposed_cut_copper_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_oxidized_chiseled_copper": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_oxidized_chiseled_copper",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_oxidized_copper_bars": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:waxed_oxidized_copper_bars",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_oxidized_copper_bulb": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_oxidized_copper_bulb",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_oxidized_copper_chain": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:waxed_oxidized_copper_chain",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_oxidized_copper_door": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_oxidized_copper_door",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_oxidized_copper_grate": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_oxidized_copper_grate",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_oxidized_copper_lantern": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:waxed_oxidized_copper_lantern",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_oxidized_copper_trapdoor": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_oxidized_copper_trapdoor",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_oxidized_cut_copper": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_oxidized_cut_copper",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_oxidized_cut_copper_slab": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_oxidized_cut_copper_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_oxidized_cut_copper_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_oxidized_cut_copper_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_oxidized_double_cut_copper_slab": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_oxidized_cut_copper_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_weathered_chiseled_copper": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_weathered_chiseled_copper",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_weathered_copper_bars": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:waxed_weathered_copper_bars",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_weathered_copper_bulb": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_weathered_copper_bulb",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_weathered_copper_chain": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:waxed_weathered_copper_chain",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_weathered_copper_door": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_weathered_copper_door",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_weathered_copper_grate": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_weathered_copper_grate",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_weathered_copper_lantern": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:waxed_weathered_copper_lantern",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_weathered_copper_trapdoor": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_weathered_copper_trapdoor",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_weathered_cut_copper": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_weathered_cut_copper",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_weathered_cut_copper_slab": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_weathered_cut_copper_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_weathered_cut_copper_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_weathered_cut_copper_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:waxed_weathered_double_cut_copper_slab": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:waxed_weathered_cut_copper_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:weathered_chiseled_copper": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:weathered_chiseled_copper",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:weathered_copper_bars": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:weathered_copper_bars",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:weathered_copper_bulb": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:weathered_copper_bulb",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:weathered_copper_chain": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:weathered_copper_chain",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:weathered_copper_door": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:weathered_copper_door",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:weathered_copper_grate": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:weathered_copper_grate",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:weathered_copper_lantern": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:weathered_copper_lantern",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:weathered_copper_trapdoor": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:weathered_copper_trapdoor",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:weathered_cut_copper": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:weathered_cut_copper",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:weathered_cut_copper_slab": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:weathered_cut_copper_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:weathered_cut_copper_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:weathered_cut_copper_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:weathered_double_cut_copper_slab": {
+   "tool": "pickaxe",
+   "min_tier": 2,
+   "drops": [
+    {
+     "item": "minecraft:weathered_cut_copper_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:web": {
+   "tool": "shears",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:web",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:white_concrete": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:white_concrete",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:white_concrete_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:white_concrete_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:white_concrete_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:white_concrete_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:white_concrete_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:white_concrete_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:white_glazed_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:white_glazed_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:white_stained_glass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:white_stained_glass_pane": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:white_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:white_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:white_wool_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:white_wool_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:yellow_concrete": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:yellow_concrete",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:yellow_concrete_double_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:yellow_concrete_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:yellow_concrete_slab": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:yellow_concrete_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:yellow_concrete_stairs": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:yellow_concrete_stairs",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:yellow_glazed_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:yellow_glazed_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:yellow_poplar_leaves": {
+   "tool": "shears",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:yellow_poplar_leaves",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:yellow_stained_glass": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:yellow_stained_glass_pane": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:yellow_terracotta": {
+   "tool": "pickaxe",
+   "min_tier": 1,
+   "drops": [
+    {
+     "item": "minecraft:yellow_terracotta",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:yellow_wool_double_slab": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:yellow_wool_slab",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0
+    }
+   ]
+  }
+ }
+}

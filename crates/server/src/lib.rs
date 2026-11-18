@@ -19,6 +19,7 @@ mod playerdata;
 mod registry;
 mod storage;
 mod streaming;
+mod tables;
 #[cfg(test)]
 mod tests;
 mod world;
