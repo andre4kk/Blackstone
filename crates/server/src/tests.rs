@@ -2,7 +2,10 @@
 use crate::{registry, GameMode, Player, Server};
 use bedrock_net::{Command, Sender};
 use bedrock_protocol::{
-    generated::{ContainerClose, ContainerOpen, CreativeContent, InventoryContent, MobEquipment, PlayerHotbar, SetPlayerGameType, StartGame, UpdateAbilities},
+    generated::{
+        ContainerClose, ContainerOpen, CreativeContent, InventoryContent, MobEquipment, PlayerHotbar, SetPlayerGameType, StartGame, UpdateAbilities,
+        UpdateAttributes,
+    },
     id,
     item::ItemStack,
     packets::{text_type, CommandRequest, Login, RequestChunkRadius, Text},
@@ -450,6 +453,22 @@ fn mob_equipment_selects_a_hotbar_slot() {
     assert_eq!(h.server.players[&1].inventory.selected, 3, "fuori dalla barra: ignorato");
     h.receive(1, &[Packet::new(id::MOB_EQUIPMENT, vec![1, 2])]);
     assert_eq!(h.server.players[&1].inventory.selected, 3, "corpo malformato: ignorato");
+}
+
+#[test]
+fn the_player_gets_speed_health_and_hunger_on_spawn() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    let attributes: Vec<Packet> = h.packets_to(1).into_iter().filter(|p| p.id == UpdateAttributes::ID).collect();
+    assert_eq!(attributes.len(), 1, "un UpdateAttributes allo spawn");
+    let expected = crate::join::spawn_attributes(1).packet();
+    assert_eq!(attributes[0].body, expected.body);
+    let attributes = crate::join::spawn_attributes(1).attribute_list;
+    for name in ["minecraft:movement", "minecraft:health", "minecraft:player.hunger", "minecraft:player.saturation", "minecraft:player.exhaustion"] {
+        assert!(attributes.iter().any(|a| a.name == name), "manca {name}");
+    }
+    let movement = attributes.iter().find(|a| a.name == "minecraft:movement").unwrap();
+    assert_eq!((movement.current_value, movement.default_value), (0.1, 0.1), "velocità di camminata vanilla");
 }
 
 /// `Interact` del client: azione e runtime id del bersaglio (la posizione opzionale manca).

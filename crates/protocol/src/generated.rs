@@ -1916,6 +1916,73 @@ impl Encode for ContainerClose {
     }
 }
 
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct AttributeModifier {
+    pub id: String,
+    pub name: String,
+    pub amount: f32,
+    pub operation: i32,
+    pub operand: i32,
+    pub is_serializable: bool,
+}
+
+impl Encode for AttributeModifier {
+    fn encode(&self, w: &mut Writer) {
+        w.string(&self.id);
+        w.string(&self.name);
+        w.f32(self.amount);
+        w.i32(self.operation);
+        w.i32(self.operand);
+        w.bool(self.is_serializable);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct AttributeData {
+    pub min_value: f32,
+    pub max_value: f32,
+    pub current_value: f32,
+    pub default_min_value: f32,
+    pub default_max_value: f32,
+    pub default_value: f32,
+    pub name: String,
+    pub modifiers: Vec<AttributeModifier>,
+}
+
+impl Encode for AttributeData {
+    fn encode(&self, w: &mut Writer) {
+        w.f32(self.min_value);
+        w.f32(self.max_value);
+        w.f32(self.current_value);
+        w.f32(self.default_min_value);
+        w.f32(self.default_max_value);
+        w.f32(self.default_value);
+        w.string(&self.name);
+        w.var_u32(self.modifiers.len() as u32);
+        for v in &self.modifiers {
+            v.encode(w);
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct UpdateAttributes {
+    pub target_runtime_id: u64,
+    pub attribute_list: Vec<AttributeData>,
+    pub tick: u64,
+}
+
+impl Encode for UpdateAttributes {
+    fn encode(&self, w: &mut Writer) {
+        w.var_u64(self.target_runtime_id);
+        w.var_u32(self.attribute_list.len() as u32);
+        for v in &self.attribute_list {
+            v.encode(w);
+        }
+        w.var_u64(self.tick);
+    }
+}
+
 impl ServerPacket for StartGame {
     const ID: u32 = 11;
 }
@@ -2010,6 +2077,10 @@ impl ServerPacket for ContainerOpen {
 
 impl ServerPacket for ContainerClose {
     const ID: u32 = 47;
+}
+
+impl ServerPacket for UpdateAttributes {
+    const ID: u32 = 29;
 }
 
 /// Valori degli enum degli schemi (i campi sono interi: si usano queste costanti).

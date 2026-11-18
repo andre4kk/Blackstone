@@ -11,10 +11,10 @@ use bedrock_net::log;
 use bedrock_protocol::{
     generated::{
         enums::{self, container_enum_name},
-        AvailableActorIdentifiers, BlockPos, ChunkRadiusUpdated, CreativeContent, CreativeGroupInfoPayload, CreativeItemEntryPayload, FullContainerName,
-        InventoryContent, ItemData, ItemRegistry, JigsawStructureData, LevelSettings, NetworkChunkPublisherUpdate, NetworkItemInstanceDescriptorData,
-        PlayerHotbar, SerializedAbilitiesData, SerializedAbilitiesDataSerializedLayer, SetPlayerGameType, SpawnSettings, StartGame,
-        SyncedPlayerMovementSettings, UpdateAbilities, Vec2, Vec3, VoxelShapes,
+        AttributeData, AvailableActorIdentifiers, BlockPos, ChunkRadiusUpdated, CreativeContent, CreativeGroupInfoPayload, CreativeItemEntryPayload,
+        FullContainerName, InventoryContent, ItemData, ItemRegistry, JigsawStructureData, LevelSettings, NetworkChunkPublisherUpdate,
+        NetworkItemInstanceDescriptorData, PlayerHotbar, SerializedAbilitiesData, SerializedAbilitiesDataSerializedLayer, SetPlayerGameType, SpawnSettings,
+        StartGame, SyncedPlayerMovementSettings, UpdateAbilities, UpdateAttributes, Vec2, Vec3, VoxelShapes,
     },
     id,
     item::ItemStack,
@@ -150,6 +150,32 @@ fn creative_descriptor(c: &CreativeItem) -> NetworkItemInstanceDescriptorData {
             Some(nbt) => ItemStack::user_data_with_nbt(nbt),
             None => ItemStack::empty_user_data(),
         },
+    }
+}
+
+/// Attributi del giocatore che il client usa per prevedere il movimento (velocità) e per vita e fame, con i valori vanilla.
+/// Senza questo pacchetto il client non riceve mai la velocità di camminata: Dragonfly lo manda subito dopo `StartGame`.
+pub(crate) fn spawn_attributes(runtime_id: u64) -> UpdateAttributes {
+    let attribute = |name: &str, value: f32, max: f32, default: f32| AttributeData {
+        min_value: 0.0,
+        max_value: max,
+        current_value: value,
+        default_min_value: 0.0,
+        default_max_value: max,
+        default_value: default,
+        name: name.into(),
+        modifiers: Vec::new(),
+    };
+    UpdateAttributes {
+        target_runtime_id: runtime_id,
+        attribute_list: vec![
+            attribute("minecraft:movement", 0.1, f32::MAX, 0.1),
+            attribute("minecraft:health", 20.0, 20.0, 20.0),
+            attribute("minecraft:player.hunger", 20.0, 20.0, 20.0),
+            attribute("minecraft:player.saturation", 5.0, 20.0, 5.0),
+            attribute("minecraft:player.exhaustion", 0.0, 5.0, 0.0),
+        ],
+        tick: 0,
     }
 }
 
@@ -317,6 +343,7 @@ impl Server {
         if !skip("creative") {
             packets.push(creative_packet().clone());
         }
+        packets.push(spawn_attributes(pid).packet());
         self.send(pid, &packets);
         if flag("CHUNKS_EARLY") {
             self.initialized(pid); // diagnostica: il vecchio ordine, senza aspettare il client
