@@ -97,7 +97,7 @@ pub struct SkinAnimation {
 #[derive(Clone, Debug, PartialEq)]
 pub struct PersonaPiece {
     pub piece_id: String,
-    /// `persona::PieceType` (valore binario).
+    /// `persona::PieceType` (indice in `PIECE_TYPES`; sul filo e' il nome).
     pub piece_type: u32,
     /// UUID del pacchetto, nell'ordine testuale (vedi `uuid_from_str`).
     pub pack_id: [u8; 16],
@@ -172,6 +172,18 @@ fn color_argb(s: &str) -> Option<i32> {
 fn piece_type(name: &str) -> u32 {
     let name = name.strip_prefix("persona_").unwrap_or(name).to_ascii_lowercase();
     PIECE_TYPES.iter().position(|p| *p == name).unwrap_or(0) as u32
+}
+
+/// Nome sul filo di un tipo di pezzo persona: il client legge `persona::PieceType` come stringa (errore del client del 19/11/2026).
+/// Un valore fuori tabella diventa "unknown".
+fn piece_type_name(v: u32) -> &'static str {
+    PIECE_TYPES.get(v as usize).copied().unwrap_or("unknown")
+}
+
+/// Legge un `PieceType` scritto come stringa; un nome sconosciuto vale 0 ("unknown").
+fn read_piece_type(r: &mut Reader) -> Option<u32> {
+    let name = r.string()?;
+    Some(PIECE_TYPES.iter().position(|p| *p == name).unwrap_or(0) as u32)
 }
 
 /// UUID testuale ("aabbccdd-eeff-...") in 16 byte nell'ordine del testo. `None` se non e' un UUID.
@@ -330,7 +342,7 @@ impl Skin {
         w.var_u32(self.persona_pieces.len() as u32);
         for p in &self.persona_pieces {
             w.string(&p.piece_id);
-            w.u32(p.piece_type);
+            w.string(piece_type_name(p.piece_type));
             w.u64(u64::from_be_bytes(p.pack_id[..8].try_into().unwrap()));
             w.u64(u64::from_be_bytes(p.pack_id[8..].try_into().unwrap()));
             w.bool(p.is_default);
@@ -338,7 +350,7 @@ impl Skin {
         }
         w.var_u32(self.piece_tints.len() as u32);
         for t in &self.piece_tints {
-            w.u32(t.piece_type);
+            w.string(piece_type_name(t.piece_type));
             w.var_u32(t.colors.len() as u32);
             for c in &t.colors {
                 w.i32(*c);
@@ -377,7 +389,7 @@ impl Skin {
         for _ in 0..r.var_u32()? {
             persona_pieces.push(PersonaPiece {
                 piece_id: r.string()?.to_owned(),
-                piece_type: r.u32()?,
+                piece_type: read_piece_type(r)?,
                 pack_id: read_uuid(r)?,
                 is_default: r.bool()?,
                 product_id: r.string()?.to_owned(),
@@ -385,7 +397,7 @@ impl Skin {
         }
         let mut piece_tints = Vec::new();
         for _ in 0..r.var_u32()? {
-            let piece_type = r.u32()?;
+            let piece_type = read_piece_type(r)?;
             let mut colors = Vec::new();
             for _ in 0..r.var_u32()? {
                 colors.push(r.i32()?);
@@ -578,5 +590,29 @@ mod tests {
         let s = Skin::from_client_data(&c).unwrap();
         assert_eq!((s.persona_pieces[0].piece_type, s.persona_pieces[0].pack_id[15]), (14, 0xff));
         assert_eq!((s.piece_tints[0].piece_type, s.piece_tints[0].colors[0]), (14, 0xff11_2233_u32 as i32));
+    }
+
+    #[test]
+    fn piece_type_is_a_string_on_the_wire() {
+        let mut skin = Skin::fallback();
+        skin.persona_pieces = vec![PersonaPiece { piece_id: "p".into(), piece_type: 14, pack_id: [0xaa; 16], is_default: true, product_id: "x".into() }];
+        skin.piece_tints = vec![PieceTint { piece_type: 99, colors: vec![1] }];
+        let mut w = Writer::default();
+        skin.encode(&mut w);
+        let b = w.0;
+        // Pezzo: id, tipo come stringa, PackId (due u64), IsDefault, ProductId.
+        let mut piece = vec![1, b'p', 4];
+        piece.extend_from_slice(b"hair");
+        piece.extend_from_slice(&[0xaa; 16]);
+        piece.extend_from_slice(&[1, 1, b'x']);
+        // Tinta: contatore 1, tipo fuori tabella = "unknown", un colore i32 LE.
+        let mut tint = vec![1, 7];
+        tint.extend_from_slice(b"unknown");
+        tint.extend_from_slice(&[1, 1, 0, 0, 0]);
+        let find = |h: &[u8]| b.windows(h.len()).any(|x| x == h);
+        assert!(find(&piece), "pezzo persona");
+        assert!(find(&tint), "tinta");
+        let back = Skin::decode(&mut Reader(&b)).unwrap();
+        assert_eq!((back.persona_pieces[0].piece_type, back.piece_tints[0].piece_type), (14, 0));
     }
 }

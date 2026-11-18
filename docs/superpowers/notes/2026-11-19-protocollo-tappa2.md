@@ -77,13 +77,15 @@ Ordine = `x-ordinal-index` di `SerializedSkin.json` (tipi di `SkinImage`, `Anima
 | 9 | FullID | stringa |
 | 10 | ArmSize | **u8** (Slim 0, Wide 1), non stringa come in gophertunnel |
 | 11 | SkinColor (`Color`) | i32 LE, ARGB (da "#AARRGGBB") |
-| 12 | PersonaPieces | contatore; per voce: PieceId stringa, PieceType u32 fisso, PackId (`mce::UUID`: Most Significant u64 poi Least Significant u64, LE), IsDefaultPiece bool, ProductId stringa |
-| 13 | PieceTintColors | mappa: contatore; per voce: chiave PieceType u32 fisso, valore `TintMapColor` = array `Colors` (contatore varuint32 + i32 LE ciascuno; lo schema dice min=max=4 ma il generatore scrive comunque il contatore: **non verificato su cattura**) |
+| 12 | PersonaPieces | contatore; per voce: PieceId stringa, PieceType **stringa** (nome minuscolo, vedi sotto), PackId (`mce::UUID`: Most Significant u64 poi Least Significant u64, LE), IsDefaultPiece bool, ProductId stringa |
+| 13 | PieceTintColors | mappa: contatore; per voce: chiave PieceType **stringa** (nome minuscolo), valore `TintMapColor` = array `Colors` (contatore varuint32 + i32 LE ciascuno; lo schema dice min=max=4 ma il generatore scrive comunque il contatore: **non verificato su cattura**) |
 | 14-18 | IsPremium, IsPersona, IsPersonaCapeOnClassicSkin, IsPrimaryUser, OverridesPlayerAppearance | bool |
 | 19 | TrustedSkinFlag | enum (Unset 0, False 1, True 2), **larghezza non verificata**: scritto come u8; il server manda 2 |
 | 20 | ProfileHash | stringa (vuota) |
 
-Incerti da confermare con una cattura reale del PlayerList: contatore dei `Colors`, larghezza di `TrustedSkinFlag`, endianness di `ArmSize`/`PieceType` (qui u8 e u32 fissi come da schema).
+Incerti da confermare con una cattura reale del PlayerList: contatore dei `Colors`, larghezza di `TrustedSkinFlag`, endianness di `ArmSize` (qui u8 come da schema).
+
+**PieceType e' una stringa sul filo** (varuint32 + UTF-8, nome minuscolo della tabella `PIECE_TYPES`: `unknown`, `skeleton`, `body`, ...), sia nei pezzi persona sia nelle tinte. Lo dice l'errore del client reale del 19/11/2026 ("This value is bound to 'persona::PieceType' and expects one of the following strings ... readNoHeader failed! packetId: 63"), anche se `SerializedPersonaPieceHandle.json` dichiara uint32 Enum-as-Value. Vale la risposta del client, non lo schema. Un nome fuori tabella si scrive come `unknown`.
 
 UUID nel PlayerList (Task 4): `skin::uuid_bytes` restituisce i 16 byte **nell'ordine del testo** ("aabbccdd-eeff-..." -> aa bb cc dd ee ff ...). Bedrock scrive l'UUID come due u64 little-endian (Most Significant Bits poi Least Significant Bits, come `mce::UUID` sopra): quindi scrivere `u64::from_be_bytes(b[..8])` e `u64::from_be_bytes(b[8..])` con `Writer::u64` (little-endian), come fa `Skin::encode` per `PackId`. Ordine non verificato su gophertunnel (non e' in `vendor/`): controllare con la cattura.
 

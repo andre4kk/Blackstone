@@ -71,7 +71,7 @@ le righe del log vicine al momento del guasto.
 3. **`SerializedSkin`**: il numero dei colori prima della lista (`Colors count`), il flag di fiducia (`TrustedSkinFlag`, un byte) e la misura delle braccia (`ArmSize`, un byte). Guasto: disconnessione o skin deformata.
 4. **Flag di stato**: accovacciato = 1, in corsa = 3, in planata = 32, a nuoto = 57. Guasto: lo stato non si vede o se ne vede un altro (per esempio il bot nuota invece di accovacciarsi).
 5. **`AddPlayer` e `AddItemActor`**: la struttura dei campi (dati sincronizzati con `oneOf`). Guasto: disconnessione quando un giocatore o un oggetto entra nel raggio visivo.
-6. **`PlayerSkin`**: nel log compaiono le righe `PlayerSkin (N byte): [..]` (le prime 3 per giocatore, tagliate a 400 byte). Servono a confrontare la struttura se il cambio skin non funziona.
+6. **`PlayerSkin`**: nel log compaiono le righe `PlayerSkin (N byte): [..]` (le prime 3 per giocatore, tagliate a 400 byte). Servono a confrontare la struttura se il cambio skin non funziona. Il corpo completo dei primi 3 `PlayerSkin` per giocatore finisce anche in `captures/playerskin-<pid>-<n>.bin` (cartella ignorata da git): allegare quei file se il cambio skin fallisce.
 7. **`Animate`**: l'azione è un byte (1 = agita il braccio). Guasto: il braccio non si muove.
 
 Anche le richieste di pila dell'inventario e gli input con azioni (lancio con Q, trascinamento fuori) sono loggati in esadecimale
