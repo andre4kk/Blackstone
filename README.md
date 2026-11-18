@@ -1,6 +1,8 @@
 # bedrock-server
 
 Server Minecraft Bedrock in Rust, su trasporto NetherNet (WebRTC), quello usato dalle versioni 26.60+.
+Il mondo è un Overworld infinito, generato da un processo separato (`versmc-gen`, basato su SteelMC) con le stesse regole di
+Java 26.3, e salvato su disco nel formato LevelDB di Bedrock.
 
 ## Architettura
 
@@ -11,9 +13,51 @@ crates/
   net/       bedrock-net       Trasporto: signaling HTTP, identità, WebRTC. Espone Event::{Open,Message,Close} e
                                Sender::{send,kick}. Non sa cosa c'è nei messaggi.
   server/    bedrock-server    Logica di gioco: un handler per pacchetto (handlers.rs). Contiene l'eseguibile.
+  vgen/      vgen              Protocollo locale (TCP, solo std) tra il server e il generatore: Hello, palette dei blocchi,
+                               Generate (chunk), Spawn. Licenza MIT: lo usano entrambi i lati.
+generator/                      `versmc-gen`: processo che genera i chunk (SteelMC) e li traduce in blocchi e biomi Bedrock.
+                               Workspace Cargo separato, toolchain nightly, licenza AGPL-3.0-or-later (vedi "Licenze").
 ```
 
-Dipendenze: `server -> net`, `server -> protocol`. `net` e `protocol` non si conoscono.
+Dipendenze: `server -> net`, `server -> protocol`, `server -> vgen`, `generator -> vgen`. `net` e `protocol` non si conoscono.
+Il server NON dipende dal codice del generatore: lo avvia come programma (`generator` in `server.toml`), legge `READY <porta>`
+dal suo stdout, si connette in TCP su localhost e parla `vgen`. Se il generatore cade lo riavvia e rimanda le richieste.
+
+## Compilare ed eseguire
+
+Server (Rust stable):
+
+```
+cargo run                 # legge server.toml (lo crea da server.example.toml se manca), TCP+UDP 19132
+```
+
+Generatore (cartella `generator/`, Rust nightly scelto da `rust-toolchain.toml`: rustup lo scarica da solo):
+
+```
+cd generator
+cargo build --release     # produce generator/target/release/versmc-gen(.exe)
+```
+
+- La prima compilazione richiede Internet: la build di Steel scarica da Mojang il jar del server Java 26.3 per estrarne i dati.
+- Una compilazione release da zero richiede circa 12 minuti (LTO); le successive sono molto più rapide.
+- Il server cerca il generatore dove dice `generator` in `server.toml` (default `generator/target/release/versmc-gen`, su Windows
+  con `.exe`). Se non lo trova scrive l'errore nel log e usa un mondo piatto di ripiego, senza salvarlo.
+- Compilare il generatore NON serve per `cargo test --workspace` alla radice (usa un generatore finto); si prova a parte con
+  `cargo test` dentro `generator/`.
+
+## `server.toml`
+
+Va nella cartella da cui si avvia il server. Se manca viene scritto con i valori di default (vedi `server.example.toml`).
+
+| Campo | Default | Significato |
+|---|---|---|
+| `world` | `"Mondo"` | Nome del mondo; i dati stanno in `worlds/<world>` (LevelDB di Bedrock + `level.dat`). |
+| `seed` | casuale | Seme, usato solo quando il mondo viene creato (poi vale quello salvato in `level.dat`). Massimo 9223372036854775807. |
+| `generator` | `generator/target/release/versmc-gen` | Programma del generatore (`.exe` aggiunto da solo su Windows). |
+| `view_distance` | `6` | Raggio di chunk inviato a ogni giocatore (1-32). |
+| `port` | `19132` | Porta TCP (signaling) e UDP (gioco). |
+
+Un `server.toml` non valido viene segnalato nel log e il server parte con i valori di default senza modificarlo.
 
 ## Flusso di ingresso (stato)
 
@@ -28,6 +72,9 @@ SetLocalPlayerAsInitialized -> BiomeDefinitionList, NetworkChunkPublisherUpdate,
 
 `BiomeDefinitionList` (tutti i biomi, da `crates/server/data/biomes.json`) parte sempre; non è ancora stata riprovata con il client
 dopo il passaggio dal solo bioma "pianura". `StartGame` aspetta che lo spawn del mondo sia noto (dal `level.dat` o dal generatore).
+Il test end-to-end `crates/server/tests/join.rs` copre tutto il flusso con un client WebRTC finto, sia sul mondo piatto sia con un
+generatore finto (biomi, chunk attorno allo spawn, nuovi chunk dopo un `PlayerAuthInput` spostato di 5 chunk). La prova con il
+client vero e la lista di controllo sono in `docs/superpowers/notes/2026-11-18-verifica-t1.md`.
 
 La sequenza segue quella dei server di riferimento (gophertunnel / Dragonfly).
 
@@ -91,11 +138,10 @@ includere e cosa far scaricare o generare all'utente.
 Variabili d'ambiente (PowerShell: `$env:NO_CHUNKS="1"; cargo run`, poi `Remove-Item Env:NO_CHUNKS`):
 
 - `NO_CHUNKS=1`: dopo PlayerSpawn non invia nessun chunk (serve a capire se i chunk causano la disconnessione).
-- `SUBCHUNK_V8=1`: serializza i sotto-chunk in versione 8 (senza indice di sezione) invece della 9, che è il default.
 - `CHUNKS_EARLY=1`: manda biomi e chunk subito dopo PlayerSpawn, senza aspettare `SetLocalPlayerAsInitialized`.
 - `SKIP=jigsaw,voxel,items,creative,publisher`: non invia i pacchetti elencati (si possono combinare).
 - `SEND=actors`: invia anche `AvailableActorIdentifiers`, spento di default perché con i dati minimi che inventiamo
-  (nessuna entità) il client crolla. I biomi invece partono sempre (`SEND=biomes` non esiste più).
+  (nessuna entità) il client crolla. I biomi invece partono sempre.
 - `PUBLIC_IP=x.x.x.x`: IP pubblico da pubblicare come candidato ICE (gioco da Internet).
 
 Ogni riga del log ha davanti i secondi dall'avvio. Il log mostra gli stati ICE, la chiusura dei data channel e il contenuto dei pacchetti non gestiti (se brevi).
@@ -104,9 +150,11 @@ Ogni riga del log ha davanti i secondi dall'avvio. Il log mostra gli stati ICE, 
 
 ```
 cargo run                 # avvia il server (TCP+UDP 19132)
-cargo test --workspace    # unit test del protocollo + test end-to-end con un client WebRTC finto
+cargo test --workspace    # unit test del protocollo + test end-to-end con un client WebRTC finto e un generatore finto
 cargo clippy --workspace --all-targets
 cargo fmt --all
+
+cd generator && cargo test && cargo clippy --all-targets   # il generatore ha i suoi test (nightly)
 ```
 
 Per giocare da Internet: `$env:PUBLIC_IP="il.tuo.ip"` (PowerShell) e apri TCP+UDP 19132 sul router.
@@ -133,3 +181,12 @@ Per giocare da Internet: `$env:PUBLIC_IP="il.tuo.ip"` (PowerShell) e apri TCP+UD
   chiunque. Va bene in sviluppo, non per un server pubblico.
 - L'offerta SDP del client (`a=identity`) viene scartata senza verifica.
 - Il signaling è HTTP semplice, senza TLS.
+
+## Licenze
+
+- Server e crate della radice (`crates/*`, compreso `vgen`): MIT (`LICENSE`).
+- Generatore (`generator/`): AGPL-3.0-or-later (`generator/LICENSE`), perché usa SteelMC (AGPL-3.0). Il server lo avvia come
+  programma separato e ci parla via TCP: non lo include. Se distribuisci il binario `versmc-gen` valgono le condizioni dell'AGPL.
+- `generator/data/geyser/` (tabelle di mappatura dei blocchi e dei biomi): GeyserMC/mappings, MIT (`generator/data/geyser/LICENSE`).
+- `crates/server/data/biomes.json`: da pmmp/BedrockData, CC0.
+- Dati e schemi di Mojang (jar del server Java, bedrock-protocol-docs, bedrock-samples): soggetti all'EULA di Minecraft.
