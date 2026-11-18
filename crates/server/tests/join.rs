@@ -150,7 +150,8 @@ fn client(port: u16, mode: Mode) {
     let (start, mut buf, mut session, mut stage, mut chunks) = (Instant::now(), vec![0u8; 2048], Session::default(), 0, 0);
     let mut pending: Vec<u8> = Vec::new();
     // Solo `Mode::Generated`: chunk e biomi ricevuti e centro (in chunk) dopo il movimento.
-    let (mut seen, mut biomes, mut moved_to): (HashSet<(i32, i32)>, bool, Option<(i32, i32)>) = (HashSet::new(), false, None);
+    let mut seen: HashSet<(i32, i32)> = HashSet::new();
+    let (mut biomes, mut moved_to) = (false, None::<(i32, i32)>);
     let limit = Duration::from_secs(if mode == Mode::Generated { 30 } else { 10 });
     while start.elapsed() < limit {
         let deadline = match rtc.poll_output().unwrap() {
