@@ -4,6 +4,9 @@ mod breaking;
 mod chat;
 pub mod config;
 mod disk;
+// Le parti non ancora usate (despawn, get, get_mut, campi degli oggetti) servono ai compiti successivi della tappa 2.
+#[allow(dead_code)]
+mod entity;
 mod events;
 mod gen_client;
 mod handlers;
@@ -117,6 +120,8 @@ struct Player {
     last_chunk: (i32, i32),
     /// Chunk già inviati e ancora nel raggio del giocatore: quando ne escono si tolgono, così al ritorno si rimandano.
     sent: HashSet<(i32, i32)>,
+    /// Entità (ID) che questo giocatore vede in questo momento: la differenza con quelle nei chunk `sent` dice cosa mostrare o togliere.
+    visible: HashSet<u64>,
     mode: GameMode,
     inventory: inventory::Inventory,
     /// Quante richieste di pila e quanti `PlayerAuthInput` con azioni su oggetti o blocchi sono già stati loggati in esadecimale
@@ -220,6 +225,8 @@ struct Server {
     scheduled: Vec<interact::Scheduled>,
     /// Già detto nel log che le modifiche al mondo piatto di ripiego non si salvano.
     flat_warned: bool,
+    /// Entità del mondo (giocatori visti dagli altri, oggetti a terra).
+    entities: entity::Entities,
 }
 
 impl Server {
@@ -250,6 +257,7 @@ impl Server {
             tick_count: 0,
             scheduled: Vec::new(),
             flat_warned: false,
+            entities: entity::Entities::default(),
         }
     }
 
@@ -297,6 +305,7 @@ impl Server {
     fn tick(&mut self) {
         let start = Instant::now();
         self.stream_tick();
+        self.visibility_tick();
         self.tick_count += 1;
         self.run_scheduled();
         if self.tick_count.is_multiple_of(AUTOSAVE_TICKS) {

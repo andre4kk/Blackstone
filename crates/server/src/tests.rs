@@ -2183,3 +2183,114 @@ fn spectator_has_no_creative_inventory() {
     assert!(GameMode::Creative.creative_inventory());
     assert!(!GameMode::Spectator.creative_inventory());
 }
+
+mod entities {
+    use super::*;
+    use crate::entity::{Entity, EntityKind, FIRST_ENTITY_ID};
+
+    fn item_at(h: &mut Harness, pos: [f32; 3]) -> u64 {
+        let id = h.server.entities.alloc();
+        let item = crate::inventory::Item { id: registry::items().id("minecraft:stone").unwrap(), count: 1, ..Default::default() };
+        h.server.entities.insert(Entity {
+            id,
+            kind: EntityKind::Item { item, pickup_at: 0, despawn_at: u64::MAX, velocity: [0.0; 3] },
+            pos,
+            pitch: 0.0,
+            yaw: 0.0,
+            head_yaw: 0.0,
+            on_ground: true,
+            moved: false,
+        });
+        id
+    }
+
+    fn count(packets: &[Packet], packet_id: u32) -> usize {
+        packets.iter().filter(|p| p.id == packet_id).count()
+    }
+
+    fn joined() -> Harness {
+        let mut h = Harness::new();
+        h.join(1, "Alex");
+        h.server.players.get_mut(&1).unwrap().sent.insert((0, 0));
+        h.packets_to(1);
+        h
+    }
+
+    #[test]
+    fn entity_in_a_sent_chunk_appears_once() {
+        let mut h = joined();
+        item_at(&mut h, [3.0, 10.0, 4.0]);
+        h.server.visibility_tick();
+        assert_eq!(count(&h.packets_to(1), id::ADD_ITEM_ACTOR), 1);
+        h.server.visibility_tick();
+        assert_eq!(count(&h.packets_to(1), id::ADD_ITEM_ACTOR), 0);
+    }
+
+    #[test]
+    fn entity_leaving_view_is_removed() {
+        let mut h = joined();
+        let eid = item_at(&mut h, [3.0, 10.0, 4.0]);
+        h.server.visibility_tick();
+        h.packets_to(1);
+        h.server.players.get_mut(&1).unwrap().sent.clear();
+        h.server.visibility_tick();
+        let out = h.packets_to(1);
+        assert_eq!(count(&out, id::REMOVE_ACTOR), 1);
+        assert!(h.server.players[&1].visible.is_empty());
+        // Un oggetto in un chunk non inviato non si mostra.
+        item_at(&mut h, [100.0, 10.0, 100.0]);
+        h.server.visibility_tick();
+        assert!(h.packets_to(1).is_empty());
+        // despawn manda RemoveActor a chi lo vede.
+        h.server.players.get_mut(&1).unwrap().sent.insert((0, 0));
+        h.server.visibility_tick();
+        h.packets_to(1);
+        h.server.despawn(eid);
+        assert_eq!(count(&h.packets_to(1), id::REMOVE_ACTOR), 1);
+        assert!(h.server.entities.get(eid).is_none());
+    }
+
+    #[test]
+    fn players_never_see_themselves() {
+        let mut h = joined();
+        h.server.entities.insert(Entity {
+            id: 1,
+            kind: EntityKind::Player { pid: Some(1), name: "Alex".into(), uuid: [1; 16] },
+            pos: [3.0, 11.62, 4.0],
+            pitch: 0.0,
+            yaw: 0.0,
+            head_yaw: 0.0,
+            on_ground: true,
+            moved: false,
+        });
+        h.server.visibility_tick();
+        assert!(h.packets_to(1).is_empty());
+        assert!(h.server.players[&1].visible.is_empty());
+    }
+
+    #[test]
+    fn other_players_are_spawned_with_add_player() {
+        let mut h = joined();
+        h.server.entities.insert(Entity {
+            id: 7,
+            kind: EntityKind::Player { pid: None, name: "Bot".into(), uuid: [2; 16] },
+            pos: [3.0, 11.62, 4.0],
+            pitch: 0.0,
+            yaw: 0.0,
+            head_yaw: 0.0,
+            on_ground: true,
+            moved: false,
+        });
+        h.server.visibility_tick();
+        assert_eq!(count(&h.packets_to(1), id::ADD_PLAYER), 1);
+    }
+
+    #[test]
+    fn ids_of_non_players_start_at_2_pow_32() {
+        let mut h = Harness::new();
+        let a = h.server.entities.alloc();
+        let b = h.server.entities.alloc();
+        assert_eq!(a, FIRST_ENTITY_ID);
+        assert_eq!(b, FIRST_ENTITY_ID + 1);
+    }
+}
