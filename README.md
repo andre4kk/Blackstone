@@ -70,11 +70,12 @@ RequestChunkRadius -> ChunkRadiusUpdated, PlayStatus(PlayerSpawn), CreativeConte
 SetLocalPlayerAsInitialized -> BiomeDefinitionList, NetworkChunkPublisherUpdate, LevelChunk...   VERIFICATO: il giocatore entra nel mondo piatto
 ```
 
-`BiomeDefinitionList` (tutti i biomi, da `crates/server/data/biomes.json`) parte sempre; non è ancora stata riprovata con il client
+`BiomeDefinitionList` (tutti i biomi, da `crates/server/data/biomes.json`) oggi è spenta di default (`SEND=biomes` per inviarla: il client l'ha rifiutata); non è ancora stata riprovata con il client
 dopo il passaggio dal solo bioma "pianura". `StartGame` aspetta che lo spawn del mondo sia noto (dal `level.dat` o dal generatore).
 Il test end-to-end `crates/server/tests/join.rs` copre tutto il flusso con un client WebRTC finto, sia sul mondo piatto sia con un
 generatore finto (biomi, chunk attorno allo spawn, nuovi chunk dopo un `PlayerAuthInput` spostato di 5 chunk). La prova con il
-client vero e la lista di controllo sono in `docs/superpowers/notes/2026-11-18-verifica-t1.md`.
+client vero e la lista di controllo della tappa 1 (creativo) sono in `docs/superpowers/notes/2026-11-19-verifica-tappa1.md`;
+`2026-11-18-verifica-t1.md` è la verifica precedente della generazione del mondo.
 
 La sequenza segue quella dei server di riferimento (gophertunnel / Dragonfly).
 
@@ -147,10 +148,10 @@ Variabili d'ambiente (PowerShell: `$env:NO_CHUNKS="1"; cargo run`, poi `Remove-I
 - `NO_CHUNKS=1`: dopo PlayerSpawn non invia nessun chunk (serve a capire se i chunk causano la disconnessione).
 - `CHUNKS_EARLY=1`: manda biomi e chunk subito dopo PlayerSpawn, senza aspettare `SetLocalPlayerAsInitialized`.
 - `SKIP=jigsaw,voxel,items,creative,publisher`: non invia i pacchetti elencati (si possono combinare).
-- `VERSMC_DEBUG=nozero,nowater,plains,nobe`: disattiva parti dei chunk per isolare cosa rifiuta il client.
+- `VERSMC_DEBUG=nozero,nowater,plains,nobe`: altera o disattiva parti dei chunk (`plains` forza il bioma pianura) per isolare cosa rifiuta il client.
 - `SEND=biomes`: invia la lista biomi (spenta di default: il client l'ha rifiutata).
 - `SEND=actors`: invia anche `AvailableActorIdentifiers`, spento di default perché con i dati minimi che inventiamo
-  (nessuna entità) il client crolla. 
+  (nessuna entità) il client crolla.
 - `PUBLIC_IP=x.x.x.x`: IP pubblico da pubblicare come candidato ICE (gioco da Internet).
 
 Ogni riga del log ha davanti i secondi dall'avvio. Il log mostra gli stati ICE, la chiusura dei data channel e il contenuto dei pacchetti non gestiti (se brevi).

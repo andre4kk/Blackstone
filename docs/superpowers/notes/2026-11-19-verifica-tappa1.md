@@ -29,8 +29,8 @@ Per partire puliti cancella `worlds/Mondo`. Il log è l'output a terminale.
 2. **Menu creativo.** Apri l'inventario: devono esserci le schede (costruzione, natura, oggetti, ecc.) con le voci in ordine.
    Le 36 icone dei gruppi usano il primo oggetto del gruppo (non verificato): segnala se mancano o sono sbagliate.
 3. **Prendere oggetti.** Clicca un blocco nel menu: deve finire in barra. Prova stack (shift-clic o clic ripetuto), spostare
-   tra barra e inventario, buttare nel cestino. Nel log cerca le righe `ItemStackRequest (N byte): [...]` (esadecimali delle
-   prime 3 richieste per giocatore): copiale, servono per confermare la codifica (non verificata). Se compare
+   tra barra e inventario, buttare nel cestino. Nel log cerca le righe `ItemStackRequest (N byte): [...]` (esadecimali solo delle
+   prime 3 richieste per giocatore, `HEX_LOGS`, ciascuna tagliata a 400 byte): copiale, servono per confermare la codifica (non verificata). Se compare
    `ItemStackRequest illeggibile` il menu non funziona del tutto.
 4. **Barra.** Cambia slot con rotella e tasti 1-9: l'oggetto in mano deve cambiare (log `MobEquipment` se illeggibile).
 5. **Rompere.** Rompi terra, pietra, erba alta, foglie: in creativo si rompe subito. Il blocco sparisce e non ricompare.
@@ -48,16 +48,16 @@ Per partire puliti cancella `worlds/Mondo`. Il log è l'output a terminale.
 9. **Uscita e rientro.** Piazza qualche blocco, metti oggetti in barra, esci e rientra: stessi oggetti, stessa posizione, stessa
    modalità. Ferma il server con Ctrl+C (`[mondo] chiusura: N chunk salvati`), riavvia, rientra: blocchi modificati ancora lì.
    Il salvataggio automatico è ogni 60 s.
-9b. **Doppio ingresso.** Entra con lo stesso account da un secondo client: il primo deve essere espulso.
-10. **/gamemode.** `/gamemode survival`, `/gamemode creative`, `/gm 1`: cambia modalità senza uscire; in survival le abilità di
+10. **Doppio ingresso.** Entra con lo stesso account da un secondo client: il primo deve essere espulso.
+11. **/gamemode.** `/gamemode survival`, `/gamemode creative`, `/gm 1`: cambia modalità senza uscire; in survival le abilità di
     volo spariscono e il menu creativo non è disponibile. Dopo il riavvio la modalità resta.
-11. **Mondo su disco (facoltativo).** Il mondo si apre con Amulet; i dati giocatore sono in formato BDS (non verificato).
+12. **Mondo su disco (facoltativo).** Il mondo si apre con Amulet; i dati giocatore sono in formato BDS (non verificato).
 
 ## Righe di log da controllare
 
-- `PlayerAuthInput illeggibile (N byte): ...`: layout non verificato; se compare le azioni (rompere/piazzare) si perdono ma il
+- `PlayerAuthInput illeggibile (N byte): ...`: layout non verificato; compare una sola volta per giocatore; se compare le azioni (rompere/piazzare) si perdono ma il
   movimento funziona. Copia la riga.
-- `ItemStackRequest (N byte): [...]`: esadecimali delle prime 3 richieste (vedi punto 3); `... illeggibile`: decodifica fallita.
+- `ItemStackRequest (N byte): [...]`: esadecimali solo delle prime 3 richieste per giocatore, ciascuna tagliata a 400 byte (vedi punto 3); `... illeggibile`: decodifica fallita.
 - `InventoryTransaction illeggibile`, `PlayerAction illeggibile`, `MobEquipment illeggibile`, `SetPlayerGameType illeggibile`,
   `comando illeggibile`.
 - `!! IL CLIENT SEGNALA UN PACCHETTO MALFORMATO` / `violazione segnalata dal client`: il client rifiuta un pacchetto (id nel testo).
