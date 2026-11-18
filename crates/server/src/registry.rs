@@ -260,7 +260,13 @@ impl ItemDef {
 fn load_creative() -> (Vec<CreativeGroup>, Vec<CreativeItem>) {
     let file: CreativeFile = serde_json::from_str(include_str!("../data/creative.json")).expect("creative.json non valido");
     let groups = file.groups.into_iter().map(|g| CreativeGroup { category: g.category, name: g.name, icon: g.icon.map(ItemDef::build) }).collect();
-    (groups, file.items.into_iter().map(ItemDef::build).collect())
+    (groups, file.items.into_iter().filter(|i| !hidden_from_creative(&i.name)).map(ItemDef::build).collect())
+}
+
+/// Oggetti che Dragonfly mette nel menu creativo ma che il client 1.26.6x mostra come oggetti sconosciuti (nome in
+/// codice, niente texture): scale e lastre di lana, provate nel gioco il 18/11/2026. Si tolgono dal menu.
+fn hidden_from_creative(name: &str) -> bool {
+    name.ends_with("_wool_stairs") || name.ends_with("_wool_slab")
 }
 
 pub(crate) fn creative() -> &'static (Vec<CreativeGroup>, Vec<CreativeItem>) {
@@ -271,6 +277,13 @@ pub(crate) fn creative() -> &'static (Vec<CreativeGroup>, Vec<CreativeItem>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn wool_stairs_and_slabs_are_not_in_the_creative_menu() {
+        let (_, items) = creative();
+        assert!(items.iter().all(|i| !hidden_from_creative(&i.name)));
+        assert!(items.iter().any(|i| i.name == "minecraft:white_wool"), "la lana normale resta");
+    }
 
     #[test]
     fn air_and_stone_hashes() {
@@ -291,7 +304,7 @@ mod tests {
     fn every_creative_block_item_places_a_known_state() {
         let (_, items) = creative();
         let with_block: Vec<_> = items.iter().filter_map(|i| i.block.map(|h| (i, h))).collect();
-        assert!(with_block.len() > 1000, "{} voci con blocco", with_block.len());
+        assert!(with_block.len() > 900, "{} voci con blocco", with_block.len());
         for (item, hash) in with_block {
             assert!(blocks().state(hash).is_some(), "{}: stato {hash} sconosciuto", item.name);
         }

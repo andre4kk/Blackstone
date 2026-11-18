@@ -115,6 +115,27 @@ impl Server {
                     (player.pitch, player.yaw) = (input.pitch, input.yaw);
                 }
                 player.sneaking = input.has(flag::SNEAKING);
+                // Diagnostica (gravità/salto non funzionano nel gioco): si logga quando cambia uno di questi flag del client.
+                const WATCHED: [(u32, &str); 12] = [
+                    (3, "JumpDown"),
+                    (6, "Jumping"),
+                    (16, "WantUp"),
+                    (17, "WantDown"),
+                    (31, "StartJumping"),
+                    (42, "StartFlying"),
+                    (43, "StopFlying"),
+                    (44, "ClientAckServerData"),
+                    (49, "HorizontalCollision"),
+                    (50, "VerticalCollision"),
+                    (60, "JumpPressedRaw"),
+                    (65, "InternalUpdate"),
+                ];
+                let mask = WATCHED.iter().fold(0u128, |m, (b, _)| m | 1 << b);
+                if input.flags & mask != player.movement_flags {
+                    player.movement_flags = input.flags & mask;
+                    let names: Vec<&str> = WATCHED.iter().filter(|(b, _)| input.has(*b)).map(|(_, n)| *n).collect();
+                    log!("[#{pid}] movimento: y={:.2} flag {names:?}", input.position[1]);
+                }
                 // Il volo va sempre confermato o rifiutato con UpdateAbilities (changelog 776): senza risposta il client resta sospeso.
                 let fly_request = if input.has(flag::START_FLYING) {
                     Some(true)

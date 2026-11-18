@@ -142,6 +142,8 @@ struct Player {
     inventory_open: bool,
     /// Volo confermato dal server (`StartFlying`/`StopFlying`): entra nel livello di abilità mandato al client.
     flying: bool,
+    /// Diagnostica del movimento: gli ultimi flag di salto/volo/collisione visti in `PlayerAuthInput` (si logga solo quando cambiano).
+    movement_flags: u128,
 }
 
 /// Il caricamento dei dati salvati di un giocatore (vedi `playerdata`).
