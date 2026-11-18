@@ -85,6 +85,8 @@ struct Server {
     flat: bool,
     /// Il generatore ha già mandato `Ready`.
     gen_ready: bool,
+    /// `Down` consecutivi del generatore senza un `Ready` in mezzo (dopo il primo `Ready`).
+    gen_downs: u8,
     /// Spawn del mondo (piedi): dal `level.dat` o dal generatore; `None` finché non è noto.
     spawn: Option<(i32, i32, i32)>,
     /// Giocatori arrivati a `StartGame` prima che lo spawn fosse noto.
@@ -120,6 +122,7 @@ impl Server {
             gen: None,
             flat: true,
             gen_ready: false,
+            gen_downs: 0,
             spawn: Some(world::FLAT_SPAWN),
             waiting_start: Vec::new(),
             chunks: HashMap::new(),
@@ -199,7 +202,7 @@ async fn run_world(mut cfg: Config, server_cfg: &config::ServerConfig, world_dir
     if let Some(seed) = server_cfg.seed.filter(|&s| s != world.seed()) {
         log!("[mondo] il seme di server.toml ({seed}) è diverso da quello del mondo esistente: vale quello del mondo ({})", world.seed());
     }
-    let generator = GenConfig { launch, seed: world.seed(), restart_delay: Duration::from_secs(2) };
+    let generator = GenConfig { launch, seed: world.seed(), restart_delay: Duration::from_secs(2), request_timeout: gen_client::REQUEST_TIMEOUT };
     serve(cfg, Some(world), Some(generator), server_cfg.view_distance.clamp(1, 32)).await
 }
 

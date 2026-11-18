@@ -20,6 +20,8 @@ pub(crate) const MAX_GEN_IN_FLIGHT: usize = 64;
 const GEN_RETRY_DELAY: Duration = Duration::from_secs(5);
 /// Tentativi per chunk o spawn (il primo compreso); dopo l'ultimo errore si ripiega.
 const GEN_MAX_ATTEMPTS: u8 = 3;
+/// `Down` consecutivi del generatore (senza un `Ready` in mezzo) dopo i quali si ripiega sul mondo piatto.
+const GEN_MAX_DOWNS: u8 = 3;
 /// Spawn usato quando il generatore non riesce a calcolarlo.
 pub(crate) const FALLBACK_SPAWN: (i32, i32, i32) = (0, 100, 0);
 /// Chunk tenuti in memoria oltre il raggio dei giocatori, per non ricaricare chi fa avanti e indietro al bordo.
@@ -32,6 +34,8 @@ pub(crate) fn chunk_of(x: f32, z: f32) -> (i32, i32) {
 
 /// Vero se il chunk a distanza (`dx`, `dz`) sta nell'area quasi circolare di raggio `radius`.
 fn in_range(dx: i32, dz: i32, radius: i32) -> bool {
+    // in i64: con posizioni fino a +-30 milioni di blocchi il quadrato della differenza non sta in i32
+    let (dx, dz, radius) = (i64::from(dx), i64::from(dz), i64::from(radius));
     dx * dx + dz * dz <= radius * radius + radius
 }
 
@@ -136,7 +140,8 @@ impl Server {
             return;
         }
         let centers: Vec<(i32, i32)> = self.players.values().filter(|p| p.spawned && p.streaming).map(|p| p.last_chunk).collect();
-        let distance = |k: &ChunkKey| centers.iter().map(|c| (k.1 - c.0).pow(2) + (k.2 - c.1).pow(2)).min().unwrap_or(0);
+        let distance =
+            |k: &ChunkKey| centers.iter().map(|c| (i64::from(k.1) - i64::from(c.0)).pow(2) + (i64::from(k.2) - i64::from(c.1)).pow(2)).min().unwrap_or(0);
         let mut next: Vec<ChunkKey> = self.queue.iter().copied().collect();
         next.sort_by_key(|k| (distance(k), k.1, k.2));
         for key in next.into_iter().take(free) {
@@ -214,6 +219,7 @@ impl Server {
         match event {
             GenEvent::Ready => {
                 self.gen_ready = true;
+                self.gen_downs = 0;
                 log!("[gen] generatore pronto");
             }
             GenEvent::Palette(entries) => {
@@ -251,7 +257,16 @@ impl Server {
                 log!("[gen] generatore assente ({reason}): uso il mondo piatto di ripiego; riavvia il server dopo aver sistemato il generatore");
                 self.fall_back_to_flat();
             }
-            GenEvent::Down(reason) => log!("[gen] generatore caduto ({reason}): il client lo riavvia e rimanda le richieste"),
+            GenEvent::Down(reason) if self.flat => log!("[gen] generatore caduto ({reason}), ma il mondo è già piatto"),
+            GenEvent::Down(reason) => {
+                self.gen_downs += 1;
+                if self.gen_downs >= GEN_MAX_DOWNS {
+                    log!("[gen] generatore caduto {} volte di fila senza tornare ({reason}): uso il mondo piatto di ripiego; riavvia il server dopo aver sistemato il generatore", self.gen_downs);
+                    self.fall_back_to_flat();
+                } else {
+                    log!("[gen] generatore caduto ({reason}): il client lo riavvia e rimanda le richieste");
+                }
+            }
         }
     }
 
@@ -580,6 +595,7 @@ mod tests {
             launch: Launch::Process { program: PathBuf::from("questo-programma-non-esiste-xyz"), args_extra: vec![] },
             seed: 1,
             restart_delay: Duration::from_millis(50),
+            request_timeout: crate::gen_client::REQUEST_TIMEOUT,
         };
         let (client, mut events) = GenClient::spawn(cfg);
         let (sender, _sent) = Sender::for_tests();
@@ -745,5 +761,50 @@ mod tests {
         rig.server.on_gen_event(GenEvent::Down("manca".into()));
         assert!(rig.server.flat && rig.server.gen.is_none());
         assert_eq!(rig.server.spawn, Some((48, 70, 32)), "lo spawn gia noto non si tocca");
+    }
+
+    #[test]
+    fn huge_positions_do_not_overflow() {
+        // fino a +-30 milioni di blocchi = +-1.875.000 chunk: il quadrato della differenza non sta in i32
+        assert!(in_range(0, 0, R));
+        assert!(!in_range(3_750_000, 0, R) && !in_range(-3_750_000, -3_750_000, R));
+        let mut rig = Rig::new();
+        rig.add_player(1, R, (1_875_000, 1_875_000));
+        rig.add_player(2, R, (-1_875_000, -1_875_000));
+        rig.server.chunks.insert((0, 0, 0), Chunk::flat(Dim::Overworld, 0, 0));
+        rig.server.stream_tick(); // unload_far e la distanza in pump_generator
+        assert!(!rig.server.chunks.contains_key(&(0, 0, 0)), "il chunk lontano da tutti è scaricato");
+        assert_eq!(rig.requested().len(), MAX_GEN_IN_FLIGHT, "le richieste partono comunque");
+        rig.server.on_move(1, [-30_000_000.0, 70.0, 30_000_000.0]); // da un estremo all'altro
+        rig.server.stream_tick();
+    }
+
+    #[test]
+    fn down_after_ready_that_never_recovers_falls_back_to_flat() {
+        let mut rig = Rig::new();
+        rig.server.spawn = None;
+        rig.server.players.insert(1, Player::default());
+        rig.server.start_game(1);
+        rig.add_player(2, 2, (0, 0));
+        rig.server.on_gen_event(GenEvent::Ready);
+        rig.server.stream_tick();
+        assert!(!rig.server.requested.is_empty() && rig.server.waiting_start == vec![1]);
+        // il generatore cade e riparte: i `Down` non consecutivi non contano
+        for _ in 0..5 {
+            rig.server.on_gen_event(GenEvent::Down("caduto".into()));
+            rig.server.on_gen_event(GenEvent::Down("ancora giù".into()));
+            assert!(!rig.server.flat, "finché il generatore torna si aspetta");
+            rig.server.on_gen_event(GenEvent::Ready);
+        }
+        // ma se non torna più (binario mancante o bloccato) si ripiega sul piatto
+        rig.server.on_gen_event(GenEvent::Down("caduto".into()));
+        rig.server.on_gen_event(GenEvent::Down("manca".into()));
+        assert!(!rig.server.flat);
+        rig.server.on_gen_event(GenEvent::Down("manca".into()));
+        assert!(rig.server.flat && rig.server.gen.is_none(), "dopo {GEN_MAX_DOWNS} Down di fila: mondo piatto");
+        assert!(rig.server.requested.is_empty() && rig.server.queue.is_empty());
+        assert_eq!(rig.server.spawn, Some(crate::world::FLAT_SPAWN));
+        assert!(rig.server.waiting_start.is_empty(), "il login in attesa dello spawn è partito");
+        assert!(rig.server.chunks.contains_key(&(0, 0, 0)), "i chunk attesi sono piatti");
     }
 }
