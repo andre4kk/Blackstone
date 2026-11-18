@@ -174,6 +174,8 @@ impl Server {
                     game_type: mode as i32,
                     data: self.entity_data(e.id),
                     layers: ability_layers(mode, false),
+                    // 0 non è una piattaforma valida ("invalid enum value" sul client): -1 = sconosciuta, come Dragonfly.
+                    build_platform: player.and_then(|p| p.info.as_ref()).and_then(|i| i.device_os).map_or(-1, |d| d as i32),
                     ..Default::default()
                 })];
                 if let Some(armor) = player.map(armor_of).filter(|a| a.iter().any(|s| s.id != 0)) {

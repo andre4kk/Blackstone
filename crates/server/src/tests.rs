@@ -2577,6 +2577,16 @@ mod player_list {
     }
 
     #[test]
+    fn add_player_of_a_bot_has_a_valid_build_platform() {
+        // 0 non è una piattaforma: il client rispondeva "invalid enum value" su AddPlayer (12) e chiudeva.
+        let mut h = three_players();
+        let bot = h.server.spawn_bot(1, "Robo");
+        let add = h.server.spawn_packets(h.server.entities.get(bot).unwrap()).remove(0);
+        assert_eq!(add.id, id::ADD_PLAYER);
+        assert_eq!(add.body[add.body.len() - 4..], (-1i32).to_le_bytes());
+    }
+
+    #[test]
     fn body_box_follows_the_state() {
         use bedrock_protocol::actor::{key, DataValue};
         let mut h = three_players();
