@@ -7,8 +7,8 @@ use base64::{
 };
 use bedrock_protocol::{
     generated::{
-        BiomeDefinitionList, ChunkRadiusUpdated, CreativeContent, ItemRegistry, JigsawStructureData, LevelChunk, NetworkChunkPublisherUpdate, StartGame,
-        VoxelShapes,
+        BiomeDefinitionList, ChunkRadiusUpdated, CreativeContent, InventoryContent, ItemRegistry, JigsawStructureData, LevelChunk, NetworkChunkPublisherUpdate,
+        PlayerHotbar, SetPlayerGameType, StartGame, UpdateAbilities, VoxelShapes,
     },
     id,
     packets::{pack_response, text_type, CommandRequest, Login, RequestChunkRadius, RequestNetworkSettings, ResourcePackClientResponse, Text},
@@ -113,6 +113,19 @@ fn response(tag: u32) -> Packet {
     Packet::new(id::RESOURCE_PACK_CLIENT_RESPONSE, ResourcePackClientResponse::new(tag).encode())
 }
 
+/// Pacchetti di modalità e inventario che arrivano appena il client è inizializzato: li conta in `sync`
+/// (tipo di gioco, abilità, contenuti dell'inventario, barra). `false` se il pacchetto è un altro.
+fn count_sync(packet: u32, sync: &mut [usize; 4]) -> bool {
+    match packet {
+        SetPlayerGameType::ID => sync[0] += 1,
+        UpdateAbilities::ID => sync[1] += 1,
+        InventoryContent::ID => sync[2] += 1,
+        PlayerHotbar::ID => sync[3] += 1,
+        _ => return false,
+    }
+    true
+}
+
 fn client(port: u16, mode: Mode) {
     // 1. Info del server.
     let (status, body) = http(port, "GET", "/v1/join", "");
@@ -149,6 +162,7 @@ fn client(port: u16, mode: Mode) {
     const EXPECTED_CHUNKS: usize = 69; // punti interi con x² + z² <= r² + r in [-4, 4]²
     let (start, mut buf, mut session, mut stage, mut chunks) = (Instant::now(), vec![0u8; 2048], Session::default(), 0, 0);
     let mut pending: Vec<u8> = Vec::new();
+    let mut sync = [0usize; 4];
     // Solo `Mode::Generated`: chunk e biomi ricevuti e centro (in chunk) dopo il movimento.
     let mut seen: HashSet<(i32, i32)> = HashSet::new();
     let (mut biomes, mut moved_to) = (false, None::<(i32, i32)>);
@@ -193,6 +207,7 @@ fn client(port: u16, mode: Mode) {
                     (4, ids) if ids == [ChunkRadiusUpdated::ID, id::PLAY_STATUS, CreativeContent::ID] => {
                         assert_eq!(packets[0].body, [(RADIUS * 2) as u8], "raggio concesso (ZigZag)");
                         assert_eq!(packets[1].body, [0, 0, 0, 3], "PlayerSpawn");
+                        assert!(packets[2].body.len() > 50_000, "il menu creativo è pieno: ha attraversato la frammentazione");
                         // Come Minecraft: solo ora, a mondo caricato, dichiara di essere inizializzato (ID di runtime 1).
                         Packet::new(id::SET_LOCAL_PLAYER_AS_INITIALIZED, vec![1])
                     }
@@ -200,7 +215,7 @@ fn client(port: u16, mode: Mode) {
                         for p in &packets {
                             match p.id {
                                 x if x == BiomeDefinitionList::ID => biomes = true,
-                                x if x == NetworkChunkPublisherUpdate::ID || x == id::TEXT => {}
+                                x if x == NetworkChunkPublisherUpdate::ID || x == id::TEXT || count_sync(x, &mut sync) => {}
                                 x if x == LevelChunk::ID => {
                                     let mut b = &p.body[..];
                                     let pos = (varint::read_signed(&mut b).unwrap(), varint::read_signed(&mut b).unwrap());
@@ -215,6 +230,7 @@ fn client(port: u16, mode: Mode) {
                         // Spenta di default: il client 1.26.6x si disconnette con la nostra lista (prova del 18/11).
                         assert!(!biomes, "la BiomeDefinitionList non va mandata senza SEND=biomes");
                         assert_eq!(seen.len(), EXPECTED_CHUNKS, "chunk attorno allo spawn");
+                        assert_eq!(sync, [1, 1, 3, 1], "modalità, abilità, inventario/mano secondaria/armatura e barra, una volta sola");
                         assert!(seen.iter().all(|&(x, z)| x.abs() <= RADIUS && z.abs() <= RADIUS), "solo chunk vicini allo spawn: {seen:?}");
                         // Sposta il giocatore di 5 chunk in X (lo spawn finto è in 8, 61, 8).
                         moved_to = Some((5, 0));
@@ -256,7 +272,7 @@ fn client(port: u16, mode: Mode) {
                         // Dopo l'inizializzazione: benvenuto e annuncio di ingresso (testo), biomi, pubblicazione e chunk.
                         for p in &packets {
                             match p.id {
-                                x if x == NetworkChunkPublisherUpdate::ID || x == BiomeDefinitionList::ID => {}
+                                x if x == NetworkChunkPublisherUpdate::ID || x == BiomeDefinitionList::ID || count_sync(x, &mut sync) => {}
                                 id::TEXT => {}
                                 x if x == LevelChunk::ID => chunks += 1,
                                 other => panic!("pacchetto inatteso durante lo streaming: {other}"),
@@ -265,6 +281,7 @@ fn client(port: u16, mode: Mode) {
                         if chunks != EXPECTED_CHUNKS {
                             continue;
                         }
+                        assert_eq!(sync, [1, 1, 3, 1], "modalità, abilità, inventario/mano secondaria/armatura e barra, una volta sola");
                         // Chat: il client si spaccia per "Hacker", ma il server usa il nome verificato dal login.
                         Packet::new(id::TEXT, Text::chat("Hacker", "ciao").encode())
                     }

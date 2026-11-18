@@ -135,6 +135,22 @@ mod tests {
     }
 
     #[test]
+    fn creative_item_user_data_is_raw_bytes() {
+        use crate::generated::{CreativeContent, CreativeItemEntryPayload, NetworkItemInstanceDescriptorData};
+        use crate::item::ItemStack;
+        use crate::wire::Encode;
+        // I dati utente con NBT iniziano con i16 -1 (0xff 0xff): non sono UTF-8 e devono passare intatti.
+        let user_data = ItemStack::user_data_with_nbt(&[0x0a, 0, 0, 0]);
+        let item = NetworkItemInstanceDescriptorData { id: 1, stack_size: 1, user_data_buffer: user_data.clone(), ..Default::default() };
+        let c = CreativeContent { groups: vec![], entries: vec![CreativeItemEntryPayload { creative_net_id: 1, item_instance: item, group_index: 0 }] };
+        let b = c.to_bytes();
+        // 0 gruppi, 1 voce, net id 1, id zigzag(1) = 2, conteggio u16, aux 0, blocco 0, lunghezza + byte, gruppo 0
+        assert_eq!(&b[..8], [0, 1, 1, 2, 1, 0, 0, 0]);
+        assert_eq!(b[8] as usize, user_data.len());
+        assert_eq!(&b[9..9 + user_data.len()], &user_data[..]);
+    }
+
+    #[test]
     fn item_stack_response_result_is_one_byte() {
         use crate::generated::{ItemStackResponse, ItemStackResponseInfo};
         use crate::wire::Encode;

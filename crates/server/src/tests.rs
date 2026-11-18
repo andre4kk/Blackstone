@@ -1,9 +1,13 @@
 //! Test della logica di gioco senza rete: i pacchetti inviati si leggono dal `Sender` di prova.
-use crate::Server;
+use crate::{registry, GameMode, Server};
 use bedrock_net::{Command, Sender};
 use bedrock_protocol::{
+    generated::{CreativeContent, InventoryContent, MobEquipment, PlayerHotbar, SetPlayerGameType, StartGame, UpdateAbilities},
     id,
+    item::ItemStack,
     packets::{text_type, CommandRequest, Login, RequestChunkRadius, Text},
+    reader::Reader,
+    wire::{ServerPacket, Writer},
     Packet, Session, PROTOCOL,
 };
 use tokio::sync::mpsc::UnboundedReceiver;
@@ -31,6 +35,18 @@ impl Harness {
             if let Command::Send(to, data) = cmd {
                 let packets = Session::default().decode(&data).unwrap();
                 out.extend(packets.into_iter().filter(|p| to == pid && p.id == id::TEXT).filter_map(|p| Text::decode(&p.body)));
+            }
+        }
+        out
+    }
+
+    /// Tutti i pacchetti arrivati a `pid` da quando si è letto l'ultima volta.
+    fn packets_to(&mut self, pid: u64) -> Vec<Packet> {
+        let mut out = Vec::new();
+        while let Ok(cmd) = self.sent.try_recv() {
+            if let Command::Send(to, data) = cmd {
+                let packets = Session::default().decode(&data).unwrap();
+                out.extend(packets.into_iter().filter(|_| to == pid));
             }
         }
         out
@@ -191,4 +207,247 @@ fn player_auth_input_moves_the_player_and_ignores_bad_positions() {
     h.server.open(2); // non ancora nel mondo: l'input non conta
     h.receive(2, &[input(100.0, 70.0, 0.0)]);
     assert_eq!(h.server.players[&2].pos, [0.0; 3]);
+}
+
+// ---------- inventario, menu creativo e modalità ----------
+
+/// Legge un `NetworkItemInstanceDescriptor` di `CreativeContent`: (id, lunghezza dei dati utente).
+fn creative_descriptor(r: &mut Reader) -> (i32, usize) {
+    let id = r.var_i32().unwrap();
+    r.u16().unwrap();
+    r.var_u32().unwrap();
+    r.var_i32().unwrap();
+    (id, r.bytes().unwrap().len())
+}
+
+#[test]
+fn join_sends_full_creative_menu() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    let packets = h.packets_to(1);
+    let creative = packets.iter().find(|p| p.id == CreativeContent::ID).expect("CreativeContent mandato al login");
+    let r = &mut Reader(&creative.body);
+    let (groups, items) = registry::creative();
+    assert_eq!(r.var_u32().unwrap() as usize, groups.len());
+    for g in groups {
+        assert_eq!((r.u8().unwrap(), r.string().unwrap()), (g.category, g.name.as_str()));
+        let (icon, user_data) = creative_descriptor(r);
+        assert!(icon != 0 && user_data >= 10, "l'icona di un gruppo non è aria e ha i dati utente");
+    }
+    assert_eq!(r.var_u32().unwrap() as usize, items.len(), "tante voci quante quelle del registro");
+    for (index, item) in items.iter().enumerate() {
+        assert_eq!(r.var_u32().unwrap(), index as u32 + 1, "net id = indice + 1");
+        let (id, user_data) = creative_descriptor(r);
+        assert_eq!(id, registry::items().id(&item.name).unwrap() as i32);
+        assert!(user_data >= 10, "ogni oggetto ha i dati utente");
+        assert_eq!(r.var_u32().unwrap(), item.group);
+    }
+    assert_eq!(r.remaining(), 0);
+}
+
+#[test]
+fn join_sends_inventory_game_type_and_abilities() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    let packets = h.packets_to(1);
+    let of = |id: u32| packets.iter().filter(|p| p.id == id).collect::<Vec<_>>();
+    assert_eq!(of(SetPlayerGameType::ID)[0].body, [2], "creativo = 1, ZigZag 2");
+    // UpdateAbilities: id giocatore, permessi, un solo livello (base) con tutte le abilità decise e quelle del creativo accese
+    let r = &mut Reader(&of(UpdateAbilities::ID)[0].body);
+    assert_eq!((r.i64().unwrap(), r.i8().unwrap(), r.u8().unwrap(), r.var_u32().unwrap(), r.u16().unwrap()), (1, 1, 0, 1, 1));
+    let (set, values) = (r.u32().unwrap(), r.u32().unwrap());
+    assert_eq!(set, 0xF_FFFF);
+    let creative = (1 << 10) | (1 << 8) | (1 << 11) | 0b11 | (0b11 << 2) | (0b11 << 4); // vola, invulnerabile, costruisce subito, build/mine, interazioni
+    assert_eq!(values, creative);
+    // inventario (36 caselle), mano secondaria (1), armatura (4), tutte vuote; poi la barra
+    let contents: Vec<_> = of(InventoryContent::ID).iter().map(|p| Reader(&p.body).var_u32().unwrap()).collect();
+    assert_eq!(contents, [0, 119, 120]);
+    let main = &of(InventoryContent::ID)[0].body;
+    assert_eq!(main[1], 36);
+    assert!(main[2..2 + 36 * 8].iter().all(|&b| b == 0), "caselle vuote = aria");
+    assert_eq!(of(PlayerHotbar::ID)[0].body, [0, 0, 1], "casella 0, finestra 0, selezionala");
+}
+
+#[test]
+fn start_game_uses_the_player_mode() {
+    let mut h = Harness::new();
+    h.server.open(1);
+    h.receive(1, &[login("Alice")]);
+    h.server.players.get_mut(&1).unwrap().mode = GameMode::Survival;
+    h.packets_to(1);
+    h.server.start_game(1);
+    let packets = h.packets_to(1);
+    let start = packets.iter().find(|p| p.id == StartGame::ID).unwrap();
+    let r = &mut Reader(&start.body);
+    r.var_i64().unwrap();
+    r.var_u64().unwrap();
+    assert_eq!(r.var_i32().unwrap(), 0, "sopravvivenza");
+    assert_eq!(GameMode::default(), GameMode::Creative);
+}
+
+fn slot_bytes(w: &mut Writer, container: u8, slot: u8, stack_id: i32) {
+    w.u8(container);
+    w.u8(0); // niente dynamic id
+    w.u8(slot);
+    w.i32(stack_id);
+}
+
+/// Corpo di una richiesta: CraftCreative + Place dalla casella creata alla casella `dst` della barra.
+fn craft_and_place(w: &mut Writer, request_id: i32, net_id: u32, dst: u8) {
+    w.var_i32(request_id);
+    w.var_u32(2);
+    w.var_u32(12); // variante CraftCreative
+    w.u8(14);
+    w.var_u32(net_id);
+    w.u8(1);
+    w.var_u32(1); // variante Place
+    w.u8(1);
+    w.u8(64);
+    slot_bytes(w, 60, 50, request_id);
+    slot_bytes(w, 28, dst, 0);
+    w.var_u32(0); // niente stringhe da filtrare
+    w.i32(-1);
+}
+
+/// Una richiesta che non può riuscire: prende 5 oggetti da una casella vuota.
+fn take_from_empty(w: &mut Writer, request_id: i32) {
+    w.var_i32(request_id);
+    w.var_u32(1);
+    w.var_u32(0);
+    w.u8(0);
+    w.u8(5);
+    slot_bytes(w, 28, 0, 0);
+    slot_bytes(w, 28, 1, 0);
+    w.var_u32(0);
+    w.i32(-1);
+}
+
+fn stone_net_id() -> u32 {
+    registry::creative().1.iter().position(|c| c.name == "minecraft:stone" && c.meta == 0).unwrap() as u32 + 1
+}
+
+fn stack_request_packet(build: impl FnOnce(&mut Writer)) -> Packet {
+    let mut w = Writer::default();
+    w.var_u32(1);
+    build(&mut w);
+    Packet::new(id::ITEM_STACK_REQUEST, w.0)
+}
+
+#[test]
+fn item_stack_request_gives_a_creative_item() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    h.packets_to(1);
+    h.receive(1, &[stack_request_packet(|w| craft_and_place(w, -1, stone_net_id(), 2))]);
+    let packets = h.packets_to(1);
+    assert_eq!(packets.iter().map(|p| p.id).collect::<Vec<_>>(), [id::ITEM_STACK_RESPONSE]);
+    assert_eq!(&packets[0].body[..4], [1, 0, 1, 1], "una risposta, riuscita, richiesta -1, contenitori presenti");
+    let stack = h.server.players[&1].inventory.stack_at(28, 2).unwrap();
+    assert_eq!((stack.id, stack.count), (registry::items().id("minecraft:stone").unwrap(), 64));
+    assert!(stack.net_id.is_some_and(|n| n > 0));
+    assert_eq!(h.server.players[&1].inventory.held().id, 0, "la barra è su una casella vuota");
+}
+
+#[test]
+fn rejected_item_stack_request_resends_the_slots() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    h.packets_to(1);
+    h.receive(1, &[stack_request_packet(|w| take_from_empty(w, -1))]);
+    let packets = h.packets_to(1);
+    assert_eq!(packets.iter().map(|p| p.id).collect::<Vec<_>>(), [id::ITEM_STACK_RESPONSE, id::INVENTORY_SLOT, id::INVENTORY_SLOT]);
+    assert_eq!(packets[0].body, [1, 1, 1, 0], "errore");
+    // Un corpo troncato non risponde e non fa nulla.
+    let mut w = Writer::default();
+    w.var_u32(1);
+    take_from_empty(&mut w, -3);
+    h.receive(1, &[Packet::new(id::ITEM_STACK_REQUEST, w.0[..w.0.len() - 3].to_vec())]);
+    assert!(h.packets_to(1).is_empty());
+}
+
+#[test]
+fn survival_player_cannot_use_the_creative_menu() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    h.server.players.get_mut(&1).unwrap().mode = GameMode::Survival;
+    h.packets_to(1);
+    h.receive(1, &[stack_request_packet(|w| craft_and_place(w, -1, stone_net_id(), 0))]);
+    assert_eq!(h.packets_to(1)[0].body, [1, 1, 1, 0]);
+    assert_eq!(h.server.players[&1].inventory.stack_at(28, 0), Some(ItemStack::air()));
+}
+
+#[test]
+fn item_stack_requests_before_spawning_are_ignored() {
+    let mut h = Harness::new();
+    h.server.open(1);
+    h.receive(1, &[login("Alice"), radius()]); // dentro il mondo ma senza SetLocalPlayerAsInitialized
+    h.packets_to(1);
+    h.receive(1, &[stack_request_packet(|w| craft_and_place(w, -1, stone_net_id(), 0))]);
+    assert!(h.packets_to(1).is_empty());
+    assert_eq!(h.server.players[&1].inventory.stack_at(28, 0), Some(ItemStack::air()));
+}
+
+/// `PlayerAuthInput` con il flag 36 e una richiesta di pila (CraftCreative + Place), posizione (x, 70, 0).
+fn pai_with_request(x: f32) -> Vec<u8> {
+    let mut w = Writer::default();
+    for v in [0.0, 0.0, x, 70.0, 0.0, 0.0, 0.0, 0.0] {
+        w.f32(v);
+    }
+    w.var_u32(1);
+    w.var_i32(36);
+    w.var_u32(1); // modalità di input
+    w.var_u32(0);
+    w.var_i32(2);
+    w.f32(0.0);
+    w.f32(0.0);
+    w.var_u64(10);
+    (0..3).for_each(|_| w.f32(0.0));
+    w.u8(0); // niente transazione
+    w.u8(1);
+    craft_and_place(&mut w, -1, stone_net_id(), 5);
+    w.u8(0); // niente azioni di blocco
+    w.u8(0);
+    w.u8(0);
+    (0..7).for_each(|_| w.f32(0.0));
+    w.0
+}
+
+#[test]
+fn player_auth_input_carries_an_item_stack_request() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    h.packets_to(1);
+    h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_request(40.5))]);
+    assert_eq!(h.server.players[&1].pos[0], 40.5, "il movimento passa anche con la richiesta");
+    let stack = h.server.players[&1].inventory.stack_at(28, 5).unwrap();
+    assert_eq!((stack.id, stack.count), (registry::items().id("minecraft:stone").unwrap(), 64));
+    assert!(h.packets_to(1).iter().any(|p| p.id == id::ITEM_STACK_RESPONSE));
+}
+
+#[test]
+fn only_the_first_item_stack_requests_are_logged_in_hex() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    for n in 0..5 {
+        h.receive(1, &[stack_request_packet(|w| take_from_empty(w, -(2 * n + 1)))]);
+        h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_request(1.0))]);
+    }
+    assert_eq!((h.server.players[&1].stack_logs, h.server.players[&1].action_logs), (3, 3));
+}
+
+fn mob_equipment(slot: u8, selected: u8) -> Packet {
+    MobEquipment { target_runtime_id: 1, item: ItemStack::air(), slot, selected_slot: selected, container_id: 0 }.packet()
+}
+
+#[test]
+fn mob_equipment_selects_a_hotbar_slot() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    h.receive(1, &[mob_equipment(3, 3)]);
+    assert_eq!(h.server.players[&1].inventory.selected, 3);
+    h.receive(1, &[mob_equipment(9, 9)]);
+    h.receive(1, &[mob_equipment(200, 200)]);
+    assert_eq!(h.server.players[&1].inventory.selected, 3, "fuori dalla barra: ignorato");
+    h.receive(1, &[Packet::new(id::MOB_EQUIPMENT, vec![1, 2])]);
+    assert_eq!(h.server.players[&1].inventory.selected, 3, "corpo malformato: ignorato");
 }

@@ -1385,7 +1385,7 @@ pub struct NetworkItemInstanceDescriptorData {
     pub stack_size: u16,
     pub aux_value: u32,
     pub block_runtime_id: i32,
-    pub user_data_buffer: String,
+    pub user_data_buffer: Vec<u8>,
 }
 
 impl Encode for NetworkItemInstanceDescriptorData {
@@ -1394,7 +1394,7 @@ impl Encode for NetworkItemInstanceDescriptorData {
         w.u16(self.stack_size);
         w.var_u32(self.aux_value);
         w.var_i32(self.block_runtime_id);
-        w.string(&self.user_data_buffer);
+        w.bytes(&self.user_data_buffer);
     }
 }
 

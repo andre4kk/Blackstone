@@ -5,6 +5,7 @@ pub mod config;
 mod disk;
 mod gen_client;
 mod handlers;
+mod inventory;
 mod join;
 mod nbt;
 mod registry;
@@ -43,6 +44,24 @@ pub fn config(port: u16) -> Config {
     }
 }
 
+/// Modalità di gioco; il valore è quello che il protocollo chiama `GameType`.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[allow(dead_code)] // le altre modalità si scelgono col comando /gamemode
+pub(crate) enum GameMode {
+    Survival = 0,
+    #[default]
+    Creative = 1,
+    Adventure = 2,
+    Spectator = 6,
+}
+
+impl GameMode {
+    /// Vero se il giocatore può prendere oggetti dal menu creativo e cestinarli.
+    pub(crate) fn creative_inventory(self) -> bool {
+        matches!(self, GameMode::Creative | GameMode::Spectator)
+    }
+}
+
 /// Stato di un giocatore connesso.
 #[derive(Default)]
 struct Player {
@@ -63,7 +82,16 @@ struct Player {
     last_chunk: (i32, i32),
     /// Chunk già inviati e ancora nel raggio del giocatore: quando ne escono si tolgono, così al ritorno si rimandano.
     sent: HashSet<(i32, i32)>,
+    mode: GameMode,
+    inventory: inventory::Inventory,
+    /// Quante richieste di pila e quanti `PlayerAuthInput` con azioni su oggetti o blocchi sono già stati loggati in esadecimale
+    /// (al massimo `HEX_LOGS`): servono a verificare nel gioco le codifiche non sicure.
+    stack_logs: u8,
+    action_logs: u8,
 }
+
+/// Quanti pacchetti per giocatore si registrano in esadecimale (richieste di pila e input con azioni).
+const HEX_LOGS: u8 = 3;
 
 /// Il gioco gira a 20 tick al secondo.
 const TICK: Duration = Duration::from_millis(50);
@@ -224,6 +252,8 @@ async fn next_gen_event(rx: &mut Option<UnboundedReceiver<GenEvent>>) -> Option<
 
 /// Il gioco: gli eventi di rete arrivano quando capitano, il tick ogni 50 ms. Ctrl+C chiude in ordine salvando il mondo.
 async fn serve(cfg: Config, world: Option<storage::World>, generator: Option<GenConfig>, max_radius: i32) -> io::Result<()> {
+    // Gli stati dei blocchi e il menu creativo si costruiscono ora, non al pacchetto del primo giocatore.
+    join::warm_up();
     let mut net = bedrock_net::start(cfg).await?;
     let mut server = Server::new(net.sender.clone());
     server.max_radius = max_radius;

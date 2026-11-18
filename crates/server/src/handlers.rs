@@ -1,9 +1,10 @@
 //! Un handler per ogni pacchetto che il server sa gestire.
-use crate::{Player, Server};
+use crate::{inventory::HOTBAR_SLOTS, Player, Server, HEX_LOGS};
 use bedrock_net::log;
 use bedrock_protocol::{
+    generated::MobEquipment,
     id,
-    input::PlayerAuthInput,
+    input::{flag, ItemStackRequestPacket, PlayerAuthInput, StackRequest},
     login,
     packets::{
         disconnect_reason, pack_response, play_status, text_type, Disconnect, Login, NetworkSettings, PacketViolationWarning, PlayStatus,
@@ -45,7 +46,7 @@ impl Server {
         let allowed = match packet.id {
             id::LOGIN => !logged_in,
             id::RESOURCE_PACK_CLIENT_RESPONSE | id::REQUEST_CHUNK_RADIUS | id::SET_LOCAL_PLAYER_AS_INITIALIZED => logged_in,
-            id::TEXT | id::COMMAND_REQUEST => spawned,
+            id::TEXT | id::COMMAND_REQUEST | id::ITEM_STACK_REQUEST | id::MOB_EQUIPMENT => spawned,
             _ => true,
         };
         if !allowed {
@@ -62,7 +63,9 @@ impl Server {
             // Pacchetti di gioco che il client manda di continuo e che arriveranno con movimento, blocchi e inventario:
             // per ora si ignorano in silenzio, altrimenti il log si riempie.
             id::PLAYER_AUTH_INPUT => self.player_auth_input(pid, &packet.body),
-            id::ANIMATE | id::PLAYER_ACTION | id::MOB_EQUIPMENT | id::INTERACT | id::EMOTE_LIST => {}
+            id::ITEM_STACK_REQUEST => self.item_stack_request(pid, &packet.body),
+            id::MOB_EQUIPMENT => self.mob_equipment(pid, &packet.body),
+            id::ANIMATE | id::PLAYER_ACTION | id::INTERACT | id::EMOTE_LIST => {}
             id::SERVERBOUND_LOADING_SCREEN | id::CLIENT_CACHE_STATUS => {} // il client dichiara se usa la cache dei chunk: per ora non serve
             id::PACKET_VIOLATION_WARNING => self.packet_violation(pid, &packet.body),
             other => {
@@ -73,25 +76,73 @@ impl Server {
         }
     }
 
-    /// Input del giocatore: per ora se ne legge solo la posizione. I valori non finiti o fuori dal mondo si scartano.
+    /// Input del giocatore: la posizione e l'eventuale richiesta di pila (flag 36). I valori non finiti o fuori dal mondo si scartano.
     /// Se il corpo non si legge per intero (il layout dopo la posizione non è verificato sul client reale) si logga
     /// la prima volta e si usa comunque la posizione: il movimento non deve dipendere dal resto del pacchetto.
     fn player_auth_input(&mut self, pid: u64, body: &[u8]) {
         let Some(player) = self.players.get_mut(&pid).filter(|p| p.spawned) else { return };
-        let position = match PlayerAuthInput::decode(body) {
-            Some(input) => input.position,
+        let (position, request) = match PlayerAuthInput::decode(body) {
+            Some(input) => {
+                let has_actions = [flag::PERFORM_ITEM_INTERACTION, flag::PERFORM_BLOCK_ACTIONS, flag::PERFORM_ITEM_STACK_REQUEST].iter().any(|&f| input.has(f));
+                if has_actions && player.action_logs < HEX_LOGS {
+                    player.action_logs += 1;
+                    log!("[#{pid}] PlayerAuthInput con azioni (flag {:#x}, {} byte): {:02x?}", input.flags, body.len(), &body[..body.len().min(400)]);
+                }
+                (input.position, input.stack_request)
+            }
             None => {
                 if !std::mem::replace(&mut player.pai_logged, true) {
                     let head = &body[..body.len().min(64)];
                     log!("[#{pid}] PlayerAuthInput illeggibile ({} byte): {head:02x?}", body.len());
                 }
                 let Some((_, _, position)) = PlayerAuthInput::decode_rotation_position(body) else { return };
-                position
+                (position, None)
             }
         };
         // Limite del mondo di Minecraft: 30 milioni di blocchi per lato.
         if position.iter().all(|v| v.is_finite() && v.abs() <= 30_000_000.0) {
             self.on_move(pid, position);
+        }
+        if let Some(request) = request {
+            self.stack_request(pid, &request);
+        }
+    }
+
+    /// Pacchetto `ItemStackRequest`: ogni richiesta ha la sua risposta.
+    fn item_stack_request(&mut self, pid: u64, body: &[u8]) {
+        if let Some(p) = self.players.get_mut(&pid).filter(|p| p.stack_logs < HEX_LOGS) {
+            p.stack_logs += 1;
+            log!("[#{pid}] ItemStackRequest ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
+        }
+        let Some(packet) = ItemStackRequestPacket::decode(body) else {
+            return log!("[#{pid}] ItemStackRequest illeggibile ({} byte): ignorato", body.len());
+        };
+        for request in &packet.requests {
+            self.stack_request(pid, request);
+        }
+    }
+
+    /// Una richiesta di pila: si applica all'inventario e si risponde (con le caselle cambiate, o con l'errore e lo stato vero).
+    fn stack_request(&mut self, pid: u64, request: &StackRequest) {
+        let Some(p) = self.players.get_mut(&pid) else { return };
+        let result = p.inventory.handle(request, p.mode.creative_inventory());
+        if let Some(error) = &result.error {
+            log!("[#{pid}] richiesta di pila {} rifiutata: {error}", request.request_id);
+        }
+        let packets = p.inventory.response(request.request_id, &result);
+        self.send(pid, &packets);
+    }
+
+    /// Il giocatore cambia la casella della barra in mano. Caselle fuori dalla barra si ignorano.
+    fn mob_equipment(&mut self, pid: u64, body: &[u8]) {
+        let Some(equipment) = MobEquipment::decode(body) else {
+            return log!("[#{pid}] MobEquipment illeggibile ({} byte): ignorato", body.len());
+        };
+        let Some(p) = self.players.get_mut(&pid) else { return };
+        if equipment.selected_slot < HOTBAR_SLOTS {
+            p.inventory.selected = equipment.selected_slot;
+        } else {
+            log!("[#{pid}] MobEquipment con la casella {} fuori dalla barra: ignorato", equipment.selected_slot);
         }
     }
 

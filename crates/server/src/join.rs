@@ -1,12 +1,22 @@
 //! Ingresso nel mondo: StartGame, registro degli oggetti e streaming dei chunk.
-use crate::{biomes, streaming::chunk_of, Server};
+use crate::{
+    biomes,
+    inventory::window,
+    registry::{self, CreativeItem},
+    streaming::chunk_of,
+    GameMode, Server,
+};
 use bedrock_net::log;
 use bedrock_protocol::{
     generated::{
-        enums, AvailableActorIdentifiers, BlockPos, ChunkRadiusUpdated, CreativeContent, ItemData, ItemRegistry, JigsawStructureData, LevelSettings,
-        NetworkChunkPublisherUpdate, SpawnSettings, StartGame, Vec3, VoxelShapes,
+        enums::{self, container_enum_name},
+        AvailableActorIdentifiers, BlockPos, ChunkRadiusUpdated, CreativeContent, CreativeGroupInfoPayload, CreativeItemEntryPayload, FullContainerName,
+        InventoryContent, ItemData, ItemRegistry, JigsawStructureData, LevelSettings, NetworkChunkPublisherUpdate, NetworkItemInstanceDescriptorData,
+        PlayerHotbar, SerializedAbilitiesData, SerializedAbilitiesDataSerializedLayer, SetPlayerGameType, SpawnSettings, StartGame, UpdateAbilities, Vec3,
+        VoxelShapes,
     },
     id,
+    item::ItemStack,
     packets::{play_status, text_type, PlayStatus, RequestChunkRadius, Text},
     varint,
     wire::ServerPacket,
@@ -70,6 +80,111 @@ fn item_registry() -> &'static Packet {
     })
 }
 
+/// Bit di `UpdateAbilities` (P§7.2).
+mod ability {
+    pub const BUILD: u32 = 1 << 0;
+    pub const MINE: u32 = 1 << 1;
+    pub const DOORS_AND_SWITCHES: u32 = 1 << 2;
+    pub const OPEN_CONTAINERS: u32 = 1 << 3;
+    pub const ATTACK_PLAYERS: u32 = 1 << 4;
+    pub const ATTACK_MOBS: u32 = 1 << 5;
+    pub const INVULNERABLE: u32 = 1 << 8;
+    pub const FLYING: u32 = 1 << 9;
+    pub const MAY_FLY: u32 = 1 << 10;
+    pub const INSTANT_BUILD: u32 = 1 << 11;
+    pub const NO_CLIP: u32 = 1 << 17;
+    /// Tutte le abilità che il client conosce: il valore di ognuna lo decide il server.
+    pub const ALL: u32 = 0xF_FFFF;
+    /// Tipi di livello.
+    pub const LAYER_BASE: u16 = 1;
+    pub const LAYER_SPECTATOR: u16 = 2;
+}
+
+/// Quali abilità ha il giocatore in una modalità (come Dragonfly, `SendAbilities`). Se sta volando lo decide il client.
+pub(crate) fn abilities_for(mode: GameMode) -> u32 {
+    use ability::*;
+    if mode == GameMode::Spectator {
+        // Lo spettatore ha come livello base quello di un giocatore normale: il resto lo aggiunge il livello sopra.
+        return BUILD | MINE | DOORS_AND_SWITCHES | OPEN_CONTAINERS | ATTACK_PLAYERS | ATTACK_MOBS;
+    }
+    let mut values = DOORS_AND_SWITCHES | OPEN_CONTAINERS | ATTACK_PLAYERS | ATTACK_MOBS;
+    if mode == GameMode::Creative {
+        values |= MAY_FLY | INVULNERABLE | INSTANT_BUILD;
+    }
+    if matches!(mode, GameMode::Survival | GameMode::Creative) {
+        values |= BUILD | MINE;
+    }
+    values
+}
+
+/// Livelli di abilità per la modalità: il livello base e, per lo spettatore, quello che lo fa volare senza collisioni.
+fn ability_layers(mode: GameMode) -> Vec<SerializedAbilitiesDataSerializedLayer> {
+    let layer = |serialized_layer, abilities_set, ability_values| SerializedAbilitiesDataSerializedLayer {
+        serialized_layer,
+        abilities_set,
+        ability_values,
+        fly_speed: 0.05,
+        vertical_fly_speed: 1.0,
+        walk_speed: 0.1,
+    };
+    let mut layers = Vec::new();
+    if mode == GameMode::Spectator {
+        use ability::*;
+        let set =
+            BUILD | MINE | DOORS_AND_SWITCHES | OPEN_CONTAINERS | ATTACK_PLAYERS | ATTACK_MOBS | INVULNERABLE | FLYING | MAY_FLY | INSTANT_BUILD | NO_CLIP;
+        layers.push(layer(LAYER_SPECTATOR, set, INVULNERABLE | FLYING | NO_CLIP));
+    }
+    layers.push(layer(ability::LAYER_BASE, ability::ALL, abilities_for(mode)));
+    layers
+}
+
+/// Una voce del menu creativo come la vuole `CreativeContent`.
+fn creative_descriptor(c: &CreativeItem) -> NetworkItemInstanceDescriptorData {
+    NetworkItemInstanceDescriptorData {
+        id: registry::items().id(&c.name).map_or(0, i32::from),
+        stack_size: 1,
+        aux_value: c.meta,
+        block_runtime_id: c.block.unwrap_or(0),
+        user_data_buffer: match &c.nbt {
+            Some(nbt) => ItemStack::user_data_with_nbt(nbt),
+            None => ItemStack::empty_user_data(),
+        },
+    }
+}
+
+/// Menu creativo completo (uguale per tutti: net id = indice + 1, come Dragonfly). Le icone dei gruppi non possono essere aria
+/// (il client scarta gli oggetti non validi): ai gruppi anonimi si dà come icona la loro prima voce.
+fn creative_packet() -> &'static Packet {
+    static PACKET: OnceLock<Packet> = OnceLock::new();
+    PACKET.get_or_init(|| {
+        let (groups, items) = registry::creative();
+        let groups = groups
+            .iter()
+            .enumerate()
+            .map(|(index, g)| {
+                let icon = g.icon.as_ref().or_else(|| items.iter().find(|i| i.group as usize == index)).or_else(|| items.first());
+                CreativeGroupInfoPayload {
+                    creative_category: g.category,
+                    name: g.name.clone(),
+                    group_icon_item: icon.map(creative_descriptor).unwrap_or_default(),
+                }
+            })
+            .collect();
+        let entries = items
+            .iter()
+            .enumerate()
+            .map(|(index, i)| CreativeItemEntryPayload { creative_net_id: index as u32 + 1, item_instance: creative_descriptor(i), group_index: i.group })
+            .collect();
+        CreativeContent { groups, entries }.packet()
+    })
+}
+
+/// Prepara i dati pesanti da costruire (stati dei blocchi, menu creativo) prima che entri il primo giocatore.
+pub(crate) fn warm_up() {
+    registry::blocks();
+    creative_packet();
+}
+
 impl Server {
     /// Il client ha applicato i resource pack: gli diciamo che mondo è e dove si trova.
     pub(crate) fn start_game(&mut self, pid: u64) {
@@ -85,10 +200,11 @@ impl Server {
             p.pos = eyes;
             p.last_chunk = chunk_of(eyes[0], eyes[2]);
         }
+        let mode = self.players.get(&pid).map_or_else(GameMode::default, |p| p.mode);
         let start = StartGame {
             entity_id: pid as i64,
             runtime_id: pid,
-            game_type: enums::game_type::CREATIVE,
+            game_type: mode as i32,
             position: Vec3 { x: eyes[0], y: eyes[1], z: eyes[2] }, // occhi del giocatore
             settings: LevelSettings {
                 spawn_settings: SpawnSettings { dimension: 0, ..Default::default() },
@@ -146,7 +262,7 @@ impl Server {
         let mut packets =
             vec![ChunkRadiusUpdated { chunk_radius: radius }.packet(), Packet::new(id::PLAY_STATUS, PlayStatus { status: play_status::PLAYER_SPAWN }.encode())];
         if !skip("creative") {
-            packets.push(CreativeContent::default().packet());
+            packets.push(creative_packet().clone());
         }
         self.send(pid, &packets);
         if flag("CHUNKS_EARLY") {
@@ -172,6 +288,8 @@ impl Server {
         let name = self.name(pid);
         self.tell(pid, "§aBenvenuto sul server Rust! Scrivi /help per i comandi.");
         self.broadcast(Text::new(text_type::RAW, format!("§e{name} è entrato nel gioco")));
+        self.send_abilities(pid);
+        self.send_inventory(pid);
         let mut packets = Vec::new();
         // La nostra BiomeDefinitionList fa chiudere il client (provato il 18/11/2026): spenta finché non è completa.
         // Senza, il client usa le sue definizioni interne e gli ID dei biomi nei chunk funzionano lo stesso.
@@ -189,6 +307,42 @@ impl Server {
             log!("[#{pid}] NO_CHUNKS attivo: non invio chunk");
         }
         // I chunk partono dal tick successivo (`stream_tick`), dal più vicino, al massimo CHUNKS_PER_TICK per tick.
+    }
+
+    /// Modalità di gioco e abilità del giocatore (`SetPlayerGameType` e `UpdateAbilities`, livello base).
+    pub(crate) fn send_abilities(&self, pid: u64) {
+        let Some(p) = self.players.get(&pid) else { return };
+        let data = SerializedAbilitiesData {
+            target_player_raw_id: pid as i64,
+            player_permissions: enums::player_permission_level::MEMBER,
+            command_permissions: 0,
+            layers: ability_layers(p.mode),
+        };
+        self.send(pid, &[SetPlayerGameType { player_game_type: p.mode as i32 }.packet(), UpdateAbilities { data }.packet()]);
+    }
+
+    /// Inventario, mano secondaria e armatura, e quale casella della barra è in mano.
+    pub(crate) fn send_inventory(&self, pid: u64) {
+        let Some(p) = self.players.get(&pid) else { return };
+        let content = |window_id: u32, container: u8, slots: Vec<ItemStack>| {
+            InventoryContent {
+                container_id: window_id,
+                slots,
+                full_container_name: FullContainerName { container_name: container, dynamic_id: None },
+                storage_item: ItemStack::air(),
+            }
+            .packet()
+        };
+        let inv = &p.inventory;
+        self.send(
+            pid,
+            &[
+                content(window::INVENTORY, container_enum_name::INVENTORY_CONTAINER, inv.main_stacks()),
+                content(window::OFFHAND, container_enum_name::OFFHAND_CONTAINER, inv.offhand_stacks()),
+                content(window::ARMOR, container_enum_name::ARMOR_CONTAINER, inv.armor_stacks()),
+                PlayerHotbar { selected_slot: inv.selected as u32, container_id: window::INVENTORY as u8, should_select_slot: true }.packet(),
+            ],
+        );
     }
 
     /// `NetworkChunkPublisherUpdate`: il centro della vista (blocco del giocatore) e il raggio in blocchi.

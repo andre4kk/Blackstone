@@ -38,7 +38,7 @@ def int_kind(under, opts):
     return rust, rust
 
 # Campi che lo schema chiama "string" ma contengono byte arbitrari (non UTF-8): lunghezza varint + byte.
-BYTES = {"LevelChunkPacketPayload.Serialized Chunk Data"}
+BYTES = {"LevelChunkPacketPayload.Serialized Chunk Data", "NetworkItemInstanceDescriptorData.User Data Buffer"}
 # Tipi che il generatore non sa produrre (interi senza tipo sottostante, ecc.): si usa un tipo scritto a mano
 # nel crate (stesso nome Rust, già implementa `Encode`). Chiave = nome dello schema, valore = percorso del modulo.
 EXTERNAL = {"NetworkItemStackDescriptor": "crate::item::ItemStack"}
