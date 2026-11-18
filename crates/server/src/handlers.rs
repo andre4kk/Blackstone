@@ -4,7 +4,7 @@ use bedrock_net::log;
 use bedrock_protocol::{
     id, login,
     packets::{
-        disconnect_reason, pack_response, play_status, text_type, Disconnect, Login, NetworkSettings, PacketViolationWarning, PlayStatus,
+        disconnect_reason, pack_response, play_status, text_type, Disconnect, Login, NetworkSettings, PacketViolationWarning, PlayStatus, PlayerAuthInput,
         RequestNetworkSettings, ResourcePackClientResponse, ResourcePackStack, ResourcePacksInfo, Text,
     },
     Packet, PROTOCOL, VERSION,
@@ -19,6 +19,7 @@ impl Server {
     pub(crate) fn close(&mut self, pid: u64) {
         log!("[#{pid}] disconnesso");
         let name = self.name(pid);
+        self.waiting_start.retain(|&w| w != pid);
         if self.players.remove(&pid).is_some_and(|p| p.spawned) {
             self.broadcast(Text::new(text_type::RAW, format!("§e{name} ha lasciato il gioco")));
         }
@@ -58,7 +59,8 @@ impl Server {
             id::COMMAND_REQUEST => self.command(pid, &packet.body),
             // Pacchetti di gioco che il client manda di continuo e che arriveranno con movimento, blocchi e inventario:
             // per ora si ignorano in silenzio, altrimenti il log si riempie.
-            id::PLAYER_AUTH_INPUT | id::ANIMATE | id::PLAYER_ACTION | id::MOB_EQUIPMENT | id::INTERACT | id::EMOTE_LIST => {}
+            id::PLAYER_AUTH_INPUT => self.player_auth_input(pid, &packet.body),
+            id::ANIMATE | id::PLAYER_ACTION | id::MOB_EQUIPMENT | id::INTERACT | id::EMOTE_LIST => {}
             id::SERVERBOUND_LOADING_SCREEN | id::CLIENT_CACHE_STATUS => {} // il client dichiara se usa la cache dei chunk: per ora non serve
             id::PACKET_VIOLATION_WARNING => self.packet_violation(pid, &packet.body),
             other => {
@@ -66,6 +68,18 @@ impl Server {
                 let hex = if body.len() <= 80 { format!(": {body:02x?}") } else { String::new() };
                 log!("[#{pid}] pacchetto {other} non gestito ({} byte){hex}", body.len());
             }
+        }
+    }
+
+    /// Input del giocatore: per ora se ne legge solo la posizione. I valori non finiti o fuori dal mondo si scartano.
+    fn player_auth_input(&mut self, pid: u64, body: &[u8]) {
+        if !self.players.get(&pid).is_some_and(|p| p.spawned) {
+            return;
+        }
+        let Some(input) = PlayerAuthInput::decode(body) else { return };
+        // Limite del mondo di Minecraft: 30 milioni di blocchi per lato.
+        if input.position.iter().all(|v| v.is_finite() && v.abs() <= 30_000_000.0) {
+            self.on_move(pid, input.position);
         }
     }
 

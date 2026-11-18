@@ -130,7 +130,8 @@ fn flush_on_shutdown_writes_dirty_chunks() {
     let dir = std::env::temp_dir().join(format!("versmc-test-shutdown-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     let (sender, _sent) = Sender::for_tests();
-    let mut server = Server::with_world(sender, World::open_with(&dir, "Prova", Some(7)).unwrap());
+    let (events, _events) = tokio::sync::mpsc::unbounded_channel();
+    let mut server = Server::with_world(sender, World::open_with(&dir, "Prova", Some(7)).unwrap(), events);
     let mut dirty = Chunk::flat(Dim::Overworld, 2, 3);
     dirty.dirty = true;
     let clean = Chunk::flat(Dim::Overworld, 4, 4); // non modificato: non va riscritto
@@ -146,4 +147,21 @@ fn flush_on_shutdown_writes_dirty_chunks() {
     assert!(world.load(Dim::Overworld, 4, 4).is_none(), "il chunk pulito non viene scritto");
     drop(world);
     let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn player_auth_input_moves_the_player_and_ignores_bad_positions() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    let input = |x: f32, y: f32, z: f32| {
+        let body: Vec<u8> = [0.0f32, 0.0, x, y, z].iter().flat_map(|v| v.to_le_bytes()).collect();
+        Packet::new(id::PLAYER_AUTH_INPUT, body)
+    };
+    h.receive(1, &[input(40.5, 70.0, -3.0)]);
+    assert_eq!((h.server.players[&1].pos, h.server.players[&1].last_chunk), ([40.5, 70.0, -3.0], (2, -1)));
+    h.receive(1, &[input(f32::NAN, 70.0, 0.0), input(1.0e9, 70.0, 0.0)]);
+    assert_eq!(h.server.players[&1].last_chunk, (2, -1), "posizioni non valide scartate");
+    h.server.open(2); // non ancora nel mondo: l'input non conta
+    h.receive(2, &[input(100.0, 70.0, 0.0)]);
+    assert_eq!(h.server.players[&2].pos, [0.0; 3]);
 }

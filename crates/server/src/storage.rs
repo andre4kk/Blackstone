@@ -7,9 +7,9 @@
 //! 6a7cc02e9dff59b69241aa0bcffdb9903ce86beb) e con Amulet-Level (`chunk_decode.cpp`, commit
 //! 28e0674e1ac4f64717d8fd11ac16c6815ab583ae), in sola lettura: il codice qui è scritto da zero.
 //!
-//! Il LevelDB vive in un thread dedicato: `rusty-leveldb` non è `Send`, così `World` lo è e le chiamate (per ora
-//! sincrone) potranno spostarsi fuori dal tick senza altro lavoro.
-#![allow(dead_code)] // usato dallo streaming (prossimo task)
+//! Il LevelDB vive in un thread dedicato: `rusty-leveldb` non è `Send`, così `World` lo è. Le chiamate qui sono
+//! sincrone: il server le fa dal thread del mondo (`disk.rs`), mai dal tick.
+#![allow(dead_code)] // alcune funzioni (open, compact, block_hash_from_nbt) servono solo ai test
 use crate::{
     nbt::{self, Enc, Reader, Tag},
     world::{bits_for_palette, block_hash, block_nbt, pack_words, Chunk, State, BIT_WIDTHS, PLAINS},

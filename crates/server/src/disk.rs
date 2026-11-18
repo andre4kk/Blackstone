@@ -1,0 +1,101 @@
+//! Il mondo su disco fuori dal tick: un thread possiede il `World` e riceve comandi in ordine (letture, scritture, flush).
+//! Le letture dei chunk tornano al ciclo di gioco come `DiskEvent`, così il tick non aspetta mai LevelDB.
+use crate::{storage::World, world::Chunk};
+use bedrock_net::log;
+use std::{
+    sync::mpsc,
+    thread::{self, JoinHandle},
+};
+use tokio::sync::mpsc::UnboundedSender;
+use vgen::Dim;
+
+/// Risultato di una richiesta al disco.
+pub(crate) enum DiskEvent {
+    /// Chunk letto (`None` se non è mai stato salvato o è illeggibile).
+    Loaded(Dim, i32, i32, Option<Chunk>),
+}
+
+enum Cmd {
+    Load(Dim, i32, i32),
+    Save(Box<Chunk>),
+    Palette(Vec<(i32, Vec<u8>)>),
+    Spawn(i32, i32, i32),
+    Flush(mpsc::Sender<()>),
+}
+
+pub(crate) struct Disk {
+    tx: Option<mpsc::Sender<Cmd>>,
+    thread: Option<JoinHandle<()>>,
+}
+
+impl Disk {
+    /// Sposta `world` nel suo thread. Gli eventi di lettura arrivano su `events`.
+    pub(crate) fn start(mut world: World, events: UnboundedSender<DiskEvent>) -> Disk {
+        let (tx, rx) = mpsc::channel::<Cmd>();
+        let thread = thread::Builder::new()
+            .name("mondo".into())
+            .spawn(move || {
+                while let Ok(cmd) = rx.recv() {
+                    match cmd {
+                        Cmd::Load(dim, x, z) => {
+                            let chunk = world.load(dim, x, z);
+                            let _ = events.send(DiskEvent::Loaded(dim, x, z, chunk));
+                        }
+                        Cmd::Save(chunk) => {
+                            if let Err(e) = world.save(&chunk) {
+                                log!("[mondo] salvataggio del chunk {},{} fallito: {e}", chunk.x, chunk.z);
+                            }
+                        }
+                        Cmd::Palette(entries) => world.set_palette(entries),
+                        Cmd::Spawn(x, y, z) => world.set_spawn(x, y, z),
+                        Cmd::Flush(reply) => {
+                            if let Err(e) = world.flush() {
+                                log!("[mondo] flush fallito: {e}");
+                            }
+                            let _ = reply.send(());
+                        }
+                    }
+                }
+            })
+            .expect("thread del mondo non avviabile");
+        Disk { tx: Some(tx), thread: Some(thread) }
+    }
+
+    fn send(&self, cmd: Cmd) {
+        if let Some(tx) = &self.tx {
+            let _ = tx.send(cmd);
+        }
+    }
+
+    pub(crate) fn load(&self, dim: Dim, x: i32, z: i32) {
+        self.send(Cmd::Load(dim, x, z));
+    }
+
+    pub(crate) fn save(&self, chunk: Chunk) {
+        self.send(Cmd::Save(Box::new(chunk)));
+    }
+
+    pub(crate) fn set_palette(&self, entries: Vec<(i32, Vec<u8>)>) {
+        self.send(Cmd::Palette(entries));
+    }
+
+    pub(crate) fn set_spawn(&self, x: i32, y: i32, z: i32) {
+        self.send(Cmd::Spawn(x, y, z));
+    }
+
+    /// Aspetta che tutto quanto inviato finora sia sul disco. Solo alla chiusura: blocca il chiamante.
+    pub(crate) fn flush_blocking(&self) {
+        let (tx, rx) = mpsc::channel();
+        self.send(Cmd::Flush(tx));
+        let _ = rx.recv();
+    }
+}
+
+impl Drop for Disk {
+    fn drop(&mut self) {
+        self.tx = None; // il thread finisce i comandi in coda, esce e chiude il database
+        if let Some(t) = self.thread.take() {
+            let _ = t.join();
+        }
+    }
+}

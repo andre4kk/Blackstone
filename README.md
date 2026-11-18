@@ -23,8 +23,11 @@ Login                  -> PlayStatus + ResourcePacksInfo           verificato co
 ResourcePackClientResponse(DownloadingFinished) -> ResourcePackStack   verificato con Minecraft
 ResourcePackClientResponse(StackFinished) -> JigsawStructureData, VoxelShapes, StartGame, ItemRegistry   accettati dal client
 RequestChunkRadius -> ChunkRadiusUpdated, PlayStatus(PlayerSpawn), CreativeContent   verificato con Minecraft
-SetLocalPlayerAsInitialized -> NetworkChunkPublisherUpdate, LevelChunk...   VERIFICATO: il giocatore entra nel mondo piatto
+SetLocalPlayerAsInitialized -> BiomeDefinitionList, NetworkChunkPublisherUpdate, LevelChunk...   VERIFICATO: il giocatore entra nel mondo piatto
 ```
+
+`BiomeDefinitionList` (tutti i biomi, da `crates/server/data/biomes.json`) parte sempre; non è ancora stata riprovata con il client
+dopo il passaggio dal solo bioma "pianura". `StartGame` aspetta che lo spawn del mondo sia noto (dal `level.dat` o dal generatore).
 
 La sequenza segue quella dei server di riferimento (gophertunnel / Dragonfly).
 
@@ -34,11 +37,17 @@ La sequenza segue quella dei server di riferimento (gophertunnel / Dragonfly).
 - Chat tra i giocatori. Il nome viene dal login e non dal messaggio, ma le firme del login non sono ancora verificate (vedi "Sicurezza").
 - Comandi: `/help`, `/list`, `/tps`, `/say <testo>`.
 - Annunci di ingresso e uscita.
-- Ancora NON gestiti (ignorati in silenzio): movimento (`PlayerAuthInput`), rottura/posa di blocchi, inventario,
-  animazioni, visibilità tra giocatori, salvataggio del mondo.
+- Movimento: dal `PlayerAuthInput` si legge la posizione (occhi); a ogni cambio di chunk il client riceve il nuovo centro
+  (`NetworkChunkPublisherUpdate`) e il server manda i chunk mancanti (al massimo 8 per giocatore per tick, dal più vicino).
+  I chunk lontani da tutti i giocatori (raggio + 2) si scaricano dalla memoria, salvandoli se modificati.
+- Mondo: `worlds/<world>` in formato LevelDB di Bedrock. I chunk si leggono dal disco (senza bloccare il tick) e, se
+  mancano, si chiedono al generatore `versmc-gen` (processo avviato dal server, vedi `server.toml`); quelli generati si salvano.
+  Il seme è quello salvato nel mondo; `seed` in `server.toml` vale solo alla creazione.
+- Se il generatore manca (programma non trovato) il server lo scrive nel log e usa il mondo piatto di ripiego
+  (bedrock a y=-64, terra a -63/-62, erba a -61, spawn in 0,-60,0), senza salvare quei chunk.
+- Ancora NON gestiti (ignorati in silenzio): rottura/posa di blocchi, inventario, animazioni, visibilità tra giocatori.
 
-Mondo: piatto (bedrock a y=-64, terra a -63/-62, erba a -61), identico in ogni chunk. Gli ID di rete dei blocchi sono
-hash FNV-1a dello stato (`crates/server/src/world.rs`): non serve nessuna tabella dei blocchi.
+Gli ID di rete dei blocchi sono hash FNV-1a dello stato (`crates/server/src/world.rs`): non serve nessuna tabella dei blocchi.
 
 ## Pacchetti generati
 
@@ -64,6 +73,16 @@ git clone --depth 1 --branch v1.26.60.5 https://github.com/Mojang/bedrock-sample
 python tools/extract_items.py ../bedrock-samples crates/server/data/items.txt
 ```
 
+`crates/server/data/biomes.json` (biomi della `BiomeDefinitionList`) si rigenera con:
+
+```
+git clone --depth 1 https://github.com/pmmp/BedrockData ../BedrockData
+python -I tools/extract_biomes.py ../BedrockData ../bedrock-samples crates/server/data/biomes.json
+```
+
+I biomi vengono da pmmp/BedrockData (CC0, 1.26.30); quelli che mancano lì (oggi `minecraft:dappled_forest`, ID 195 dalla tabella di
+Geyser in `generator/data/geyser/biomes.json`) da bedrock-samples v1.26.60.5, con colore dell'acqua della pianura (ipotesi: Mojang non lo pubblica).
+
 Schemi e dati Mojang sono soggetti all'EULA di Minecraft: prima di distribuire il server verificare cosa si può
 includere e cosa far scaricare o generare all'utente.
 
@@ -75,8 +94,8 @@ Variabili d'ambiente (PowerShell: `$env:NO_CHUNKS="1"; cargo run`, poi `Remove-I
 - `SUBCHUNK_V8=1`: serializza i sotto-chunk in versione 8 (senza indice di sezione) invece della 9, che è il default.
 - `CHUNKS_EARLY=1`: manda biomi e chunk subito dopo PlayerSpawn, senza aspettare `SetLocalPlayerAsInitialized`.
 - `SKIP=jigsaw,voxel,items,creative,publisher`: non invia i pacchetti elencati (si possono combinare).
-- `SEND=biomes,actors`: invia anche `BiomeDefinitionList` e `AvailableActorIdentifiers`, spenti di default perché con i dati
-  minimi che inventiamo (un solo bioma, nessuna entità) il client crolla. Da riabilitare con dati completi.
+- `SEND=actors`: invia anche `AvailableActorIdentifiers`, spento di default perché con i dati minimi che inventiamo
+  (nessuna entità) il client crolla. I biomi invece partono sempre (`SEND=biomes` non esiste più).
 - `PUBLIC_IP=x.x.x.x`: IP pubblico da pubblicare come candidato ICE (gioco da Internet).
 
 Ogni riga del log ha davanti i secondi dall'avvio. Il log mostra gli stati ICE, la chiusura dei data channel e il contenuto dei pacchetti non gestiti (se brevi).

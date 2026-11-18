@@ -384,6 +384,23 @@ impl ResourcePackClientResponse {
     }
 }
 
+/// Client -> server: input del giocatore a ogni tick (movimento autoritativo del server). Si leggono solo i campi iniziali
+/// (schema Mojang `PlayerAuthInputPacketPayload`, v1.26.61: "Player Rotation" Vec2 = pitch, yaw; "Position" Vec3); il resto,
+/// dal vettore di movimento in poi, si ignora.
+pub struct PlayerAuthInput {
+    pub pitch: f32,
+    pub yaw: f32,
+    /// Posizione degli occhi del giocatore.
+    pub position: [f32; 3],
+}
+
+impl PlayerAuthInput {
+    pub fn decode(body: &[u8]) -> Option<Self> {
+        let f = |i: usize| body.get(i * 4..i * 4 + 4).map(|b| f32::from_le_bytes(b.try_into().unwrap()));
+        Some(Self { pitch: f(0)?, yaw: f(1)?, position: [f(2)?, f(3)?, f(4)?] })
+    }
+}
+
 /// Stringa con lunghezza varint.
 fn take_varint_string(b: &mut &[u8]) -> Option<String> {
     let len = varint::read(b)? as usize;
@@ -428,6 +445,26 @@ fn put_string(out: &mut Vec<u8>, s: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Vettore costruito a mano dallo schema Mojang (nessuna cattura reale disponibile): pitch 15.5, yaw -90, posizione
+    /// (1.5, 100, -20.25), poi il vettore di movimento (0, 1) che non si legge.
+    #[test]
+    fn player_auth_input_decodes_position() {
+        let body = [
+            0x00, 0x00, 0x78, 0x41, // pitch 15.5
+            0x00, 0x00, 0xb4, 0xc2, // yaw -90.0
+            0x00, 0x00, 0xc0, 0x3f, // x 1.5
+            0x00, 0x00, 0xc8, 0x42, // y 100.0
+            0x00, 0x00, 0xa2, 0xc1, // z -20.25
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x3f, // Move Vector, ignorato
+            0xff, 0xff, // coda qualsiasi
+        ];
+        let input = PlayerAuthInput::decode(&body).expect("leggibile");
+        assert_eq!((input.pitch, input.yaw, input.position), (15.5, -90.0, [1.5, 100.0, -20.25]));
+        assert!(PlayerAuthInput::decode(&body[..20]).is_some(), "bastano i campi iniziali");
+        assert!(PlayerAuthInput::decode(&body[..19]).is_none(), "troncato");
+        assert!(PlayerAuthInput::decode(&[]).is_none());
+    }
 
     #[test]
     fn network_settings_is_10_bytes() {

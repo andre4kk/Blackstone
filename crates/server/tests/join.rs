@@ -6,7 +6,10 @@ use base64::{
     Engine,
 };
 use bedrock_protocol::{
-    generated::{ChunkRadiusUpdated, CreativeContent, ItemRegistry, JigsawStructureData, LevelChunk, NetworkChunkPublisherUpdate, StartGame, VoxelShapes},
+    generated::{
+        BiomeDefinitionList, ChunkRadiusUpdated, CreativeContent, ItemRegistry, JigsawStructureData, LevelChunk, NetworkChunkPublisherUpdate, StartGame,
+        VoxelShapes,
+    },
     id,
     packets::{pack_response, text_type, CommandRequest, Login, RequestChunkRadius, RequestNetworkSettings, ResourcePackClientResponse, Text},
     wire::ServerPacket,
@@ -177,10 +180,10 @@ fn client() {
                         Packet::new(id::SET_LOCAL_PLAYER_AS_INITIALIZED, vec![1])
                     }
                     (5, _) => {
-                        // Dopo l'inizializzazione: benvenuto e annuncio di ingresso (testo), pubblicazione e chunk.
+                        // Dopo l'inizializzazione: benvenuto e annuncio di ingresso (testo), biomi, pubblicazione e chunk.
                         for p in &packets {
                             match p.id {
-                                x if x == NetworkChunkPublisherUpdate::ID => {}
+                                x if x == NetworkChunkPublisherUpdate::ID || x == BiomeDefinitionList::ID => {}
                                 id::TEXT => {}
                                 x if x == LevelChunk::ID => chunks += 1,
                                 other => panic!("pacchetto inatteso durante lo streaming: {other}"),

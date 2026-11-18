@@ -1,24 +1,33 @@
 //! Logica di gioco: riceve i pacchetti decodificati dal trasporto e risponde.
+mod biomes;
 mod chat;
 pub mod config;
+mod disk;
 mod gen_client;
 mod handlers;
 mod join;
 mod nbt;
 mod storage;
+mod streaming;
 #[cfg(test)]
 mod tests;
 mod world;
 
 use bedrock_net::{log, Config, Event, Sender};
 use bedrock_protocol::{login::PlayerInfo, Packet, Session};
+use disk::{Disk, DiskEvent};
+use gen_client::{GenClient, GenConfig, GenEvent, Launch};
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
     io,
     path::Path,
     time::{Duration, Instant},
 };
-use tokio::time::{interval, MissedTickBehavior};
+use tokio::{
+    sync::mpsc::{unbounded_channel, UnboundedReceiver},
+    time::{interval, MissedTickBehavior},
+};
+use vgen::Dim;
 
 /// Configurazione di default. L'IP pubblico (per giocare da Internet) si imposta con la variabile PUBLIC_IP.
 pub fn config(port: u16) -> Config {
@@ -43,12 +52,23 @@ struct Player {
     radius: i32,
     /// Vero quando il client si è inizializzato e vede il mondo.
     spawned: bool,
+    /// Vero quando al giocatore si inviano i chunk (spento da `NO_CHUNKS=1`).
+    streaming: bool,
+    /// Posizione degli occhi: quella dello spawn, poi l'ultima di `PlayerAuthInput`.
+    pos: [f32; 3],
+    /// Chunk (x, z) in cui si trova.
+    last_chunk: (i32, i32),
+    /// Chunk già inviati e ancora nel raggio del giocatore: quando ne escono si tolgono, così al ritorno si rimandano.
+    sent: HashSet<(i32, i32)>,
 }
 
 /// Il gioco gira a 20 tick al secondo.
 const TICK: Duration = Duration::from_millis(50);
 /// Quanti tick ricordare per calcolare i TPS reali.
 const TPS_WINDOW: usize = 100;
+
+/// Chiave di un chunk in memoria: (dimensione, x, z).
+type ChunkKey = (u8, i32, i32);
 
 struct Server {
     sender: Sender,
@@ -57,40 +77,66 @@ struct Server {
     ticks: VecDeque<Instant>,
     /// Durata media (media mobile) del lavoro di un tick, in millisecondi.
     mspt: f64,
-    /// Mondo su disco (assente nei test che non salvano).
-    world: Option<storage::World>,
-    /// Chunk in memoria, per (dimensione, x, z). Lo streaming li riempirà; per ora serve a salvarli alla chiusura.
-    #[allow(dead_code)]
-    chunks: HashMap<(u8, i32, i32), world::Chunk>,
+    /// Mondo su disco, nel suo thread (assente nei test che non salvano e quando non c'è un mondo).
+    disk: Option<Disk>,
+    /// Generatore del mondo; assente in modalità piatta.
+    gen: Option<GenClient>,
+    /// Vero se i chunk nuovi sono `Chunk::flat` (generatore assente o mai partito).
+    flat: bool,
+    /// Il generatore ha già mandato `Ready`.
+    gen_ready: bool,
+    /// Spawn del mondo (piedi): dal `level.dat` o dal generatore; `None` finché non è noto.
+    spawn: Option<(i32, i32, i32)>,
+    /// Giocatori arrivati a `StartGame` prima che lo spawn fosse noto.
+    waiting_start: Vec<u64>,
+    /// Chunk in memoria.
+    chunks: HashMap<ChunkKey, world::Chunk>,
+    /// Chunk chiesti al generatore e non ancora arrivati.
+    requested: HashSet<ChunkKey>,
+    /// Chunk in lettura dal disco.
+    loading: HashSet<ChunkKey>,
+    /// Raggio massimo di chunk concesso ai giocatori.
+    max_radius: i32,
 }
 
 impl Server {
+    /// Un server senza disco né generatore: mondo piatto e spawn piatto.
     fn new(sender: Sender) -> Self {
-        Self { sender, players: HashMap::new(), ticks: VecDeque::new(), mspt: 0.0, world: None, chunks: HashMap::new() }
+        Self {
+            sender,
+            players: HashMap::new(),
+            ticks: VecDeque::new(),
+            mspt: 0.0,
+            disk: None,
+            gen: None,
+            flat: true,
+            gen_ready: false,
+            spawn: Some(world::FLAT_SPAWN),
+            waiting_start: Vec::new(),
+            chunks: HashMap::new(),
+            requested: HashSet::new(),
+            loading: HashSet::new(),
+            max_radius: join::MAX_RADIUS,
+        }
     }
 
-    #[allow(dead_code)] // usato dai test; lo streaming lo userà per i chunk caricati
-    fn with_world(sender: Sender, world: storage::World) -> Self {
-        Self { world: Some(world), ..Self::new(sender) }
+    /// Un server con il mondo su disco; gli eventi di lettura vanno a `events`.
+    #[cfg(test)]
+    fn with_world(sender: Sender, world: storage::World, events: tokio::sync::mpsc::UnboundedSender<DiskEvent>) -> Self {
+        Self { disk: Some(Disk::start(world, events)), ..Self::new(sender) }
     }
 
     /// Chiusura ordinata: salva i chunk modificati e scarica il database.
     fn shutdown(&mut self) {
-        let Some(world) = self.world.as_mut() else { return };
+        let Some(disk) = self.disk.as_ref() else { return };
         let mut saved = 0;
         for chunk in self.chunks.values_mut().filter(|c| c.dirty) {
-            match world.save(chunk) {
-                Ok(()) => {
-                    chunk.dirty = false;
-                    saved += 1;
-                }
-                Err(e) => log!("[mondo] salvataggio del chunk {},{} fallito: {e}", chunk.x, chunk.z),
-            }
+            disk.save(chunk.clone());
+            chunk.dirty = false;
+            saved += 1;
         }
-        match world.flush() {
-            Ok(()) => log!("[mondo] chiusura: {saved} chunk salvati"),
-            Err(e) => log!("[mondo] flush fallito: {e}"),
-        }
+        disk.flush_blocking();
+        log!("[mondo] chiusura: {saved} chunk salvati");
     }
 
     /// Codifica i pacchetti per quel giocatore (con la sua compressione) e li invia in un solo messaggio.
@@ -100,10 +146,10 @@ impl Server {
         }
     }
 
-    /// Un tick di gioco. Qui andranno gli aggiornamenti di giocatori, entità e mondo.
+    /// Un tick di gioco: per ora lo streaming dei chunk. Qui andranno anche gli aggiornamenti di entità e mondo.
     fn tick(&mut self) {
         let start = Instant::now();
-        // ... (nulla da aggiornare per ora)
+        self.stream_tick();
         self.mspt = self.mspt * 0.9 + start.elapsed().as_secs_f64() * 1000.0 * 0.1;
         self.ticks.push_back(start);
         if self.ticks.len() > TPS_WINDOW {
@@ -120,24 +166,57 @@ impl Server {
     }
 }
 
-/// Come [`run`], ma con il mondo e le impostazioni di `server.toml`: apre `worlds/<world>` e lo salva alla chiusura.
+/// Come [`run`], ma con il mondo e le impostazioni di `server.toml`: apre `worlds/<world>`, avvia il generatore e salva alla chiusura.
 pub async fn run_with(mut cfg: Config, server_cfg: &config::ServerConfig) -> io::Result<()> {
     cfg.level = server_cfg.world.clone();
     let world = storage::World::open_with(&Path::new("worlds").join(&server_cfg.world), &server_cfg.world, server_cfg.seed)?;
     log!("[mondo] \"{}\" aperto, seme {}", server_cfg.world, world.seed());
-    serve(cfg, Some(world)).await
+    if let Some(seed) = server_cfg.seed.filter(|&s| s != world.seed()) {
+        log!("[mondo] il seme di server.toml ({seed}) è diverso da quello del mondo esistente: vale quello del mondo ({})", world.seed());
+    }
+    let generator = GenConfig {
+        launch: Launch::Process { program: server_cfg.generator.clone(), args_extra: Vec::new() },
+        seed: world.seed(),
+        restart_delay: Duration::from_secs(2),
+    };
+    serve(cfg, Some(world), Some(generator), server_cfg.view_distance.clamp(1, 32)).await
 }
 
-/// Avvia il trasporto e fa girare il gioco senza salvare nulla.
+/// Avvia il trasporto e fa girare il gioco con il mondo piatto, senza salvare nulla.
 pub async fn run(cfg: Config) -> io::Result<()> {
-    serve(cfg, None).await
+    serve(cfg, None, None, join::MAX_RADIUS).await
+}
+
+/// Prossimo evento del generatore; senza generatore non arriva mai.
+async fn next_gen_event(rx: &mut Option<UnboundedReceiver<GenEvent>>) -> Option<GenEvent> {
+    match rx {
+        Some(rx) => rx.recv().await,
+        None => std::future::pending().await,
+    }
 }
 
 /// Il gioco: gli eventi di rete arrivano quando capitano, il tick ogni 50 ms. Ctrl+C chiude in ordine salvando il mondo.
-async fn serve(cfg: Config, world: Option<storage::World>) -> io::Result<()> {
+async fn serve(cfg: Config, world: Option<storage::World>, generator: Option<GenConfig>, max_radius: i32) -> io::Result<()> {
     let mut net = bedrock_net::start(cfg).await?;
     let mut server = Server::new(net.sender.clone());
-    server.world = world;
+    server.max_radius = max_radius;
+    let (disk_tx, mut disk_rx) = unbounded_channel::<DiskEvent>();
+    if generator.is_some() {
+        server.spawn = world.as_ref().and_then(|w| w.spawn()); // se manca lo calcola il generatore
+    }
+    if let Some(world) = world {
+        server.disk = Some(Disk::start(world, disk_tx));
+    }
+    let mut gen_rx = None;
+    if let Some(generator) = generator {
+        let (client, rx) = GenClient::spawn(generator);
+        if server.spawn.is_none() {
+            client.request_spawn(Dim::Overworld); // finché non arriva, i login aspettano
+        }
+        server.gen = Some(client);
+        server.flat = false;
+        gen_rx = Some(rx);
+    }
     let mut ticker = interval(TICK);
     ticker.set_missed_tick_behavior(MissedTickBehavior::Skip); // se un tick tarda, non si "recupera" a raffica
     loop {
@@ -151,6 +230,13 @@ async fn serve(cfg: Config, world: Option<storage::World>) -> io::Result<()> {
                     return Ok(());
                 }
             },
+            Some(event) = next_gen_event(&mut gen_rx) => {
+                server.on_gen_event(event);
+                if server.gen.is_none() {
+                    gen_rx = None; // passati al mondo piatto: il generatore non serve più
+                }
+            }
+            Some(event) = disk_rx.recv() => server.on_disk_event(event),
             _ = ticker.tick() => server.tick(),
             _ = tokio::signal::ctrl_c() => {
                 log!("Ctrl+C: chiusura del server");

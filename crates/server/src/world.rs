@@ -50,6 +50,9 @@ pub const PLAINS: u16 = 1;
 /// Livello del suolo del mondo piatto: bedrock a y=-64, terra a -63 e -62, erba a -61.
 pub const GROUND_Y: i32 = -60; // y del primo blocco d'aria sopra l'erba
 
+/// Spawn del mondo piatto (piedi): il primo blocco d'aria sopra l'erba al centro del chunk (0, 0).
+pub const FLAT_SPAWN: (i32, i32, i32) = (0, GROUND_Y, 0);
+
 /// Larghezze in bit per blocco ammesse da Bedrock.
 pub(crate) const BIT_WIDTHS: [u8; 8] = [1, 2, 3, 4, 5, 6, 8, 16];
 
@@ -87,7 +90,6 @@ fn write_storage(w: &mut Writer, palette: &[i32], index_at: impl Fn(usize) -> us
 
 /// Chunk in memoria: sezioni indicate dalla più bassa della dimensione (`None` = sezione di sola aria).
 #[derive(Clone, Debug)]
-#[allow(dead_code)] // x, z e dirty serviranno con lo streaming
 pub(crate) struct Chunk {
     pub dim: Dim,
     pub x: i32,
@@ -104,7 +106,6 @@ impl Chunk {
         (min.div_euclid(16), ((max - min) / 16) as usize)
     }
 
-    #[allow(dead_code)] // usato quando i chunk arriveranno dal generatore
     pub fn from_gen(data: ChunkData) -> Chunk {
         let (lowest, count) = Self::section_range(data.dim);
         let mut sections: Vec<Option<Section>> = vec![None; count];

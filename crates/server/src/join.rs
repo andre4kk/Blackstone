@@ -1,13 +1,10 @@
 //! Ingresso nel mondo: StartGame, registro degli oggetti e streaming dei chunk.
-use crate::{
-    world::{self, Chunk},
-    Server,
-};
+use crate::{biomes, streaming::chunk_of, Server};
 use bedrock_net::log;
 use bedrock_protocol::{
     generated::{
-        enums, AvailableActorIdentifiers, BiomeDefinitionData, BiomeDefinitionList, BiomeStringList, BlockPos, ChunkPos, ChunkRadiusUpdated, CreativeContent,
-        ItemData, ItemRegistry, JigsawStructureData, LevelChunk, LevelSettings, NetworkChunkPublisherUpdate, SpawnSettings, StartGame, Vec3, VoxelShapes,
+        enums, AvailableActorIdentifiers, BlockPos, ChunkRadiusUpdated, CreativeContent, ItemData, ItemRegistry, JigsawStructureData, LevelSettings,
+        NetworkChunkPublisherUpdate, SpawnSettings, StartGame, Vec3, VoxelShapes,
     },
     id,
     packets::{play_status, text_type, PlayStatus, RequestChunkRadius, Text},
@@ -16,12 +13,9 @@ use bedrock_protocol::{
     Packet, VERSION,
 };
 use std::sync::OnceLock;
-use vgen::Dim;
 
 /// Raggio massimo di chunk che il server accetta di inviare.
-const MAX_RADIUS: i32 = 6;
-/// Sezioni di chunk per messaggio: i batch troppo grandi rallentano la compressione e il client.
-const CHUNKS_PER_MESSAGE: usize = 16;
+pub(crate) const MAX_RADIUS: i32 = 6;
 /// NBT di un compound vuoto in formato di rete.
 const EMPTY_NBT: [u8; 3] = [0x0a, 0, 0];
 
@@ -29,7 +23,7 @@ const EMPTY_NBT: [u8; 3] = [0x0a, 0, 0];
 /// NO_CHUNKS=1 non invia chunk;
 /// CHUNKS_EARLY=1 manda biomi e chunk subito dopo PlayerSpawn, senza aspettare SetLocalPlayerAsInitialized;
 /// SKIP=jigsaw,voxel,items,creative,publisher non invia i pacchetti elencati;
-/// SEND=biomes,actors invia anche i pacchetti spenti di default (vedi `send`).
+/// SEND=actors invia anche i pacchetti spenti di default (vedi `send`).
 fn flag(name: &str) -> bool {
     std::env::var(name).is_ok_and(|v| v == "1")
 }
@@ -38,8 +32,8 @@ fn skip(packet: &str) -> bool {
     std::env::var("SKIP").is_ok_and(|v| v.split(',').any(|s| s.trim() == packet))
 }
 
-/// Pacchetti da abilitare esplicitamente con SEND=biomes,actors. Biomi e identificatori sono spenti di default: con i
-/// dati minimi che inventiamo (un solo bioma, nessuna entità) il client crolla; torneranno con dati completi.
+/// Pacchetti da abilitare esplicitamente con SEND=actors. Gli identificatori delle entità sono spenti di default: con i
+/// dati minimi che inventiamo (nessuna entità) il client crolla; torneranno con dati completi.
 fn send(packet: &str) -> bool {
     std::env::var("SEND").is_ok_and(|v| v.split(',').any(|s| s.trim() == packet))
 }
@@ -55,22 +49,6 @@ fn nbt_empty_lists(names: &[&str]) -> Vec<u8> {
     }
     b.push(0);
     b
-}
-
-/// Biomi: per ora solo la pianura, con i valori dei dati ufficiali (clima 0.8/0.4, acqua #44AFF5).
-/// La chiave della mappa è l'indice del nome nella lista di stringhe.
-fn biome_definitions() -> BiomeDefinitionList {
-    let plains = BiomeDefinitionData {
-        id: world::PLAINS,
-        temperature: 0.8,
-        downfall: 0.4,
-        depth: 0.125,
-        scale: 0.05,
-        map_water_color_argb: 0xFF44_AFF5u32 as i32,
-        rain: true,
-        ..Default::default()
-    };
-    BiomeDefinitionList { map_of_biome_names_to_data: vec![(0, plains)], string_list: BiomeStringList { strings: vec!["minecraft:plains".into()] } }
 }
 
 /// Oggetti vanilla (nome + ID) dai dati ufficiali di Mojang, già codificati: sono uguali per tutti i giocatori.
@@ -94,16 +72,27 @@ fn item_registry() -> &'static Packet {
 
 impl Server {
     /// Il client ha applicato i resource pack: gli diciamo che mondo è e dove si trova.
-    pub(crate) fn start_game(&self, pid: u64) {
-        let spawn = BlockPos { x: 0, y: world::GROUND_Y, z: 0 };
+    pub(crate) fn start_game(&mut self, pid: u64) {
+        let Some((sx, sy, sz)) = self.spawn else {
+            log!("[#{pid}] lo spawn non è ancora noto: StartGame aspetta il generatore");
+            self.waiting_start.push(pid);
+            return;
+        };
+        let spawn = BlockPos { x: sx, y: sy, z: sz };
+        // Gli occhi stanno 1.62 sopra i piedi, al centro del blocco di spawn.
+        let eyes = [sx as f32 + 0.5, sy as f32 + 1.62, sz as f32 + 0.5];
+        if let Some(p) = self.players.get_mut(&pid) {
+            p.pos = eyes;
+            p.last_chunk = chunk_of(eyes[0], eyes[2]);
+        }
         let start = StartGame {
             entity_id: pid as i64,
             runtime_id: pid,
             game_type: enums::game_type::CREATIVE,
-            position: Vec3 { x: 0.5, y: world::GROUND_Y as f32 + 1.62, z: 0.5 }, // occhi del giocatore
+            position: Vec3 { x: eyes[0], y: eyes[1], z: eyes[2] }, // occhi del giocatore
             settings: LevelSettings {
                 spawn_settings: SpawnSettings { dimension: 0, ..Default::default() },
-                generator_type: enums::generator_type::FLAT,
+                generator_type: if self.flat { enums::generator_type::FLAT } else { enums::generator_type::OVERWORLD },
                 game_type: enums::game_type::CREATIVE,
                 game_difficulty: enums::difficulty::NORMAL,
                 default_spawn_block_position: spawn,
@@ -149,7 +138,7 @@ impl Server {
     /// non partono ancora: come nei server di riferimento si aspetta `SetLocalPlayerAsInitialized`.
     pub(crate) fn request_chunk_radius(&mut self, pid: u64, body: &[u8]) {
         let Some(request) = RequestChunkRadius::decode(body) else { return };
-        let radius = request.chunk_radius.clamp(1, MAX_RADIUS);
+        let radius = request.chunk_radius.clamp(1, self.max_radius);
         log!("[#{pid}] chunk richiesti: raggio {} -> concesso {radius}", request.chunk_radius);
         if let Some(p) = self.players.get_mut(&pid) {
             p.radius = radius;
@@ -174,47 +163,36 @@ impl Server {
             return log!("[#{pid}] SetLocalPlayerAsInitialized prima della richiesta del raggio: ignorato");
         };
         log!("[#{pid}] il client è inizializzato: invio i chunk");
-        if let Some(p) = self.players.get_mut(&pid) {
-            p.spawned = true;
-        }
+        let streaming = !flag("NO_CHUNKS");
+        let Some(p) = self.players.get_mut(&pid) else { return };
+        p.spawned = true;
+        p.streaming = streaming;
+        p.last_chunk = chunk_of(p.pos[0], p.pos[2]);
+        let eyes = p.pos;
         let name = self.name(pid);
         self.tell(pid, "§aBenvenuto sul server Rust! Scrivi /help per i comandi.");
         self.broadcast(Text::new(text_type::RAW, format!("§e{name} è entrato nel gioco")));
-        let mut packets = Vec::new();
-        if send("biomes") {
-            packets.push(biome_definitions().packet());
-        }
+        let mut packets = vec![biomes::packet().clone()];
         if send("actors") {
             packets.push(AvailableActorIdentifiers { identifier_list: nbt_empty_lists(&["idlist"]) }.packet());
         }
         if !skip("publisher") {
-            packets.push(
-                NetworkChunkPublisherUpdate {
-                    new_position_for_view: BlockPos { x: 0, y: world::GROUND_Y, z: 0 },
-                    new_radius_for_view: radius as u32 * 16,
-                    ..Default::default()
-                }
-                .packet(),
-            );
+            packets.push(self.publisher_update(eyes, radius));
         }
         self.send(pid, &packets);
+        if !streaming {
+            log!("[#{pid}] NO_CHUNKS attivo: non invio chunk");
+        }
+        // I chunk partono dal tick successivo (`stream_tick`), dal più vicino, al massimo CHUNKS_PER_TICK per tick.
+    }
 
-        if flag("NO_CHUNKS") {
-            return log!("[#{pid}] NO_CHUNKS attivo: non invio chunk");
+    /// `NetworkChunkPublisherUpdate`: il centro della vista (blocco del giocatore) e il raggio in blocchi.
+    pub(crate) fn publisher_update(&self, eyes: [f32; 3], radius: i32) -> Packet {
+        NetworkChunkPublisherUpdate {
+            new_position_for_view: BlockPos { x: eyes[0].floor() as i32, y: eyes[1].floor() as i32, z: eyes[2].floor() as i32 },
+            new_radius_for_view: radius as u32 * 16,
+            ..Default::default()
         }
-        let flat_chunk = Chunk::flat(Dim::Overworld, 0, 0); // uguale per tutti i chunk
-        let (flat_count, flat) = (flat_chunk.sub_chunk_count(), flat_chunk.network_bytes());
-        let chunks: Vec<Packet> = (-radius..=radius)
-            .flat_map(|x| (-radius..=radius).map(move |z| (x, z)))
-            .filter(|(x, z)| x * x + z * z <= radius * radius + radius) // area quasi circolare
-            .map(|(x, z)| {
-                LevelChunk { chunk_position: ChunkPos { x, z }, sub_chunks_count: flat_count, serialized_chunk_data: flat.clone(), ..Default::default() }
-                    .packet()
-            })
-            .collect();
-        for group in chunks.chunks(CHUNKS_PER_MESSAGE) {
-            self.send(pid, group);
-        }
-        log!("[#{pid}] inviati {} chunk", chunks.len());
+        .packet()
     }
 }

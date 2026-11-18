@@ -1,6 +1,7 @@
 //! Client del generatore del mondo: avvia (o raggiunge) `versmc-gen`, parla il protocollo `vgen` su TCP locale
 //! e riavvia/riconnette il generatore se cade, rimandando le richieste rimaste senza risposta.
-#![allow(dead_code)]
+
+#![allow(dead_code)] // `Launch::Connect` serve ai test
 
 use bedrock_net::log;
 use std::{collections::HashMap, io, net::SocketAddr, path::PathBuf, process::Stdio, time::Duration};
@@ -39,7 +40,7 @@ pub(crate) enum GenEvent {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum Pending {
+pub(crate) enum Pending {
     Chunk(Dim, i32, i32),
     Spawn(Dim),
 }
@@ -54,6 +55,13 @@ impl GenClient {
         let (ev_tx, ev_rx) = mpsc::unbounded_channel();
         tokio::spawn(run(cfg, rx, ev_tx));
         (GenClient { tx }, ev_rx)
+    }
+
+    /// Un client senza generatore: le richieste finiscono nel ricevitore restituito (senza eliminare i duplicati). Per i test.
+    #[cfg(test)]
+    pub(crate) fn for_tests() -> (GenClient, mpsc::UnboundedReceiver<Pending>) {
+        let (tx, rx) = mpsc::unbounded_channel();
+        (GenClient { tx }, rx)
     }
 
     /// Non blocca; se lo stesso chunk è già in volo non fa niente.
