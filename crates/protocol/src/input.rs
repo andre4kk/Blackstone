@@ -1,6 +1,6 @@
 //! Decoder dei pacchetti client -> server di input, transazioni e richieste di inventario (layout in
 //! `docs/superpowers/notes/2026-11-18-protocollo-tappa1.md`, sezioni 3-5 e 7). Un corpo malformato dà `None`, mai un panico.
-use crate::generated::MobEquipment;
+use crate::generated::{ContainerClose, MobEquipment};
 use crate::item::ItemStack;
 use crate::reader::Reader;
 
@@ -404,6 +404,33 @@ impl MobEquipment {
     pub fn decode(body: &[u8]) -> Option<Self> {
         let r = &mut Reader(body);
         Some(Self { target_runtime_id: r.var_u64()?, item: ItemStack::decode(r)?, slot: r.u8()?, selected_slot: r.u8()?, container_id: r.u8()? })
+    }
+}
+
+/// Azioni di `Interact` (pacchetto 33) che il server usa.
+pub mod interact_action {
+    pub const OPEN_INVENTORY: u8 = 6;
+}
+
+/// `Interact` dal client: interessa solo l'azione e il bersaglio (la posizione opzionale che segue si ignora).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Interact {
+    pub action: u8,
+    pub target_runtime_id: u64,
+}
+
+impl Interact {
+    pub fn decode(body: &[u8]) -> Option<Self> {
+        let r = &mut Reader(body);
+        Some(Self { action: r.u8()?, target_runtime_id: r.var_u64()? })
+    }
+}
+
+impl ContainerClose {
+    /// Il pacchetto 47 viaggia nei due versi: la codifica è nel codice generato, qui c'è solo la lettura.
+    pub fn decode(body: &[u8]) -> Option<Self> {
+        let r = &mut Reader(body);
+        Some(Self { container_id: r.u8()?, container_type: r.u8()?, server_initiated_close: r.bool()? })
     }
 }
 

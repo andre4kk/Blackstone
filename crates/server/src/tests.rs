@@ -2,7 +2,7 @@
 use crate::{registry, GameMode, Player, Server};
 use bedrock_net::{Command, Sender};
 use bedrock_protocol::{
-    generated::{CreativeContent, InventoryContent, MobEquipment, PlayerHotbar, SetPlayerGameType, StartGame, UpdateAbilities},
+    generated::{ContainerClose, ContainerOpen, CreativeContent, InventoryContent, MobEquipment, PlayerHotbar, SetPlayerGameType, StartGame, UpdateAbilities},
     id,
     item::ItemStack,
     packets::{text_type, CommandRequest, Login, RequestChunkRadius, Text},
@@ -450,6 +450,34 @@ fn mob_equipment_selects_a_hotbar_slot() {
     assert_eq!(h.server.players[&1].inventory.selected, 3, "fuori dalla barra: ignorato");
     h.receive(1, &[Packet::new(id::MOB_EQUIPMENT, vec![1, 2])]);
     assert_eq!(h.server.players[&1].inventory.selected, 3, "corpo malformato: ignorato");
+}
+
+/// `Interact` del client: azione e runtime id del bersaglio (la posizione opzionale manca).
+fn interact(action: u8, target: u32) -> Packet {
+    let mut body = vec![action];
+    bedrock_protocol::varint::write(&mut body, target);
+    body.push(0); // posizione assente
+    Packet::new(id::INTERACT, body)
+}
+
+#[test]
+fn open_inventory_answers_with_container_open_once_until_closed() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    h.packets_to(1);
+    h.receive(1, &[interact(6, 1)]);
+    let opens: Vec<Packet> = h.packets_to(1).into_iter().filter(|p| p.id == ContainerOpen::ID).collect();
+    assert_eq!(opens.len(), 1, "l'inventario si apre con un ContainerOpen");
+    assert_eq!(opens[0].body[..2], [0, 0xff], "finestra 0, tipo inventario (0xff)");
+    assert_eq!(opens[0].body[opens[0].body.len() - 1], 1, "bersaglio -1 (zigzag): come Dragonfly");
+    h.receive(1, &[interact(6, 1)]);
+    assert!(h.packets_to(1).iter().all(|p| p.id != ContainerOpen::ID), "un secondo OpenInventory senza chiusura farebbe crashare il client");
+    h.receive(1, &[ContainerClose { container_id: 0, container_type: 0xff, server_initiated_close: false }.packet()]);
+    let closes: Vec<Packet> = h.packets_to(1).into_iter().filter(|p| p.id == ContainerClose::ID).collect();
+    assert_eq!(closes.len(), 1, "la chiusura va confermata, altrimenti il client non lo riapre");
+    assert_eq!(closes[0].body, vec![0, 0, 0], "finestra 0, chiusa dal client");
+    h.receive(1, &[interact(6, 1)]);
+    assert_eq!(h.packets_to(1).iter().filter(|p| p.id == ContainerOpen::ID).count(), 1, "dopo la chiusura si riapre");
 }
 
 // ---------- modifica dei blocchi ----------

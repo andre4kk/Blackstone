@@ -13,6 +13,7 @@ pub mod id {
     pub const REQUEST_CHUNK_RADIUS: u32 = 69;
     pub const MOB_EQUIPMENT: u32 = 31;
     pub const INTERACT: u32 = 33;
+    pub const CONTAINER_CLOSE: u32 = 47;
     pub const PLAYER_ACTION: u32 = 36;
     pub const ANIMATE: u32 = 44;
     pub const EMOTE_LIST: u32 = 152;

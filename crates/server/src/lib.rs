@@ -138,6 +138,8 @@ struct Player {
     saved_feet: Option<[f32; 3]>,
     /// Vero da quando `StartGame` ha fissato posizione e inventario: solo allora i dati sono quelli veri e si possono salvare.
     started: bool,
+    /// Vero tra l'apertura dell'inventario (`Interact` OpenInventory) e la sua chiusura: un secondo `ContainerOpen` farebbe crashare il client.
+    inventory_open: bool,
 }
 
 /// Il caricamento dei dati salvati di un giocatore (vedi `playerdata`).

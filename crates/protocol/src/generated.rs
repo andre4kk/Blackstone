@@ -1884,6 +1884,38 @@ impl Encode for BlockActorData {
     }
 }
 
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ContainerOpen {
+    pub container_id: u8,
+    pub container_type: u8,
+    pub position: BlockPos,
+    pub target_actor_id: i64,
+}
+
+impl Encode for ContainerOpen {
+    fn encode(&self, w: &mut Writer) {
+        w.u8(self.container_id);
+        w.u8(self.container_type);
+        self.position.encode(w);
+        w.var_i64(self.target_actor_id);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ContainerClose {
+    pub container_id: u8,
+    pub container_type: u8,
+    pub server_initiated_close: bool,
+}
+
+impl Encode for ContainerClose {
+    fn encode(&self, w: &mut Writer) {
+        w.u8(self.container_id);
+        w.u8(self.container_type);
+        w.bool(self.server_initiated_close);
+    }
+}
+
 impl ServerPacket for StartGame {
     const ID: u32 = 11;
 }
@@ -1970,6 +2002,14 @@ impl ServerPacket for ItemStackResponse {
 
 impl ServerPacket for BlockActorData {
     const ID: u32 = 56;
+}
+
+impl ServerPacket for ContainerOpen {
+    const ID: u32 = 46;
+}
+
+impl ServerPacket for ContainerClose {
+    const ID: u32 = 47;
 }
 
 /// Valori degli enum degli schemi (i campi sono interi: si usano queste costanti).

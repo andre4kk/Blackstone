@@ -5,16 +5,20 @@ use crate::{
 };
 use bedrock_net::log;
 use bedrock_protocol::{
-    generated::MobEquipment,
+    generated::{BlockPos, ContainerClose, ContainerOpen, MobEquipment},
     id,
-    input::{flag, use_item, InventoryTransaction, ItemStackRequestPacket, PlayerAction, PlayerAuthInput, StackRequest},
+    input::{flag, interact_action, use_item, Interact, InventoryTransaction, ItemStackRequestPacket, PlayerAction, PlayerAuthInput, StackRequest},
     login,
     packets::{
         disconnect_reason, pack_response, play_status, text_type, Disconnect, Login, NetworkSettings, PacketViolationWarning, PlayStatus,
         RequestNetworkSettings, ResourcePackClientResponse, ResourcePackStack, ResourcePacksInfo, Text,
     },
+    wire::ServerPacket,
     Packet, PROTOCOL, VERSION,
 };
+
+/// Tipo di contenitore dell'inventario del giocatore in `ContainerOpen` (-1 nel protocollo).
+const CONTAINER_TYPE_INVENTORY: u8 = 0xff;
 
 impl Server {
     pub(crate) fn open(&mut self, pid: u64) {
@@ -78,9 +82,11 @@ impl Server {
             id::PLAYER_AUTH_INPUT => self.player_auth_input(pid, &packet.body),
             id::ITEM_STACK_REQUEST => self.item_stack_request(pid, &packet.body),
             id::MOB_EQUIPMENT => self.mob_equipment(pid, &packet.body),
+            id::INTERACT => self.interact_packet(pid, &packet.body),
+            id::CONTAINER_CLOSE => self.container_close(pid, &packet.body),
             id::PLAYER_ACTION => self.player_action(pid, &packet.body),
             id::INVENTORY_TRANSACTION => self.inventory_transaction(pid, &packet.body),
-            id::ANIMATE | id::INTERACT | id::EMOTE_LIST => {}
+            id::ANIMATE | id::EMOTE_LIST => {}
             id::SERVERBOUND_LOADING_SCREEN | id::CLIENT_CACHE_STATUS => {} // il client dichiara se usa la cache dei chunk: per ora non serve
             id::PACKET_VIOLATION_WARNING => self.packet_violation(pid, &packet.body),
             other => {
@@ -189,6 +195,37 @@ impl Server {
 
     /// Il giocatore cambia la casella della barra in mano. Vale solo per la finestra dell'inventario (0): quella della mano
     /// secondaria (119) non sposta la selezione (come Dragonfly). Caselle fuori dalla barra si ignorano.
+    /// Il client chiede di aprire il proprio inventario: senza `ContainerOpen` (finestra 0, tipo inventario) non si apre. Come Dragonfly.
+    fn interact_packet(&mut self, pid: u64, body: &[u8]) {
+        let Some(i) = Interact::decode(body) else {
+            return log!("[#{pid}] Interact illeggibile ({} byte): ignorato", body.len());
+        };
+        if i.action != interact_action::OPEN_INVENTORY {
+            return;
+        }
+        let Some(p) = self.players.get_mut(&pid).filter(|p| !p.inventory_open) else { return };
+        p.inventory_open = true;
+        let position = BlockPos { x: p.pos[0].floor() as i32, y: p.pos[1].floor() as i32, z: p.pos[2].floor() as i32 };
+        self.send(
+            pid,
+            &[ContainerOpen { container_id: window::INVENTORY as u8, container_type: CONTAINER_TYPE_INVENTORY, position, target_actor_id: -1 }.packet()],
+        );
+    }
+
+    /// Il client ha chiuso una finestra: si conferma, altrimenti il client non la riapre più. 0xff arriva quando si apre la chat con l'inventario aperto.
+    fn container_close(&mut self, pid: u64, body: &[u8]) {
+        let Some(c) = ContainerClose::decode(body) else {
+            return log!("[#{pid}] ContainerClose illeggibile ({} byte): ignorato", body.len());
+        };
+        let Some(p) = self.players.get_mut(&pid) else { return };
+        p.inventory_open = false;
+        if c.container_id == 0xff {
+            return;
+        }
+        let container_type = if c.container_id == window::INVENTORY as u8 { 0 } else { c.container_type };
+        self.send(pid, &[ContainerClose { container_id: c.container_id, container_type, server_initiated_close: false }.packet()]);
+    }
+
     fn mob_equipment(&mut self, pid: u64, body: &[u8]) {
         let Some(equipment) = MobEquipment::decode(body) else {
             return log!("[#{pid}] MobEquipment illeggibile ({} byte): ignorato", body.len());

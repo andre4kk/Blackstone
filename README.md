@@ -112,7 +112,7 @@ python tools/protocolgen.py ../bedrock-protocol-docs/json crates/protocol/src/ge
     StartGame ItemRegistry LevelChunk ChunkRadiusUpdated NetworkChunkPublisherUpdate BiomeDefinitionList \
     AvailableActorIdentifiers CreativeContent VoxelShapes JigsawStructureData InventoryContent InventorySlot \
     MobEquipment PlayerHotbar UpdateBlock SetPlayerGameType UpdatePlayerGameType UpdateAbilities LevelEvent \
-    LevelSoundEvent ItemStackResponse BlockActorData
+    LevelSoundEvent ItemStackResponse BlockActorData ContainerOpen ContainerClose
 ```
 
 Per aggiungere un pacchetto server -> client basta aggiungerne il nome all'elenco e rigenerare. Il generatore
