@@ -108,12 +108,14 @@ impl Server {
                     self.remove_bots();
                     self.tell(pid, "Bot rimossi.");
                 }
-                name => {
-                    let name = if name.is_empty() { "Bot" } else { name };
-                    if self.spawn_bot(pid, name) != 0 {
-                        self.tell(pid, &format!("Bot §e{name}§r creato qui. Per toglierli: /bot rimuovi"));
+                raw => match self.bot_name(raw) {
+                    Ok(name) => {
+                        if self.spawn_bot(pid, &name) != 0 {
+                            self.tell(pid, &format!("Bot §e{name}§r creato qui. Per toglierli: /bot rimuovi"));
+                        }
                     }
-                }
+                    Err(message) => self.tell(pid, &message),
+                },
             },
             "say" if !args.trim().is_empty() => self.broadcast(Text::new(text_type::RAW, format!("§d[Server] {}", args.trim()))),
             "say" => self.tell(pid, "Uso: /say <testo>"),

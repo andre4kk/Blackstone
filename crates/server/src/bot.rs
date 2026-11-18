@@ -37,6 +37,9 @@ const THROW_EVERY: u64 = 200;
 /// Attesa prima che la pietra lanciata si possa raccogliere, e velocità del lancio.
 const THROW_PICKUP_DELAY: u64 = 40;
 const THROW_SPEED: f32 = 0.3;
+/// Quanti bot al massimo, e quanti caratteri al massimo nel nome (come un gamertag Xbox).
+pub(crate) const MAX_BOTS: usize = 8;
+const MAX_NAME_CHARS: usize = 16;
 /// Altezza degli occhi sopra i piedi.
 const EYE_HEIGHT: f32 = 1.62;
 /// Oggetti che il bot tiene in mano a turno (quelli che esistono nel registro).
@@ -71,6 +74,26 @@ pub(crate) fn bot_uuid(id: u64) -> [u8; 16] {
 }
 
 impl Server {
+    /// Il nome da dare a un bot: senza caratteri di controllo e senza `§`, senza spazi ai bordi, al massimo 16 caratteri ("Bot" se resta vuoto).
+    /// Rifiuta (con il messaggio per chi scrive) un nome uguale, senza badare alle maiuscole, a quello di un giocatore o di un altro bot, e il bot oltre il limite.
+    pub(crate) fn bot_name(&self, raw: &str) -> Result<String, String> {
+        if self.bots.len() >= MAX_BOTS {
+            return Err(format!("§cCi sono già {MAX_BOTS} bot: toglili con /bot rimuovi."));
+        }
+        let cleaned: String = raw.chars().filter(|c| !c.is_control() && *c != '§').collect();
+        let cleaned: String = cleaned.trim().chars().take(MAX_NAME_CHARS).collect();
+        let name = cleaned.trim_end().to_string();
+        let name = if name.is_empty() { "Bot".to_string() } else { name };
+        let taken = self.players.iter().filter(|(_, p)| p.spawned).any(|(&id, _)| self.name(id).to_lowercase() == name.to_lowercase())
+            || self.bots.iter().any(
+                |b| matches!(self.entities.get(b.id).map(|e| &e.kind), Some(EntityKind::Player { name: n, .. }) if n.to_lowercase() == name.to_lowercase()),
+            );
+        if taken {
+            return Err(format!("§cIl nome {name} è già in uso da un giocatore o da un bot."));
+        }
+        Ok(name)
+    }
+
     /// Crea un bot con `name` nel punto di `by`, con la sua skin. Restituisce l'ID dell'entità (0 se `by` non è nel mondo).
     /// Lo vedranno dal prossimo `visibility_tick` i giocatori che hanno il chunk; la voce nella `PlayerList` va subito a tutti.
     pub(crate) fn spawn_bot(&mut self, by: u64, name: &str) -> u64 {

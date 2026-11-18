@@ -3055,6 +3055,55 @@ mod bot {
         assert!(has_name(&to_carol, id::PLAYER_LIST, "Prova"));
     }
 
+    fn bot_names(h: &Harness) -> Vec<String> {
+        h.server
+            .entities
+            .iter()
+            .filter_map(|e| match &e.kind {
+                EntityKind::Player { pid: None, name, .. } => Some(name.clone()),
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn bot_name_is_cleaned_and_limited() {
+        let mut h = two_players();
+        h.receive(1, &[command("/bot   Un nome lunghissimo davvero  ")]);
+        assert_eq!(bot_names(&h), vec!["Un nome lunghiss".to_string()], "16 caratteri");
+        h.server.remove_bots();
+        h.receive(1, &[command(&format!("/bot §cRo{}sso§r", ''))]);
+        assert_eq!(bot_names(&h), vec!["cRossor".to_string()], "senza § e controlli");
+        h.server.remove_bots();
+        h.receive(1, &[command("/bot àèìòùàèìòùàèìòùàèìòù")]);
+        assert_eq!(bot_names(&h)[0].chars().count(), 16, "si contano i caratteri, non i byte");
+        h.server.remove_bots();
+        h.receive(1, &[command("/bot §")]);
+        assert_eq!(bot_names(&h), vec!["Bot".to_string()]);
+    }
+
+    #[test]
+    fn bot_with_a_taken_name_is_refused() {
+        let mut h = two_players();
+        h.texts_to(1);
+        h.receive(1, &[command("/bot bob")]);
+        assert!(bot_names(&h).is_empty());
+        assert!(h.texts_to(1).iter().any(|t| t.message.contains("già in uso")));
+        h.receive(1, &[command("/bot Prova")]);
+        h.receive(1, &[command("/bot PROVA")]);
+        assert_eq!(bot_names(&h).len(), 1);
+    }
+
+    #[test]
+    fn ninth_bot_is_refused() {
+        let mut h = two_players();
+        for n in 0..9 {
+            h.receive(1, &[command(&format!("/bot B{n}"))]);
+        }
+        assert_eq!(h.server.bots.len(), 8);
+        assert!(h.texts_to(1).iter().any(|t| t.message.contains("già 8 bot")));
+    }
+
     #[test]
     fn list_shows_bots() {
         let mut h = two_players();

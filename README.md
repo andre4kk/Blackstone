@@ -83,7 +83,7 @@ La sequenza segue quella dei server di riferimento (gophertunnel / Dragonfly).
 
 - Ciclo di gioco a 20 tick al secondo (`Server::tick`), con misura di TPS e durata media del tick (`/tps`).
 - Chat tra i giocatori. Il nome viene dal login e non dal messaggio, ma le firme del login non sono ancora verificate (vedi "Sicurezza").
-- Comandi: `/help`, `/list`, `/tps`, `/say <testo>`, `/gamemode <modo>` (`/gm`), `/bot [nome]` (crea un giocatore finto) e `/bot rimuovi`.
+- Comandi: `/help`, `/list`, `/tps`, `/say <testo>`, `/gamemode <modo>` (`/gm`), `/bot [nome]` (crea un giocatore finto) e `/bot rimuovi`. Nome del bot: senza `§` e caratteri di controllo, al massimo 16 caratteri, diverso da quello di ogni giocatore e bot; al massimo 8 bot. Per ora chiunque può crearli e toglierli tutti (non c'è ancora un sistema di permessi).
 - Annunci di ingresso e uscita.
 - Movimento: dal `PlayerAuthInput` si legge la posizione (occhi); a ogni cambio di chunk il client riceve il nuovo centro
   (`NetworkChunkPublisherUpdate`) e il server manda i chunk mancanti (al massimo 8 per giocatore per tick, dal più vicino).
