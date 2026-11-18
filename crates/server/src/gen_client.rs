@@ -13,6 +13,9 @@ use tokio::{
 };
 use vgen::{Dim, FromGen, ToGen};
 
+/// Tempo massimo per `READY` e per l'handshake: il generatore carica il Translator prima di rispondere all'Hello.
+const STARTUP_TIMEOUT: Duration = Duration::from_secs(60);
+
 /// Come ottenere la connessione al generatore.
 pub(crate) enum Launch {
     /// Avvia `program serve --port 0 --seed S [args_extra]`, legge `READY <porta>` e si connette.
@@ -101,7 +104,7 @@ async fn start_process(program: &PathBuf, extra: &[String], seed: u64) -> io::Re
         .spawn()?;
     let stdout = child.stdout.take().ok_or_else(|| io::Error::other("stdout non disponibile"))?;
     let mut lines = BufReader::new(stdout).lines();
-    let port = timeout(Duration::from_secs(30), async {
+    let port = timeout(STARTUP_TIMEOUT, async {
         while let Some(line) = lines.next_line().await? {
             if let Some(p) = line.trim().strip_prefix("READY ") {
                 return p.trim().parse::<u16>().map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "porta READY non valida"));
@@ -159,7 +162,7 @@ async fn session(cfg: &GenConfig, rx: &mut mpsc::UnboundedReceiver<Pending>, ev:
     let (mut rd, mut wr) = stream.into_split();
 
     write_frame(&mut wr, &ToGen::Hello { version: vgen::VERSION, seed: cfg.seed }.encode()).await?;
-    let palette = timeout(Duration::from_secs(10), async {
+    let palette = timeout(STARTUP_TIMEOUT, async {
         match read_msg(&mut rd).await? {
             FromGen::Hello { version } if version == vgen::VERSION => {}
             FromGen::Hello { version } => return Err(io::Error::other(format!("versione del generatore {version} diversa da {}", vgen::VERSION))),
@@ -360,5 +363,36 @@ mod tests {
         let (_client, mut rx) = GenClient::spawn(cfg);
         assert!(matches!(ev(&mut rx).await, GenEvent::Down(_)));
         assert!(matches!(ev(&mut rx).await, GenEvent::Down(_))); // continua a riprovare
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn real_generator_process_serves_chunk_0_0() {
+        let Ok(bin) = std::env::var("VERSMC_GEN") else {
+            println!("VERSMC_GEN non impostata: test saltato");
+            return;
+        };
+        let cfg =
+            GenConfig { launch: Launch::Process { program: PathBuf::from(bin), args_extra: vec![] }, seed: 13579, restart_delay: Duration::from_millis(500) };
+        let (client, mut rx) = GenClient::spawn(cfg);
+        let long = Duration::from_secs(120);
+        assert!(matches!(timeout(long, rx.recv()).await.unwrap().unwrap(), GenEvent::Ready));
+        assert!(matches!(timeout(long, rx.recv()).await.unwrap().unwrap(), GenEvent::Palette(_)));
+        client.request_chunk(Dim::Overworld, 0, 0);
+        let c = loop {
+            if let GenEvent::Chunk(c) = timeout(long, rx.recv()).await.unwrap().unwrap() {
+                break c;
+            }
+        };
+        assert_eq!(c.sections.iter().map(|s| s.index).min(), Some(-4));
+        drop(client);
+        drop(rx);
+        sleep(Duration::from_secs(2)).await;
+        #[cfg(windows)]
+        {
+            let out = std::process::Command::new("tasklist").args(["/FI", "IMAGENAME eq versmc-gen.exe"]).output().unwrap();
+            let out = String::from_utf8_lossy(&out.stdout).to_lowercase();
+            assert!(!out.contains("versmc-gen.exe"), "processo del generatore ancora vivo: {out}");
+        }
     }
 }
