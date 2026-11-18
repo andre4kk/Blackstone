@@ -5,7 +5,7 @@
 use crate::{
     breaking::in_reach,
     events::{BlockChange, WorldAction},
-    inventory::Item,
+    inventory::{Item, HOTBAR_SLOTS},
     registry::{self, blocks},
     GameMode, Server,
 };
@@ -74,6 +74,19 @@ fn side(pos: [i32; 3], face: u8) -> [i32; 3] {
     const STEP: [[i32; 3]; 6] = [[0, -1, 0], [0, 1, 0], [0, 0, -1], [0, 0, 1], [-1, 0, 0], [1, 0, 0]];
     let step = STEP.get(face as usize).copied().unwrap_or_default();
     [pos[0].saturating_add(step[0]), pos[1].saturating_add(step[1]), pos[2].saturating_add(step[2])]
+}
+
+/// Le celle `cells` e i loro sei vicini, senza doppioni e nell'ordine in cui compaiono (ogni cella seguita dai suoi vicini).
+pub(crate) fn with_neighbors(cells: &[[i32; 3]]) -> Vec<[i32; 3]> {
+    let mut out: Vec<[i32; 3]> = Vec::with_capacity(cells.len() * 7);
+    for &cell in cells {
+        for pos in std::iter::once(cell).chain((DOWN..=EAST).map(|face| side(cell, face))) {
+            if !out.contains(&pos) {
+                out.push(pos);
+            }
+        }
+    }
+    out
 }
 
 /// Nome del blocco con quell'hash senza `minecraft:`.
@@ -167,15 +180,109 @@ impl PlaceCtx {
     }
 }
 
-/// La modifica di `pos` a `hash`: se la cella ha acqua (nel secondo strato o come blocco) la tiene nel secondo strato.
-fn change_at(view: &impl BlockView, pos: [i32; 3], existing: i32, hash: i32) -> BlockChange {
-    BlockChange { pos, hash, water: is_water(existing) || view.water(pos) }
+/// Blocchi che possono tenere l'acqua nel secondo strato (waterlogged, D§2 e D§4.7). Un blocco normale che si piazza in una
+/// cella con acqua la sostituisce; la tengono solo questi: mezze lastre (non le doppie), scale, recinzioni (non i cancelletti),
+/// muretti, pannelli di vetro e sbarre, botole, cartelli (anche appesi), scale a pioli, lanterne, catene, coralli e ventagli di
+/// corallo, alghe e erba marina, cetrioli di mare, candele, bauli, falò, impalcature, parafulmini, campane, vasi decorati,
+/// sensori sculk, licheni, stalattiti e foglie di dripleaf. Elenco per nome (come `passable`) finché non ci sono le proprietà dei blocchi.
+fn waterloggable(name: &str) -> bool {
+    const EXACT: [&str; 21] = [
+        "ladder",
+        "kelp",
+        "seagrass",
+        "sea_pickle",
+        "conduit",
+        "chest",
+        "trapped_chest",
+        "ender_chest",
+        "campfire",
+        "soul_campfire",
+        "scaffolding",
+        "lightning_rod",
+        "pointed_dripstone",
+        "bell",
+        "decorated_pot",
+        "glow_lichen",
+        "sculk_vein",
+        "sculk_shrieker",
+        "small_dripleaf_block",
+        "big_dripleaf",
+        "fence",
+    ];
+    const SUFFIXES: [&str; 16] = [
+        "_stairs",
+        "_fence",
+        "_wall",
+        "_pane",
+        "_bars",
+        "trapdoor",
+        "_sign",
+        "chain",
+        "_coral",
+        "coral_fan",
+        "coral_wall_fan",
+        "candle",
+        "sculk_sensor",
+        "propagule",
+        "lantern",
+        "_slab",
+    ];
+    if name.contains("double_") || name == "sea_lantern" {
+        return false;
+    }
+    EXACT.contains(&name) || name == "glass_pane" || name == "iron_bars" || SUFFIXES.iter().any(|s| name.ends_with(s))
+}
+
+/// Blocchi che l'acqua (o la lava) porta via e che quindi non si piazzano in una cella con un liquido (`LiquidRemovable` di
+/// Dragonfly, D§4.7): piante e fiori, alberelli, torce, polvere di redstone, ragnatele e fili, tappeti, colture, cacao e simili.
+fn removed_by_liquid(name: &str) -> bool {
+    const EXACT: [&str; 17] = [
+        "redstone_wire",
+        "web",
+        "tripwire",
+        "string",
+        "cocoa",
+        "nether_wart",
+        "spore_blossom",
+        "skull",
+        "wheat",
+        "carrots",
+        "potatoes",
+        "beetroot",
+        "pumpkin_stem",
+        "melon_stem",
+        "torchflower_crop",
+        "pitcher_crop",
+        "fire",
+    ];
+    neighbors::plant_kind(name).is_some_and(|plant| plant != neighbors::Plant::Cactus)
+        || EXACT.contains(&name)
+        || name.ends_with("torch")
+        || name.ends_with("carpet")
+        || name.ends_with("_mushroom")
+}
+
+fn is_lava(hash: i32) -> bool {
+    name_of(hash).is_some_and(|name| matches!(name, "lava" | "flowing_lava"))
+}
+
+/// La modifica di `pos` a `hash`. Se la cella ha acqua (nel secondo strato o come blocco) l'acqua resta nel secondo strato solo
+/// per i blocchi che la possono tenere (`waterloggable`); gli altri la sostituiscono. `None` se il blocco è di quelli che
+/// l'acqua o la lava portano via (`removed_by_liquid`): non si piazza in un liquido.
+fn change_at(view: &impl BlockView, pos: [i32; 3], existing: i32, hash: i32) -> Option<BlockChange> {
+    let name = name_of(hash).unwrap_or_default();
+    let wet = is_water(existing) || view.water(pos);
+    if (wet || is_lava(existing)) && removed_by_liquid(name) {
+        return None;
+    }
+    Some(BlockChange { pos, hash, water: wet && waterloggable(name) })
 }
 
 /// Piazza il blocco di `ctx.block` nella cella giusta: `None` se si rifiuta, altrimenti le celle da cambiare.
 /// Si rifiuta se: lo stato dell'oggetto è sconosciuto, il clic non è sul mondo caricato, la faccia non va bene per quel blocco,
 /// la cella non è libera (D§2: o è sostituibile, o si piazza accanto), c'è il giocatore, o il blocco ha due metà che nessun
-/// caso speciale sa piazzare. I blocchi con regole proprie (D§4) le applicano in `special`. Se la cella ha acqua, il blocco la tiene nel secondo strato.
+/// caso speciale sa piazzare. I blocchi con regole proprie (D§4) le applicano in `special`. Se la cella ha acqua, solo i blocchi
+/// waterloggabili la tengono nel secondo strato (vedi `change_at`).
 pub(crate) fn place(ctx: &PlaceCtx, view: &impl BlockView) -> Option<Vec<BlockChange>> {
     if ctx.face > EAST || !ctx.click.iter().chain(&ctx.feet).chain([&ctx.yaw]).all(|v| v.is_finite()) {
         return None;
@@ -203,7 +310,7 @@ fn place_generic(ctx: &PlaceCtx, view: &impl BlockView) -> Option<Vec<BlockChang
     if hash == existing || obstructs(hash, target, ctx.feet) {
         return None;
     }
-    Some(vec![change_at(view, target, existing, hash)])
+    Some(vec![change_at(view, target, existing, hash)?])
 }
 
 /// Il mondo di una dimensione, per `place` e per gli aggiornamenti dei vicini.
@@ -239,23 +346,25 @@ fn held_block(held: &Item) -> Option<i32> {
 }
 
 impl Server {
-    /// Il giocatore usa l'oggetto in mano su un blocco con l'azione Place. Se il blocco cliccato è interattivo (porta, leva...)
-    /// e il giocatore non è accovacciato con qualcosa in mano, lo si attiva (vedi `interact`) e non si piazza nulla. Altrimenti,
-    /// se in mano ha un blocco e tutti i controlli passano (modalità, oggetto uguale a quello del client, portata, spazio libero,
-    /// ganci) il blocco si piazza: chi vede il chunk riceve l'aggiornamento e il suono; in sopravvivenza si consuma un oggetto,
-    /// in creativo no. Altrimenti si rimanda al solo autore lo stato vero del blocco cliccato e di quello accanto. Una mano senza
-    /// blocchi non fa nulla.
+    /// Il giocatore usa l'oggetto in mano su un blocco con l'azione Place. La casella della barra che il client dichiara
+    /// (`hotbar_slot`) diventa quella in mano, come `UpdateHeldSlot` di Dragonfly. Se il blocco cliccato è interattivo (porta,
+    /// leva...) e il giocatore non è accovacciato con qualcosa in mano, lo si attiva (vedi `interact`) e non si piazza nulla,
+    /// qualunque cosa il client creda di avere in mano. Altrimenti, se in mano ha un blocco e tutti i controlli passano
+    /// (modalità, oggetto uguale a quello del client, portata, spazio libero, ganci) il blocco si piazza: chi vede il chunk
+    /// riceve l'aggiornamento e il suono. In questa tappa piazzare non consuma nulla neanche in sopravvivenza (spec): poiché il
+    /// client ha previsto il consumo, gli si rimanda la casella in mano col conteggio vero. All'autore si rimandano anche la
+    /// cella cliccata e quella prevista, che possono differire dall'esito (mezze lastre che si uniscono, torce spostate).
+    /// Se si rifiuta, all'autore si rimanda lo stato vero delle celle toccate e dei loro vicini. Una mano senza blocchi non fa nulla.
     pub(crate) fn place_item(&mut self, pid: u64, u: &UseItem) {
-        let Some(p) = self.players.get(&pid).filter(|p| p.spawned) else { return };
+        let Some(p) = self.players.get_mut(&pid).filter(|p| p.spawned) else { return };
         if u.face > EAST {
             return log!("[#{pid}] piazzamento con la faccia {} inesistente: ignorato", u.face);
         }
+        if (0..HOTBAR_SLOTS as i32).contains(&u.hotbar_slot) {
+            p.inventory.selected = u.hotbar_slot as u8;
+        }
         let (mode, eyes, yaw, sneaking) = (p.mode, p.pos, p.yaw, p.sneaking);
         let held = p.inventory.held().clone();
-        // Il client deve avere in mano ciò che il server crede, altrimenti si fida del server (D§5, Review Focus 4).
-        if !held.same_kind(&Item::kind_of(&u.held)) {
-            return self.refuse_place(pid, u, "l'oggetto in mano non è quello del server");
-        }
         let dim = Dim::Overworld;
         let feet = [eyes[0], eyes[1] - EYE_HEIGHT, eyes[2]];
         let block = held_block(&held);
@@ -263,6 +372,11 @@ impl Server {
         // Un blocco interattivo (porta, leva...) si attiva invece di piazzare, a meno che si sia accovacciati con qualcosa in mano (D§5).
         if (!ctx.sneaking || held.is_empty()) && self.interact(pid, u, &ctx, mode, eyes) {
             return;
+        }
+        // Il client deve avere in mano ciò che il server crede, altrimenti si fida del server (D§5, Review Focus 4).
+        if !held.same_kind(&Item::kind_of(&u.held)) {
+            self.refuse_place(pid, u, "l'oggetto in mano non è quello del server");
+            return self.resync_held(pid);
         }
         if block.is_none() {
             return;
@@ -277,10 +391,11 @@ impl Server {
         let Some(changes) = place(&ctx, &WorldView { server: self, dim }) else {
             return self.refuse_place(pid, u, "blocco non piazzabile lì");
         };
+        // gli spettatori non hanno corpo: non sono d'intralcio
         let others_in_the_way = self
             .players
             .iter()
-            .filter(|(&other, o)| other != pid && o.spawned)
+            .filter(|(&other, o)| other != pid && o.spawned && o.mode != GameMode::Spectator)
             .any(|(_, o)| changes.iter().any(|c| obstructs(c.hash, c.pos, [o.pos[0], o.pos[1] - EYE_HEIGHT, o.pos[2]])));
         if others_in_the_way || changes.iter().any(|c| !in_reach(eyes, c.pos, creative)) {
             return self.refuse_place(pid, u, "cella fuori portata o occupata da un giocatore");
@@ -302,17 +417,27 @@ impl Server {
         for c in &changes {
             self.play_sound("place", c.pos, c.hash);
         }
+        // Il client ha previsto il blocco nella cella accanto a quella cliccata: se l'esito è un altro (lastre unite, torcia su un'altra
+        // faccia) la cella prevista va corretta; la cella cliccata si rimanda per lo stesso motivo.
+        self.resend_blocks(pid, dim, &[u.pos, side(u.pos, u.face)]);
         if !creative {
-            if let Some(packet) = self.players.get_mut(&pid).and_then(|p| p.inventory.consume_held()) {
-                self.send(pid, &[packet]);
-            }
+            // il client ha previsto che l'oggetto si consumi: qui non succede, e glielo si dice
+            self.resync_held(pid);
         }
     }
 
-    /// Piazzamento rifiutato: si dice perché nel log e si rimanda all'autore lo stato vero del blocco cliccato e di quello accanto.
+    /// Rimanda al giocatore la casella in mano e quale casella è selezionata, com'è per il server.
+    fn resync_held(&self, pid: u64) {
+        if let Some(p) = self.players.get(&pid) {
+            self.send(pid, &[p.inventory.held_slot_packet(), p.inventory.hotbar_packet()]);
+        }
+    }
+
+    /// Piazzamento rifiutato: si dice perché nel log e si rimanda all'autore lo stato vero del blocco cliccato, di quello accanto
+    /// e dei loro vicini (il client prevede anche le seconde metà di porte, letti e piante alte).
     fn refuse_place(&self, pid: u64, u: &UseItem, why: &str) {
         log!("[#{pid}] piazzamento su {:?} (faccia {}) rifiutato: {why}", u.pos, u.face);
-        self.resend_blocks(pid, Dim::Overworld, &[u.pos, side(u.pos, u.face)]);
+        self.resend_around(pid, Dim::Overworld, &[u.pos, side(u.pos, u.face)]);
     }
 }
 
@@ -403,7 +528,7 @@ pub(super) mod fake {
 
 #[cfg(test)]
 mod tests {
-    use super::fake::{air, hash, world};
+    use super::fake::{air, hash, world, Fake};
     use super::*;
     use crate::world::{block_hash, State};
 
@@ -512,20 +637,75 @@ mod tests {
     }
 
     #[test]
-    fn place_in_water_waterlogs() {
+    fn only_waterloggable_blocks_keep_the_water() {
         let mut f = world();
         f.water.insert([1, 10, 0]);
+        f.water.insert([0, 11, 0]);
+        let at = |f: &Fake, face: u8, held: &str| place(&click([0, 10, 0], face, held), f).map(|c| (c[0].pos, c[0].water));
         let dry = place(&click([0, 10, 0], NORTH, "minecraft:cobblestone"), &f).unwrap();
         assert!(!dry[0].water);
-        let wet = place(&click([0, 10, 0], EAST, "minecraft:cobblestone"), &f).unwrap();
-        assert_eq!((wet[0].pos, wet[0].water), ([1, 10, 0], true), "acqua nel secondo strato: resta");
-        // acqua come blocco nello strato 0: il blocco la sostituisce ma l'acqua resta nel secondo strato
+        // un blocco normale sostituisce l'acqua (D§4.7)
+        for held in ["minecraft:cobblestone", "minecraft:dirt", "minecraft:oak_planks", "minecraft:oak_door", "minecraft:oak_double_slab"] {
+            if let Some(hash) = blocks().default_hash(held) {
+                let ctx = PlaceCtx { block: hash, ..click([0, 10, 0], EAST, "minecraft:cobblestone") };
+                assert_eq!(place(&ctx, &f).map(|c| (c[0].pos, c[0].water)), Some(([1, 10, 0], false)), "{held}: sostituisce l'acqua");
+            }
+        }
+        // mezzi blocchi, scale, recinzioni, muretti, botole, cartelli, scale a pioli, lanterne, catene, pannelli: la tengono
+        for held in [
+            "minecraft:oak_slab",
+            "minecraft:oak_stairs",
+            "minecraft:oak_fence",
+            "minecraft:cobblestone_wall",
+            "minecraft:glass_pane",
+            "minecraft:iron_bars",
+            "minecraft:trapdoor",
+            "minecraft:ladder",
+            "minecraft:lantern",
+            "minecraft:iron_chain",
+            "minecraft:tube_coral",
+            "minecraft:tube_coral_fan",
+            "minecraft:sea_pickle",
+            "minecraft:chest",
+        ] {
+            if blocks().default_hash(held).is_some() {
+                // di lato o, per quelli che non si appoggiano di lato (lanterne, coralli), sopra
+                let got = at(&f, EAST, held).or_else(|| at(&f, UP, held));
+                assert!(matches!(got, Some((_, true))), "{held}: tiene l'acqua nel secondo strato ({got:?})");
+            }
+        }
+        // acqua come blocco nello strato 0: il blocco la sostituisce, e solo i waterloggabili ne tengono nel secondo strato
         f.blocks.insert([0, 10, 1], block_hash("minecraft:water", &[("liquid_depth", State::Int(0))]));
-        let source = place(&click([0, 10, 0], SOUTH, "minecraft:cobblestone"), &f).unwrap();
-        assert_eq!((source[0].pos, source[0].water), ([0, 10, 1], true));
+        assert_eq!(at(&f, SOUTH, "minecraft:cobblestone"), Some(([0, 10, 1], false)));
+        assert_eq!(at(&f, SOUTH, "minecraft:oak_slab"), Some(([0, 10, 1], true)));
         // la lava no
         f.blocks.insert([-1, 10, 0], block_hash("minecraft:lava", &[("liquid_depth", State::Int(0))]));
         assert!(!place(&click([0, 10, 0], WEST, "minecraft:cobblestone"), &f).unwrap()[0].water);
+        assert!(!place(&click([0, 10, 0], WEST, "minecraft:oak_slab"), &f).unwrap()[0].water);
+    }
+
+    #[test]
+    fn plants_and_torches_are_not_placed_in_water() {
+        // i fiori, l'erba e gli alberelli li porta via l'acqua: non si piazzano in una cella con l'acqua (LiquidRemovable)
+        let mut f = world();
+        // terra sotto le tre celle, così le piante mancano solo per colpa del liquido
+        let grass = hash("minecraft:grass_block");
+        for pos in [[1, 9, 0], [0, 9, 1], [-1, 9, 0], [0, 9, -1], [0, 10, 0]] {
+            f.blocks.insert(pos, grass);
+        }
+        f.water.insert([1, 10, 0]); // acqua nel secondo strato
+        f.blocks.insert([0, 10, 1], block_hash("minecraft:water", &[("liquid_depth", State::Int(0))])); // acqua come blocco
+        f.blocks.insert([-1, 10, 0], block_hash("minecraft:lava", &[("liquid_depth", State::Int(0))]));
+        for held in ["minecraft:poppy", "minecraft:dandelion", "minecraft:short_grass", "minecraft:oak_sapling", "minecraft:deadbush", "minecraft:torch"] {
+            if blocks().default_hash(held).is_none() {
+                continue;
+            }
+            for face in [EAST, SOUTH, WEST] {
+                assert!(place(&click([0, 10, 0], face, held), &f).is_none(), "{held} (faccia {face}) in un liquido");
+            }
+            // all'asciutto sì (la cella a nord ha la terra sotto e niente acqua)
+            assert!(place(&click([0, 10, 0], NORTH, held), &f).is_some(), "{held} all'asciutto");
+        }
     }
 
     #[test]

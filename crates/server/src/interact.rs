@@ -205,20 +205,23 @@ impl Server {
     }
 
     /// Un pulsante premuto che non ha un appuntamento per risalire (per esempio salvato premuto: la memoria dei tick non sopravvive
-    /// al riavvio) ne riceve uno quando lo si clicca, così non resta giù per sempre.
+    /// al riavvio) ne riceve uno quando lo si clicca, così non resta giù per sempre. Se l'appuntamento c'è già per questo stato
+    /// resta quello: la risalita si conta dalla prima pressione.
     fn keep_button_scheduled(&mut self, dim: Dim, pos: [i32; 3]) {
         let Some((hash, _)) = self.block_at(dim, pos) else { return };
+        if self.scheduled.iter().any(|s| s.dim == dim && s.pos == pos && s.expect == hash) {
+            return;
+        }
         if let Some(state) = blocks().state(hash).filter(|s| button_ticks(s).is_some()) {
             self.schedule(self.tick_count + button_ticks(state).unwrap_or(WOODEN_BUTTON_TICKS), dim, pos, hash, released(state));
         }
     }
 
     /// Programma il cambio di `pos` a `then` per il tick `due_tick`, se a quel punto il blocco è ancora `expect`. Una cella ha
-    /// un solo appuntamento: se ne ha già uno resta quello.
+    /// un solo appuntamento: uno nuovo sostituisce il vecchio (che apparteneva a un blocco ormai rotto o sostituito).
     pub(crate) fn schedule(&mut self, due_tick: u64, dim: Dim, pos: [i32; 3], expect: i32, then: i32) {
-        if !self.scheduled.iter().any(|s| s.dim == dim && s.pos == pos) {
-            self.scheduled.push(Scheduled { due: due_tick, dim, pos, expect, then });
-        }
+        self.scheduled.retain(|s| !(s.dim == dim && s.pos == pos));
+        self.scheduled.push(Scheduled { due: due_tick, dim, pos, expect, then });
     }
 
     /// Applica le modifiche programmate arrivate a scadenza. Se la cella non è in memoria (chunk scaricato) l'appuntamento resta e

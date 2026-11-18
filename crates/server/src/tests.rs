@@ -635,6 +635,20 @@ mod blocks {
     }
 
     #[test]
+    fn fallback_chunks_are_never_saved_even_when_the_server_is_not_flat() {
+        // generazione fallita: il chunk di ripiego sta in memoria mentre il server ha il generatore (`flat` è falso)
+        let mut h = harness_with_chunk();
+        h.server.flat = false;
+        assert!(h.server.chunks[&(0, 0, 0)].fallback && !h.server.flat_warned);
+        h.server.set_blocks(Dim::Overworld, &[change([0, 10, 0], stone(), false)]);
+        assert_eq!(h.server.block_at(Dim::Overworld, [0, 10, 0]), Some((stone(), false)), "la modifica c'è in memoria");
+        assert!(!h.server.chunks[&(0, 0, 0)].dirty, "ma non si salva");
+        assert!(h.server.flat_warned, "avviso nel log dato una volta");
+        h.server.put_block_entity(Dim::Overworld, vgen::BlockEntity { x: 1, y: 10, z: 1, nbt: Vec::new() });
+        assert!(!h.server.chunks[&(0, 0, 0)].dirty, "nemmeno con un block entity");
+    }
+
+    #[test]
     fn fallback_flat_chunks_are_never_marked_for_saving() {
         let mut h = harness_with_chunk();
         assert!(h.server.flat && !h.server.flat_warned);
@@ -817,7 +831,23 @@ mod breaking {
         let out = outbox(&mut h.sent);
         assert!(events(&out).is_empty());
         let state: Vec<_> = out.iter().filter(|(_, p)| p.id == UpdateBlock::ID).map(|(to, _)| *to).collect();
-        assert_eq!(state, [1, 1], "strato 0 e strato 1, solo ad Alice");
+        // la cella e i suoi sei vicini (il client prevede anche le altre metà di porte e letti), strato 0 e 1, solo ad Alice
+        assert_eq!(state, [1; 14]);
+    }
+
+    #[test]
+    fn a_refused_break_resends_the_neighbours_too() {
+        let mut h = setup(GameMode::Creative);
+        let above = [ROCK[0], ROCK[1] + 1, ROCK[2]];
+        h.server.set_blocks(Dim::Overworld, &[change(above, stone(), false)]);
+        h.server.players.get_mut(&1).unwrap().pos = [3.5, 30.0, 4.5]; // fuori portata
+        drop(outbox(&mut h.sent));
+        h.receive(1, &[action(player_action::CREATIVE_DESTROY, ROCK)]);
+        let got = updates(&mut h.sent);
+        let cells: std::collections::HashSet<_> = got.iter().filter(|u| u.0 == 1 && u.4 == 0).map(|u| u.1).collect();
+        assert!(cells.contains(&ROCK) && cells.contains(&above), "la cella e quella sopra (l'altra metà): {cells:?}");
+        assert_eq!(cells.len(), 7, "la cella e i sei vicini");
+        assert!(got.iter().all(|u| u.0 == 1), "solo ad Alice");
     }
 
     #[test]
@@ -931,8 +961,9 @@ mod breaking {
             assert!(seen.lock().unwrap().is_empty(), "{mode:?}");
             assert_untouched(&h);
             let sent = updates(&mut h.sent);
-            assert_eq!(sent.len(), 6, "{mode:?}: tre rifiuti, due strati ciascuno");
-            assert!(sent.iter().all(|u| u.0 == 1 && u.1 == ROCK), "{mode:?}: lo stato vero va solo ad Alice");
+            assert_eq!(sent.len(), 3 * 14, "{mode:?}: tre rifiuti, sette celle e due strati ciascuno");
+            assert!(sent.iter().all(|u| u.0 == 1), "{mode:?}: lo stato vero va solo ad Alice");
+            assert!(sent.iter().filter(|u| u.1 == ROCK).count() >= 6, "{mode:?}: tre volte la cella rifiutata");
             assert!(sent.iter().any(|u| u.2 == stone() as u32 && u.4 == 0), "{mode:?}");
         }
     }
@@ -1120,6 +1151,11 @@ mod placing {
 
     /// `InventoryTransaction` di tipo ItemUse con azione Place sul blocco `pos`, faccia `face`, con `held` in mano secondo il client.
     pub(super) fn place_packet(pos: [i32; 3], face: u8, held: &ItemStack) -> Packet {
+        place_packet_slot(pos, face, held, 0)
+    }
+
+    /// Come `place_packet`, con la casella della barra che il client dichiara in mano.
+    pub(super) fn place_packet_slot(pos: [i32; 3], face: u8, held: &ItemStack, slot: i32) -> Packet {
         let mut w = Writer::default();
         w.var_i32(0); // id legacy
         w.u8(0); // niente slot legacy
@@ -1129,7 +1165,7 @@ mod placing {
         w.u8(1); // trigger
         pos.iter().for_each(|&c| w.var_i32(c));
         w.u8(face);
-        w.var_i32(0); // casella
+        w.var_i32(slot); // casella
         w.u8(0); // mano
         held.encode(&mut w);
         EYES.iter().for_each(|&v| w.f32(v));
@@ -1141,7 +1177,7 @@ mod placing {
     }
 
     /// `PlayerAction` con `runtime_id` 1.
-    fn destroy(pos: [i32; 3]) -> Packet {
+    pub(super) fn destroy(pos: [i32; 3]) -> Packet {
         let mut w = Writer::default();
         w.var_u64(1);
         w.var_i32(player_action::CREATIVE_DESTROY);
@@ -1166,8 +1202,14 @@ mod placing {
         assert!(!h.server.chunks[&(0, 0, 0)].dirty);
         let mut cells: Vec<_> = updates(&mut h.sent).iter().map(|(to, pos, hash, _, layer)| (*to, *pos, *hash, *layer)).collect();
         cells.sort();
-        let (rock, top, none) = (stone() as u32, air() as u32, air() as u32);
-        assert_eq!(cells, [(1, ROCK, rock, 0), (1, ROCK, none, 1), (1, TOP, top, 0), (1, TOP, none, 1)]);
+        // la cella cliccata, quella accanto e i loro vicini: il client prevede anche le seconde metà (porte, letti, piante alte)
+        let mut want = Vec::new();
+        for pos in crate::placement::with_neighbors(&[ROCK, TOP]) {
+            want.push((1, pos, if pos == ROCK { stone() } else { air() } as u32, 0));
+            want.push((1, pos, air() as u32, 1));
+        }
+        want.sort();
+        assert_eq!(cells, want);
     }
 
     pub(super) fn counting_hook(h: &mut Harness, allow: bool) -> Arc<Mutex<Vec<WorldAction>>> {
@@ -1193,7 +1235,11 @@ mod placing {
         let out = packets(&mut h.sent);
         let mut got: Vec<_> = out.iter().filter(|(_, p)| p.id == UpdateBlock::ID).map(|(to, p)| (*to, Reader(&p.body).block_pos().unwrap())).collect();
         got.sort();
-        assert_eq!(got, [(1, TOP), (1, TOP), (2, TOP), (2, TOP)], "strato 0 e 1 ad Alice e Bob, non a Carol");
+        assert_eq!(
+            got,
+            [(1, ROCK), (1, ROCK), (1, TOP), (1, TOP), (1, TOP), (1, TOP), (2, TOP), (2, TOP)],
+            "strato 0 e 1 ad Alice e Bob, non a Carol; ad Alice anche la cella cliccata e quella prevista"
+        );
         let sounds: Vec<_> = out
             .iter()
             .filter(|(_, p)| p.id == LevelSoundEvent::ID)
@@ -1208,20 +1254,23 @@ mod placing {
     }
 
     #[test]
-    fn survival_place_consumes_one_item() {
+    fn survival_place_does_not_consume_and_resyncs_the_slot() {
+        // la spec di questa tappa: la sopravvivenza piazza senza consumare; il client però ha previsto il consumo
         let mut h = setup(GameMode::Survival);
         h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
         assert_placed(&h);
-        assert_eq!(h.server.players[&1].inventory.held().count, 63);
-        let slots: Vec<_> = packets(&mut h.sent).into_iter().filter(|(_, p)| p.id == InventorySlot::ID).collect();
-        assert_eq!(slots.len(), 1, "il client sa com'è ora la casella");
+        assert_eq!(h.server.players[&1].inventory.held().count, 64, "nessun consumo");
+        let out = packets(&mut h.sent);
+        let slots: Vec<_> = out.iter().filter(|(_, p)| p.id == InventorySlot::ID).collect();
+        assert_eq!(slots.len(), 1, "il client sa com'è davvero la casella");
         assert_eq!(slots[0].0, 1);
-        // fino all'ultimo: la casella si svuota
-        for _ in 0..63 {
+        assert_eq!(slots[0].1.body, h.server.players[&1].inventory.held_slot_packet().body, "con il conteggio vero (64)");
+        // ripetuto fino a svuotare la scorta che non c'è: la mano resta piena
+        for _ in 0..70 {
             h.server.set_blocks(Dim::Overworld, &[change(TOP, air(), false)]);
             h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
         }
-        assert_eq!(h.server.players[&1].inventory.held().id, 0, "vuota");
+        assert_eq!(h.server.players[&1].inventory.held().count, 64);
         assert_eq!(h.server.block_at(Dim::Overworld, TOP), Some((stone(), false)));
     }
 
@@ -1240,7 +1289,7 @@ mod placing {
         // il server ha la mano vuota e il client dice di avere pietra
         let stone_stack = held(&h);
         h.receive(1, &[mob_equipment(5, 5)]);
-        h.receive(1, &[place_packet(ROCK, 1, &stone_stack)]);
+        h.receive(1, &[place_packet_slot(ROCK, 1, &stone_stack, 5)]);
         assert_reverted(&mut h);
     }
 
@@ -1248,7 +1297,7 @@ mod placing {
     fn empty_hands_do_nothing_and_send_nothing() {
         let mut h = setup(GameMode::Creative);
         h.receive(1, &[mob_equipment(5, 5)]); // casella vuota
-        h.receive(1, &[place_packet(ROCK, 1, &ItemStack::air())]);
+        h.receive(1, &[place_packet_slot(ROCK, 1, &ItemStack::air(), 5)]);
         assert!(packets(&mut h.sent).is_empty());
         assert_eq!(h.server.block_at(Dim::Overworld, TOP), Some((air(), false)));
     }
@@ -1290,6 +1339,16 @@ mod placing {
         h.server.players.get_mut(&2).unwrap().pos = [3.5, 12.62, 4.5];
         h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
         assert_reverted(&mut h);
+    }
+
+    #[test]
+    fn spectators_are_not_in_the_way() {
+        // Bob, spettatore, sta nella cella da riempire: non ostruisce
+        let mut h = setup(GameMode::Creative);
+        let bob = h.server.players.get_mut(&2).unwrap();
+        (bob.pos, bob.mode) = ([3.5, 12.62, 4.5], GameMode::Spectator);
+        h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
+        assert_placed(&h);
     }
 
     #[test]
@@ -1378,7 +1437,7 @@ mod placing {
         h.server.set_blocks(Dim::Overworld, &[change(support, stone(), false)]);
         hold_creative(&mut h, "minecraft:bed", 8);
         drop(packets(&mut h.sent));
-        h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
+        h.receive(1, &[place_packet_slot(ROCK, 1, &held(&h), 1)]);
         let name = |pos| registry::blocks().state(h.server.block_at(Dim::Overworld, pos).unwrap().0).unwrap().name.clone();
         assert_eq!((name(TOP), name([3, 11, 5])), ("minecraft:bed".to_string(), "minecraft:bed".to_string()));
         // le due metà hanno il block entity con il colore dell'aux (8: grigio chiaro), nel chunk e mandate a chi lo vede
@@ -1448,11 +1507,98 @@ mod placing {
         h.receive(1, &[stack_request_packet(|w| craft_and_place(w, -2, stairs, 1))]);
         h.receive(1, &[mob_equipment(1, 1)]);
         h.server.players.get_mut(&1).unwrap().yaw = 180.0;
-        h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
+        h.receive(1, &[place_packet_slot(ROCK, 1, &held(&h), 1)]);
         let (hash, _) = h.server.block_at(Dim::Overworld, TOP).unwrap();
         let state = registry::blocks().state(hash).unwrap();
         assert_eq!(state.name, "minecraft:oak_stairs");
         assert_eq!(state.get("weirdo_direction"), Some(&registry::StateValue::Int(3)));
+    }
+
+    /// Le celle (strato 0) che `pid` ha ricevuto in `UpdateBlock`, con l'hash.
+    fn cells_for(h: &mut Harness, pid: u64) -> Vec<([i32; 3], u32)> {
+        updates(&mut h.sent).into_iter().filter(|u| u.0 == pid && u.4 == 0).map(|u| (u.1, u.2)).collect()
+    }
+
+    #[test]
+    fn a_refused_door_resends_the_cell_above_to_the_author() {
+        let mut h = setup(GameMode::Creative);
+        hold_creative(&mut h, "minecraft:wooden_door", 0);
+        h.server.players.get_mut(&1).unwrap().pos = [40.5, 11.62, 4.5]; // fuori portata: rifiutato
+        drop(packets(&mut h.sent));
+        h.receive(1, &[place_packet_slot(ROCK, 1, &held(&h), 1)]);
+        assert_eq!(h.server.block_at(Dim::Overworld, TOP), Some((air(), false)));
+        let all = updates(&mut h.sent);
+        assert!(all.iter().all(|u| u.0 == 1), "solo all'autore");
+        let got: Vec<_> = all.iter().filter(|u| u.4 == 0).map(|u| (u.1, u.2)).collect();
+        // il client ha previsto la porta in TOP e nella cella sopra: tutte e due tornano come sono davvero
+        assert!(got.contains(&(TOP, air() as u32)), "{got:?}");
+        assert!(got.contains(&([3, 12, 4], air() as u32)), "la metà alta prevista dal client: {got:?}");
+    }
+
+    #[test]
+    fn merged_half_slabs_resend_the_cell_the_client_predicted() {
+        let mut h = setup(GameMode::Creative);
+        let slab = registry::blocks().default_hash("minecraft:oak_slab").unwrap();
+        h.server.set_blocks(Dim::Overworld, &[change(ROCK, slab, false)]);
+        hold_creative(&mut h, "minecraft:oak_slab", 0);
+        drop(packets(&mut h.sent));
+        // il client prevede una mezza lastra in TOP; il server unisce le due in una lastra doppia in ROCK
+        h.receive(1, &[place_packet_slot(ROCK, 1, &held(&h), 1)]);
+        let name = |pos| registry::blocks().state(h.server.block_at(Dim::Overworld, pos).unwrap().0).unwrap().name.clone();
+        assert_eq!((name(ROCK).as_str(), name(TOP).as_str()), ("minecraft:oak_double_slab", "minecraft:air"));
+        let got = cells_for(&mut h, 1);
+        assert!(got.contains(&(TOP, air() as u32)), "la cella prevista dal client torna aria: {got:?}");
+    }
+
+    /// Un `MobEquipment` con quella finestra.
+    fn equipment_in_window(slot: u8, container_id: u8) -> Packet {
+        MobEquipment { target_runtime_id: 1, item: ItemStack::air(), slot, selected_slot: slot, container_id }.packet()
+    }
+
+    #[test]
+    fn use_item_adopts_the_hotbar_slot_the_client_declares() {
+        let mut h = setup(GameMode::Creative);
+        hold_creative(&mut h, "minecraft:oak_stairs", 0); // casella 1
+        h.receive(1, &[mob_equipment(0, 0)]);
+        assert_eq!(h.server.players[&1].inventory.selected, 0);
+        // il client ha già in mano la casella 1 (il MobEquipment è in ritardo o perso): vale ciò che dichiara l'uso
+        let stairs = h.server.players[&1].inventory.main(1).stack(1);
+        h.receive(1, &[place_packet_slot(ROCK, 1, &stairs, 1)]);
+        assert_eq!(h.server.players[&1].inventory.selected, 1);
+        let (hash, _) = h.server.block_at(Dim::Overworld, TOP).unwrap();
+        assert_eq!(registry::blocks().state(hash).unwrap().name, "minecraft:oak_stairs");
+        // una casella fuori dalla barra non cambia nulla
+        h.receive(1, &[place_packet_slot(ROCK, 1, &stairs, 9)]);
+        h.receive(1, &[place_packet_slot(ROCK, 1, &stairs, -1)]);
+        assert_eq!(h.server.players[&1].inventory.selected, 1);
+    }
+
+    #[test]
+    fn equipment_of_the_offhand_window_does_not_move_the_selection() {
+        let mut h = setup(GameMode::Creative);
+        h.receive(1, &[equipment_in_window(3, crate::inventory::window::OFFHAND as u8)]);
+        assert_eq!(h.server.players[&1].inventory.selected, 0, "la finestra 119 è la mano secondaria");
+        h.receive(1, &[equipment_in_window(3, crate::inventory::window::ARMOR as u8)]);
+        assert_eq!(h.server.players[&1].inventory.selected, 0);
+        h.receive(1, &[equipment_in_window(3, crate::inventory::window::INVENTORY as u8)]);
+        assert_eq!(h.server.players[&1].inventory.selected, 3, "la finestra dell'inventario sì");
+    }
+
+    #[test]
+    fn a_mismatched_hand_resends_the_slot_and_the_selection() {
+        use bedrock_protocol::generated::PlayerHotbar;
+        let mut h = setup(GameMode::Creative);
+        // il client crede di avere la mano vuota, il server ha 64 pietre
+        h.receive(1, &[place_packet(ROCK, 1, &ItemStack::air())]);
+        assert_eq!(h.server.block_at(Dim::Overworld, TOP), Some((air(), false)));
+        let out = packets(&mut h.sent);
+        let slots: Vec<_> = out.iter().filter(|(_, p)| p.id == InventorySlot::ID).collect();
+        assert_eq!(slots.len(), 1);
+        assert_eq!(slots[0].0, 1, "solo all'autore");
+        assert_eq!(slots[0].1.body, h.server.players[&1].inventory.held_slot_packet().body, "la casella com'è per il server");
+        let hotbar: Vec<_> = out.iter().filter(|(_, p)| p.id == PlayerHotbar::ID).collect();
+        assert_eq!(hotbar.len(), 1);
+        assert_eq!((hotbar[0].0, hotbar[0].1.body.as_slice()), (1, [0u8, 0, 1].as_slice()), "casella 0, finestra 0, selezionala");
     }
 }
 
@@ -1460,7 +1606,7 @@ mod placing {
 
 mod interacting {
     use super::blocks::{air, change, stone, updates};
-    use super::placing::{counting_hook, held, hold_creative, packets, place_packet, setup, TOP};
+    use super::placing::{counting_hook, destroy, held, hold_creative, packets, place_packet, place_packet_slot, setup, TOP};
     use super::*;
     use crate::{
         events::WorldAction,
@@ -1503,7 +1649,7 @@ mod interacting {
     /// Alice, con la mano vuota (la casella 5 non ha nulla), clicca la faccia est di `pos`.
     fn click_with_empty_hand(h: &mut Harness, pos: [i32; 3]) {
         h.receive(1, &[mob_equipment(5, 5)]);
-        h.receive(1, &[place_packet(pos, EAST, &ItemStack::air())]);
+        h.receive(1, &[place_packet_slot(pos, EAST, &ItemStack::air(), 5)]);
     }
 
     /// I suoni arrivati: (destinatario, nome, dato).
@@ -1548,6 +1694,33 @@ mod interacting {
         h.receive(1, &[place_packet(UPPER, EAST, &in_hand)]);
         assert_eq!((at(&h, TOP), at(&h, UPPER)), (door("minecraft:wooden_door", false, false), door("minecraft:wooden_door", true, false)));
         assert!(sounds(&packets(&mut h.sent)).iter().all(|(_, name, _)| name == "door.close"));
+    }
+
+    #[test]
+    fn interactions_work_whatever_the_client_thinks_is_in_hand() {
+        let mut h = setup(GameMode::Creative);
+        put_door(&mut h, "minecraft:wooden_door");
+        // il server ha 64 pietre in mano, il client dice di avere la mano vuota (o un'altra cosa): la porta si apre lo stesso
+        h.receive(1, &[place_packet(TOP, EAST, &ItemStack::air())]);
+        assert_eq!(at(&h, TOP), door("minecraft:wooden_door", false, true));
+        let mut other = held(&h);
+        other.id = 9999;
+        h.receive(1, &[place_packet(TOP, EAST, &other)]);
+        assert_eq!(at(&h, TOP), door("minecraft:wooden_door", false, false));
+        assert_eq!(at(&h, BESIDE), air(), "e non piazza nulla");
+    }
+
+    #[test]
+    fn a_refused_break_of_half_a_door_resends_the_other_half() {
+        let mut h = setup(GameMode::Survival);
+        put_door(&mut h, "minecraft:wooden_door");
+        drop(packets(&mut h.sent));
+        h.receive(1, &[destroy(TOP)]); // la rottura creativa non è ammessa in sopravvivenza: rifiutata
+        assert_eq!(at(&h, TOP), door("minecraft:wooden_door", false, false));
+        let got = updates(&mut h.sent);
+        assert!(got.iter().all(|u| u.0 == 1), "solo all'autore");
+        let cells: Vec<_> = got.iter().filter(|u| u.4 == 0).map(|u| (u.1, u.2)).collect();
+        assert!(cells.contains(&(UPPER, door("minecraft:wooden_door", true, false) as u32)), "anche l'altra metà: {cells:?}");
     }
 
     #[test]
@@ -1642,7 +1815,7 @@ mod interacting {
         assert_eq!(at(&h, BUTTON), lever.hash());
         // una porta in mano (che non è un blocco già pronto): la leva si usa comunque
         hold_creative(&mut h, "minecraft:wooden_door", 0);
-        h.receive(1, &[place_packet(BUTTON, EAST, &held(&h))]);
+        h.receive(1, &[place_packet_slot(BUTTON, EAST, &held(&h), 1)]);
         assert_eq!(at(&h, BUTTON), on);
     }
 
@@ -1700,6 +1873,24 @@ mod interacting {
         assert_eq!(at(&h, BUTTON), down);
         h.server.tick();
         assert_eq!(at(&h, BUTTON), up, "risale 20 tick dopo la prima pressione, non dopo il secondo clic");
+    }
+
+    #[test]
+    fn a_new_press_on_a_replaced_button_replaces_the_old_appointment() {
+        let mut h = setup(GameMode::Creative);
+        press(&mut h, "minecraft:stone_button"); // appuntamento a 20 tick
+        for _ in 0..5 {
+            h.server.tick();
+        }
+        // il pulsante di pietra si rompe e al suo posto ne va uno di legno, che si preme: vale il nuovo appuntamento
+        let (up, down) = press(&mut h, "minecraft:wooden_button");
+        assert_eq!(h.server.scheduled.len(), 1, "una sola voce per cella");
+        for n in 1..30 {
+            h.server.tick();
+            assert_eq!(at(&h, BUTTON), down, "ancora premuto dopo {n} tick");
+        }
+        h.server.tick();
+        assert_eq!(at(&h, BUTTON), up, "risale dopo 30 tick dalla nuova pressione");
     }
 
     #[test]

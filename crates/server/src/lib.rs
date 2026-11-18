@@ -350,11 +350,12 @@ impl Server {
             if old != c.hash && registry::blocks().state(old).map(|s| &s.name) != registry::blocks().state(c.hash).map(|s| &s.name) {
                 chunk.remove_block_entity(c.pos);
             }
-            if self.flat && chunk.fallback {
-                // il mondo piatto di ripiego si perde alla chiusura: la modifica resta in memoria ma il chunk non si salva
+            if chunk.fallback {
+                // un chunk di ripiego (mondo piatto, o generazione fallita) non è il mondo vero: salvarlo ne cancellerebbe la
+                // versione generata la prossima volta. La modifica resta in memoria ma il chunk non si salva, in qualunque modalità.
                 chunk.dirty = false;
                 if !std::mem::replace(&mut self.flat_warned, true) {
-                    log!("[mondo] mondo piatto di ripiego: le modifiche non si salvano");
+                    log!("[mondo] chunk di ripiego (mondo piatto o generazione fallita): le modifiche non si salvano");
                 }
             }
             applied.push(((cx, cz), *c));
@@ -376,8 +377,8 @@ impl Server {
         let Some(chunk) = self.chunks.get_mut(&(dim as u8, cx, cz)) else { return };
         let packet = BlockActorData { block_position: BlockPos { x: entity.x, y: entity.y, z: entity.z }, actor_data_tags: entity.nbt.clone() }.packet();
         chunk.put_block_entity(entity);
-        if self.flat && chunk.fallback {
-            chunk.dirty = false;
+        if chunk.fallback {
+            chunk.dirty = false; // vedi `apply_blocks`: i chunk di ripiego non si salvano mai
         }
         for (&pid, _) in self.players.iter().filter(|(_, p)| p.sent.contains(&(cx, cz))) {
             self.send(pid, std::slice::from_ref(&packet));
@@ -391,6 +392,13 @@ impl Server {
         if !packets.is_empty() {
             self.send(pid, &packets);
         }
+    }
+
+    /// Come [`Server::resend_blocks`] per le celle `cells` e per i loro sei vicini. Il client prevede porte, letti e piante alte
+    /// per intero, e a volte un blocco diverso da quello che il server decide: dopo un rifiuto (o un esito diverso) la seconda
+    /// metà o la cella prevista resterebbero sullo schermo come celle fantasma.
+    pub(crate) fn resend_around(&self, pid: u64, dim: Dim, cells: &[[i32; 3]]) {
+        self.resend_blocks(pid, dim, &placement::with_neighbors(cells));
     }
 
     /// Mostra l'azione ai ganci: `false` se almeno uno la annulla (allora chi chiama non deve cambiare nulla).

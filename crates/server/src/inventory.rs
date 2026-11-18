@@ -11,7 +11,7 @@ use bedrock_protocol::{
             ARMOR_CONTAINER, COMBINED_HOTBAR_AND_INVENTORY_CONTAINER, CREATED_OUTPUT_CONTAINER, CURSOR_CONTAINER, HOTBAR_CONTAINER, INVENTORY_CONTAINER,
             OFFHAND_CONTAINER,
         },
-        FullContainerName, InventorySlot, ItemStackResponse, ItemStackResponseContainerInfo, ItemStackResponseInfo, ItemStackResponseSlotInfo,
+        FullContainerName, InventorySlot, ItemStackResponse, ItemStackResponseContainerInfo, ItemStackResponseInfo, ItemStackResponseSlotInfo, PlayerHotbar,
     },
     input::{SlotRef, StackAction, StackRequest},
     item::ItemStack,
@@ -242,32 +242,24 @@ impl Inventory {
         &self.contents.main[self.selected as usize].item
     }
 
-    /// Toglie un oggetto da quello in mano (piazzamento in sopravvivenza) e dà alla casella un nuovo ID di pila.
-    /// Restituisce l'`InventorySlot` che dice al client com'è ora la casella; `None` se la mano è vuota.
-    pub fn consume_held(&mut self) -> Option<Packet> {
+    /// Il pacchetto `InventorySlot` con la casella in mano com'è per il server (anche vuota): serve a riallineare il client
+    /// quando ha previsto qualcosa di diverso (un oggetto consumato, un'altra casella in mano).
+    pub fn held_slot_packet(&self) -> Packet {
         let loc = Loc::Main(self.selected);
-        if self.contents.get(loc).item.is_empty() {
-            return None;
-        }
-        let slot = self.contents.get_mut(loc);
-        slot.item.count -= 1;
-        if slot.item.is_empty() {
-            *slot = Slot::default();
-        } else {
-            let id = self.new_id();
-            self.contents.get_mut(loc).stack_id = id;
-        }
         let (window, index, name) = loc.window();
-        Some(
-            InventorySlot {
-                container_id: window as u8,
-                slot: index,
-                full_container_name: Some(FullContainerName { container_name: name, dynamic_id: None }),
-                storage_item: None,
-                item: self.stack_of(loc),
-            }
-            .packet(),
-        )
+        InventorySlot {
+            container_id: window as u8,
+            slot: index,
+            full_container_name: Some(FullContainerName { container_name: name, dynamic_id: None }),
+            storage_item: None,
+            item: self.stack_of(loc),
+        }
+        .packet()
+    }
+
+    /// Il pacchetto `PlayerHotbar` che dice al client quale casella della barra è in mano e gliela fa selezionare.
+    pub fn hotbar_packet(&self) -> Packet {
+        PlayerHotbar { selected_slot: self.selected as u32, container_id: window::INVENTORY as u8, should_select_slot: true }.packet()
     }
 
     /// Oggetto della casella `i` dell'inventario principale (0-8 barra).

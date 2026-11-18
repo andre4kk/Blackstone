@@ -284,6 +284,58 @@ fn uuid_v4() -> String {
     format!("{}-{}-{}-{}-{}", &hex[..8], &hex[8..12], &hex[12..16], &hex[16..20], &hex[20..])
 }
 
+/// Scritture chiave/valore per il database (`None` cancella).
+type WriteOps = Vec<(Vec<u8>, Option<Vec<u8>>)>;
+
+/// Il record `player_<identity>` com'è sul disco.
+#[derive(Debug, PartialEq)]
+enum Lookup {
+    /// Il giocatore non ha mai salvato nulla.
+    Missing,
+    /// Il record è buono e punta a questa chiave dei dati.
+    Found(String),
+    /// Il record c'è ma non è NBT, o non ha un `ServerId` che cominci per `player_server_`: i suoi byte originali.
+    Unreadable(Vec<u8>),
+}
+
+/// Interpreta i byte del record `player_<identity>`. La chiave dei dati deve essere una `player_server_*`: un record alterato
+/// non può puntare ai chunk o ad altro.
+fn classify_record(bytes: Option<Vec<u8>>) -> Lookup {
+    let Some(bytes) = bytes else { return Lookup::Missing };
+    let id = Reader::new(&bytes, Enc::Disk).root().and_then(|(_, record)| record.get("ServerId").and_then(Tag::as_str).map(str::to_string));
+    match id {
+        Some(id) if id.starts_with(SERVER_PREFIX) => Lookup::Found(id),
+        _ => Lookup::Unreadable(bytes),
+    }
+}
+
+/// Cosa serve scrivere, oltre ai dati, per salvare `identity` data la lettura del suo record: la chiave dei dati e le scritture
+/// del record. `Err` se la lettura è fallita (errore del database: non si inventa un `ServerId`). Un record illeggibile si copia
+/// prima, tale e quale, sotto `player_server_<uuid>_illeggibile` (con un UUID nuovo) e si rifà; uno buono si lascia com'è.
+fn save_plan(identity: &str, lookup: Result<Lookup, String>, new_uuid: &mut dyn FnMut() -> String) -> io::Result<(String, WriteOps)> {
+    let lookup = lookup.map_err(|e| io::Error::other(format!("lettura del record di {identity}: {e}")))?;
+    let mut ops = Vec::with_capacity(3);
+    let server_id = match lookup {
+        Lookup::Found(id) => return Ok((id, ops)),
+        Lookup::Missing => format!("{SERVER_PREFIX}{}", new_uuid()),
+        Lookup::Unreadable(bytes) => {
+            let backup = format!("{SERVER_PREFIX}{}_illeggibile", new_uuid());
+            log!("[mondo] record di {identity} illeggibile: copia in {backup}, poi lo rifaccio");
+            ops.push((backup.into_bytes(), Some(bytes)));
+            format!("{SERVER_PREFIX}{}", new_uuid())
+        }
+    };
+    // L'XUID è l'`MsaId`; senza account Xbox l'identità è una `name:<nome>` e va in `SelfSignedId` (non verificato su un mondo vero).
+    let (msa, self_signed) = if identity.starts_with("name:") { ("", identity) } else { (identity, "") };
+    let record = Tag::Compound(vec![
+        ("MsaId".into(), Tag::String(msa.into())),
+        ("SelfSignedId".into(), Tag::String(self_signed.into())),
+        ("ServerId".into(), Tag::String(server_id.clone())),
+    ]);
+    ops.push((format!("player_{identity}").into_bytes(), Some(nbt::write_root("", &record, Enc::Disk))));
+    Ok((server_id, ops))
+}
+
 /// Secondi dall'epoca Unix, per `LastPlayed`.
 fn unix_time() -> i64 {
     std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64)
@@ -460,22 +512,19 @@ impl World {
 
     // ---------- dati dei giocatori ----------
 
-    /// `ServerId` del record `player_<identity>`; `None` se il record manca. `Err` se esiste ma non si legge.
-    fn player_server_id(&self, identity: &str) -> Result<Option<String>, String> {
-        let Some(bytes) = self.db_get(format!("player_{identity}").as_bytes()).map_err(|e| format!("database: {e}"))? else { return Ok(None) };
-        let (_, record) = Reader::new(&bytes, Enc::Disk).root().ok_or("record del giocatore illeggibile")?;
-        // la chiave dei dati deve essere una `player_server_*`: un record alterato non può puntare ai chunk o ad altro
-        match record.get("ServerId").and_then(Tag::as_str) {
-            Some(id) if id.starts_with(SERVER_PREFIX) => Ok(Some(id.to_string())),
-            _ => Err("record del giocatore senza ServerId valido".into()),
-        }
+    /// Il record `player_<identity>` com'è sul disco. `Err` solo se il database non risponde (un errore che può passare: non dice
+    /// nulla sul record). Un record presente ma che non si interpreta non è un errore: è `Lookup::Unreadable`, coi suoi byte.
+    fn player_lookup(&self, identity: &str) -> Result<Lookup, String> {
+        let bytes = self.db_get(format!("player_{identity}").as_bytes()).map_err(|e| format!("database: {e}"))?;
+        Ok(classify_record(bytes))
     }
 
     /// Dati salvati di un giocatore (NBT su disco, tali e quali). `None` se non ne ha mai salvati o non si leggono (con una riga di log).
     pub fn load_player(&mut self, identity: &str) -> Option<Vec<u8>> {
-        let result = self.player_server_id(identity).and_then(|id| match id {
-            Some(id) => self.db_get(id.as_bytes()).map_err(|e| format!("database: {e}")),
-            None => Ok(None),
+        let result = self.player_lookup(identity).and_then(|lookup| match lookup {
+            Lookup::Found(id) => self.db_get(id.as_bytes()).map_err(|e| format!("database: {e}")),
+            Lookup::Missing => Ok(None),
+            Lookup::Unreadable(_) => Err("record del giocatore illeggibile o senza ServerId valido".into()),
         });
         result.unwrap_or_else(|e| {
             log!("[mondo] dati di {identity} illeggibili, si parte da capo: {e}");
@@ -484,28 +533,18 @@ impl World {
     }
 
     /// Salva i dati del giocatore come i server dedicati: il record `player_<identity>` (`MsaId`, `SelfSignedId`, `ServerId`) punta a
-    /// `player_server_<uuid>` con i dati veri. L'UUID si genera la prima volta e poi si riusa.
+    /// `player_server_<uuid>` con i dati veri. L'UUID si genera la prima volta e poi si riusa. Se il database non risponde alla
+    /// lettura del record il salvataggio fallisce senza toccare nulla (un nuovo `ServerId` staccherebbe il giocatore dai suoi dati).
+    /// Se il record c'è ma non si interpreta, prima di rifarlo se ne copiano i byte sotto la chiave di riserva
+    /// `player_server_<uuid>_illeggibile` (vedi [`save_plan`]), così nulla va perso.
     pub fn save_player(&mut self, identity: &str, nbt: &[u8]) -> io::Result<()> {
-        let existing = self.player_server_id(identity).unwrap_or_else(|e| {
-            log!("[mondo] record di {identity} da rifare: {e}");
-            None
-        });
-        let mut ops = Vec::with_capacity(2);
-        let server_id = match existing {
-            Some(id) => id,
-            None => {
-                let id = format!("{SERVER_PREFIX}{}", uuid_v4());
-                // L'XUID è l'`MsaId`; senza account Xbox l'identità è una `name:<nome>` e va in `SelfSignedId` (non verificato su un mondo vero).
-                let (msa, self_signed) = if identity.starts_with("name:") { ("", identity) } else { (identity, "") };
-                let record = Tag::Compound(vec![
-                    ("MsaId".into(), Tag::String(msa.into())),
-                    ("SelfSignedId".into(), Tag::String(self_signed.into())),
-                    ("ServerId".into(), Tag::String(id.clone())),
-                ]);
-                ops.push((format!("player_{identity}").into_bytes(), Some(nbt::write_root("", &record, Enc::Disk))));
-                id
-            }
-        };
+        self.save_player_with(identity, nbt, &mut uuid_v4)
+    }
+
+    /// Come [`World::save_player`], con il generatore di UUID a scelta (i test lo fissano).
+    fn save_player_with(&mut self, identity: &str, nbt: &[u8], new_uuid: &mut dyn FnMut() -> String) -> io::Result<()> {
+        let lookup = self.player_lookup(identity);
+        let (server_id, mut ops) = save_plan(identity, lookup, new_uuid)?;
         ops.push((server_id.into_bytes(), Some(nbt.to_vec())));
         self.db.call(|reply| Op::Write(ops, reply))
     }
@@ -1110,5 +1149,58 @@ mod tests {
         assert_eq!(w.load_player("7"), None, "mappatura illeggibile: si parte da capo");
         w.save_player("7", &[0x0a, 0, 0]).unwrap(); // e si può risalvare
         assert!(w.load_player("7").is_some());
+    }
+
+    #[test]
+    fn unreadable_player_record_is_backed_up_before_being_replaced() {
+        let dir = TempDir::new("player-backup");
+        let mut w = open(&dir);
+        w.db_put(b"player_7", b"non nbt").unwrap();
+        let n = std::cell::Cell::new(0);
+        let mut uuid = || {
+            n.set(n.get() + 1);
+            format!("uuid-{}", n.get())
+        };
+        let nbt = [0x0a, 0, 0];
+        w.save_player_with("7", &nbt, &mut uuid).unwrap();
+        assert_eq!(w.db_get(b"player_server_uuid-1_illeggibile").unwrap(), Some(b"non nbt".to_vec()), "i byte originali sotto la chiave di riserva");
+        assert_eq!(w.load_player("7"), Some(nbt.to_vec()), "il record rifatto punta ai dati nuovi");
+        assert_eq!(w.db_get(b"player_server_uuid-2").unwrap(), Some(nbt.to_vec()));
+        // un record buono non si copia e non cambia ServerId
+        w.save_player_with("7", &nbt, &mut uuid).unwrap();
+        assert_eq!(n.get(), 2, "nessun UUID nuovo");
+        assert_eq!(w.db_get(b"player_server_uuid-3_illeggibile").unwrap(), None);
+    }
+
+    #[test]
+    fn a_failed_read_never_regenerates_the_server_id() {
+        let n = std::cell::Cell::new(0);
+        let mut uuid = || {
+            n.set(n.get() + 1);
+            format!("uuid-{}", n.get())
+        };
+        // il database non risponde: il salvataggio fallisce e non si inventa nulla
+        let err = save_plan("7", Err("database: occupato".into()), &mut uuid).unwrap_err();
+        assert!(err.to_string().contains("lettura del record"), "{err}");
+        assert_eq!(n.get(), 0, "nessun UUID generato");
+        // un record buono mantiene il suo ServerId e non viene riscritto
+        let (id, ops) = save_plan("7", Ok(Lookup::Found("player_server_x".into())), &mut uuid).unwrap();
+        assert_eq!((id.as_str(), ops.len(), n.get()), ("player_server_x", 0, 0));
+        // solo un record presente ma non interpretabile si rifà (dopo la copia)
+        let (_, ops) = save_plan("7", Ok(Lookup::Unreadable(b"zz".to_vec())), &mut uuid).unwrap();
+        assert_eq!(ops.len(), 2, "copia di riserva e record nuovo");
+        assert_eq!(classify_record(None), Lookup::Missing);
+        assert_eq!(classify_record(Some(b"zz".to_vec())), Lookup::Unreadable(b"zz".to_vec()));
+        // senza ServerId `player_server_*` il record è illeggibile (non può puntare ai chunk)
+        let alien = nbt::write_root("", &Tag::Compound(vec![("ServerId".into(), Tag::String("chunk".into()))]), Enc::Disk);
+        assert_eq!(classify_record(Some(alien.clone())), Lookup::Unreadable(alien));
+    }
+
+    #[test]
+    fn a_closed_database_fails_the_save() {
+        let dir = TempDir::new("player-closed");
+        let mut w = open(&dir);
+        w.db.tx = None;
+        assert!(w.save_player("7", &[0x0a, 0, 0]).is_err());
     }
 }

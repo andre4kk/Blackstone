@@ -62,20 +62,20 @@ impl Server {
                     self.break_block(pid, pos);
                 } else {
                     // il client ha rotto un blocco che non stava rompendo: gli si dice com'è davvero
-                    self.resend_blocks(pid, Dim::Overworld, &[pos]);
+                    self.resend_around(pid, Dim::Overworld, &[pos]);
                 }
             }
             player_action::CREATIVE_DESTROY if p.mode == GameMode::Creative => self.break_block(pid, pos),
             player_action::CREATIVE_DESTROY => {
                 log!("[#{pid}] rottura creativa fuori dalla modalità creativa: rifiutata");
-                self.resend_blocks(pid, Dim::Overworld, &[pos]);
+                self.resend_around(pid, Dim::Overworld, &[pos]);
             }
             _ => {}
         }
     }
 
     /// Il giocatore rompe il blocco in `pos`. Se non può (modalità, portata, blocco indistruttibile, gancio che annulla)
-    /// si rimanda lo stato vero a lui solo. Altrimenti il blocco diventa aria (l'acqua del secondo strato resta) e chi vede
+    /// si rimanda lo stato vero a lui solo, per la cella e per i suoi vicini (l'altra metà di una porta o di un letto, la pianta alta). Altrimenti il blocco diventa aria (l'acqua del secondo strato resta) e chi vede
     /// il chunk riceve l'aggiornamento e l'effetto di rottura. L'aria e i blocchi non caricati non fanno nulla.
     pub(crate) fn break_block(&mut self, pid: u64, pos: [i32; 3]) {
         let tick = self.tick_count;
@@ -95,7 +95,7 @@ impl Server {
         let editable = matches!(mode, GameMode::Creative | GameMode::Survival);
         if !editable || !in_reach(eyes, pos, creative) || hand_proof(old, creative) || !self.allow(&WorldAction::Break { pid, pos, old }) {
             log!("[#{pid}] rottura in {pos:?} rifiutata");
-            return self.resend_blocks(pid, dim, &[pos]);
+            return self.resend_around(pid, dim, &[pos]);
         }
         self.set_blocks(dim, &[BlockChange { pos, hash: block_hash("minecraft:air", &[]), water }]);
         let effect = LevelEvent {

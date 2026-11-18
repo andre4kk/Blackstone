@@ -121,7 +121,11 @@ fn supported_below(view: &impl BlockView, pos: [i32; 3]) -> bool {
 /// La cella `pos` si può riempire con `hash`: è sostituibile e non c'è già lo stesso blocco. Restituisce il cambio.
 fn free_cell(view: &impl BlockView, pos: [i32; 3], hash: i32) -> Option<BlockChange> {
     let existing = view.block(pos)?;
-    (replaceable(existing) && existing != hash).then(|| change_at(view, pos, existing, hash))
+    if replaceable(existing) && existing != hash {
+        change_at(view, pos, existing, hash)
+    } else {
+        None
+    }
 }
 
 /// Porte (D§4.1): due metà, solo cliccando la faccia superiore (o un blocco sostituibile) con aria sopra e un appoggio pieno
@@ -399,10 +403,11 @@ mod tests {
         put_block(&mut flowers, [2, 10, 2], "minecraft:short_grass");
         let changes = place(&click([2, 10, 2], NORTH, "minecraft:wooden_door"), &flowers).unwrap();
         assert_eq!(changes[0].pos, [2, 10, 2]);
-        // acqua: la porta la tiene nel secondo strato
+        // acqua: la porta la sostituisce (non si può "waterlogged")
         let mut wet = floor();
         wet.water.insert([0, 10, 0]);
-        assert!(place(&on_floor("minecraft:wooden_door"), &wet).unwrap().iter().any(|c| c.pos == [0, 10, 0] && c.water));
+        let changes = place(&on_floor("minecraft:wooden_door"), &wet).unwrap();
+        assert!(changes.iter().any(|c| c.pos == [0, 10, 0]) && changes.iter().all(|c| !c.water));
     }
 
     #[test]

@@ -1,5 +1,8 @@
 //! Un handler per ogni pacchetto che il server sa gestire.
-use crate::{inventory::HOTBAR_SLOTS, playerdata, Player, Server, HEX_LOGS};
+use crate::{
+    inventory::{window, HOTBAR_SLOTS},
+    playerdata, Player, Server, HEX_LOGS,
+};
 use bedrock_net::log;
 use bedrock_protocol::{
     generated::MobEquipment,
@@ -184,11 +187,15 @@ impl Server {
         self.send(pid, &packets);
     }
 
-    /// Il giocatore cambia la casella della barra in mano. Caselle fuori dalla barra si ignorano.
+    /// Il giocatore cambia la casella della barra in mano. Vale solo per la finestra dell'inventario (0): quella della mano
+    /// secondaria (119) non sposta la selezione (come Dragonfly). Caselle fuori dalla barra si ignorano.
     fn mob_equipment(&mut self, pid: u64, body: &[u8]) {
         let Some(equipment) = MobEquipment::decode(body) else {
             return log!("[#{pid}] MobEquipment illeggibile ({} byte): ignorato", body.len());
         };
+        if equipment.container_id != window::INVENTORY as u8 {
+            return; // la mano secondaria (finestra 119) e le altre finestre non cambiano la casella in mano
+        }
         let Some(p) = self.players.get_mut(&pid) else { return };
         if equipment.selected_slot < HOTBAR_SLOTS {
             p.inventory.selected = equipment.selected_slot;
