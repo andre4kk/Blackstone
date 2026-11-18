@@ -12,6 +12,7 @@
 #![allow(dead_code)] // alcune funzioni (open, compact, block_hash_from_nbt) servono solo ai test
 use crate::{
     nbt::{self, Enc, Reader, Tag},
+    registry,
     world::{bits_for_palette, block_hash, block_nbt, pack_words, Chunk, State, BIT_WIDTHS, PLAINS},
 };
 use bedrock_net::log;
@@ -411,8 +412,15 @@ impl World {
         }
     }
 
-    /// NBT su disco di uno stato; un hash sconosciuto diventa `minecraft:info_update` (segnalato una volta per hash).
+    /// NBT su disco di uno stato (dalla tabella del generatore o, in mancanza, dal registro dei blocchi). Un hash sconosciuto a entrambi
+    /// diventa `minecraft:info_update` (segnalato una volta per hash).
     fn entry(&mut self, hash: i32) -> &[u8] {
+        if !self.palette.contains_key(&hash) {
+            // non è nella tabella del generatore: ripiego sul registro dei blocchi
+            if let Some(state) = registry::blocks().state(hash) {
+                self.register(hash, &state.nbt());
+            }
+        }
         let known = self.palette.contains_key(&hash);
         if !known && self.warned.insert(hash) {
             log!("[mondo] blocco sconosciuto (hash {hash}): salvato come minecraft:info_update");
@@ -783,6 +791,30 @@ mod tests {
         drop(w);
         let mut w = World::open(&dir.0).unwrap();
         assert_eq!(w.load(Dim::Overworld, 1, 1).unwrap().network_bytes(), flat.network_bytes());
+    }
+
+    #[test]
+    fn save_and_load_block_not_in_generator_palette() {
+        use crate::registry::{blocks, StateValue};
+        let dir = TempDir::new("fallback");
+        let stairs = blocks().state(blocks().default_hash("minecraft:oak_stairs").unwrap()).unwrap().with("weirdo_direction", StateValue::Int(3));
+        assert!(blocks().is_valid(&stairs));
+        let hash = stairs.hash();
+        let chunk = Chunk::from_gen(ChunkData {
+            dim: Dim::Overworld,
+            x: 2,
+            z: 3,
+            sections: vec![section(0, vec![air(), hash], |i| (i % 2) as u16)],
+            block_entities: Vec::new(),
+        });
+        let mut w = World::open_with(&dir.0, "Prova", None).unwrap(); // nessuna palette del generatore
+        w.save(&chunk).unwrap();
+        drop(w);
+        let mut w = World::open(&dir.0).unwrap();
+        let loaded = w.load(Dim::Overworld, 2, 3).expect("chunk salvato");
+        assert_eq!(loaded.sections.iter().flatten().next().unwrap().palette, vec![air(), hash], "la scala non diventa info_update");
+        assert_eq!(loaded.network_bytes(), chunk.network_bytes());
+        assert!(w.warned.is_empty());
     }
 
     #[test]

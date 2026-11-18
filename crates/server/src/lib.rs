@@ -7,6 +7,7 @@ mod gen_client;
 mod handlers;
 mod join;
 mod nbt;
+mod registry;
 mod storage;
 mod streaming;
 #[cfg(test)]
