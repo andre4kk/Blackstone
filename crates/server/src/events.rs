@@ -14,6 +14,8 @@ pub(crate) struct BlockChange {
 pub(crate) enum WorldAction {
     /// Il giocatore butta `item` (una casella dell'inventario, in tutto o in parte): diventa un oggetto a terra.
     DropItem { pid: u64, item: Item },
+    /// Il giocatore sta per raccogliere `item` (l'intera pila a terra, o la parte che ci sta) dall'entità `entity`.
+    PickupItem { pid: u64, entity: u64, item: Item },
     /// Il giocatore rompe il blocco in `pos`, che prima era `old`.
     Break { pid: u64, pos: [i32; 3], old: i32 },
     /// Il giocatore piazza dei blocchi.

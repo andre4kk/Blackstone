@@ -312,6 +312,7 @@ impl Server {
         self.stream_tick();
         self.visibility_tick();
         self.items_tick();
+        self.pickup_tick();
         self.movement_tick();
         self.tick_count += 1;
         self.run_scheduled();

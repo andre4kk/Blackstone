@@ -25,10 +25,13 @@ pub(crate) const FIRST_ENTITY_ID: u64 = 1 << 32;
 
 pub(crate) enum EntityKind {
     /// `pid: None` è un bot (nessuna connessione).
-    Player { pid: Option<u64>, name: String, uuid: [u8; 16] },
+    Player {
+        pid: Option<u64>,
+        name: String,
+        uuid: [u8; 16],
+    },
     Item {
         item: inventory::Item,
-        #[allow(dead_code)] // lo legge la raccolta (compito successivo)
         pickup_at: u64,
         despawn_at: u64,
         velocity: [f32; 3],

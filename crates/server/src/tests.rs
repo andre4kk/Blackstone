@@ -2848,4 +2848,131 @@ mod ground_items {
         assert_eq!(moves.last().unwrap().body, last.body);
         assert!(sent[&1].iter().any(|p| p.id == id::SET_ACTOR_MOTION), "la caduta cambia la velocità");
     }
+
+    /// Alice (1, i piedi a y = 10) con l'inventario vuoto e un oggetto `count` pietre ai suoi piedi, pronto da raccogliere.
+    fn pickup_setup(mode: GameMode, count: u16) -> (Harness, u64) {
+        let mut h = setup(mode);
+        let alice = h.server.players.get_mut(&1).unwrap();
+        (0..crate::inventory::MAIN_SLOTS).for_each(|i| alice.inventory.set_main(i, crate::inventory::Item::default()));
+        let item = crate::inventory::Item { id: stone_id(), count, ..Default::default() };
+        let id = h.server.spawn_item(item, [EYES[0], EYES[1] - 1.62, EYES[2]], [0.0; 3], 0);
+        h.server.visibility_tick();
+        h.packets_by_player();
+        (h, id)
+    }
+
+    fn stone_id() -> i16 {
+        registry::items().id("minecraft:stone").unwrap()
+    }
+
+    fn carried(h: &Harness, pid: u64) -> u32 {
+        (0..crate::inventory::MAIN_SLOTS).map(|i| h.server.players[&pid].inventory.main(i)).filter(|i| i.id == stone_id()).map(|i| i.count as u32).sum()
+    }
+
+    #[test]
+    fn pickup_adds_to_inventory_and_removes_the_entity() {
+        for mode in [GameMode::Survival, GameMode::Creative, GameMode::Adventure] {
+            let (mut h, id) = pickup_setup(mode, 5);
+            h.server.pickup_tick();
+            assert!(h.server.entities.get(id).is_none(), "{mode:?}");
+            assert_eq!(carried(&h, 1), 5, "{mode:?}");
+            let sent = h.packets_by_player();
+            let take = bedrock_protocol::entity::take_item_actor(id, 1);
+            assert!(sent[&1].iter().any(|p| p.id == take.id && p.body == take.body), "{mode:?}: il raccoglitore vede l'animazione");
+            assert!(sent[&2].iter().any(|p| p.id == take.id && p.body == take.body), "{mode:?}: Bob pure");
+            assert!(sent[&1].iter().any(|p| p.id == id::INVENTORY_SLOT), "{mode:?}: la casella cambiata");
+            assert!(sent[&2].iter().any(|p| p.id == id::REMOVE_ACTOR));
+            assert!(sent.get(&3).is_none_or(|v| v.iter().all(|p| p.id != take.id)), "Carol non vede nulla");
+        }
+    }
+
+    #[test]
+    fn pickup_in_the_held_slot_shows_the_item_to_viewers() {
+        let (mut h, _) = pickup_setup(GameMode::Survival, 3);
+        h.server.pickup_tick();
+        let sent = h.packets_by_player();
+        assert!(sent[&2].iter().any(|p| p.id == id::MOB_EQUIPMENT));
+    }
+
+    #[test]
+    fn full_inventory_leaves_the_item() {
+        let (mut h, id) = pickup_setup(GameMode::Survival, 5);
+        let dirt = registry::items().id("minecraft:dirt").unwrap();
+        let alice = h.server.players.get_mut(&1).unwrap();
+        (0..crate::inventory::MAIN_SLOTS).for_each(|i| alice.inventory.set_main(i, crate::inventory::Item { id: dirt, count: 64, ..Default::default() }));
+        h.server.pickup_tick();
+        assert!(h.server.entities.get(id).is_some());
+        assert!(h.packets_by_player().is_empty());
+    }
+
+    #[test]
+    fn partial_pickup_leaves_the_rest() {
+        let (mut h, id) = pickup_setup(GameMode::Survival, 10);
+        let dirt = registry::items().id("minecraft:dirt").unwrap();
+        let alice = h.server.players.get_mut(&1).unwrap();
+        (0..crate::inventory::MAIN_SLOTS).for_each(|i| alice.inventory.set_main(i, crate::inventory::Item { id: dirt, count: 64, ..Default::default() }));
+        alice.inventory.set_main(9, crate::inventory::Item { id: stone_id(), count: 60, ..Default::default() });
+        h.server.pickup_tick();
+        assert_eq!(carried(&h, 1), 64);
+        assert_eq!(items(&h), vec![(id, 6, h.server.entities.get(id).unwrap().pos, [0.0; 3])]);
+    }
+
+    #[test]
+    fn two_players_on_the_same_item_only_one_gets_it() {
+        let (mut h, id) = pickup_setup(GameMode::Survival, 5);
+        h.server.players.get_mut(&2).unwrap().pos = EYES;
+        h.server.pickup_tick();
+        assert_eq!(carried(&h, 1) + carried(&h, 2), 5);
+        assert_eq!((carried(&h, 1), carried(&h, 2)), (5, 0), "vince il pid più basso");
+        assert!(h.server.entities.get(id).is_none());
+    }
+
+    #[test]
+    fn two_players_split_a_partially_taken_item_without_duplicating() {
+        let (mut h, _) = pickup_setup(GameMode::Survival, 10);
+        h.server.players.get_mut(&2).unwrap().pos = EYES;
+        let dirt = registry::items().id("minecraft:dirt").unwrap();
+        let alice = h.server.players.get_mut(&1).unwrap();
+        (0..crate::inventory::MAIN_SLOTS).for_each(|i| alice.inventory.set_main(i, crate::inventory::Item { id: dirt, count: 64, ..Default::default() }));
+        alice.inventory.set_main(9, crate::inventory::Item { id: stone_id(), count: 60, ..Default::default() });
+        h.server.pickup_tick();
+        assert_eq!(carried(&h, 1) + carried(&h, 2) + items(&h).iter().map(|i| i.1 as u32).sum::<u32>(), 70);
+        assert_eq!((carried(&h, 1), carried(&h, 2)), (64, 6));
+    }
+
+    #[test]
+    fn pickup_waits_for_the_delay_and_the_reach() {
+        let (mut h, id) = pickup_setup(GameMode::Survival, 5);
+        let EntityKind::Item { pickup_at, .. } = &mut h.server.entities.get_mut(id).unwrap().kind else { panic!("oggetto") };
+        *pickup_at = h.server.tick_count + 2;
+        h.server.pickup_tick();
+        h.server.tick_count += 1;
+        h.server.pickup_tick();
+        assert!(h.server.entities.get(id).is_some(), "ritardo non ancora passato");
+        h.server.tick_count += 1;
+        h.server.players.get_mut(&1).unwrap().pos[0] += 2.0; // oltre 1 + 0.3 + 0.125 di distanza
+        h.server.pickup_tick();
+        assert!(h.server.entities.get(id).is_some(), "troppo lontano");
+        h.server.players.get_mut(&1).unwrap().pos[0] -= 1.0; // dentro il riquadro allargato
+        h.server.pickup_tick();
+        assert!(h.server.entities.get(id).is_none());
+    }
+
+    #[test]
+    fn spectators_do_not_pick_up() {
+        let (mut h, id) = pickup_setup(GameMode::Spectator, 5);
+        h.server.pickup_tick();
+        assert!(h.server.entities.get(id).is_some());
+        assert_eq!(carried(&h, 1), 0);
+    }
+
+    #[test]
+    fn cancelled_pickup_leaves_everything() {
+        let (mut h, id) = pickup_setup(GameMode::Survival, 5);
+        h.server.hooks.push(Box::new(|a| !matches!(a, WorldAction::PickupItem { .. })));
+        h.server.pickup_tick();
+        assert!(h.server.entities.get(id).is_some());
+        assert_eq!(carried(&h, 1), 0);
+        assert!(h.packets_by_player().is_empty());
+    }
 }

@@ -249,7 +249,15 @@ impl Inventory {
     /// Il pacchetto `InventorySlot` con la casella in mano com'è per il server (anche vuota): serve a riallineare il client
     /// quando ha previsto qualcosa di diverso (un oggetto consumato, un'altra casella in mano).
     pub fn held_slot_packet(&self) -> Packet {
-        let loc = Loc::Main(self.selected);
+        self.slot_packet(Loc::Main(self.selected))
+    }
+
+    /// Il pacchetto `InventorySlot` per una casella nominata dal client (`None` se non esiste).
+    pub fn slot_packet_at(&self, container: u8, slot: u8) -> Option<Packet> {
+        Loc::resolve(container, slot).map(|loc| self.slot_packet(loc))
+    }
+
+    fn slot_packet(&self, loc: Loc) -> Packet {
         let (window, index, name) = loc.window();
         InventorySlot {
             container_id: window as u8,
@@ -493,6 +501,47 @@ impl Inventory {
         }
         self.put(run, src.container, src.slot, loc, a.with_count(a.count - count));
         Ok(a.with_count(count))
+    }
+
+    /// Vero se `add` metterebbe almeno un oggetto di `item` nell'inventario (una pila uguale non piena o una casella vuota).
+    pub fn accepts(&self, item: &Item) -> bool {
+        !item.is_empty() && self.contents.main.iter().any(|s| s.item.is_empty() || (s.item.stacks_with(item) && s.item.count < MAX_STACK))
+    }
+
+    /// Raccoglie `item` nell'inventario: prima riempie le pile uguali, poi le caselle vuote, sempre dalla barra verso l'alto.
+    /// Restituisce il resto che non ci sta (vuoto se è entrato tutto) e le caselle cambiate, come (contenitore, casella) per `slot_packet_at`.
+    /// Ogni casella cambiata prende un ID di pila nuovo.
+    pub fn add(&mut self, item: Item) -> (Item, Vec<(u8, u8)>) {
+        let mut left = item.count;
+        let mut changed = Vec::new();
+        if item.is_empty() {
+            return (item, changed);
+        }
+        for pass_empty in [false, true] {
+            for i in 0..MAIN_SLOTS {
+                if left == 0 {
+                    break;
+                }
+                let slot = &self.contents.main[i].item;
+                let room = if pass_empty && slot.is_empty() {
+                    MAX_STACK
+                } else if !pass_empty && !slot.is_empty() && slot.stacks_with(&item) {
+                    MAX_STACK.saturating_sub(slot.count)
+                } else {
+                    0
+                };
+                let moved = room.min(left);
+                if moved == 0 {
+                    continue;
+                }
+                left -= moved;
+                let total = self.contents.main[i].item.count * u16::from(!pass_empty) + moved;
+                let stack_id = self.new_id();
+                self.contents.main[i] = Slot { item: item.with_count(total), stack_id };
+                changed.push((INVENTORY_CONTAINER, i as u8));
+            }
+        }
+        (if left == 0 { Item::default() } else { item.with_count(left) }, changed)
     }
 
     /// Rimette in una casella un oggetto buttato che un gancio ha annullato. Se nel frattempo la casella contiene altro, l'oggetto va
@@ -837,5 +886,34 @@ mod tests {
         let stone_slot = &packets[1].body;
         assert_eq!(&stone_slot[..3], [0, 0, 1], "finestra 0, casella 0, nome del contenitore presente");
         assert_eq!(&packets[2].body[..2], [window::UI as u8, 0]);
+    }
+
+    #[test]
+    fn add_fills_equal_stacks_then_empty_slots_hotbar_first() {
+        let mut inv = Inventory::default();
+        give(&mut inv, 3, "minecraft:stone", 60);
+        give(&mut inv, 20, "minecraft:stone", 10);
+        let (rest, changed) = inv.add(Item { id: stone(), count: 80, ..Default::default() });
+        // 4 nella casella 3, 54 nella 20, poi 22 nella prima vuota (la 0)
+        assert!(rest.is_empty());
+        assert_eq!(changed, vec![(INVENTORY_CONTAINER, 3), (INVENTORY_CONTAINER, 20), (INVENTORY_CONTAINER, 0)]);
+        assert_eq!((inv.main(3).count, inv.main(20).count, inv.main(0).count), (64, 64, 22));
+        assert!(changed.iter().all(|&(c, s)| inv.stack_at(c, s).unwrap().net_id.is_some_and(|id| id > 0)));
+    }
+
+    #[test]
+    fn add_returns_the_rest_when_full_and_skips_other_kinds() {
+        let mut inv = Inventory::default();
+        let dirt = registry::items().id("minecraft:dirt").unwrap();
+        for i in 0..MAIN_SLOTS {
+            inv.set_main(i, Item { id: dirt, count: 64, ..Default::default() });
+        }
+        inv.set_main(7, Item { id: stone(), count: 63, ..Default::default() });
+        let stones = Item { id: stone(), count: 5, ..Default::default() };
+        assert!(inv.accepts(&stones));
+        let (rest, changed) = inv.add(stones.clone());
+        assert_eq!((rest.count, changed), (4, vec![(INVENTORY_CONTAINER, 7)]));
+        assert!(!inv.accepts(&stones));
+        assert_eq!(inv.add(stones.clone()), (stones, vec![]));
     }
 }

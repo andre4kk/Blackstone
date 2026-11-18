@@ -2,12 +2,16 @@
 //! I valori sono quelli di Dragonfly (`entity/item_behaviour.go`, `entity/movement.go`). La posizione di un oggetto è quella dei suoi piedi
 //! (il riquadro è 0.25 x 0.25); il client la vede 0.125 più in alto (vedi `Entity::network_pos`).
 use crate::{
-    entity::{Entity, EntityKind},
+    entity::{armor_of, Entity, EntityKind},
+    events::WorldAction,
     inventory::Item,
     placement::{neighbors::solid_face, UP},
-    Server,
+    GameMode, Server,
 };
-use bedrock_protocol::entity::set_actor_motion;
+use bedrock_protocol::{
+    entity::{set_actor_motion, take_item_actor},
+    Packet,
+};
 use vgen::Dim;
 
 /// Quanto la velocità verticale cala a ogni tick.
@@ -159,6 +163,71 @@ impl Server {
             if direction_changed(velocity, result.velocity) {
                 self.broadcast_to_viewers(id, &[set_actor_motion(id, result.velocity)]);
             }
+        }
+    }
+}
+
+/// Il riquadro del giocatore (0.6 x 1.8 dai piedi) si allarga di tanto in orizzontale e in verticale per raccogliere.
+const PICKUP_REACH_XZ: f32 = 1.0;
+const PICKUP_REACH_Y: f32 = 0.5;
+const PLAYER_HALF_WIDTH: f32 = 0.3;
+const PLAYER_HEIGHT: f32 = 1.8;
+/// Altezza degli occhi sopra i piedi (la posizione del giocatore sono gli occhi).
+const EYE_HEIGHT: f32 = 1.62;
+
+impl Server {
+    /// Chi cammina sugli oggetti a terra li raccoglie: il riquadro del giocatore allargato tocca quello dell'oggetto e il ritardo è passato.
+    /// Gli spettatori non raccolgono. Si procede per giocatore (ID crescente) e per oggetto (ID crescente), togliendo o riducendo l'oggetto
+    /// prima di passare oltre: lo stesso oggetto non va mai a due giocatori. Un oggetto che non ci sta resta a terra con il resto.
+    pub(crate) fn pickup_tick(&mut self) {
+        let mut pids: Vec<u64> = self.players.iter().filter(|(_, p)| p.spawned && p.mode != GameMode::Spectator).map(|(&pid, _)| pid).collect();
+        pids.sort_unstable();
+        let mut ids: Vec<u64> = self.entities.iter().filter(|e| matches!(e.kind, EntityKind::Item { .. })).map(|e| e.id).collect();
+        ids.sort_unstable();
+        for pid in pids {
+            let feet = self.players[&pid].pos[1] - EYE_HEIGHT;
+            let [x, z] = [self.players[&pid].pos[0], self.players[&pid].pos[2]];
+            // orizzontale: l'asse dell'oggetto (± mezza larghezza) contro quello del giocatore allargato
+            let near = |c: f32, o: f32| (o - c).abs() <= PLAYER_HALF_WIDTH + PICKUP_REACH_XZ + HALF_WIDTH;
+            for &id in &ids {
+                let Some(Entity { kind: EntityKind::Item { item, pickup_at, .. }, pos, .. }) = self.entities.get(id) else { continue };
+                if self.tick_count < *pickup_at {
+                    continue;
+                }
+                let touches = near(x, pos[0]) && near(z, pos[2]) && {
+                    // verticale: [piedi - 0.5, piedi + 1.8 + 0.5] contro [pos, pos + 0.25]
+                    pos[1] <= feet + PLAYER_HEIGHT + PICKUP_REACH_Y && pos[1] + HEIGHT >= feet - PICKUP_REACH_Y
+                };
+                let item = item.clone();
+                if !touches || !self.players[&pid].inventory.accepts(&item) {
+                    continue;
+                }
+                if !self.allow(&WorldAction::PickupItem { pid, entity: id, item: item.clone() }) {
+                    continue;
+                }
+                self.take_item(pid, id, item);
+            }
+        }
+    }
+
+    /// Il giocatore prende `item` dall'entità `id`: entra nell'inventario quel che ci sta; se resta qualcosa l'oggetto a terra si riduce.
+    fn take_item(&mut self, pid: u64, id: u64, item: Item) {
+        let Some(p) = self.players.get_mut(&pid) else { return };
+        let (held, armor) = (p.inventory.held().stack(0), armor_of(p));
+        let (rest, changed) = p.inventory.add(item);
+        let slots: Vec<Packet> = changed.iter().filter_map(|&(container, slot)| p.inventory.slot_packet_at(container, slot)).collect();
+        self.send(pid, &slots);
+        self.send_equipment_changes(pid, &held, &armor);
+        if rest.is_empty() {
+            // l'animazione parte prima della scomparsa; chi raccoglie la vede anche se il chunk dell'oggetto non è tra i suoi visibili
+            let take = [take_item_actor(id, pid)];
+            self.broadcast_to_viewers(id, &take);
+            if !self.players[&pid].visible.contains(&id) {
+                self.send(pid, &take);
+            }
+            self.despawn(id);
+        } else if let Some(Entity { kind: EntityKind::Item { item, .. }, .. }) = self.entities.get_mut(id) {
+            *item = rest;
         }
     }
 }
