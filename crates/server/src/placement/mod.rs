@@ -1,11 +1,12 @@
 //! Piazzamento dei blocchi: il client dice dove ha cliccato e cosa ha in mano, ma è il server a decidere (modalità, portata,
 //! oggetto in mano, spazio libero, ganci) e a rimandare lo stato vero se rifiuta. Qui c'è il ramo generico (D§5): lo stato
-//! del blocco si ricava dal clic con le regole di `rules`. Porte, letti e gli altri casi speciali arrivano con il loro modulo.
+//! del blocco si ricava dal clic con le regole di `rules`; i blocchi con regole proprie (porte, letti, mezze lastre, torce, piante...)
+//! passano da `special`, e `neighbors` aggiorna i blocchi accanto a ogni modifica (appoggi, connessioni, angoli).
 use crate::{
     breaking::in_reach,
     events::{BlockChange, WorldAction},
     inventory::Item,
-    registry::blocks,
+    registry::{self, blocks},
     GameMode, Server,
 };
 use bedrock_net::log;
@@ -16,7 +17,9 @@ use bedrock_protocol::{
 };
 use vgen::Dim;
 
+pub(crate) mod neighbors;
 pub(crate) mod rules;
+mod special;
 
 /// Facce, nell'ordine di Bedrock e di Dragonfly (`cube.Face`).
 pub(crate) const DOWN: u8 = 0;
@@ -111,8 +114,9 @@ fn is_water(hash: i32) -> bool {
     name_of(hash).is_some_and(|name| matches!(name, "water" | "flowing_water"))
 }
 
-/// Blocchi senza ingombro (o quasi) che non impediscono di piazzare sotto i piedi o la testa di qualcuno.
-/// Approssimazione per nome finché non ci sono i modelli dei blocchi: l'errore è sempre dalla parte di rifiutare di meno.
+/// Blocchi senza ingombro (o quasi) che non impediscono di piazzare sotto i piedi o la testa di qualcuno; porte e letti
+/// si piazzano comunque (`IgnoreBBox`, D§4.1 e D§4.2). Approssimazione per nome finché non ci sono i modelli dei blocchi:
+/// l'errore è sempre dalla parte di rifiutare di meno.
 fn passable(name: &str) -> bool {
     const SUFFIXES: [&str; 11] = ["torch", "sign", "banner", "button", "lever", "ladder", "vine", "vines", "rail", "carpet", "pressure_plate"];
     const EXACT: [&str; 14] = [
@@ -131,7 +135,14 @@ fn passable(name: &str) -> bool {
         "frame",
         "glow_frame",
     ];
-    SUFFIXES.iter().any(|s| name.ends_with(s)) || EXACT.contains(&name) || name.ends_with("_sapling") || name.ends_with("_tulip") || name.ends_with("coral_fan")
+    SUFFIXES.iter().any(|s| name.ends_with(s))
+        || EXACT.contains(&name)
+        || name.ends_with("_sapling")
+        || name.ends_with("_tulip")
+        || name.ends_with("coral_fan")
+        || name.ends_with("_door")
+        || name == "bed"
+        || neighbors::plant_kind(name).is_some_and(|plant| plant != neighbors::Plant::Cactus)
 }
 
 /// Vero se il blocco `hash` messo in `pos` si sovrappone al giocatore con quei piedi (0.6 × 1.8, D§6).
@@ -147,38 +158,63 @@ pub(crate) fn obstructs(hash: i32, pos: [i32; 3], feet: [f32; 3]) -> bool {
         && feet[1] as f64 + PLAYER_HEIGHT - MARGIN > pos[1] as f64
 }
 
+/// Un clic su un blocco sostituibile lo rimpiazza sul posto, come se si fosse cliccata la faccia superiore (`firstReplaceable`);
+/// altrimenti il blocco va accanto a quello cliccato. `None` se il blocco cliccato non è nel mondo caricato.
+fn normalize(ctx: &PlaceCtx, view: &impl BlockView) -> Option<PlaceCtx> {
+    let clicked = view.block(ctx.clicked)?;
+    Some(if replaceable(clicked) { PlaceCtx { clicked: side(ctx.clicked, DOWN), face: UP, ..*ctx } } else { *ctx })
+}
+
+impl PlaceCtx {
+    /// Lo stesso clic con un'altra faccia che porta alla stessa cella (la torcia che si appoggia a un altro lato, la lanterna appesa...).
+    fn with_face(&self, face: u8) -> PlaceCtx {
+        PlaceCtx { clicked: side(self.target(), face ^ 1), face, ..*self }
+    }
+}
+
+/// La modifica di `pos` a `hash`: se la cella ha acqua (nel secondo strato o come blocco) la tiene nel secondo strato.
+fn change_at(view: &impl BlockView, pos: [i32; 3], existing: i32, hash: i32) -> BlockChange {
+    BlockChange { pos, hash, water: is_water(existing) || view.water(pos) }
+}
+
 /// Piazza il blocco di `ctx.block` nella cella giusta: `None` se si rifiuta, altrimenti le celle da cambiare.
 /// Si rifiuta se: lo stato dell'oggetto è sconosciuto, il clic non è sul mondo caricato, la faccia non va bene per quel blocco,
-/// la cella non è libera (D§2: o è sostituibile, o si piazza accanto), c'è il giocatore, o il blocco è un caso speciale
-/// (due metà: porte, letti, piante alte) che il ramo generico non sa piazzare. Se la cella ha acqua, il blocco la tiene nel secondo strato.
+/// la cella non è libera (D§2: o è sostituibile, o si piazza accanto), c'è il giocatore, o il blocco ha due metà che nessun
+/// caso speciale sa piazzare. I blocchi con regole proprie (D§4) le applicano in `special`. Se la cella ha acqua, il blocco la tiene nel secondo strato.
 pub(crate) fn place(ctx: &PlaceCtx, view: &impl BlockView) -> Option<Vec<BlockChange>> {
     if ctx.face > EAST || !ctx.click.iter().chain(&ctx.feet).chain([&ctx.yaw]).all(|v| v.is_finite()) {
         return None;
     }
     let state = blocks().state(ctx.block)?;
+    if let Some(done) = special::place_special(ctx, view) {
+        return done;
+    }
     if state.get("upper_block_bit").is_some() || state.get("head_piece_bit").is_some() {
         return None;
     }
-    // Un blocco sostituibile si rimpiazza sul posto, come se si fosse cliccata la faccia superiore (`firstReplaceable`).
-    let clicked = view.block(ctx.clicked)?;
-    let ctx = if replaceable(clicked) { PlaceCtx { clicked: side(ctx.clicked, DOWN), face: UP, ..*ctx } } else { *ctx };
+    place_generic(&normalize(ctx, view)?, view)
+}
+
+/// Il ramo generico su un clic già normalizzato: un solo blocco, orientato dalle regole di `rules`.
+fn place_generic(ctx: &PlaceCtx, view: &impl BlockView) -> Option<Vec<BlockChange>> {
+    let state = blocks().state(ctx.block)?;
     let target = ctx.target();
     let existing = view.block(target)?;
     if !replaceable(existing) || !rules::face_allowed(&state.name, ctx.face) {
         return None;
     }
-    let placed = rules::orient(state, &ctx);
+    let placed = rules::orient(state, ctx);
     let hash = placed.hash();
     if hash == existing || obstructs(hash, target, ctx.feet) {
         return None;
     }
-    Some(vec![BlockChange { pos: target, hash, water: is_water(existing) || view.water(target) }])
+    Some(vec![change_at(view, target, existing, hash)])
 }
 
-/// Il mondo di una dimensione, per `place`.
-struct WorldView<'a> {
-    server: &'a Server,
-    dim: Dim,
+/// Il mondo di una dimensione, per `place` e per gli aggiornamenti dei vicini.
+pub(crate) struct WorldView<'a> {
+    pub(crate) server: &'a Server,
+    pub(crate) dim: Dim,
 }
 
 impl BlockView for WorldView<'_> {
@@ -189,6 +225,22 @@ impl BlockView for WorldView<'_> {
     fn water(&self, pos: [i32; 3]) -> bool {
         self.server.block_at(self.dim, pos).is_some_and(|(_, water)| water)
     }
+}
+
+/// Il blocco che l'oggetto in mano piazza: lo stato che porta, oppure (per porte e letti, che arrivano dal menu creativo senza
+/// stato, e per la canna da zucchero, il cui blocco ha un altro nome) lo stato di default del blocco corrispondente.
+/// `None` per la mano vuota e per gli oggetti che non piazzano nulla (il grano non è il suo seme).
+fn held_block(held: &Item) -> Option<i32> {
+    if held.is_empty() {
+        return None;
+    }
+    held.block.or_else(|| {
+        let name = registry::items().name(held.id)?;
+        let block = if name == "minecraft:sugar_cane" { "minecraft:reeds" } else { name };
+        let hash = registry::items().block_of(block)?;
+        let two_halves = blocks().state(hash).is_some_and(|s| s.get("upper_block_bit").is_some() || s.get("head_piece_bit").is_some());
+        (two_halves || block != name).then_some(hash)
+    })
 }
 
 impl Server {
@@ -207,7 +259,7 @@ impl Server {
         if !held.same_kind(&Item::kind_of(&u.held)) {
             return self.refuse_place(pid, u, "l'oggetto in mano non è quello del server");
         }
-        let Some(block) = held.block.filter(|_| !held.is_empty()) else { return };
+        let Some(block) = held_block(&held) else { return };
         let creative = mode == GameMode::Creative;
         if !matches!(mode, GameMode::Creative | GameMode::Survival) {
             return self.refuse_place(pid, u, "modalità senza modifica del mondo");
@@ -233,6 +285,10 @@ impl Server {
             return self.refuse_place(pid, u, "annullato da un gancio");
         }
         self.set_blocks(dim, &changes);
+        // il colore del letto sta nel suo block entity (D§4.2): è l'aux dell'oggetto
+        for c in changes.iter().filter(|c| name_of(c.hash) == Some("bed")) {
+            self.put_block_entity(dim, special::bed_entity(c.pos, held.aux));
+        }
         for p in self.players.values_mut() {
             // una rottura chiesta due volte nello stesso tick vale una, ma non se in mezzo la cella è stata riempita
             if p.last_break.is_some_and(|(_, pos)| changes.iter().any(|c| c.pos == pos)) {
@@ -270,17 +326,18 @@ impl Server {
     }
 }
 
+/// Un mondo finto per i test del piazzamento e dei vicini.
 #[cfg(test)]
-mod tests {
+pub(super) mod fake {
     use super::*;
-    use crate::world::{block_hash, State};
+    use crate::world::block_hash;
     use std::collections::{HashMap, HashSet};
 
     /// Un mondo di prova: le celle non elencate sono chunk non caricati.
     #[derive(Default)]
-    struct Fake {
-        blocks: HashMap<[i32; 3], i32>,
-        water: HashSet<[i32; 3]>,
+    pub(crate) struct Fake {
+        pub(crate) blocks: HashMap<[i32; 3], i32>,
+        pub(crate) water: HashSet<[i32; 3]>,
     }
 
     impl BlockView for Fake {
@@ -293,16 +350,36 @@ mod tests {
         }
     }
 
-    fn hash(name: &str) -> i32 {
+    impl Fake {
+        /// Applica le modifiche (come `Server::set_blocks`, ma senza vicini).
+        pub(crate) fn apply(&mut self, changes: &[BlockChange]) {
+            for c in changes {
+                self.blocks.insert(c.pos, c.hash);
+                if c.water {
+                    self.water.insert(c.pos);
+                } else {
+                    self.water.remove(&c.pos);
+                }
+            }
+        }
+
+        /// Lo stato del blocco in `pos`, senza il prefisso `minecraft:` nel nome.
+        pub(crate) fn name(&self, pos: [i32; 3]) -> String {
+            let state = blocks().state(self.blocks[&pos]).expect("stato noto");
+            state.name.strip_prefix("minecraft:").unwrap_or(&state.name).to_string()
+        }
+    }
+
+    pub(crate) fn hash(name: &str) -> i32 {
         blocks().default_hash(name).unwrap_or_else(|| panic!("{name} non esiste"))
     }
 
-    fn air() -> i32 {
+    pub(crate) fn air() -> i32 {
         block_hash("minecraft:air", &[])
     }
 
     /// Una pietra in (0, 10, 0), aria attorno (anche sopra e accanto), un giocatore lontano.
-    fn world() -> Fake {
+    pub(crate) fn world() -> Fake {
         let mut f = Fake::default();
         for x in -3..=3 {
             for y in 6..=14 {
@@ -314,6 +391,31 @@ mod tests {
         f.blocks.insert([0, 10, 0], hash("minecraft:stone"));
         f
     }
+
+    /// Un pavimento di pietra fino a y = 9 (le celle libere cominciano a y = 10), da -4 a 4 su x e z, aria sopra fino a y = 14.
+    pub(crate) fn floor() -> Fake {
+        let mut f = Fake::default();
+        for x in -4..=4 {
+            for z in -4..=4 {
+                for y in 6..=14 {
+                    f.blocks.insert([x, y, z], if y <= 9 { hash("minecraft:stone") } else { air() });
+                }
+            }
+        }
+        f
+    }
+
+    /// Un clic con quell'oggetto in mano, il giocatore lontano e rivolto a sud.
+    pub(crate) fn click(clicked: [i32; 3], face: u8, held: &str) -> PlaceCtx {
+        PlaceCtx { clicked, face, click: [0.5, 0.5, 0.5], yaw: 0.0, feet: [30.5, 10.0, 30.5], block: hash(held), sneaking: false }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::fake::{air, hash, world};
+    use super::*;
+    use crate::world::{block_hash, State};
 
     fn click(clicked: [i32; 3], face: u8, held: &str) -> PlaceCtx {
         PlaceCtx { clicked, face, click: [0.5, 0.5, 0.5], yaw: 0.0, feet: [3.5, 10.0, 3.5], block: hash(held), sneaking: false }
@@ -437,6 +539,20 @@ mod tests {
     }
 
     #[test]
+    fn items_without_a_state_place_their_default_block_only_when_needed() {
+        let item = |name: &str| Item { id: registry::items().id(name).unwrap(), count: 1, aux: 0, block: None, nbt: None };
+        let block = |name: &str| held_block(&item(name)).and_then(|h| blocks().state(h)).map(|s| s.name.clone());
+        assert_eq!(block("minecraft:wooden_door").as_deref(), Some("minecraft:wooden_door"));
+        assert_eq!(block("minecraft:bed").as_deref(), Some("minecraft:bed"));
+        assert_eq!(block("minecraft:sugar_cane").as_deref(), Some("minecraft:reeds"));
+        assert_eq!(block("minecraft:wheat"), None, "il grano non è il suo seme");
+        assert_eq!(block("minecraft:stick"), None);
+        let stone = Item { block: Some(hash("minecraft:dirt")), ..item("minecraft:stone") };
+        assert_eq!(held_block(&stone), Some(hash("minecraft:dirt")), "lo stato dell'oggetto vince");
+        assert_eq!(held_block(&Item::default()), None);
+    }
+
+    #[test]
     fn unknown_held_item_is_refused() {
         let f = world();
         let mut ctx = click([0, 10, 0], UP, "minecraft:cobblestone");
@@ -449,10 +565,14 @@ mod tests {
     }
 
     #[test]
-    fn blocks_with_two_halves_are_not_generic() {
+    fn blocks_with_two_halves_need_a_special_case() {
         let f = world();
-        for name in ["minecraft:wooden_door", "minecraft:bed", "minecraft:tall_grass", "minecraft:sunflower"] {
-            assert!(place(&click([0, 10, 0], UP, name), &f).is_none(), "{name}: lo piazzerà il caso speciale");
+        // quelli che hanno un caso speciale lo seguono (porte, letti, piante alte): qui un appoggio c'è per la porta, non per la testa del letto
+        assert_eq!(place(&click([0, 10, 0], UP, "minecraft:wooden_door"), &f).map(|c| c.len()), Some(2));
+        assert!(place(&click([0, 10, 0], UP, "minecraft:bed"), &f).is_none());
+        // ...gli altri il ramo generico li rifiuta
+        for name in ["minecraft:pitcher_plant", "minecraft:pale_moss_carpet", "minecraft:small_dripleaf_block", "minecraft:straw_bed"] {
+            assert!(place(&click([0, 10, 0], UP, name), &f).is_none(), "{name}: nessun caso speciale");
         }
     }
 

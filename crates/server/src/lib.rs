@@ -20,7 +20,7 @@ mod world;
 
 use bedrock_net::{log, Config, Event, Sender};
 use bedrock_protocol::{
-    generated::{BlockPos, UpdateBlock},
+    generated::{BlockActorData, BlockPos, UpdateBlock},
     wire::ServerPacket,
 };
 use bedrock_protocol::{login::PlayerInfo, Packet, Session};
@@ -114,6 +114,10 @@ const HEX_LOGS: u8 = 3;
 const TICK: Duration = Duration::from_millis(50);
 /// Quanti tick ricordare per calcolare i TPS reali.
 const TPS_WINDOW: usize = 100;
+
+/// Quanti giri di aggiornamento dei vicini dopo una modifica: la porta senza pavimento perde la metà bassa al primo,
+/// quella alta al secondo. Oltre non si va, così nessuna catena di reazioni può durare per sempre.
+const NEIGHBOR_ROUNDS: usize = 2;
 
 /// Ogni quanti tick i chunk modificati vanno al disco (1200 tick = 60 s).
 const AUTOSAVE_TICKS: u64 = 1200;
@@ -265,14 +269,35 @@ impl Server {
     }
 
     /// Applica le modifiche ai chunk in memoria (quelle fuori dal mondo o in chunk non caricati si scartano) e le manda
-    /// a chi ha quel chunk in `sent`: `UpdateBlock` per lo strato 0 (blocco) e per lo strato 1 (acqua o aria).
+    /// a chi ha quel chunk in `sent`: `UpdateBlock` per lo strato 0 (blocco) e per lo strato 1 (acqua o aria). Poi fa reagire
+    /// i vicini (vedi `placement::neighbors`): chi perde l'appoggio sparisce, muri e scale si ricalcolano, fino a `NEIGHBOR_ROUNDS` giri
+    /// (le conseguenze delle conseguenze). Tutte le modifiche del mondo (piazzamento, rottura, interazioni) passano da qui.
     pub(crate) fn set_blocks(&mut self, dim: Dim, changes: &[BlockChange]) {
+        let mut applied = self.apply_blocks(dim, changes);
+        for _ in 0..NEIGHBOR_ROUNDS {
+            let cells: Vec<[i32; 3]> = applied.iter().map(|c| c.pos).collect();
+            let extra = placement::neighbors::updates(&cells, &placement::WorldView { server: self, dim });
+            if extra.is_empty() {
+                break;
+            }
+            applied = self.apply_blocks(dim, &extra);
+        }
+    }
+
+    /// Scrive le modifiche nei chunk e le manda ai giocatori, senza far reagire i vicini. Restituisce quelle applicate
+    /// (le altre erano fuori dal mondo o in chunk non caricati). Un blocco che cambia nome perde il suo block entity.
+    fn apply_blocks(&mut self, dim: Dim, changes: &[BlockChange]) -> Vec<BlockChange> {
         let (min, max) = dim.height_range();
         let mut applied = Vec::with_capacity(changes.len());
         for c in changes.iter().filter(|c| (min..max).contains(&c.pos[1])) {
             let (cx, cz) = (c.pos[0].div_euclid(16), c.pos[2].div_euclid(16));
             let Some(chunk) = self.chunks.get_mut(&(dim as u8, cx, cz)) else { continue };
-            chunk.set_block(c.pos[0].rem_euclid(16) as usize, c.pos[1], c.pos[2].rem_euclid(16) as usize, c.hash, c.water);
+            let (lx, lz) = (c.pos[0].rem_euclid(16) as usize, c.pos[2].rem_euclid(16) as usize);
+            let old = chunk.block(lx, c.pos[1], lz);
+            chunk.set_block(lx, c.pos[1], lz, c.hash, c.water);
+            if old != c.hash && registry::blocks().state(old).map(|s| &s.name) != registry::blocks().state(c.hash).map(|s| &s.name) {
+                chunk.remove_block_entity(c.pos);
+            }
             if self.flat && chunk.fallback {
                 // il mondo piatto di ripiego si perde alla chiusura: la modifica resta in memoria ma il chunk non si salva
                 chunk.dirty = false;
@@ -280,7 +305,7 @@ impl Server {
                     log!("[mondo] mondo piatto di ripiego: le modifiche non si salvano");
                 }
             }
-            applied.push(((cx, cz), c));
+            applied.push(((cx, cz), *c));
         }
         for (&pid, player) in &self.players {
             let packets: Vec<Packet> =
@@ -288,6 +313,22 @@ impl Server {
             if !packets.is_empty() {
                 self.send(pid, &packets);
             }
+        }
+        applied.into_iter().map(|(_, c)| c).collect()
+    }
+
+    /// Mette (o sostituisce) il block entity di una cella e lo manda a chi vede il chunk (`BlockActorData`). Fuori dai chunk
+    /// in memoria non fa nulla.
+    pub(crate) fn put_block_entity(&mut self, dim: Dim, entity: vgen::BlockEntity) {
+        let (cx, cz) = (entity.x.div_euclid(16), entity.z.div_euclid(16));
+        let Some(chunk) = self.chunks.get_mut(&(dim as u8, cx, cz)) else { return };
+        let packet = BlockActorData { block_position: BlockPos { x: entity.x, y: entity.y, z: entity.z }, actor_data_tags: entity.nbt.clone() }.packet();
+        chunk.put_block_entity(entity);
+        if self.flat && chunk.fallback {
+            chunk.dirty = false;
+        }
+        for (&pid, _) in self.players.iter().filter(|(_, p)| p.sent.contains(&(cx, cz))) {
+            self.send(pid, std::slice::from_ref(&packet));
         }
     }
 

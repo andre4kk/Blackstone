@@ -224,6 +224,20 @@ impl Chunk {
         self.dirty = true;
     }
 
+    /// Mette il block entity di una cella (sostituisce quello che c'era) e segna il chunk come modificato.
+    pub fn put_block_entity(&mut self, entity: BlockEntity) {
+        self.block_entities.retain(|b| (b.x, b.y, b.z) != (entity.x, entity.y, entity.z));
+        self.block_entities.push(entity);
+        self.dirty = true;
+    }
+
+    /// Toglie il block entity di una cella, se c'è.
+    pub fn remove_block_entity(&mut self, pos: [i32; 3]) {
+        let before = self.block_entities.len();
+        self.block_entities.retain(|b| [b.x, b.y, b.z] != pos);
+        self.dirty |= self.block_entities.len() != before;
+    }
+
     /// Numero di sotto-chunk da annunciare: dalla sezione più bassa fino all'ultima non vuota (0 se il chunk è vuoto).
     pub fn sub_chunk_count(&self) -> u32 {
         self.sections.iter().rposition(Option::is_some).map_or(0, |i| i as u32 + 1)

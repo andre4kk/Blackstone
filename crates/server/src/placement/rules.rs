@@ -6,7 +6,7 @@ use crate::registry::{blocks, BlockState, StateValue};
 
 /// Direzione orizzontale, nell'ordine di Dragonfly (`cube.Direction`): nord, sud, ovest, est.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Dir {
+pub(super) enum Dir {
     North,
     South,
     West,
@@ -16,7 +16,7 @@ enum Dir {
 impl Dir {
     /// Verso dove guarda un giocatore con quella rotazione (0 = sud, 90 = ovest, -90 = est, 180 = nord), come `Rotation.Direction`.
     /// Gli angoli si riportano a [0, 360): 135 è ovest, 136 nord, 315 est (-45), 316 sud.
-    fn from_yaw(yaw: f32) -> Dir {
+    pub(super) fn from_yaw(yaw: f32) -> Dir {
         let y = yaw.rem_euclid(360.0);
         if y <= 45.0 || y > 315.0 {
             Dir::South
@@ -30,7 +30,7 @@ impl Dir {
     }
 
     /// La direzione di una faccia laterale (nord 2, sud 3, ovest 4, est 5); `None` per su e giù.
-    fn from_face(face: u8) -> Option<Dir> {
+    pub(super) fn from_face(face: u8) -> Option<Dir> {
         match face {
             NORTH => Some(Dir::North),
             SOUTH => Some(Dir::South),
@@ -40,7 +40,7 @@ impl Dir {
         }
     }
 
-    fn opposite(self) -> Dir {
+    pub(super) fn opposite(self) -> Dir {
         match self {
             Dir::North => Dir::South,
             Dir::South => Dir::North,
@@ -49,7 +49,7 @@ impl Dir {
         }
     }
 
-    fn rotate_right(self) -> Dir {
+    pub(super) fn rotate_right(self) -> Dir {
         match self {
             Dir::North => Dir::East,
             Dir::East => Dir::South,
@@ -58,11 +58,11 @@ impl Dir {
         }
     }
 
-    fn rotate_left(self) -> Dir {
+    pub(super) fn rotate_left(self) -> Dir {
         self.rotate_right().opposite()
     }
 
-    fn name(self) -> &'static str {
+    pub(super) fn name(self) -> &'static str {
         match self {
             Dir::North => "north",
             Dir::South => "south",
@@ -72,17 +72,22 @@ impl Dir {
     }
 
     /// Indice nell'ordine di Dragonfly (nord 0, sud 1, ovest 2, est 3).
-    fn index(self) -> i32 {
+    pub(super) fn index(self) -> i32 {
         self as i32
     }
 
+    /// La direzione con quell'indice di Dragonfly (0..3); `None` oltre.
+    pub(super) fn from_index(index: i32) -> Option<Dir> {
+        [Dir::North, Dir::South, Dir::West, Dir::East].get(usize::try_from(index).ok()?).copied()
+    }
+
     /// ID della faccia (2..5).
-    fn face(self) -> u8 {
+    pub(super) fn face(self) -> u8 {
         self as u8 + 2
     }
 
     /// Il valore "direction" di Bedrock (sud 0, ovest 1, nord 2, est 3).
-    fn legacy(self) -> i32 {
+    pub(super) fn legacy(self) -> i32 {
         match self {
             Dir::South => 0,
             Dir::West => 1,
@@ -92,12 +97,12 @@ impl Dir {
     }
 
     /// Vero per est e ovest.
-    fn is_x(self) -> bool {
+    pub(super) fn is_x(self) -> bool {
         matches!(self, Dir::West | Dir::East)
     }
 }
 
-const FACE_NAMES: [&str; 6] = ["down", "up", "north", "south", "west", "east"];
+pub(super) const FACE_NAMES: [&str; 6] = ["down", "up", "north", "south", "west", "east"];
 
 /// Asse della faccia: su e giù Y, ovest ed est X, nord e sud Z.
 fn face_axis(face: u8) -> &'static str {
@@ -114,13 +119,13 @@ fn orientation(yaw: f32) -> i32 {
 }
 
 /// Un valore da scrivere: numero (int o byte) o testo.
-enum V<'a> {
+pub(super) enum V<'a> {
     N(i32),
     S(&'a str),
 }
 
 /// Scrive `value` nello stato `key` se il blocco ha quella chiave e ammette quel valore; il tipo (byte, int, stringa) è quello dello stato.
-fn put(state: &mut BlockState, key: &str, value: V) {
+pub(super) fn put(state: &mut BlockState, key: &str, value: V) {
     let new = match (state.get(key), value) {
         (Some(StateValue::Int(_)), V::N(n)) => StateValue::Int(n),
         (Some(StateValue::Byte(_)), V::N(n)) => match u8::try_from(n) {

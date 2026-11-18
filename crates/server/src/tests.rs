@@ -1354,6 +1354,92 @@ mod placing {
         assert_eq!(h.server.players[&1].yaw, 120.0);
     }
 
+    /// Mette in mano ad Alice (casella 1) l'oggetto del menu creativo con quel nome e quell'aux.
+    fn hold_creative(h: &mut Harness, name: &str, aux: u32) {
+        let net_id = registry::creative().1.iter().position(|c| c.name == name && c.meta == aux).unwrap() as u32 + 1;
+        h.receive(1, &[stack_request_packet(|w| craft_and_place(w, -2, net_id, 1))]);
+        h.receive(1, &[mob_equipment(1, 1)]);
+        assert_eq!(h.server.players[&1].inventory.held().aux, aux, "{name}");
+    }
+
+    /// Il NBT di rete di un `BlockActorData`: la posizione e il compound letto.
+    fn block_actor(p: &Packet) -> ([i32; 3], crate::nbt::Tag) {
+        let mut r = Reader(&p.body);
+        let pos = r.block_pos().unwrap();
+        (pos, crate::nbt::Reader::new(r.0, crate::nbt::Enc::Network).root().expect("NBT di rete").1)
+    }
+
+    #[test]
+    fn bed_sends_block_actor_data_with_the_items_color() {
+        use bedrock_protocol::generated::BlockActorData;
+        let mut h = setup(GameMode::Creative);
+        // la testa, davanti ad Alice (guarda a sud), ha bisogno del suo appoggio
+        let support = [3, 10, 5];
+        h.server.set_blocks(Dim::Overworld, &[change(support, stone(), false)]);
+        hold_creative(&mut h, "minecraft:bed", 8);
+        drop(packets(&mut h.sent));
+        h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
+        let name = |pos| registry::blocks().state(h.server.block_at(Dim::Overworld, pos).unwrap().0).unwrap().name.clone();
+        assert_eq!((name(TOP), name([3, 11, 5])), ("minecraft:bed".to_string(), "minecraft:bed".to_string()));
+        // le due metà hanno il block entity con il colore dell'aux (8: grigio chiaro), nel chunk e mandate a chi lo vede
+        let chunk = &h.server.chunks[&(0, 0, 0)];
+        let mut entities: Vec<_> = chunk.block_entities.iter().map(|b| [b.x, b.y, b.z]).collect();
+        entities.sort();
+        assert_eq!(entities, [TOP, [3, 11, 5]]);
+        let out = packets(&mut h.sent);
+        let mut seen: Vec<_> = out.iter().filter(|(_, p)| p.id == BlockActorData::ID).map(|(to, p)| (*to, block_actor(p))).collect();
+        seen.sort_by_key(|(to, (pos, _))| (*to, *pos));
+        assert_eq!(
+            seen.iter().map(|(to, (pos, _))| (*to, *pos)).collect::<Vec<_>>(),
+            [(1, TOP), (1, [3, 11, 5]), (2, TOP), (2, [3, 11, 5])],
+            "Alice e Bob, non Carol"
+        );
+        for (_, (_, tag)) in &seen {
+            assert_eq!(tag.get("id").and_then(crate::nbt::Tag::as_str), Some("Bed"));
+            assert_eq!(tag.get("color"), Some(&crate::nbt::Tag::Byte(8)));
+        }
+        assert!(h.server.chunks[&(0, 0, 0)].dirty, "il chunk si salva");
+        // il chunk che si manda dopo porta i block entity nel suo payload
+        let payload = h.server.chunks[&(0, 0, 0)].network_bytes();
+        assert!(payload.windows(3).any(|w| w == b"Bed"), "il letto sta nei dati del chunk");
+        // rotto un pezzo, l'altro sparisce con il suo block entity
+        h.receive(1, &[destroy(TOP)]);
+        assert_eq!((h.server.block_at(Dim::Overworld, TOP), h.server.block_at(Dim::Overworld, [3, 11, 5])), (Some((air(), false)), Some((air(), false))));
+        assert!(h.server.chunks[&(0, 0, 0)].block_entities.is_empty());
+        let removed: Vec<_> = updates(&mut h.sent).into_iter().filter(|(to, pos, _, _, layer)| *to == 2 && *layer == 0 && *pos == [3, 11, 5]).collect();
+        assert_eq!(removed.len(), 1, "anche Bob vede sparire la testa");
+    }
+
+    #[test]
+    fn breaking_the_support_removes_what_it_held() {
+        let mut h = setup(GameMode::Creative);
+        let standing = registry::blocks().state(registry::blocks().default_hash("minecraft:torch").unwrap()).unwrap();
+        let torch = standing.with("torch_facing_direction", registry::StateValue::Str("top".into())).hash();
+        h.server.set_blocks(Dim::Overworld, &[change(TOP, torch, false)]);
+        assert_eq!(h.server.block_at(Dim::Overworld, TOP), Some((torch, false)), "la torcia regge sulla pietra");
+        drop(packets(&mut h.sent));
+        h.receive(1, &[destroy(ROCK)]);
+        assert_eq!(h.server.block_at(Dim::Overworld, ROCK), Some((air(), false)));
+        assert_eq!(h.server.block_at(Dim::Overworld, TOP), Some((air(), false)), "senza appoggio la torcia sparisce");
+        let seen: Vec<_> =
+            updates(&mut h.sent).into_iter().filter(|(to, _, _, _, layer)| *to == 2 && *layer == 0).map(|(_, pos, hash, _, _)| (pos, hash)).collect();
+        assert_eq!(seen, [(ROCK, air() as u32), (TOP, air() as u32)], "Bob vede sparire la pietra e la torcia");
+    }
+
+    #[test]
+    fn placing_a_block_next_to_a_wall_reconnects_it() {
+        let mut h = setup(GameMode::Creative);
+        let wall = registry::blocks().default_hash("minecraft:cobblestone_wall").unwrap();
+        h.server.set_blocks(Dim::Overworld, &[change(TOP, wall, false)]);
+        drop(packets(&mut h.sent));
+        // un blocco pieno accanto al muro: il muro si ricalcola e il client lo sa
+        h.server.set_blocks(Dim::Overworld, &[change([4, 11, 4], stone(), false)]);
+        let state = registry::blocks().state(h.server.block_at(Dim::Overworld, TOP).unwrap().0).unwrap();
+        assert_eq!(state.get("wall_connection_type_east"), Some(&registry::StateValue::Str("short".into())));
+        let wall_update = updates(&mut h.sent).into_iter().filter(|(to, pos, ..)| *to == 1 && *pos == TOP).count();
+        assert_eq!(wall_update, 2, "Alice ha ricevuto il muro ricalcolato (strato 0 e 1)");
+    }
+
     #[test]
     fn placed_blocks_follow_the_players_yaw() {
         let mut h = setup(GameMode::Creative);
