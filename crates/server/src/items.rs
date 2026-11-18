@@ -132,7 +132,18 @@ impl Server {
         for id in ids {
             let Some(Entity { kind: EntityKind::Item { despawn_at, velocity, .. }, pos, on_ground, .. }) = self.entities.get(id) else { continue };
             let (despawn_at, velocity, pos, on_ground) = (*despawn_at, *velocity, *pos, *on_ground);
-            if self.tick_count >= despawn_at || pos[1] < WORLD_BOTTOM {
+            if self.tick_count >= despawn_at {
+                self.despawn(id);
+                continue;
+            }
+            // Come nel gioco vero, un oggetto in un chunk non in memoria (o diretto verso uno) è fermo: niente caduta, movimento o
+            // scomparsa sotto il mondo (il suo tempo di vita invece scorre). Altrimenti uscirebbe dal mondo "attraverso l'aria".
+            let loaded =
+                |p: [f32; 3]| self.chunks.contains_key(&(Dim::Overworld as u8, (p[0].floor() as i32).div_euclid(16), (p[2].floor() as i32).div_euclid(16)));
+            if !loaded(pos) || !loaded([pos[0] + velocity[0], pos[1], pos[2] + velocity[2]]) {
+                continue;
+            }
+            if pos[1] < WORLD_BOTTOM {
                 self.despawn(id);
                 continue;
             }

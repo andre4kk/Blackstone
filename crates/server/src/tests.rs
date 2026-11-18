@@ -2783,6 +2783,29 @@ mod ground_items {
     }
 
     #[test]
+    fn item_in_an_unloaded_chunk_is_frozen_and_not_lost() {
+        let (mut h, id) = item_over_stone();
+        for _ in 0..40 {
+            h.server.items_tick();
+        }
+        let resting = h.server.entities.get(id).unwrap().pos;
+        let chunk = h.server.chunks.remove(&(0, 0, 0)).unwrap();
+        for _ in 0..200 {
+            h.server.items_tick();
+        }
+        assert_eq!(h.server.entities.get(id).expect("l'oggetto non si perde").pos, resting);
+        h.server.chunks.insert((0, 0, 0), chunk);
+        h.server.items_tick();
+        let e = h.server.entities.get(id).unwrap();
+        assert!(e.on_ground && e.pos == resting, "di nuovo simulato, sempre appoggiato");
+        // il tempo di vita scorre anche da fermo
+        h.server.chunks.remove(&(0, 0, 0));
+        h.server.tick_count += 6000;
+        h.server.items_tick();
+        assert!(h.server.entities.get(id).is_none());
+    }
+
+    #[test]
     fn item_despawns_after_6000_ticks() {
         let (mut h, id) = item_over_stone();
         for _ in 0..5999 {
