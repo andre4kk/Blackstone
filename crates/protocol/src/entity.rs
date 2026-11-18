@@ -212,6 +212,25 @@ pub fn animate_swing(runtime_id: u64) -> Packet {
     animate(1, runtime_id, 0.0, None, 0)
 }
 
+/// Eventi di `ActorEvent` (`packet/actor_event.go` di gophertunnel v1.63.0, `ActorEventJump = iota + 1`).
+pub mod actor_event_type {
+    /// L'entità subisce un colpo (animazione di danno, rossore).
+    pub const HURT: u8 = 2;
+    /// L'entità muore.
+    pub const DEATH: u8 = 3;
+}
+
+/// `ActorEvent` (27) come `ActorEvent.Marshal` di gophertunnel v1.63.0: ID di runtime (varint), evento u8, dato varint32 e posizione
+/// opzionale (qui sempre assente: vale la posizione dell'entità).
+pub fn actor_event(runtime_id: u64, event: u8, data: i32) -> Packet {
+    let mut w = Writer::default();
+    w.var_u64(runtime_id);
+    w.u8(event);
+    w.var_i32(data);
+    w.bool(false);
+    Packet::new(id::ACTOR_EVENT, w.0)
+}
+
 /// `SetActorMotion` (40), al tick 0 (non riguarda il giocatore che controlla).
 pub fn set_actor_motion(runtime_id: u64, velocity: [f32; 3]) -> Packet {
     SetActorMotion { target_runtime_id: runtime_id, motion: vec3(velocity), tick: 0 }.packet()
@@ -308,6 +327,15 @@ mod tests {
         expected.extend(f32s(&[1.0, 2.0, 3.0, 0.0, 0.5, 0.0]));
         expected.extend([0, 0]); // nessun dato, non da pesca
         assert_eq!(p.body, expected);
+    }
+
+    #[test]
+    fn actor_event_layout() {
+        // gophertunnel: ID di runtime varint, evento u8, dato varint32 (zigzag), posizione opzionale assente
+        let p = actor_event(7, actor_event_type::HURT, 0);
+        assert_eq!((p.id, p.body), (id::ACTOR_EVENT, vec![7, 2, 0, 0]));
+        let p = actor_event(300, actor_event_type::DEATH, -1);
+        assert_eq!(p.body, vec![0xAC, 0x02, 3, 1, 0]);
     }
 
     #[test]

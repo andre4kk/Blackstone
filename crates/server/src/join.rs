@@ -5,7 +5,7 @@ use crate::{
     playerdata::{self, PlayerData, EYE_HEIGHT},
     registry::{self, CreativeItem},
     streaming::chunk_of,
-    DataState, GameMode, Server,
+    survival, DataState, GameMode, Player, Server,
 };
 use bedrock_net::log;
 use bedrock_protocol::{
@@ -168,10 +168,9 @@ fn creative_descriptor(c: &CreativeItem) -> NetworkItemInstanceDescriptorData {
     }
 }
 
-/// Attributi del giocatore che il client usa per prevedere il movimento (velocità) e per vita e fame, con i valori vanilla.
-/// Senza questo pacchetto il client non riceve mai la velocità di camminata: Dragonfly lo manda subito dopo `StartGame`.
-pub(crate) fn spawn_attributes(runtime_id: u64) -> UpdateAttributes {
-    let attribute = |name: &str, value: f32, max: f32, default: f32| AttributeData {
+/// Un attributo con minimo 0 e valore di partenza `default`.
+fn attribute(name: &str, value: f32, max: f32, default: f32) -> AttributeData {
+    AttributeData {
         min_value: 0.0,
         max_value: max,
         current_value: value,
@@ -180,18 +179,26 @@ pub(crate) fn spawn_attributes(runtime_id: u64) -> UpdateAttributes {
         default_value: default,
         name: name.into(),
         modifiers: Vec::new(),
-    };
-    UpdateAttributes {
-        target_runtime_id: runtime_id,
-        attribute_list: vec![
-            attribute("minecraft:movement", 0.1, f32::MAX, 0.1),
-            attribute("minecraft:health", 20.0, 20.0, 20.0),
-            attribute("minecraft:player.hunger", 20.0, 20.0, 20.0),
-            attribute("minecraft:player.saturation", 5.0, 20.0, 5.0),
-            attribute("minecraft:player.exhaustion", 0.0, 5.0, 0.0),
-        ],
-        tick: 0,
     }
+}
+
+/// Vita, fame, saturazione ed esaurimento di `p`, con i massimi vanilla. La vita viaggia arrotondata per eccesso, come in Dragonfly
+/// (`SendHealth`): il client mostra cuori interi.
+pub(crate) fn vitals_attributes(p: &Player) -> Vec<AttributeData> {
+    vec![
+        attribute("minecraft:health", p.health.ceil(), survival::MAX_HEALTH, survival::MAX_HEALTH),
+        attribute("minecraft:player.hunger", p.food as f32, survival::MAX_FOOD as f32, survival::MAX_FOOD as f32),
+        attribute("minecraft:player.saturation", p.saturation, survival::MAX_FOOD as f32, survival::START_SATURATION),
+        attribute("minecraft:player.exhaustion", p.exhaustion, 5.0, 0.0),
+    ]
+}
+
+/// Attributi del giocatore che il client usa per prevedere il movimento (velocità) e per vita e fame, coi valori attuali di `p`.
+/// Senza questo pacchetto il client non riceve mai la velocità di camminata: Dragonfly lo manda subito dopo `StartGame`.
+pub(crate) fn spawn_attributes(runtime_id: u64, p: &Player) -> UpdateAttributes {
+    let mut attribute_list = vec![attribute("minecraft:movement", 0.1, f32::MAX, 0.1)];
+    attribute_list.extend(vitals_attributes(p));
+    UpdateAttributes { target_runtime_id: runtime_id, attribute_list, tick: 0 }
 }
 
 /// Menu creativo completo (uguale per tutti: net id = indice + 1, come Dragonfly). Le icone dei gruppi non possono essere aria
@@ -246,6 +253,7 @@ impl Server {
                     log!("[#{pid}] posizione salvata non utilizzabile (dimensione {}): parte dallo spawn", d.dim);
                 }
                 (p.mode, p.yaw, p.pitch, p.inventory) = (d.mode, d.yaw, d.pitch, d.inventory);
+                (p.health, p.food, p.saturation, p.exhaustion) = (d.health, d.food, d.saturation, d.exhaustion);
             }
         }
         self.start_game(pid);
@@ -358,7 +366,8 @@ impl Server {
         if !skip("creative") {
             packets.push(creative_packet().clone());
         }
-        packets.push(spawn_attributes(pid).packet());
+        let attributes = self.players.get(&pid).map(|p| spawn_attributes(pid, p).packet());
+        packets.extend(attributes);
         if !skip("metadata") {
             packets.push(bedrock_protocol::actor::set_actor_data(pid, &self.entity_data(pid)));
             // gravità, collisioni, arrampicata: senza, il giocatore non cade

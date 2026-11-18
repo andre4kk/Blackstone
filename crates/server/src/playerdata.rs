@@ -9,6 +9,7 @@ use crate::{
     nbt::{write_root, Enc, Reader, Tag},
     registry,
     storage::{block_from_tag, BLOCK_STATE_VERSION},
+    survival::{MAX_FOOD, MAX_HEALTH, MAX_SATURATION, START_SATURATION},
     DataState, GameMode, Player,
 };
 use bedrock_net::log;
@@ -26,6 +27,11 @@ pub(crate) struct PlayerData {
     pub dim: i32,
     pub mode: GameMode,
     pub inventory: Inventory,
+    /// Vita e fame: se mancano nei dati salvati valgono i valori pieni (`survival`).
+    pub health: f32,
+    pub food: u8,
+    pub saturation: f32,
+    pub exhaustion: f32,
 }
 
 /// Intero di un tag numerico qualunque (i mondi veri usano Byte, Short o Int a seconda del campo).
@@ -148,6 +154,11 @@ impl PlayerData {
             ("Offhand".into(), Tag::List(10, vec![slot_tag(inv.offhand(), 0)])),
             ("Armor".into(), Tag::List(10, armor)),
             ("SelectedInventorySlot".into(), Tag::Int(inv.selected as i32)),
+            // nomi di PocketMine (i mondi vanilla tengono questi valori tra gli `Attributes`, che il server non scrive)
+            ("Health".into(), Tag::Float(self.health)),
+            ("foodLevel".into(), Tag::Int(self.food as i32)),
+            ("foodSaturationLevel".into(), Tag::Float(self.saturation)),
+            ("foodExhaustionLevel".into(), Tag::Float(self.exhaustion)),
         ]);
         write_root("", &root, Enc::Disk)
     }
@@ -183,7 +194,16 @@ impl PlayerData {
             }
         }
         inventory.selected = root.get("SelectedInventorySlot").and_then(int).filter(|s| (0..HOTBAR_SLOTS as i64).contains(s)).map_or(0, |s| s as u8);
-        Some(PlayerData { feet, yaw, pitch, dim, mode, inventory })
+        // una vita a 0 (morto all'uscita) o assurda riparte piena: un giocatore non rientra morto
+        let float = |key: &str| match root.get(key) {
+            Some(Tag::Float(v)) if v.is_finite() => Some(*v),
+            _ => None,
+        };
+        let health = float("Health").filter(|&h| h > 0.0).map_or(MAX_HEALTH, |h| h.min(MAX_HEALTH));
+        let food = root.get("foodLevel").and_then(int).map_or(MAX_FOOD, |f| f.clamp(0, MAX_FOOD as i64) as u8);
+        let saturation = float("foodSaturationLevel").map_or(START_SATURATION, |s| s.clamp(0.0, MAX_SATURATION));
+        let exhaustion = float("foodExhaustionLevel").map_or(0.0, |e| e.clamp(0.0, 4.0));
+        Some(PlayerData { feet, yaw, pitch, dim, mode, inventory, health, food, saturation, exhaustion })
     }
 }
 
@@ -211,6 +231,10 @@ pub(crate) fn persist(disk: Option<&Disk>, p: &mut Player) {
         dim: 0,
         mode: p.mode,
         inventory: std::mem::take(&mut p.inventory),
+        health: p.health,
+        food: p.food,
+        saturation: p.saturation,
+        exhaustion: p.exhaustion,
     };
     disk.save_player(identity(info), data.to_nbt());
 }
@@ -282,7 +306,18 @@ mod tests {
         inventory.set_offhand(item("minecraft:shield", 1));
         inventory.set_armor(0, item("minecraft:iron_helmet", 1));
         inventory.selected = 4;
-        PlayerData { feet: [10.5, 64.0, -3.25], yaw: 90.0, pitch: -10.0, dim: 0, mode: GameMode::Survival, inventory }
+        PlayerData {
+            feet: [10.5, 64.0, -3.25],
+            yaw: 90.0,
+            pitch: -10.0,
+            dim: 0,
+            mode: GameMode::Survival,
+            inventory,
+            health: 7.0,
+            food: 13,
+            saturation: 2.5,
+            exhaustion: 1.25,
+        }
     }
 
     fn contents(inv: &Inventory) -> Vec<Item> {
@@ -314,6 +349,29 @@ mod tests {
         assert_eq!(root.get("SelectedInventorySlot"), Some(&Tag::Int(4)));
         assert!(matches!(root.get("Pos"), Some(Tag::List(5, p)) if p.len() == 3));
         assert!(matches!(root.get("Armor"), Some(Tag::List(10, a)) if a.len() == 4));
+    }
+
+    #[test]
+    fn vitals_round_trip_and_default_to_full() {
+        let back = PlayerData::from_nbt(&sample().to_nbt()).unwrap();
+        assert_eq!((back.health, back.food, back.saturation, back.exhaustion), (7.0, 13, 2.5, 1.25));
+        let (_, root) = crate::nbt::Reader::new(&sample().to_nbt(), Enc::Disk).root().unwrap();
+        assert_eq!(root.get("Health"), Some(&Tag::Float(7.0)));
+        assert_eq!(root.get("foodLevel"), Some(&Tag::Int(13)));
+
+        // dati vecchi, senza vita né fame: tutto pieno
+        let mut old = root.clone();
+        let Tag::Compound(fields) = &mut old else { unreachable!() };
+        fields.retain(|(k, _)| !["Health", "foodLevel", "foodSaturationLevel", "foodExhaustionLevel"].contains(&k.as_str()));
+        let back = PlayerData::from_nbt(&write_root("", &old, Enc::Disk)).unwrap();
+        assert_eq!((back.health, back.food, back.saturation, back.exhaustion), (20.0, 20, 5.0, 0.0));
+
+        // morto all'uscita (vita 0) o valori fuori scala: si riparte pieni / nei limiti
+        let mut odd = root.clone();
+        odd.set("Health", Tag::Float(0.0));
+        odd.set("foodLevel", Tag::Int(99));
+        let back = PlayerData::from_nbt(&write_root("", &odd, Enc::Disk)).unwrap();
+        assert_eq!((back.health, back.food), (20.0, 20));
     }
 
     #[test]
@@ -418,6 +476,22 @@ mod tests {
         assert_eq!(starts[0].1, 0, "modalità sopravvivenza salvata");
         assert_eq!(rig.server.players[&2].inventory.main(2).count, 10);
         assert_eq!(rig.server.players[&2].yaw, 45.0);
+    }
+
+    #[test]
+    fn health_and_food_are_saved_and_restored() {
+        let dir = TempDir::new("vitals");
+        let mut rig = Rig::new(&dir.0);
+        rig.login(1, "Alice", "2535");
+        rig.pump();
+        let p = rig.server.players.get_mut(&1).unwrap();
+        (p.health, p.food, p.saturation, p.exhaustion) = (7.0, 9, 1.5, 2.25);
+        rig.server.close(1);
+
+        rig.login(2, "Alice", "2535");
+        rig.pump();
+        let p = &rig.server.players[&2];
+        assert_eq!((p.health, p.food, p.saturation, p.exhaustion), (7.0, 9, 1.5, 2.25));
     }
 
     #[test]

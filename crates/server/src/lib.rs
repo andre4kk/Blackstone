@@ -19,6 +19,7 @@ mod playerdata;
 mod registry;
 mod storage;
 mod streaming;
+mod survival;
 mod tables;
 #[cfg(test)]
 mod tests;
@@ -102,7 +103,6 @@ impl GameMode {
 }
 
 /// Stato di un giocatore connesso.
-#[derive(Default)]
 struct Player {
     session: Session,
     /// Compilato dopo il login.
@@ -154,6 +154,64 @@ struct Player {
     inventory_open: bool,
     /// Volo confermato dal server (`StartFlying`/`StopFlying`): entra nel livello di abilità mandato al client.
     flying: bool,
+    /// Vita (0..=20, mezzo cuore = 1): vedi `survival`.
+    health: f32,
+    /// Fame (0..=20), saturazione (0..=20) ed esaurimento (0..5): i valori di Dragonfly `hunger`.
+    food: u8,
+    saturation: f32,
+    exhaustion: f32,
+    /// Fino a questo tick (escluso) il giocatore è nel periodo di invulnerabilità dopo un colpo; `last_damage` è il danno di quel colpo.
+    invulnerable_until: u64,
+    last_damage: f32,
+    /// Vero da quando la vita è arrivata a 0 e finché il giocatore non rinasce.
+    dead: bool,
+    /// Altezza dei piedi da cui è iniziata la caduta in corso (per il danno da caduta: la legge il Task 4).
+    #[allow(dead_code)]
+    fall_start_y: Option<f32>,
+}
+
+impl Default for Player {
+    /// Un giocatore appena arrivato: vita, fame e saturazione di partenza (`survival::MAX_HEALTH`, `MAX_FOOD`, `START_SATURATION`).
+    fn default() -> Self {
+        Player {
+            session: Session::default(),
+            info: None,
+            radius: 0,
+            spawned: false,
+            streaming: false,
+            pos: [0.0; 3],
+            pai_logged: false,
+            last_chunk: (0, 0),
+            sent: HashSet::new(),
+            visible: HashSet::new(),
+            mode: GameMode::default(),
+            inventory: inventory::Inventory::default(),
+            stack_logs: 0,
+            action_logs: 0,
+            skin_logs: 0,
+            breaking: None,
+            yaw: 0.0,
+            pitch: 0.0,
+            sneaking: false,
+            sprinting: false,
+            swimming: false,
+            gliding: false,
+            last_break: None,
+            data: DataState::default(),
+            saved_feet: None,
+            started: false,
+            inventory_open: false,
+            flying: false,
+            health: survival::MAX_HEALTH,
+            food: survival::MAX_FOOD,
+            saturation: survival::START_SATURATION,
+            exhaustion: 0.0,
+            invulnerable_until: 0,
+            last_damage: 0.0,
+            dead: false,
+            fall_start_y: None,
+        }
+    }
 }
 
 /// Il caricamento dei dati salvati di un giocatore (vedi `playerdata`).

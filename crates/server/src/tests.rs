@@ -502,9 +502,9 @@ fn the_player_gets_speed_health_and_hunger_on_spawn() {
     h.join(1, "Alice");
     let attributes: Vec<Packet> = h.packets_to(1).into_iter().filter(|p| p.id == UpdateAttributes::ID).collect();
     assert_eq!(attributes.len(), 1, "un UpdateAttributes allo spawn");
-    let expected = crate::join::spawn_attributes(1).packet();
+    let expected = crate::join::spawn_attributes(1, &Player::default()).packet();
     assert_eq!(attributes[0].body, expected.body);
-    let attributes = crate::join::spawn_attributes(1).attribute_list;
+    let attributes = crate::join::spawn_attributes(1, &Player::default()).attribute_list;
     for name in ["minecraft:movement", "minecraft:health", "minecraft:player.hunger", "minecraft:player.saturation", "minecraft:player.exhaustion"] {
         assert!(attributes.iter().any(|a| a.name == name), "manca {name}");
     }
@@ -3327,5 +3327,193 @@ mod bot {
         h.receive(1, &[command("/list")]);
         let texts = h.texts_to(1);
         assert!(texts.iter().any(|t| t.message.contains("Prova") && t.message.contains("(3)")), "{:?}", texts.iter().map(|t| &t.message).collect::<Vec<_>>());
+    }
+}
+
+mod survival {
+    use super::*;
+    use crate::{events::WorldAction, join::vitals_attributes, survival::DamageCause};
+    use bedrock_protocol::entity::{actor_event, actor_event_type};
+
+    /// Alice (1) in `mode`, Bob (2) che la vede, Carol (3) che non la vede.
+    fn setup(mode: GameMode) -> Harness {
+        let mut h = Harness::new();
+        for (pid, name) in [(1, "Alice"), (2, "Bob"), (3, "Carol")] {
+            h.join(pid, name);
+        }
+        h.server.players.get_mut(&1).unwrap().mode = mode;
+        h.server.players.get_mut(&2).unwrap().visible.insert(1);
+        h.packets_by_player();
+        h
+    }
+
+    fn health(h: &Harness) -> f32 {
+        h.server.players[&1].health
+    }
+
+    fn vitals_packet(h: &Harness) -> Packet {
+        UpdateAttributes { target_runtime_id: 1, attribute_list: vitals_attributes(&h.server.players[&1]), tick: 0 }.packet()
+    }
+
+    fn hurt_event() -> Packet {
+        actor_event(1, actor_event_type::HURT, 0)
+    }
+
+    fn health_attribute(h: &Harness) -> f32 {
+        vitals_attributes(&h.server.players[&1]).iter().find(|a| a.name == "minecraft:health").unwrap().current_value
+    }
+
+    #[test]
+    fn hurt_in_survival_takes_health_and_tells_self_and_viewers() {
+        let mut h = setup(GameMode::Survival);
+        assert!(h.server.hurt(1, 3.0, DamageCause::Fall));
+        assert_eq!(health(&h), 17.0);
+        let sent = h.packets_by_player();
+        assert!(sent[&1].contains(&vitals_packet(&h)), "UpdateAttributes a sé");
+        assert!(sent[&1].contains(&hurt_event()), "ActorEvent HURT a sé");
+        assert!(sent[&2].contains(&hurt_event()), "ActorEvent HURT agli spettatori");
+        assert!(!sent[&2].contains(&vitals_packet(&h)), "la vita la vede solo lui");
+        assert!(sent.get(&3).is_none_or(|v| !v.contains(&hurt_event())), "chi non lo vede non riceve nulla");
+        assert_eq!(health_attribute(&h), 17.0);
+    }
+
+    #[test]
+    fn second_hit_within_ten_ticks_only_counts_the_difference() {
+        let mut h = setup(GameMode::Survival);
+        assert!(h.server.hurt(1, 4.0, DamageCause::Attack { attacker: 2 }));
+        // più debole o uguale: niente
+        assert!(!h.server.hurt(1, 3.0, DamageCause::Attack { attacker: 2 }));
+        assert!(!h.server.hurt(1, 4.0, DamageCause::Attack { attacker: 2 }));
+        assert_eq!(health(&h), 16.0);
+        h.packets_by_player();
+        // più forte: solo la differenza
+        assert!(h.server.hurt(1, 6.0, DamageCause::Attack { attacker: 2 }));
+        assert_eq!(health(&h), 14.0);
+        assert!(h.packets_by_player()[&2].contains(&hurt_event()));
+        // passati i 10 tick dal colpo più recente si subisce di nuovo per intero
+        h.server.tick_count += 10;
+        assert!(h.server.hurt(1, 2.0, DamageCause::Fall));
+        assert_eq!(health(&h), 12.0);
+    }
+
+    #[test]
+    fn void_ignores_invulnerability() {
+        let mut h = setup(GameMode::Survival);
+        assert!(h.server.hurt(1, 5.0, DamageCause::Fall));
+        assert!(h.server.hurt(1, 1.0, DamageCause::Void));
+        assert_eq!(health(&h), 14.0);
+    }
+
+    #[test]
+    fn creative_and_spectator_take_no_damage_except_the_void() {
+        for mode in [GameMode::Creative, GameMode::Spectator] {
+            let mut h = setup(mode);
+            assert!(!h.server.hurt(1, 5.0, DamageCause::Fall));
+            assert!(!h.server.hurt(1, 5.0, DamageCause::Attack { attacker: 2 }));
+            assert_eq!(health(&h), 20.0);
+            assert!(h.packets_to(1).is_empty(), "nessun pacchetto se non c'è danno");
+        }
+        let mut h = setup(GameMode::Creative);
+        assert!(h.server.hurt(1, 4.0, DamageCause::Void), "il vuoto colpisce anche in creativa");
+        assert_eq!(health(&h), 16.0);
+        let mut h = setup(GameMode::Spectator);
+        assert!(!h.server.hurt(1, 4.0, DamageCause::Void));
+        let mut h = setup(GameMode::Adventure);
+        assert!(h.server.hurt(1, 4.0, DamageCause::Fall), "l'avventura subisce danno come la sopravvivenza");
+    }
+
+    #[test]
+    fn nonsense_amounts_do_nothing() {
+        let mut h = setup(GameMode::Survival);
+        for amount in [0.0, -2.0, f32::NAN] {
+            assert!(!h.server.hurt(1, amount, DamageCause::Fall));
+        }
+        assert!(!h.server.hurt(99, 1.0, DamageCause::Fall), "giocatore inesistente");
+        assert_eq!(health(&h), 20.0);
+    }
+
+    #[test]
+    fn a_hook_can_refuse_damage_and_sees_what_is_left() {
+        use std::sync::{Arc, Mutex};
+        let mut h = setup(GameMode::Survival);
+        let seen = Arc::new(Mutex::new(Vec::new()));
+        let log = seen.clone();
+        let allow = Arc::new(Mutex::new(false));
+        let gate = allow.clone();
+        h.server.hooks.push(Box::new(move |a| {
+            if matches!(a, WorldAction::Damage { .. }) {
+                log.lock().unwrap().push(a.clone());
+                return *gate.lock().unwrap();
+            }
+            true
+        }));
+        assert!(!h.server.hurt(1, 5.0, DamageCause::Fall));
+        assert_eq!(health(&h), 20.0);
+        assert!(h.packets_to(1).is_empty(), "un colpo annullato non manda nulla");
+        // il rifiuto non dà invulnerabilità: il colpo successivo passa per intero
+        *allow.lock().unwrap() = true;
+        assert!(h.server.hurt(1, 5.0, DamageCause::Fall));
+        assert!(h.server.hurt(1, 8.0, DamageCause::Fall));
+        assert_eq!(
+            seen.lock().unwrap().as_slice(),
+            [
+                WorldAction::Damage { pid: 1, amount: 5.0, cause: DamageCause::Fall },
+                WorldAction::Damage { pid: 1, amount: 5.0, cause: DamageCause::Fall },
+                WorldAction::Damage { pid: 1, amount: 3.0, cause: DamageCause::Fall },
+            ]
+        );
+        assert_eq!(health(&h), 12.0);
+    }
+
+    #[test]
+    fn health_at_zero_kills_once() {
+        let mut h = setup(GameMode::Survival);
+        assert!(h.server.hurt(1, 25.0, DamageCause::Void));
+        assert_eq!(health(&h), 0.0);
+        assert!(h.server.players[&1].dead);
+        assert!(!h.server.hurt(1, 1.0, DamageCause::Void), "un morto non subisce altro danno");
+        h.server.heal(1, 5.0);
+        assert_eq!(health(&h), 0.0, "né si cura");
+    }
+
+    #[test]
+    fn heal_caps_at_twenty_and_sends_vitals() {
+        let mut h = setup(GameMode::Survival);
+        h.server.players.get_mut(&1).unwrap().health = 10.0;
+        h.server.heal(1, 4.5);
+        assert_eq!(health(&h), 14.5);
+        assert!(h.packets_to(1).contains(&vitals_packet(&h)));
+        assert_eq!(health_attribute(&h), 15.0, "i cuori arrivano interi (come Dragonfly)");
+        h.server.heal(1, 100.0);
+        assert_eq!(health(&h), 20.0);
+        h.packets_to(1);
+        h.server.heal(1, 1.0);
+        assert!(h.packets_to(1).is_empty(), "già a vita piena: nulla da dire");
+        h.server.heal(1, -3.0);
+        assert_eq!(health(&h), 20.0);
+    }
+
+    #[test]
+    fn heal_does_nothing_in_creative() {
+        let mut h = setup(GameMode::Creative);
+        h.server.players.get_mut(&1).unwrap().health = 10.0;
+        h.server.heal(1, 5.0);
+        assert_eq!(health(&h), 10.0);
+    }
+
+    #[test]
+    fn send_vitals_carries_health_hunger_saturation_and_exhaustion() {
+        let mut h = setup(GameMode::Survival);
+        let p = h.server.players.get_mut(&1).unwrap();
+        (p.food, p.saturation, p.exhaustion) = (12, 3.5, 1.5);
+        h.server.send_vitals(1);
+        let sent = h.packets_to(1);
+        assert_eq!(sent, vec![vitals_packet(&h)]);
+        let attributes = vitals_attributes(&h.server.players[&1]);
+        let names: Vec<&str> = attributes.iter().map(|a| a.name.as_str()).collect();
+        assert_eq!(names, ["minecraft:health", "minecraft:player.hunger", "minecraft:player.saturation", "minecraft:player.exhaustion"]);
+        assert_eq!(attributes[1].current_value, 12.0);
+        assert_eq!(attributes[2].current_value, 3.5);
+        assert_eq!(attributes[3].current_value, 1.5);
     }
 }

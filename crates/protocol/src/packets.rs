@@ -16,6 +16,7 @@ pub mod id {
     pub const CONTAINER_CLOSE: u32 = 47;
     pub const PLAYER_ACTION: u32 = 36;
     pub const ANIMATE: u32 = 44;
+    pub const ACTOR_EVENT: u32 = 27;
     pub const EMOTE_LIST: u32 = 152;
     pub const SERVERBOUND_LOADING_SCREEN: u32 = 312;
     pub const SET_LOCAL_PLAYER_AS_INITIALIZED: u32 = 113;
