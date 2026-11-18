@@ -833,7 +833,9 @@ mod breaking {
         blocks.sort();
         assert_eq!(blocks, [(1, ROCK), (1, ROCK), (2, ROCK), (2, ROCK)]);
         // LevelEvent 2001 con l'hash del blocco rotto, al centro del blocco
-        assert_eq!(events(&out), [(1, 2001, [3.5, 10.5, 4.5], stone()), (2, 2001, [3.5, 10.5, 4.5], stone())]);
+        let mut effects = events(&out);
+        effects.sort_by_key(|e| e.0); // l'ordine dei giocatori non è fissato
+        assert_eq!(effects, [(1, 2001, [3.5, 10.5, 4.5], stone()), (2, 2001, [3.5, 10.5, 4.5], stone())]);
     }
 
     #[test]
@@ -959,7 +961,8 @@ mod breaking {
         drop(h.packets_to(1));
         h.receive(1, &[action(player_action::CREATIVE_DESTROY, ROCK)]);
         assert_eq!(h.server.block_at(Dim::Overworld, ROCK), Some((air(), true)), "il blocco sparisce, l'acqua resta");
-        assert_eq!(updates(&mut h.sent)[..2], [(1, ROCK, air() as u32, 3, 0), (1, ROCK, water() as u32, 3, 1)]);
+        let alice: Vec<_> = updates(&mut h.sent).into_iter().filter(|u| u.0 == 1).collect(); // l'ordine dei giocatori non è fissato
+        assert_eq!(alice, [(1, ROCK, air() as u32, 3, 0), (1, ROCK, water() as u32, 3, 1)]);
         assert!(h.server.chunks[&(0, 0, 0)].water(3, 10, 4));
     }
 
@@ -1061,5 +1064,308 @@ mod breaking {
         assert!(!in_reach([f32::INFINITY, 0.0, 0.0], [0, 0, 0], true));
         assert!(!in_reach(eyes, [i32::MAX, i32::MAX, i32::MAX], true), "senza overflow");
         assert!(!in_reach(eyes, [8, 8, 0], false), "la distanza è in 3D");
+    }
+}
+
+// ---------- piazzamento ----------
+
+mod placing {
+    use super::blocks::{air, change, harness_with_chunk, stone, updates};
+    use super::*;
+    use crate::{events::WorldAction, world::block_hash};
+    use bedrock_protocol::{
+        generated::{InventorySlot, LevelSoundEvent, UpdateBlock},
+        input::{player_action, use_item},
+    };
+    use std::sync::{Arc, Mutex};
+    use vgen::Dim;
+
+    /// La pietra su cui si clicca e la cella sopra, dove va il blocco piazzato.
+    const ROCK: [i32; 3] = [3, 10, 4];
+    const TOP: [i32; 3] = [3, 11, 4];
+    /// Occhi di Alice: tre blocchi a est della pietra, i piedi a y 10.
+    const EYES: [f32; 3] = [6.5, 11.62, 4.5];
+
+    /// Un mondo con una pietra in `ROCK`; Alice (1) in modalità `mode` con in mano 64 pietre (casella 0), Bob (2) vede il chunk, Carol (3) no.
+    fn setup(mode: GameMode) -> Harness {
+        let mut h = harness_with_chunk();
+        for (pid, name) in [(1, "Alice"), (2, "Bob"), (3, "Carol")] {
+            h.join(pid, name);
+        }
+        for pid in [1, 2] {
+            h.server.players.get_mut(&pid).unwrap().sent.insert((0, 0));
+        }
+        h.server.players.get_mut(&3).unwrap().sent.clear();
+        h.server.set_blocks(Dim::Overworld, &[change(ROCK, stone(), false)]);
+        // le pietre si prendono dal menu creativo (in sopravvivenza non si può): la modalità si cambia dopo
+        h.receive(1, &[stack_request_packet(|w| craft_and_place(w, -1, stone_net_id(), 0))]);
+        let alice = h.server.players.get_mut(&1).unwrap();
+        (alice.mode, alice.pos) = (mode, EYES);
+        let chunk = h.server.chunks.get_mut(&(0, 0, 0)).unwrap();
+        (chunk.fallback, chunk.dirty) = (false, false);
+        (1..=3).for_each(|pid| drop(h.packets_to(pid)));
+        h
+    }
+
+    /// Tutti i pacchetti inviati da quando si è letto l'ultima volta, con il destinatario.
+    fn packets(sent: &mut UnboundedReceiver<Command>) -> Vec<(u64, Packet)> {
+        let mut out = Vec::new();
+        while let Ok(cmd) = sent.try_recv() {
+            if let Command::Send(to, data) = cmd {
+                out.extend(Session::default().decode(&data).unwrap().into_iter().map(|p| (to, p)));
+            }
+        }
+        out
+    }
+
+    /// `InventoryTransaction` di tipo ItemUse con azione Place sul blocco `pos`, faccia `face`, con `held` in mano secondo il client.
+    fn place_packet(pos: [i32; 3], face: u8, held: &ItemStack) -> Packet {
+        let mut w = Writer::default();
+        w.var_i32(0); // id legacy
+        w.u8(0); // niente slot legacy
+        w.var_u32(2); // tipo ItemUse
+        w.var_u32(0); // niente azioni
+        w.var_i32(use_item::PLACE);
+        w.u8(1); // trigger
+        pos.iter().for_each(|&c| w.var_i32(c));
+        w.u8(face);
+        w.var_i32(0); // casella
+        w.u8(0); // mano
+        held.encode(&mut w);
+        EYES.iter().for_each(|&v| w.f32(v));
+        [0.5f32, 1.0, 0.5].iter().for_each(|&v| w.f32(v)); // punto cliccato
+        w.var_u32(0); // blocco secondo il client
+        w.u8(1);
+        w.u8(0);
+        Packet::new(id::INVENTORY_TRANSACTION, w.0)
+    }
+
+    /// `PlayerAction` con `runtime_id` 1.
+    fn destroy(pos: [i32; 3]) -> Packet {
+        let mut w = Writer::default();
+        w.var_u64(1);
+        w.var_i32(player_action::CREATIVE_DESTROY);
+        pos.iter().chain(&[0, 0, 0]).for_each(|&c| w.var_i32(c));
+        w.var_i32(1);
+        Packet::new(id::PLAYER_ACTION, w.0)
+    }
+
+    /// L'oggetto in mano ad Alice come lo vede il suo client.
+    fn held(h: &Harness) -> ItemStack {
+        h.server.players[&1].inventory.held().stack(1)
+    }
+
+    fn assert_placed(h: &Harness) {
+        assert_eq!(h.server.block_at(Dim::Overworld, TOP), Some((stone(), false)));
+        assert!(h.server.chunks[&(0, 0, 0)].dirty, "il chunk si salva");
+    }
+
+    /// Niente è cambiato e lo stato vero (la pietra cliccata e l'aria sopra) è stato rimandato al solo autore.
+    fn assert_reverted(h: &mut Harness) {
+        assert_eq!(h.server.block_at(Dim::Overworld, TOP), Some((air(), false)));
+        assert!(!h.server.chunks[&(0, 0, 0)].dirty);
+        let mut cells: Vec<_> = updates(&mut h.sent).iter().map(|(to, pos, hash, _, layer)| (*to, *pos, *hash, *layer)).collect();
+        cells.sort();
+        let (rock, top, none) = (stone() as u32, air() as u32, air() as u32);
+        assert_eq!(cells, [(1, ROCK, rock, 0), (1, ROCK, none, 1), (1, TOP, top, 0), (1, TOP, none, 1)]);
+    }
+
+    fn counting_hook(h: &mut Harness, allow: bool) -> Arc<Mutex<Vec<WorldAction>>> {
+        let seen = Arc::new(Mutex::new(Vec::new()));
+        let log = seen.clone();
+        h.server.hooks.push(Box::new(move |a| {
+            log.lock().unwrap().push(a.clone());
+            allow
+        }));
+        seen
+    }
+
+    #[test]
+    fn creative_place_sets_the_block_and_notifies_viewers() {
+        let mut h = setup(GameMode::Creative);
+        let seen = counting_hook(&mut h, true);
+        let before = h.server.players[&1].inventory.held().clone();
+        assert_eq!((before.id, before.count), (registry::items().id("minecraft:stone").unwrap(), 64));
+        h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
+        assert_placed(&h);
+        assert_eq!(seen.lock().unwrap().as_slice(), [WorldAction::Place { pid: 1, changes: vec![change(TOP, stone(), false)] }]);
+        assert_eq!(h.server.players[&1].inventory.held().count, 64, "in creativo non si consuma");
+        let out = packets(&mut h.sent);
+        let mut got: Vec<_> = out.iter().filter(|(_, p)| p.id == UpdateBlock::ID).map(|(to, p)| (*to, Reader(&p.body).block_pos().unwrap())).collect();
+        got.sort();
+        assert_eq!(got, [(1, TOP), (1, TOP), (2, TOP), (2, TOP)], "strato 0 e 1 ad Alice e Bob, non a Carol");
+        let sounds: Vec<_> = out
+            .iter()
+            .filter(|(_, p)| p.id == LevelSoundEvent::ID)
+            .map(|(to, p)| {
+                let r = &mut Reader(&p.body);
+                (*to, r.string().unwrap().to_string(), r.vec3().unwrap(), r.var_i32().unwrap())
+            })
+            .collect();
+        assert_eq!(sounds.len(), 2);
+        assert!(sounds.iter().all(|(_, name, pos, data)| name == "place" && *pos == [3.5, 11.5, 4.5] && *data == stone()));
+        assert!(out.iter().all(|(_, p)| p.id != InventorySlot::ID), "nessun cambio all'inventario");
+    }
+
+    #[test]
+    fn survival_place_consumes_one_item() {
+        let mut h = setup(GameMode::Survival);
+        h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
+        assert_placed(&h);
+        assert_eq!(h.server.players[&1].inventory.held().count, 63);
+        let slots: Vec<_> = packets(&mut h.sent).into_iter().filter(|(_, p)| p.id == InventorySlot::ID).collect();
+        assert_eq!(slots.len(), 1, "il client sa com'è ora la casella");
+        assert_eq!(slots[0].0, 1);
+        // fino all'ultimo: la casella si svuota
+        for _ in 0..63 {
+            h.server.set_blocks(Dim::Overworld, &[change(TOP, air(), false)]);
+            h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
+        }
+        assert_eq!(h.server.players[&1].inventory.held().id, 0, "vuota");
+        assert_eq!(h.server.block_at(Dim::Overworld, TOP), Some((stone(), false)));
+    }
+
+    #[test]
+    fn held_item_different_from_the_clients_is_refused() {
+        // Review Focus 4: il server non ha in mano ciò che il client dice
+        let mut h = setup(GameMode::Creative);
+        let mut unknown = held(&h);
+        unknown.id = 9999; // un oggetto che nessuno conosce
+        h.receive(1, &[place_packet(ROCK, 1, &unknown)]);
+        assert_reverted(&mut h);
+        let mut other_block = held(&h);
+        other_block.block_runtime_id = block_hash("minecraft:dirt", &[]) as u32;
+        h.receive(1, &[place_packet(ROCK, 1, &other_block)]);
+        assert_reverted(&mut h);
+        // il server ha la mano vuota e il client dice di avere pietra
+        let stone_stack = held(&h);
+        h.receive(1, &[mob_equipment(5, 5)]);
+        h.receive(1, &[place_packet(ROCK, 1, &stone_stack)]);
+        assert_reverted(&mut h);
+    }
+
+    #[test]
+    fn empty_hands_do_nothing_and_send_nothing() {
+        let mut h = setup(GameMode::Creative);
+        h.receive(1, &[mob_equipment(5, 5)]); // casella vuota
+        h.receive(1, &[place_packet(ROCK, 1, &ItemStack::air())]);
+        assert!(packets(&mut h.sent).is_empty());
+        assert_eq!(h.server.block_at(Dim::Overworld, TOP), Some((air(), false)));
+    }
+
+    #[test]
+    fn out_of_reach_wrong_mode_and_hooks_are_refused() {
+        let mut h = setup(GameMode::Creative);
+        h.server.players.get_mut(&1).unwrap().pos = [40.5, 11.62, 4.5];
+        h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
+        assert_reverted(&mut h);
+        for mode in [GameMode::Adventure, GameMode::Spectator] {
+            let mut h = setup(mode);
+            h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
+            assert_reverted(&mut h);
+        }
+        // sopravvivenza: la portata è 8, non 14
+        let mut h = setup(GameMode::Survival);
+        h.server.players.get_mut(&1).unwrap().pos = [12.5, 11.62, 4.5];
+        h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
+        assert_reverted(&mut h);
+        assert_eq!(h.server.players[&1].inventory.held().count, 64, "nulla si consuma");
+        // un gancio che annulla
+        let mut h = setup(GameMode::Creative);
+        let seen = counting_hook(&mut h, false);
+        h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
+        assert_eq!(seen.lock().unwrap().len(), 1);
+        assert_reverted(&mut h);
+    }
+
+    #[test]
+    fn nobody_can_be_inside_the_new_block() {
+        // Alice sta sulla pietra: i suoi piedi sono nella cella da riempire
+        let mut h = setup(GameMode::Creative);
+        h.server.players.get_mut(&1).unwrap().pos = [3.5, 12.62, 4.5];
+        h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
+        assert_reverted(&mut h);
+        // Bob sta nella cella
+        let mut h = setup(GameMode::Creative);
+        h.server.players.get_mut(&2).unwrap().pos = [3.5, 12.62, 4.5];
+        h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
+        assert_reverted(&mut h);
+    }
+
+    #[test]
+    fn place_then_break_in_the_same_tick_both_work() {
+        let mut h = setup(GameMode::Creative);
+        h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
+        h.receive(1, &[destroy(TOP)]);
+        assert_eq!(h.server.block_at(Dim::Overworld, TOP), Some((air(), false)), "rotto");
+        h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
+        assert_placed(&h);
+        h.receive(1, &[destroy(TOP)]);
+        assert_eq!(h.server.block_at(Dim::Overworld, TOP), Some((air(), false)), "la rottura dopo il piazzamento non è scartata come doppione");
+    }
+
+    #[test]
+    fn malformed_and_early_place_packets_are_ignored() {
+        let mut h = setup(GameMode::Creative);
+        let good = place_packet(ROCK, 1, &held(&h)).body;
+        for cut in 0..good.len() {
+            h.receive(1, &[Packet::new(id::INVENTORY_TRANSACTION, good[..cut].to_vec())]);
+        }
+        assert_eq!(h.server.block_at(Dim::Overworld, TOP), Some((air(), false)));
+        h.receive(1, &[place_packet(ROCK, 9, &held(&h))]); // faccia inesistente
+        assert_eq!(h.server.block_at(Dim::Overworld, TOP), Some((air(), false)));
+        // clic in un chunk non caricato o fuori dal mondo: rifiutato, nessun chunk creato
+        let chunks = h.server.chunks.len();
+        for pos in [[1000, 10, 1000], [3, 400, 4], [3, -500, 4], [i32::MAX, 0, i32::MIN]] {
+            h.receive(1, &[place_packet(pos, 1, &held(&h))]);
+        }
+        assert_eq!(h.server.chunks.len(), chunks);
+        // un giocatore non ancora nel mondo non piazza nulla
+        h.server.open(9);
+        h.receive(9, &[place_packet(ROCK, 1, &held(&h))]);
+        assert_eq!(h.server.block_at(Dim::Overworld, TOP), Some((air(), false)));
+    }
+
+    #[test]
+    fn player_auth_input_keeps_rotation_and_sneaking() {
+        let mut h = Harness::new();
+        h.join(1, "Alice");
+        let body = |yaw: f32, pitch: f32, sneaking: bool| {
+            let mut b = auth_input_body(1.0, 70.0, 1.0);
+            b[..4].copy_from_slice(&pitch.to_le_bytes());
+            b[4..8].copy_from_slice(&yaw.to_le_bytes());
+            if sneaking {
+                b.splice(32..33, [1, 16]); // un flag attivo (var_i32 con zigzag: 8 diventa 16): l'accovacciamento
+            }
+            Packet::new(id::PLAYER_AUTH_INPUT, b)
+        };
+        h.receive(1, &[body(90.0, 15.0, true)]);
+        let p = &h.server.players[&1];
+        assert_eq!((p.yaw, p.pitch, p.sneaking), (90.0, 15.0, true));
+        h.receive(1, &[body(-45.0, 0.0, false)]);
+        let p = &h.server.players[&1];
+        assert_eq!((p.yaw, p.pitch, p.sneaking), (-45.0, 0.0, false));
+        h.receive(1, &[body(f32::NAN, 0.0, false)]);
+        assert_eq!(h.server.players[&1].yaw, -45.0, "valori non finiti scartati");
+        // anche quando il resto del pacchetto non si legge, la rotazione arriva dalla via di ripiego
+        let mut cut = auth_input_body(1.0, 70.0, 1.0)[..30].to_vec();
+        cut[4..8].copy_from_slice(&120.0f32.to_le_bytes());
+        h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, cut)]);
+        assert_eq!(h.server.players[&1].yaw, 120.0);
+    }
+
+    #[test]
+    fn placed_blocks_follow_the_players_yaw() {
+        let mut h = setup(GameMode::Creative);
+        // una scala in mano al posto della pietra, giocatore che guarda a nord
+        let stairs = registry::creative().1.iter().position(|c| c.name == "minecraft:oak_stairs").unwrap() as u32 + 1;
+        h.receive(1, &[stack_request_packet(|w| craft_and_place(w, -2, stairs, 1))]);
+        h.receive(1, &[mob_equipment(1, 1)]);
+        h.server.players.get_mut(&1).unwrap().yaw = 180.0;
+        h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
+        let (hash, _) = h.server.block_at(Dim::Overworld, TOP).unwrap();
+        let state = registry::blocks().state(hash).unwrap();
+        assert_eq!(state.name, "minecraft:oak_stairs");
+        assert_eq!(state.get("weirdo_direction"), Some(&registry::StateValue::Int(3)));
     }
 }

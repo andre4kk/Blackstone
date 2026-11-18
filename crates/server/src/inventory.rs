@@ -68,7 +68,6 @@ impl Item {
     }
 
     /// Stesso genere di oggetto (ID, valore ausiliario e stato del blocco), quantità a parte.
-    #[allow(dead_code)] // serve al controllo dell'oggetto in mano (piazzamento)
     pub fn same_kind(&self, other: &Item) -> bool {
         self.id == other.id && self.aux == other.aux && self.block == other.block
     }
@@ -76,6 +75,11 @@ impl Item {
     /// Due pile si fondono solo se, oltre al genere, hanno lo stesso NBT (due libri incantati diversi non si impilano).
     fn stacks_with(&self, other: &Item) -> bool {
         self.same_kind(other) && self.nbt == other.nbt
+    }
+
+    /// Il genere di oggetto che il client dichiara di avere in mano (la quantità e i dati utente non contano per `same_kind`).
+    pub fn kind_of(stack: &ItemStack) -> Item {
+        Item { id: stack.id, count: stack.count, aux: stack.aux, block: (stack.block_runtime_id != 0).then_some(stack.block_runtime_id as i32), nbt: None }
     }
 
     /// Voce del menu creativo come oggetto (una pila piena); `None` se l'oggetto non ha un ID.
@@ -234,9 +238,36 @@ struct Run {
 
 impl Inventory {
     /// L'oggetto in mano (casella `selected` della barra).
-    #[allow(dead_code)] // serve al piazzamento dei blocchi
     pub fn held(&self) -> &Item {
         &self.contents.main[self.selected as usize].item
+    }
+
+    /// Toglie un oggetto da quello in mano (piazzamento in sopravvivenza) e dà alla casella un nuovo ID di pila.
+    /// Restituisce l'`InventorySlot` che dice al client com'è ora la casella; `None` se la mano è vuota.
+    pub fn consume_held(&mut self) -> Option<Packet> {
+        let loc = Loc::Main(self.selected);
+        if self.contents.get(loc).item.is_empty() {
+            return None;
+        }
+        let slot = self.contents.get_mut(loc);
+        slot.item.count -= 1;
+        if slot.item.is_empty() {
+            *slot = Slot::default();
+        } else {
+            let id = self.new_id();
+            self.contents.get_mut(loc).stack_id = id;
+        }
+        let (window, index, name) = loc.window();
+        Some(
+            InventorySlot {
+                container_id: window as u8,
+                slot: index,
+                full_container_name: Some(FullContainerName { container_name: name, dynamic_id: None }),
+                storage_item: None,
+                item: self.stack_of(loc),
+            }
+            .packet(),
+        )
     }
 
     fn stack_of(&self, loc: Loc) -> ItemStack {

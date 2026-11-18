@@ -90,6 +90,11 @@ impl Server {
                     player.action_logs += 1;
                     log!("[#{pid}] PlayerAuthInput con azioni (flag {:#x}, {} byte): {:02x?}", input.flags, body.len(), &body[..body.len().min(400)]);
                 }
+                // la rotazione e l'accovacciamento servono a orientare i blocchi che il giocatore piazza
+                if input.pitch.is_finite() && input.yaw.is_finite() {
+                    (player.pitch, player.yaw) = (input.pitch, input.yaw);
+                }
+                player.sneaking = input.has(flag::SNEAKING);
                 (input.position, input.stack_request.clone(), Some(input))
             }
             None => {
@@ -97,7 +102,10 @@ impl Server {
                     let head = &body[..body.len().min(64)];
                     log!("[#{pid}] PlayerAuthInput illeggibile ({} byte): {head:02x?}", body.len());
                 }
-                let Some((_, _, position)) = PlayerAuthInput::decode_rotation_position(body) else { return };
+                let Some((pitch, yaw, position)) = PlayerAuthInput::decode_rotation_position(body) else { return };
+                if pitch.is_finite() && yaw.is_finite() {
+                    (player.pitch, player.yaw) = (pitch, yaw);
+                }
                 (position, None, None)
             }
         };
@@ -128,14 +136,16 @@ impl Server {
         }
     }
 
-    /// Pacchetto `InventoryTransaction`: per ora conta solo l'uso di un oggetto con azione Destroy (rottura di un blocco);
-    /// gli altri usi e gli altri tipi di transazione li gestiranno il piazzamento e le interazioni.
+    /// Pacchetto `InventoryTransaction`: l'uso di un oggetto con azione Destroy rompe un blocco, con azione Place ne piazza uno.
+    /// Gli altri usi e gli altri tipi di transazione li gestiranno le interazioni.
     fn inventory_transaction(&mut self, pid: u64, body: &[u8]) {
         let Some(transaction) = InventoryTransaction::decode(body) else {
             return log!("[#{pid}] InventoryTransaction illeggibile ({} byte): ignorata", body.len());
         };
-        if let Some(u) = transaction.use_item.filter(|u| u.action == use_item::DESTROY) {
-            self.break_block(pid, u.pos);
+        match transaction.use_item {
+            Some(u) if u.action == use_item::DESTROY => self.break_block(pid, u.pos),
+            Some(u) if u.action == use_item::PLACE => self.place_item(pid, &u),
+            _ => {}
         }
     }
 

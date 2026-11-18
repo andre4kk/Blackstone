@@ -10,6 +10,7 @@ mod handlers;
 mod inventory;
 mod join;
 mod nbt;
+mod placement;
 mod registry;
 mod storage;
 mod streaming;
@@ -97,6 +98,11 @@ struct Player {
     action_logs: u8,
     /// Blocco che il giocatore ha cominciato a rompere (Start/Continue) e non ha ancora rotto né abbandonato.
     breaking: Option<[i32; 3]>,
+    /// Rotazione dall'ultimo `PlayerAuthInput` (gradi): 0 = sud, 90 = ovest, -90 = est, 180 = nord. Serve a orientare i blocchi piazzati.
+    yaw: f32,
+    pitch: f32,
+    /// Vero se l'ultimo `PlayerAuthInput` completo aveva il flag di accovacciamento.
+    sneaking: bool,
     /// Ultimo blocco di cui si è tentata la rottura, col tick: la stessa rottura chiesta due volte nello stesso tick vale una.
     last_break: Option<(u64, [i32; 3])>,
 }

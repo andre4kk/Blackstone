@@ -73,6 +73,11 @@ pub(crate) struct Blocks {
 }
 
 impl Blocks {
+    /// Nomi di tutti i blocchi del registro.
+    pub fn names(&self) -> impl Iterator<Item = &str> {
+        self.defaults.keys().map(String::as_str)
+    }
+
     pub fn state(&self, hash: i32) -> Option<&BlockState> {
         self.states.get(&hash)
     }
