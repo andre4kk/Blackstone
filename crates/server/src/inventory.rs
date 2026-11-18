@@ -31,8 +31,77 @@ pub(crate) const HOTBAR_SLOTS: u8 = 9;
 pub(crate) const ARMOR_SLOTS: usize = 4;
 /// Casella di `CreatedOutput` dove sta l'oggetto appena preso dal menu creativo (P§5.3).
 const CREATED_SLOT: u8 = 50;
-/// Massimo di una pila. Il server non conosce ancora il massimo di ogni oggetto: 64 vale come tetto per tutti.
+/// Massimo di una pila di un oggetto qualunque (il tetto): il massimo vero dipende dall'oggetto, vedi `max_stack_of`.
 pub(crate) const MAX_STACK: u16 = 64;
+
+/// Massimo di una pila dato il nome dell'oggetto (`MaxCount` di Dragonfly, `server/item`): 1 per spade, attrezzi, armature, pozioni, stufati,
+/// dischi, archi, secchi pieni e simili; 16 per uova, palle di neve, perle, secchi vuoti, miele, libri scritti; 64 per il resto.
+/// `items_meta.json` non basta: i suoi componenti non portano `max_stack_size` (quasi tutti gli oggetti non sono data-driven), quindi
+/// la tabella è questa. Oltre a Dragonfly ci sono gli oggetti vanilla che Dragonfly non ha (barche, carrelli, letti, cartelli, stendardi,
+/// scatole di Shulker, armature per cavalli), con il massimo del gioco originale.
+pub(crate) fn max_stack_of(name: &str) -> u16 {
+    let name = name.strip_prefix("minecraft:").unwrap_or(name);
+    const ONE_EXACT: &[&str] = &[
+        "bow",
+        "crossbow",
+        "elytra",
+        "shears",
+        "flint_and_steel",
+        "fishing_rod",
+        "carrot_on_a_stick",
+        "warped_fungus_on_a_stick",
+        "totem_of_undying",
+        "shield",
+        "trident",
+        "mace",
+        "spyglass",
+        "brush",
+        "enchanted_book",
+        "potion",
+        "splash_potion",
+        "lingering_potion",
+        "writable_book",
+        "mushroom_stew",
+        "rabbit_stew",
+        "beetroot_soup",
+        "suspicious_stew",
+        "goat_horn",
+        "saddle",
+        "bundle",
+        "cake",
+        "minecart",
+        "wolf_armor",
+        "turtle_helmet",
+    ];
+    const ONE_SUFFIX: &[&str] = &[
+        "_sword",
+        "_axe",
+        "_pickaxe",
+        "_shovel",
+        "_hoe",
+        "_helmet",
+        "_chestplate",
+        "_leggings",
+        "_boots",
+        "_boat",
+        "_raft",
+        "_minecart",
+        "_horse_armor",
+        "_banner_pattern",
+        "_bed",
+        "_shulker_box",
+        "_bucket",
+    ];
+    const SIXTEEN_EXACT: &[&str] = &["egg", "snowball", "ender_pearl", "bucket", "honey_bottle", "written_book", "armor_stand"];
+    const SIXTEEN_SUFFIX: &[&str] = &["sign", "_banner"];
+    if name == "bucket" || SIXTEEN_EXACT.contains(&name) || SIXTEEN_SUFFIX.iter().any(|s| name.ends_with(s)) {
+        16
+    } else if ONE_EXACT.contains(&name) || name.starts_with("music_disc_") || ONE_SUFFIX.iter().any(|s| name.ends_with(s)) {
+        1
+    } else {
+        MAX_STACK
+    }
+}
 /// Richieste con modifiche non ancora confermate dal client (D§8.2): oltre, le richieste si rifiutano.
 const MAX_PENDING: usize = 256;
 /// Dopo questo tempo una modifica non confermata si dimentica.
@@ -82,9 +151,15 @@ impl Item {
         Item { id: stack.id, count: stack.count, aux: stack.aux, block: (stack.block_runtime_id != 0).then_some(stack.block_runtime_id as i32), nbt: None }
     }
 
-    /// Voce del menu creativo come oggetto (una pila piena); `None` se l'oggetto non ha un ID.
+    /// Voce del menu creativo come oggetto (una pila piena del suo massimo); `None` se l'oggetto non ha un ID.
     fn from_creative(c: &CreativeItem) -> Option<Item> {
-        Some(Item { id: registry::items().id(&c.name)?, count: MAX_STACK, aux: c.meta, block: c.block, nbt: c.nbt.clone() })
+        let item = Item { id: registry::items().id(&c.name)?, count: 1, aux: c.meta, block: c.block, nbt: c.nbt.clone() };
+        Some(item.with_count(item.max_stack()))
+    }
+
+    /// Massimo della pila di questo oggetto.
+    pub fn max_stack(&self) -> u16 {
+        registry::items().name(self.id).map_or(MAX_STACK, max_stack_of)
     }
 
     fn with_count(&self, count: u16) -> Item {
@@ -465,7 +540,7 @@ impl Inventory {
         if a.is_empty() || a.count < count {
             return Err(format!("si chiedono {count} oggetti ma la casella ne ha {}", if a.is_empty() { 0 } else { a.count }));
         }
-        if !b.is_empty() && (!a.stacks_with(&b) || b.count + count > MAX_STACK) {
+        if !b.is_empty() && (!a.stacks_with(&b) || b.count + count > a.max_stack()) {
             return Err("la destinazione ha un oggetto diverso o non c'è posto".into());
         }
         let moved = if b.is_empty() { a.with_count(count) } else { b.with_count(b.count + count) };
@@ -505,7 +580,7 @@ impl Inventory {
 
     /// Vero se `add` metterebbe almeno un oggetto di `item` nell'inventario (una pila uguale non piena o una casella vuota).
     pub fn accepts(&self, item: &Item) -> bool {
-        !item.is_empty() && self.contents.main.iter().any(|s| s.item.is_empty() || (s.item.stacks_with(item) && s.item.count < MAX_STACK))
+        !item.is_empty() && self.contents.main.iter().any(|s| s.item.is_empty() || (s.item.stacks_with(item) && s.item.count < item.max_stack()))
     }
 
     /// Raccoglie `item` nell'inventario: prima riempie le pile uguali, poi le caselle vuote, sempre dalla barra verso l'alto.
@@ -513,6 +588,7 @@ impl Inventory {
     /// Ogni casella cambiata prende un ID di pila nuovo.
     pub fn add(&mut self, item: Item) -> (Item, Vec<(u8, u8)>) {
         let mut left = item.count;
+        let max = item.max_stack();
         let mut changed = Vec::new();
         if item.is_empty() {
             return (item, changed);
@@ -524,9 +600,9 @@ impl Inventory {
                 }
                 let slot = &self.contents.main[i].item;
                 let room = if pass_empty && slot.is_empty() {
-                    MAX_STACK
+                    max
                 } else if !pass_empty && !slot.is_empty() && slot.stacks_with(&item) {
-                    MAX_STACK.saturating_sub(slot.count)
+                    max.saturating_sub(slot.count)
                 } else {
                     0
                 };
@@ -915,5 +991,65 @@ mod tests {
         assert_eq!((rest.count, changed), (4, vec![(INVENTORY_CONTAINER, 7)]));
         assert!(!inv.accepts(&stones));
         assert_eq!(inv.add(stones.clone()), (stones, vec![]));
+    }
+
+    fn named(name: &str, count: u16) -> Item {
+        Item { id: registry::items().id(name).unwrap(), count, ..Default::default() }
+    }
+
+    #[test]
+    fn max_stack_depends_on_the_item() {
+        for (name, max) in [
+            ("minecraft:diamond_sword", 1),
+            ("minecraft:netherite_pickaxe", 1),
+            ("minecraft:iron_chestplate", 1),
+            ("minecraft:bow", 1),
+            ("minecraft:oak_boat", 1),
+            ("minecraft:music_disc_13", 1),
+            ("minecraft:egg", 16),
+            ("minecraft:snowball", 16),
+            ("minecraft:ender_pearl", 16),
+            ("minecraft:oak_sign", 16),
+            ("minecraft:bucket", 16),
+            ("minecraft:water_bucket", 1),
+            ("minecraft:stone", 64),
+            ("minecraft:apple", 64),
+        ] {
+            assert_eq!(named(name, 1).max_stack(), max, "{name}");
+        }
+    }
+
+    #[test]
+    fn add_never_stacks_beyond_the_real_maximum() {
+        let mut inv = Inventory::default();
+        let (rest, changed) = inv.add(named("minecraft:diamond_sword", 3));
+        assert!(rest.is_empty());
+        assert_eq!(changed.len(), 3, "una spada per casella");
+        assert!((0..3).all(|i| inv.main(i).count == 1));
+        let (rest, _) = inv.add(named("minecraft:egg", 20));
+        assert!(rest.is_empty());
+        assert_eq!((inv.main(3).count, inv.main(4).count), (16, 4));
+        // una pila di spade non "accetta" altre spade se non c'è una casella vuota
+        let mut full = Inventory::default();
+        for i in 0..MAIN_SLOTS {
+            full.set_main(i, named("minecraft:diamond_sword", 1));
+        }
+        assert!(!full.accepts(&named("minecraft:diamond_sword", 1)));
+    }
+
+    #[test]
+    fn place_cannot_stack_unstackable_items() {
+        let mut inv = Inventory::default();
+        let id0 = give(&mut inv, 0, "minecraft:diamond_sword", 1);
+        let id1 = give(&mut inv, 1, "minecraft:diamond_sword", 1);
+        let before = inv.contents.main.clone();
+        let req = request(-1, vec![StackAction::Place { count: 1, src: hotbar(0, id0), dst: hotbar(1, id1) }]);
+        assert!(!inv.handle(&req, true).ok);
+        assert_eq!(inv.contents.main, before);
+        // le uova arrivano a 16 e non oltre
+        let a = give(&mut inv, 2, "minecraft:egg", 10);
+        let b = give(&mut inv, 3, "minecraft:egg", 10);
+        let req = request(-2, vec![StackAction::Place { count: 10, src: hotbar(2, a), dst: hotbar(3, b) }]);
+        assert!(!inv.handle(&req, true).ok);
     }
 }

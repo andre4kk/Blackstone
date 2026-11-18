@@ -269,11 +269,14 @@ impl Server {
         if let Some(p) = self.players.get_mut(&pid).filter(|p| p.skin_logs < HEX_LOGS) {
             p.skin_logs += 1;
             log!("[#{pid}] PlayerSkin ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
-            // Corpo completo su file, per confrontare la struttura offline (`captures/` e' ignorata da git).
-            let path = format!("captures/playerskin-{pid}-{}.bin", p.skin_logs);
-            match std::fs::create_dir_all("captures").and_then(|()| std::fs::write(&path, body)) {
-                Ok(()) => log!("[#{pid}] PlayerSkin: corpo completo salvato in {path}"),
-                Err(e) => log!("[#{pid}] PlayerSkin: salvataggio di {path} non riuscito: {e}"),
+            // Corpo completo su file, per confrontare la struttura offline (`captures/` e' ignorata da git). Solo nel server vero: i test non scrivono file.
+            #[cfg(not(test))]
+            {
+                let path = format!("captures/playerskin-{pid}-{}.bin", p.skin_logs);
+                match std::fs::create_dir_all("captures").and_then(|()| std::fs::write(&path, body)) {
+                    Ok(()) => log!("[#{pid}] PlayerSkin: corpo completo salvato in {path}"),
+                    Err(e) => log!("[#{pid}] PlayerSkin: salvataggio di {path} non riuscito: {e}"),
+                }
             }
         }
         let Some(change) = PlayerSkinChange::decode(body) else {

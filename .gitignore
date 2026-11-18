@@ -31,4 +31,4 @@ Thumbs.db
 __pycache__/
 
 # Catture di pacchetti per la verifica con il client reale
-/captures/
+captures/

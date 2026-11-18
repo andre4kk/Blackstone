@@ -188,12 +188,13 @@ impl Server {
     }
 
     /// I dati dell'entità (`SetActorData` e `AddPlayer`): per un giocatore i flag di base (gravità, collisioni, arrampicata, respiro)
-    /// più lo stato attuale (accovacciato, in corsa, a nuoto, in planata) e il riquadro 0.6 x 1.8. Un oggetto a terra ha gravità, collisioni e il riquadro 0.25 x 0.25.
+    /// più lo stato attuale (accovacciato, in corsa, a nuoto, in planata), il nome e il riquadro del corpo secondo lo stato. Un oggetto a terra ha gravità, collisioni e il riquadro 0.25 x 0.25.
     pub(crate) fn entity_data(&self, id: u64) -> Vec<(u32, DataValue)> {
         let bot_sneaking = self.bots.iter().any(|b| b.id == id && b.sneaking);
-        let state = match self.entities.get(id).map(|e| &e.kind) {
-            Some(EntityKind::Player { pid, .. }) => pid.and_then(|pid| self.players.get(&pid)),
-            None => self.players.get(&id), // il giocatore che sta entrando non ha ancora la sua entità
+        let (state, name) = match self.entities.get(id).map(|e| &e.kind) {
+            Some(EntityKind::Player { pid, name, .. }) => (pid.and_then(|pid| self.players.get(&pid)), name.clone()),
+            // il giocatore che sta entrando non ha ancora la sua entità
+            None => (self.players.get(&id), self.players.get(&id).and_then(|p| p.info.as_ref()).map_or_else(String::new, |i| i.name.clone())),
             Some(EntityKind::Item { .. }) => {
                 let flags = [flag::HAS_GRAVITY, flag::HAS_COLLISION].iter().fold(0i64, |f, b| f | 1 << b);
                 return vec![
@@ -205,12 +206,32 @@ impl Server {
         };
         let mut flags = [flag::HAS_GRAVITY, flag::HAS_COLLISION, flag::CAN_CLIMB, flag::BREATHING].iter().fold(0i64, |f, b| f | 1 << b);
         flags |= (bot_sneaking as i64) << flag::SNEAKING;
+        let (mut sneaking, mut crawling) = (bot_sneaking, false);
         if let Some(p) = state {
             for (on, bit) in [(p.sneaking, flag::SNEAKING), (p.sprinting, flag::SPRINTING), (p.swimming, flag::SWIMMING), (p.gliding, flag::GLIDING)] {
                 flags |= (on as i64) << bit;
             }
+            sneaking |= p.sneaking;
+            crawling = p.swimming || p.gliding;
         }
-        vec![(key::FLAGS, DataValue::Int64(flags)), (key::BOUNDING_BOX_WIDTH, DataValue::Float(0.6)), (key::BOUNDING_BOX_HEIGHT, DataValue::Float(1.8))]
+        // Il nome sopra la testa, sempre visibile (come `writeNameTagMetadata` di Dragonfly).
+        let show = !name.is_empty();
+        flags |= (show as i64) << flag::SHOW_NAME | (show as i64) << flag::ALWAYS_SHOW_NAME;
+        // Il riquadro del corpo (`ptype.BBox` di Dragonfly): 0.6 a nuoto o in planata, 1.5 accovacciato, 1.8 altrimenti.
+        let height = if crawling {
+            0.6
+        } else if sneaking {
+            1.5
+        } else {
+            1.8
+        };
+        vec![
+            (key::FLAGS, DataValue::Int64(flags)),
+            (key::NAME, DataValue::Str(name)),
+            (key::BOUNDING_BOX_WIDTH, DataValue::Float(0.6)),
+            (key::BOUNDING_BOX_HEIGHT, DataValue::Float(height)),
+            (key::ALWAYS_SHOW_NAMETAG, DataValue::Byte(show as u8)),
+        ]
     }
 
     /// Manda `packets` a chi vede l'entità `id` (non a lei stessa).

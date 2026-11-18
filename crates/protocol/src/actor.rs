@@ -11,8 +11,10 @@ pub const SET_ACTOR_DATA: u32 = 39;
 /// Chiavi dei dati (stabili da anni: PocketMine `EntityMetadataProperties`, gophertunnel `EntityDataKey*`).
 pub mod key {
     pub const FLAGS: u32 = 0;
+    pub const NAME: u32 = 4;
     pub const BOUNDING_BOX_WIDTH: u32 = 53;
     pub const BOUNDING_BOX_HEIGHT: u32 = 54;
+    pub const ALWAYS_SHOW_NAMETAG: u32 = 81;
 }
 
 /// Bit della chiave `FLAGS` (`ActorFlags`). Dal protocollo 560 CAN_DASH(46) ha spostato di uno tutti i successivi
@@ -20,6 +22,8 @@ pub mod key {
 pub mod flag {
     pub const SNEAKING: u32 = 1;
     pub const SPRINTING: u32 = 3;
+    pub const SHOW_NAME: u32 = 14;
+    pub const ALWAYS_SHOW_NAME: u32 = 15;
     pub const CAN_CLIMB: u32 = 19;
     pub const GLIDING: u32 = 32;
     pub const BREATHING: u32 = 35;
@@ -30,23 +34,29 @@ pub mod flag {
 }
 
 /// Un valore sincronizzato; il numero è sia l'indice di variante sia il `DataItemType`.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum DataValue {
+    Byte(u8),
     Float(f32),
+    Str(String),
     Int64(i64),
 }
 
 impl DataValue {
-    fn write(self, w: &mut Writer) {
+    fn write(&self, w: &mut Writer) {
         let ty: u8 = match self {
+            DataValue::Byte(_) => 0,
             DataValue::Float(_) => 3,
+            DataValue::Str(_) => 4,
             DataValue::Int64(_) => 7,
         };
         w.var_u32(ty as u32); // indice di variante
         w.u8(ty); // tipo
         match self {
-            DataValue::Float(v) => w.f32(v),
-            DataValue::Int64(v) => w.var_i64(v),
+            DataValue::Byte(v) => w.u8(*v),
+            DataValue::Float(v) => w.f32(*v),
+            DataValue::Str(v) => w.string(v),
+            DataValue::Int64(v) => w.var_i64(*v),
         }
     }
 }
@@ -106,6 +116,15 @@ mod tests {
         write_data(&mut w, &[(key::BOUNDING_BOX_WIDTH, DataValue::Float(1.0)), (key::FLAGS, DataValue::Int64(0))]);
         assert_eq!(w.0[..5], [2, 0, 7, 7, 0]);
         assert_eq!(w.0[5], 53);
+    }
+
+    #[test]
+    fn name_entry_is_string_and_always_show_is_byte() {
+        // gophertunnel Writer.EntityMetadata: stringa = tipo 4 (varuint32 di lunghezza + byte), byte = tipo 0.
+        let mut w = Writer::default();
+        write_data(&mut w, &[(key::ALWAYS_SHOW_NAMETAG, DataValue::Byte(1)), (key::NAME, DataValue::Str("Alex".into()))]);
+        assert_eq!(w.0, [2, 4, 4, 4, 4, b'A', b'l', b'e', b'x', 81, 0, 0, 1]);
+        assert_eq!((key::NAME, key::ALWAYS_SHOW_NAMETAG, flag::SHOW_NAME, flag::ALWAYS_SHOW_NAME), (4, 81, 14, 15));
     }
 
     #[test]

@@ -313,6 +313,11 @@ fn craft_and_place(w: &mut Writer, request_id: i32, net_id: u32, dst: u8) {
 
 /// Come `craft_and_place`, ma verso la casella `dst` del contenitore `container` (28 = barra, 6 = armatura).
 fn craft_and_place_in(w: &mut Writer, request_id: i32, net_id: u32, container: u8, dst: u8) {
+    craft_and_place_count(w, request_id, net_id, container, dst, 64);
+}
+
+/// Come `craft_and_place_in`, ma sposta `count` oggetti (una pila di spade o di elmi ne ha uno solo).
+fn craft_and_place_count(w: &mut Writer, request_id: i32, net_id: u32, container: u8, dst: u8, count: u8) {
     w.var_i32(request_id);
     w.var_u32(2);
     w.var_u32(12); // variante CraftCreative
@@ -321,7 +326,7 @@ fn craft_and_place_in(w: &mut Writer, request_id: i32, net_id: u32, container: u
     w.u8(1);
     w.var_u32(1); // variante Place
     w.u8(1);
-    w.u8(64);
+    w.u8(count);
     slot_bytes(w, 60, 50, request_id);
     slot_bytes(w, container, dst, 0);
     w.var_u32(0); // niente stringhe da filtrare
@@ -513,7 +518,13 @@ fn the_player_gets_its_actor_data_with_gravity_on_spawn() {
     h.join(1, "Alice");
     let data: Vec<Packet> = h.packets_to(1).into_iter().filter(|p| p.id == bedrock_protocol::actor::SET_ACTOR_DATA).collect();
     assert_eq!(data.len(), 1, "senza i dati dell'entità il client non applica la gravità al giocatore");
-    assert_eq!(data[0].body, bedrock_protocol::actor::player_data(1).body);
+    assert_eq!(data[0].body, bedrock_protocol::actor::set_actor_data(1, &h.server.entity_data(1)).body);
+    let flags = h.server.entity_data(1).into_iter().find_map(|(k, v)| match v {
+        bedrock_protocol::actor::DataValue::Int64(f) if k == bedrock_protocol::actor::key::FLAGS => Some(f),
+        _ => None,
+    });
+    let gravity = 1i64 << bedrock_protocol::actor::flag::HAS_GRAVITY;
+    assert_eq!(flags.unwrap() & gravity, gravity, "gravità accesa");
 }
 
 /// `PlayerAuthInput` minimo con un solo flag di input, posizione (0, 70, 0).
@@ -2502,10 +2513,22 @@ mod player_list {
         let mut h = three_players();
         h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_flag(27))]);
         let sent = h.packets_by_player();
-        let flags = (1i64 << flag::HAS_GRAVITY) | 1 << flag::HAS_COLLISION | 1 << flag::CAN_CLIMB | 1 << flag::BREATHING | 1 << flag::SNEAKING;
+        let flags = (1i64 << flag::HAS_GRAVITY)
+            | 1 << flag::HAS_COLLISION
+            | 1 << flag::CAN_CLIMB
+            | 1 << flag::BREATHING
+            | 1 << flag::SNEAKING
+            | 1 << flag::SHOW_NAME
+            | 1 << flag::ALWAYS_SHOW_NAME;
         let expected = set_actor_data(
             1,
-            &[(key::FLAGS, DataValue::Int64(flags)), (key::BOUNDING_BOX_WIDTH, DataValue::Float(0.6)), (key::BOUNDING_BOX_HEIGHT, DataValue::Float(1.8))],
+            &[
+                (key::FLAGS, DataValue::Int64(flags)),
+                (key::NAME, DataValue::Str("Alice".into())),
+                (key::BOUNDING_BOX_WIDTH, DataValue::Float(0.6)),
+                (key::BOUNDING_BOX_HEIGHT, DataValue::Float(1.5)),
+                (key::ALWAYS_SHOW_NAMETAG, DataValue::Byte(1)),
+            ],
         );
         for pid in [1, 2] {
             let data = of_kind(&sent[&pid], bedrock_protocol::actor::SET_ACTOR_DATA);
@@ -2537,6 +2560,48 @@ mod player_list {
     }
 
     #[test]
+    fn players_and_bots_carry_their_name_over_the_head() {
+        use bedrock_protocol::actor::{flag, key, DataValue};
+        let mut h = three_players();
+        let data = h.server.entity_data(1);
+        let get = |k: u32| data.iter().find(|(id, _)| *id == k).map(|(_, v)| v.clone());
+        assert_eq!(get(key::NAME), Some(DataValue::Str("Alice".into())));
+        assert_eq!(get(key::ALWAYS_SHOW_NAMETAG), Some(DataValue::Byte(1)));
+        let Some(DataValue::Int64(flags)) = get(key::FLAGS) else { panic!("flag") };
+        assert_ne!(flags & 1 << flag::SHOW_NAME, 0);
+        assert_ne!(flags & 1 << flag::ALWAYS_SHOW_NAME, 0);
+        // Anche AddPlayer dice il nome ai nuovi spettatori, e un bot lo ha come i giocatori.
+        let bot = h.server.spawn_bot(1, "Robo");
+        let data = h.server.entity_data(bot);
+        assert!(data.iter().any(|(k, v)| *k == key::NAME && *v == DataValue::Str("Robo".into())));
+    }
+
+    #[test]
+    fn body_box_follows_the_state() {
+        use bedrock_protocol::actor::{key, DataValue};
+        let mut h = three_players();
+        let height = |h: &Harness| match h.server.entity_data(1).iter().find(|(k, _)| *k == key::BOUNDING_BOX_HEIGHT) {
+            Some((_, DataValue::Float(v))) => *v,
+            _ => panic!("altezza"),
+        };
+        assert_eq!(height(&h), 1.8);
+        for (start, stop, expected) in [(27, 28, 1.5), (29, 30, 0.6), (32, 33, 0.6)] {
+            h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_flag(start))]);
+            assert_eq!(height(&h), expected, "stato {start}");
+            // sia a sé sia agli spettatori arriva il riquadro dello stato
+            let sent = h.packets_by_player();
+            for pid in [1, 2] {
+                let data = of_kind(&sent[&pid], bedrock_protocol::actor::SET_ACTOR_DATA);
+                let want = bedrock_protocol::actor::set_actor_data(1, &h.server.entity_data(1));
+                assert_eq!(data.last().map(|p| &p.body), Some(&want.body), "#{pid} stato {start}");
+            }
+            h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_flag(stop))]);
+            assert_eq!(height(&h), 1.8, "stop {stop}");
+            h.packets_by_player();
+        }
+    }
+
+    #[test]
     fn changing_held_slot_shows_the_item_to_viewers() {
         let mut h = three_players();
         h.receive(1, &[stack_request_packet(|w| craft_and_place(w, -1, stone_net_id(), 2))]);
@@ -2563,7 +2628,7 @@ mod player_list {
     fn armor_change_is_relayed() {
         let mut h = three_players();
         let helmet = registry::creative().1.iter().position(|c| c.name == "minecraft:iron_helmet").unwrap() as u32 + 1;
-        h.receive(1, &[stack_request_packet(|w| craft_and_place_in(w, -1, helmet, 6, 0))]);
+        h.receive(1, &[stack_request_packet(|w| craft_and_place_count(w, -1, helmet, 6, 0, 1))]);
         let sent = h.packets_by_player();
         let armor = of_kind(&sent[&2], id::MOB_ARMOR_EQUIPMENT);
         assert_eq!(armor.len(), 1);
@@ -3072,7 +3137,7 @@ mod bot {
         h.receive(1, &[command("/bot   Un nome lunghissimo davvero  ")]);
         assert_eq!(bot_names(&h), vec!["Un nome lunghiss".to_string()], "16 caratteri");
         h.server.remove_bots();
-        h.receive(1, &[command(&format!("/bot §cRo{}sso§r", ''))]);
+        h.receive(1, &[command(&format!("/bot §cRo{}sso§r", '\u{7}'))]);
         assert_eq!(bot_names(&h), vec!["cRossor".to_string()], "senza § e controlli");
         h.server.remove_bots();
         h.receive(1, &[command("/bot àèìòùàèìòùàèìòùàèìòù")]);
