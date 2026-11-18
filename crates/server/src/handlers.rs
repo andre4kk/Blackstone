@@ -74,14 +74,24 @@ impl Server {
     }
 
     /// Input del giocatore: per ora se ne legge solo la posizione. I valori non finiti o fuori dal mondo si scartano.
+    /// Se il corpo non si legge per intero (il layout dopo la posizione non è verificato sul client reale) si logga
+    /// la prima volta e si usa comunque la posizione: il movimento non deve dipendere dal resto del pacchetto.
     fn player_auth_input(&mut self, pid: u64, body: &[u8]) {
-        if !self.players.get(&pid).is_some_and(|p| p.spawned) {
-            return;
-        }
-        let Some(input) = PlayerAuthInput::decode(body) else { return };
+        let Some(player) = self.players.get_mut(&pid).filter(|p| p.spawned) else { return };
+        let position = match PlayerAuthInput::decode(body) {
+            Some(input) => input.position,
+            None => {
+                if !std::mem::replace(&mut player.pai_logged, true) {
+                    let head = &body[..body.len().min(64)];
+                    log!("[#{pid}] PlayerAuthInput illeggibile ({} byte): {head:02x?}", body.len());
+                }
+                let Some((_, _, position)) = PlayerAuthInput::decode_rotation_position(body) else { return };
+                position
+            }
+        };
         // Limite del mondo di Minecraft: 30 milioni di blocchi per lato.
-        if input.position.iter().all(|v| v.is_finite() && v.abs() <= 30_000_000.0) {
-            self.on_move(pid, input.position);
+        if position.iter().all(|v| v.is_finite() && v.abs() <= 30_000_000.0) {
+            self.on_move(pid, position);
         }
     }
 

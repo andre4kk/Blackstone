@@ -57,6 +57,8 @@ struct Player {
     streaming: bool,
     /// Posizione degli occhi: quella dello spawn, poi l'ultima di `PlayerAuthInput`.
     pos: [f32; 3],
+    /// Vero dopo aver loggato un `PlayerAuthInput` illeggibile: si logga solo il primo, a 20 Hz sarebbe un diluvio.
+    pai_logged: bool,
     /// Chunk (x, z) in cui si trova.
     last_chunk: (i32, i32),
     /// Chunk già inviati e ancora nel raggio del giocatore: quando ne escono si tolgono, così al ritorno si rimandano.

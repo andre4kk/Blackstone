@@ -163,6 +163,23 @@ fn auth_input_body(x: f32, y: f32, z: f32) -> Vec<u8> {
 }
 
 #[test]
+fn malformed_pai_still_moves_player_and_logs_once() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    // Corpo valido solo fino alla posizione e ai primi campi: il decoder completo lo rifiuta.
+    let truncated = |x: f32| Packet::new(id::PLAYER_AUTH_INPUT, auth_input_body(x, 70.0, -3.0)[..30].to_vec());
+    assert!(!h.server.players[&1].pai_logged);
+    h.receive(1, &[truncated(40.5)]);
+    assert_eq!((h.server.players[&1].pos, h.server.players[&1].last_chunk), ([40.5, 70.0, -3.0], (2, -1)));
+    assert!(h.server.players[&1].pai_logged, "primo errore registrato");
+    h.receive(1, &[truncated(100.5)]);
+    assert_eq!(h.server.players[&1].pos[0], 100.5, "il movimento continua anche dopo il primo errore");
+    // Meno di 20 byte: nemmeno la posizione si legge, nessun effetto.
+    h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, auth_input_body(1.0, 70.0, 0.0)[..19].to_vec())]);
+    assert_eq!(h.server.players[&1].pos[0], 100.5);
+}
+
+#[test]
 fn player_auth_input_moves_the_player_and_ignores_bad_positions() {
     let mut h = Harness::new();
     h.join(1, "Alice");

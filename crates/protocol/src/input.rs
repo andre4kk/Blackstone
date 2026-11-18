@@ -336,6 +336,13 @@ impl PlayerAuthInput {
         flag <= MAX_FLAG_ID as u32 && self.flags >> flag & 1 == 1
     }
 
+    /// Solo rotazione e posizione (i primi 5 f32): la parte del layout verificata sul client reale. Serve da ripiego
+    /// quando `decode` rifiuta il resto del corpo.
+    pub fn decode_rotation_position(body: &[u8]) -> Option<(f32, f32, [f32; 3])> {
+        let r = &mut Reader(body);
+        Some((r.f32()?, r.f32()?, r.vec3()?))
+    }
+
     /// Dopo `block_actions` si leggono veicolo, vettore analogico, camera e vettore grezzo, ma non si conservano.
     /// Una richiesta di pila con un'azione sconosciuta si scarta e il resto del corpo si abbandona: restano i campi già letti.
     pub fn decode(body: &[u8]) -> Option<Self> {
@@ -612,6 +619,17 @@ mod tests {
         w.raw(&[0, 0, 0]);
         pai_tail(&mut w);
         assert!(PlayerAuthInput::decode(&w.0).expect("127 è valido").has(127));
+    }
+
+    #[test]
+    fn decode_rotation_position_reads_only_the_first_five_floats() {
+        let body = pai_minimal();
+        assert_eq!(PlayerAuthInput::decode_rotation_position(&body), Some((0.0, 90.0, [1.0, 2.0, 3.0])));
+        // il corpo intero viene rifiutato, il ripiego no
+        assert!(PlayerAuthInput::decode(&body[..24]).is_none());
+        assert_eq!(PlayerAuthInput::decode_rotation_position(&body[..20]), Some((0.0, 90.0, [1.0, 2.0, 3.0])));
+        assert_eq!(PlayerAuthInput::decode_rotation_position(&body[..19]), None);
+        assert_eq!(PlayerAuthInput::decode_rotation_position(&[]), None);
     }
 
     #[test]
