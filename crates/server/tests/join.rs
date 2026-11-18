@@ -12,13 +12,17 @@ use bedrock_protocol::{
     },
     id,
     packets::{pack_response, text_type, CommandRequest, Login, RequestChunkRadius, RequestNetworkSettings, ResourcePackClientResponse, Text},
+    varint,
     wire::ServerPacket,
     Packet, Session, PROTOCOL,
 };
+use bedrock_server::config::ServerConfig;
 use p384::ecdsa::{signature::Verifier, Signature, VerifyingKey};
 use std::{
+    collections::HashSet,
     io::{Read, Write},
-    net::{TcpStream, UdpSocket},
+    net::{SocketAddr, TcpListener, TcpStream, UdpSocket},
+    path::PathBuf,
     time::{Duration, Instant},
 };
 use str0m::{
@@ -29,12 +33,21 @@ use str0m::{
 };
 
 const PORT: u16 = 29132;
+/// Porta del test con il generatore finto.
+const GEN_PORT: u16 = 29133;
+
+/// Che mondo ci si aspetta: quello piatto di ripiego o quello del generatore finto, con un movimento di 5 chunk.
+#[derive(Clone, Copy, PartialEq)]
+enum Mode {
+    Flat,
+    Generated,
+}
 
 /// Richiesta HTTP minimale. Ritorna (status line, corpo).
-fn http(method: &str, path: &str, body: &str) -> (String, String) {
+fn http(port: u16, method: &str, path: &str, body: &str) -> (String, String) {
     let mut s = (0..50)
         .find_map(|_| {
-            TcpStream::connect(("127.0.0.1", PORT)).ok().or_else(|| {
+            TcpStream::connect(("127.0.0.1", port)).ok().or_else(|| {
                 std::thread::sleep(Duration::from_millis(100));
                 None
             })
@@ -100,9 +113,9 @@ fn response(tag: u32) -> Packet {
     Packet::new(id::RESOURCE_PACK_CLIENT_RESPONSE, ResourcePackClientResponse::new(tag).encode())
 }
 
-fn client() {
+fn client(port: u16, mode: Mode) {
     // 1. Info del server.
-    let (status, body) = http("GET", "/v1/join", "");
+    let (status, body) = http(port, "GET", "/v1/join", "");
     assert!(status.contains("200"), "{status}");
     let info: serde_json::Value = serde_json::from_str(&body).unwrap();
     assert_eq!(info["protocol"], PROTOCOL);
@@ -123,7 +136,7 @@ fn client() {
     });
     let (offer, pending) = api.apply().unwrap();
 
-    let (status, answer) = http("POST", "/v1/join/123456", &offer.to_sdp_string());
+    let (status, answer) = http(port, "POST", "/v1/join/123456", &offer.to_sdp_string());
     assert!(status.contains("200"), "{status}");
     verify_identity(&answer);
     let answer: String = answer.lines().filter(|l| !l.starts_with("a=identity:")).flat_map(|l| [l, "\r\n"]).collect();
@@ -136,7 +149,10 @@ fn client() {
     const EXPECTED_CHUNKS: usize = 69; // punti interi con x² + z² <= r² + r in [-4, 4]²
     let (start, mut buf, mut session, mut stage, mut chunks) = (Instant::now(), vec![0u8; 2048], Session::default(), 0, 0);
     let mut pending: Vec<u8> = Vec::new();
-    while start.elapsed() < Duration::from_secs(10) {
+    // Solo `Mode::Generated`: chunk e biomi ricevuti e centro (in chunk) dopo il movimento.
+    let (mut seen, mut biomes, mut moved_to): (HashSet<(i32, i32)>, bool, Option<(i32, i32)>) = (HashSet::new(), false, None);
+    let limit = Duration::from_secs(if mode == Mode::Generated { 30 } else { 10 });
+    while start.elapsed() < limit {
         let deadline = match rtc.poll_output().unwrap() {
             Output::Timeout(t) => t,
             Output::Transmit(t) => {
@@ -178,6 +194,52 @@ fn client() {
                         assert_eq!(packets[1].body, [0, 0, 0, 3], "PlayerSpawn");
                         // Come Minecraft: solo ora, a mondo caricato, dichiara di essere inizializzato (ID di runtime 1).
                         Packet::new(id::SET_LOCAL_PLAYER_AS_INITIALIZED, vec![1])
+                    }
+                    (5, _) if mode == Mode::Generated => {
+                        for p in &packets {
+                            match p.id {
+                                x if x == BiomeDefinitionList::ID => biomes = true,
+                                x if x == NetworkChunkPublisherUpdate::ID || x == id::TEXT => {}
+                                x if x == LevelChunk::ID => {
+                                    let mut b = &p.body[..];
+                                    let pos = (varint::read_signed(&mut b).unwrap(), varint::read_signed(&mut b).unwrap());
+                                    assert!(seen.insert(pos), "chunk {pos:?} inviato due volte");
+                                }
+                                other => panic!("pacchetto inatteso durante lo streaming: {other}"),
+                            }
+                        }
+                        if seen.len() < EXPECTED_CHUNKS {
+                            continue;
+                        }
+                        assert!(biomes, "manca la BiomeDefinitionList");
+                        assert_eq!(seen.len(), EXPECTED_CHUNKS, "chunk attorno allo spawn");
+                        assert!(seen.iter().all(|&(x, z)| x.abs() <= RADIUS && z.abs() <= RADIUS), "solo chunk vicini allo spawn: {seen:?}");
+                        // Sposta il giocatore di 5 chunk in X (lo spawn finto è in 8, 61, 8).
+                        moved_to = Some((5, 0));
+                        let body: Vec<u8> = [0.0f32, 0.0, 88.0, 63.0, 8.0].iter().flat_map(|v| v.to_le_bytes()).collect();
+                        Packet::new(id::PLAYER_AUTH_INPUT, body)
+                    }
+                    (6, _) if mode == Mode::Generated => {
+                        let before = seen.clone();
+                        for p in &packets {
+                            match p.id {
+                                x if x == NetworkChunkPublisherUpdate::ID => {}
+                                x if x == LevelChunk::ID => {
+                                    let mut b = &p.body[..];
+                                    let pos = (varint::read_signed(&mut b).unwrap(), varint::read_signed(&mut b).unwrap());
+                                    assert!(seen.insert(pos), "chunk {pos:?} rimandato dopo il movimento");
+                                }
+                                other => panic!("pacchetto inatteso dopo il movimento: {other}"),
+                            }
+                        }
+                        // Il bordo nuovo (x = 5 + RADIUS) deve arrivare, e ogni chunk nuovo sta nel raggio del nuovo centro.
+                        let (cx, cz) = moved_to.unwrap();
+                        assert!(seen.iter().filter(|c| !before.contains(c)).all(|&(x, z)| (x - cx).pow(2) + (z - cz).pow(2) <= RADIUS * RADIUS + RADIUS));
+                        if !seen.contains(&(cx + RADIUS, cz)) {
+                            continue;
+                        }
+                        assert!(seen.len() > EXPECTED_CHUNKS, "dopo il movimento servono chunk nuovi");
+                        return;
                     }
                     (5, _) => {
                         // Dopo l'inizializzazione: benvenuto e annuncio di ingresso (testo), biomi, pubblicazione e chunk.
@@ -229,11 +291,94 @@ fn client() {
             Err(_) => rtc.handle_input(Input::Timeout(now)).unwrap(),
         }
     }
-    panic!("flusso non completato entro 10 secondi (fermo al passo {stage})");
+    panic!("flusso non completato entro {limit:?} (fermo al passo {stage})");
+}
+
+// ---------- generatore finto ----------
+
+/// NBT su disco little-endian `{name, states: {}}` di un blocco senza stati e il suo hash FNV-1a (l'ID di rete).
+fn fake_block(name: &str) -> (i32, Vec<u8>) {
+    let mut nbt = vec![0x0a, 0, 0, 0x08, 4, 0];
+    nbt.extend_from_slice(b"name");
+    nbt.extend_from_slice(&(name.len() as u16).to_le_bytes());
+    nbt.extend_from_slice(name.as_bytes());
+    nbt.extend_from_slice(&[0x0a, 6, 0]);
+    nbt.extend_from_slice(b"states");
+    nbt.extend_from_slice(&[0, 0]);
+    let hash = nbt.iter().fold(0x811c_9dc5u32, |h, &b| (h ^ b as u32).wrapping_mul(0x0100_0193)) as i32;
+    (hash, nbt)
+}
+
+/// Chunk deterministico: pietra fino a y=59, erba a y=60, aria sopra; bioma 1 (pianura).
+fn fake_chunk(dim: vgen::Dim, x: i32, z: i32, palette: &[i32]) -> vgen::ChunkData {
+    let sections = (-4..=3i8)
+        .map(|index| {
+            let mut blocks = Box::new([0u16; 4096]);
+            for (n, b) in blocks.iter_mut().enumerate() {
+                let y = index as i32 * 16 + (n % 16) as i32;
+                *b = match y {
+                    ..=59 => 1,
+                    60 => 2,
+                    _ => 0,
+                };
+            }
+            vgen::Section { index, palette: palette.to_vec(), blocks, biomes: Box::new([1; 64]), water: None }
+        })
+        .collect();
+    vgen::ChunkData { dim, x, z, sections, block_entities: Vec::new() }
+}
+
+/// Generatore finto in un thread: risponde a Hello (con la palette aria/pietra/erba), Generate e Spawn (8, 61, 8).
+fn start_fake_generator() -> SocketAddr {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    std::thread::spawn(move || {
+        for stream in listener.incoming() {
+            let Ok(mut stream) = stream else { continue };
+            std::thread::spawn(move || {
+                let blocks = [fake_block("minecraft:air"), fake_block("minecraft:stone"), fake_block("minecraft:grass_block")];
+                let palette: Vec<i32> = blocks.iter().map(|b| b.0).collect();
+                while let Ok(frame) = vgen::read_frame(&mut stream) {
+                    let replies = match vgen::ToGen::decode(&frame).expect("messaggio del server illeggibile") {
+                        vgen::ToGen::Hello { .. } => vec![vgen::FromGen::Hello { version: vgen::VERSION }, vgen::FromGen::Palette { entries: blocks.to_vec() }],
+                        vgen::ToGen::Generate { req, dim, x, z } => vec![vgen::FromGen::Chunk { req, data: fake_chunk(dim, x, z, &palette) }],
+                        vgen::ToGen::Spawn { req, .. } => vec![vgen::FromGen::Spawn { req, x: 8, y: 61, z: 8 }],
+                    };
+                    for r in replies {
+                        if vgen::write_frame(&mut stream, &r.encode()).is_err() {
+                            return;
+                        }
+                    }
+                }
+            });
+        }
+    });
+    addr
+}
+
+/// Cartella temporanea del mondo del test, rimossa alla fine.
+struct TempWorld(PathBuf);
+
+impl Drop for TempWorld {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
 }
 
 #[tokio::test(flavor = "multi_thread")]
 async fn client_joins_the_world_and_receives_chunks() {
     tokio::spawn(bedrock_server::run(bedrock_server::config(PORT)));
-    tokio::task::spawn_blocking(client).await.unwrap();
+    tokio::task::spawn_blocking(|| client(PORT, Mode::Flat)).await.unwrap();
+}
+
+/// Con un generatore (finto): arrivano biomi e chunk attorno allo spawn dato dal generatore e,
+/// dopo un `PlayerAuthInput` spostato di 5 chunk in X, i chunk del nuovo bordo (e nessuno già inviato).
+#[tokio::test(flavor = "multi_thread")]
+async fn generated_world_streams_chunks_while_the_player_moves() {
+    let gen_addr = start_fake_generator();
+    let world = TempWorld(std::env::temp_dir().join(format!("vgen-e2e-{}", std::process::id())));
+    let server_cfg = ServerConfig { seed: Some(13579), view_distance: 4, port: GEN_PORT, ..ServerConfig::default() };
+    let dir = world.0.clone();
+    tokio::spawn(async move { bedrock_server::run_with_generator_at(bedrock_server::config(GEN_PORT), &server_cfg, &dir, gen_addr).await });
+    tokio::task::spawn_blocking(|| client(GEN_PORT, Mode::Generated)).await.unwrap();
 }

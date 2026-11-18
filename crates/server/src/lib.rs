@@ -181,18 +181,25 @@ impl Server {
 }
 
 /// Come [`run`], ma con il mondo e le impostazioni di `server.toml`: apre `worlds/<world>`, avvia il generatore e salva alla chiusura.
-pub async fn run_with(mut cfg: Config, server_cfg: &config::ServerConfig) -> io::Result<()> {
+pub async fn run_with(cfg: Config, server_cfg: &config::ServerConfig) -> io::Result<()> {
+    let launch = Launch::Process { program: server_cfg.generator.clone(), args_extra: Vec::new() };
+    run_world(cfg, server_cfg, &Path::new("worlds").join(&server_cfg.world), launch).await
+}
+
+/// Come [`run_with`], ma il mondo sta in `world_dir` e il generatore è già in ascolto su `generator` (nessun processo da avviare).
+/// Serve ai test end-to-end, che mettono un generatore finto nello stesso processo.
+pub async fn run_with_generator_at(cfg: Config, server_cfg: &config::ServerConfig, world_dir: &Path, generator: std::net::SocketAddr) -> io::Result<()> {
+    run_world(cfg, server_cfg, world_dir, Launch::Connect(generator)).await
+}
+
+async fn run_world(mut cfg: Config, server_cfg: &config::ServerConfig, world_dir: &Path, launch: Launch) -> io::Result<()> {
     cfg.level = server_cfg.world.clone();
-    let world = storage::World::open_with(&Path::new("worlds").join(&server_cfg.world), &server_cfg.world, server_cfg.seed)?;
+    let world = storage::World::open_with(world_dir, &server_cfg.world, server_cfg.seed)?;
     log!("[mondo] \"{}\" aperto, seme {}", server_cfg.world, world.seed());
     if let Some(seed) = server_cfg.seed.filter(|&s| s != world.seed()) {
         log!("[mondo] il seme di server.toml ({seed}) è diverso da quello del mondo esistente: vale quello del mondo ({})", world.seed());
     }
-    let generator = GenConfig {
-        launch: Launch::Process { program: server_cfg.generator.clone(), args_extra: Vec::new() },
-        seed: world.seed(),
-        restart_delay: Duration::from_secs(2),
-    };
+    let generator = GenConfig { launch, seed: world.seed(), restart_delay: Duration::from_secs(2) };
     serve(cfg, Some(world), Some(generator), server_cfg.view_distance.clamp(1, 32)).await
 }
 
