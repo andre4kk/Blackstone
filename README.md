@@ -82,7 +82,7 @@ La sequenza segue quella dei server di riferimento (gophertunnel / Dragonfly).
 
 - Ciclo di gioco a 20 tick al secondo (`Server::tick`), con misura di TPS e durata media del tick (`/tps`).
 - Chat tra i giocatori. Il nome viene dal login e non dal messaggio, ma le firme del login non sono ancora verificate (vedi "Sicurezza").
-- Comandi: `/help`, `/list`, `/tps`, `/say <testo>`.
+- Comandi: `/help`, `/list`, `/tps`, `/say <testo>`, `/gamemode <modo>` (`/gm`).
 - Annunci di ingresso e uscita.
 - Movimento: dal `PlayerAuthInput` si legge la posizione (occhi); a ogni cambio di chunk il client riceve il nuovo centro
   (`NetworkChunkPublisherUpdate`) e il server manda i chunk mancanti (al massimo 8 per giocatore per tick, dal più vicino).
@@ -92,7 +92,12 @@ La sequenza segue quella dei server di riferimento (gophertunnel / Dragonfly).
   Il seme è quello salvato nel mondo; `seed` in `server.toml` vale solo alla creazione.
 - Se il generatore manca (programma non trovato) il server lo scrive nel log e usa il mondo piatto di ripiego
   (bedrock a y=-64, terra a -63/-62, erba a -61, spawn in 0,-60,0), senza salvare quei chunk.
-- Ancora NON gestiti (ignorati in silenzio): rottura/posa di blocchi, inventario, animazioni, visibilità tra giocatori.
+- Creativo: ingresso in creativo con menu creativo completo, barra e inventario, rottura (validata dal server) e posa di blocchi
+  con regole di orientamento (scale, lastre, porte, letti, torce, muri, ecc.), aggiornamento dei vicini, interazioni
+  (porte, botole, cancelli, leve, bottoni). Le modifiche si salvano ogni 60 s e alla chiusura; l'inventario e la modalità
+  del giocatore sono salvati nel LevelDB in formato Bedrock (un nuovo ingresso con la stessa identità espelle il vecchio).
+- Ancora NON gestiti: drop e sopravvivenza (tappa 2), animazioni, visibilità tra giocatori. Limiti noti e lista di prova nel
+  gioco: `docs/superpowers/notes/2026-11-19-verifica-tappa1.md`.
 
 Gli ID di rete dei blocchi sono hash FNV-1a dello stato (`crates/server/src/world.rs`): non serve nessuna tabella dei blocchi.
 
@@ -142,8 +147,10 @@ Variabili d'ambiente (PowerShell: `$env:NO_CHUNKS="1"; cargo run`, poi `Remove-I
 - `NO_CHUNKS=1`: dopo PlayerSpawn non invia nessun chunk (serve a capire se i chunk causano la disconnessione).
 - `CHUNKS_EARLY=1`: manda biomi e chunk subito dopo PlayerSpawn, senza aspettare `SetLocalPlayerAsInitialized`.
 - `SKIP=jigsaw,voxel,items,creative,publisher`: non invia i pacchetti elencati (si possono combinare).
+- `VERSMC_DEBUG=nozero,nowater,plains,nobe`: disattiva parti dei chunk per isolare cosa rifiuta il client.
+- `SEND=biomes`: invia la lista biomi (spenta di default: il client l'ha rifiutata).
 - `SEND=actors`: invia anche `AvailableActorIdentifiers`, spento di default perché con i dati minimi che inventiamo
-  (nessuna entità) il client crolla. I biomi invece partono sempre.
+  (nessuna entità) il client crolla. 
 - `PUBLIC_IP=x.x.x.x`: IP pubblico da pubblicare come candidato ICE (gioco da Internet).
 
 Ogni riga del log ha davanti i secondi dall'avvio. Il log mostra gli stati ICE, la chiusura dei data channel e il contenuto dei pacchetti non gestiti (se brevi).
