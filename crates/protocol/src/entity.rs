@@ -134,7 +134,7 @@ pub fn player_list_add(entries: &[PlayerListEntry]) -> Packet {
         w.bool(e.teacher);
         w.bool(e.host);
         w.bool(e.sub_client);
-        w.i32(-1); // colore del giocatore: bianco opaco (ARGB)
+        crate::skin::write_be_argb(&mut w, [255; 4]); // colore del giocatore: bianco opaco (BEARGB, come gophertunnel)
     }
     Packet::new(id::PLAYER_LIST, w.0)
 }
@@ -189,9 +189,27 @@ pub fn take_item_actor(item_runtime_id: u64, taker_runtime_id: u64) -> Packet {
     TakeItemActor { item_runtime_id, actor_runtime_id: taker_runtime_id }.packet()
 }
 
-/// `Animate` (44) server -> client: oscillazione del braccio (azione 1) senza origine né mano.
+/// `Animate` (44) come `Animate.Marshal` di gophertunnel v1.63.0: azione u8, ID di runtime, dati f32, origine
+/// dell'oscillazione opzionale (STRINGA: "build", "mine", "attack"...) e mano come u8 sempre presente.
+pub fn animate(action: u8, runtime_id: u64, data: f32, swing_source: Option<&str>, hand: u8) -> Packet {
+    let mut w = Writer::default();
+    w.u8(action);
+    w.var_u64(runtime_id);
+    w.f32(data);
+    match swing_source {
+        Some(s) => {
+            w.bool(true);
+            w.string(s);
+        }
+        None => w.bool(false),
+    }
+    w.u8(hand);
+    Packet::new(id::ANIMATE, w.0)
+}
+
+/// `Animate` (44) server -> client: oscillazione del braccio (azione 1) senza origine, mano 0.
 pub fn animate_swing(runtime_id: u64) -> Packet {
-    crate::generated::Animate { action: 1, target_actor_runtime_id: runtime_id, data: 0.0, swing_source: None, hand: None }.packet()
+    animate(1, runtime_id, 0.0, None, 0)
 }
 
 /// `SetActorMotion` (40), al tick 0 (non riguarda il giocatore che controlla).
@@ -325,6 +343,29 @@ mod tests {
     }
 
     #[test]
+    fn animate_has_string_source_and_plain_hand() {
+        // gophertunnel: origine = Optional[string], mano = u8 sempre presente.
+        let p = animate(1, 4, 0.0, Some("attack"), 1);
+        let mut expected = vec![1, 4, 0, 0, 0, 0, 1, 6];
+        expected.extend(b"attack");
+        expected.push(1);
+        assert_eq!(p.body, expected);
+    }
+
+    #[test]
+    fn mob_equipment_matches_gophertunnel() {
+        // MobEquipment.Marshal: ID di runtime, oggetto, slot dell'inventario, slot della barra, finestra (tre u8).
+        let item = ItemStack { id: 5, count: 1, ..ItemStack::air() };
+        let p = crate::generated::MobEquipment { target_runtime_id: 9, item: item.clone(), slot: 2, selected_slot: 3, container_id: 119 }.packet();
+        let mut w = Writer::default();
+        item.encode(&mut w);
+        let mut expected = vec![9];
+        expected.extend(w.0);
+        expected.extend([2, 3, 119]);
+        assert_eq!((p.id, p.body), (id::MOB_EQUIPMENT, expected));
+    }
+
+    #[test]
     fn set_actor_motion_layout() {
         let p = set_actor_motion(2, [0.0, 0.25, 0.0]);
         let mut expected = vec![2];
@@ -374,7 +415,7 @@ mod tests {
         skin.encode(&mut w);
         expected.extend(w.0);
         expected.extend([0, 1, 0]); // insegnante, host, sub-client
-        expected.extend((-1i32).to_le_bytes()); // colore
+        expected.extend([255; 4]); // colore BEARGB bianco opaco
         assert_eq!(p.body, expected);
     }
 

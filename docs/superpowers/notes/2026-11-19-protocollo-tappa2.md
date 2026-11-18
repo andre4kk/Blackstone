@@ -61,6 +61,8 @@ PocketMine `EntityMetadataFlags` (SNEAKING 1, SPRINTING 3, GLIDING 32, SWIMMING 
 
 ## SerializedSkin (implementata in `crates/protocol/src/skin.rs`, `Skin::encode`)
 
+> **Superata dalla sezione "Confronto con gophertunnel v1.63.0" in fondo**: colore, PieceType, tinte e flag fidato di questa tabella erano sbagliati.
+
 Ordine = `x-ordinal-index` di `SerializedSkin.json` (tipi di `SkinImage`, `AnimatedImageData`, `SerializedPersonaPieceHandle`, `TintMapColor`). Regole del generatore: struct = campi in ordine, array/mappe = contatore varuint32, wrapper a un solo intero (`Color`) = intero, interi senza `Compression` = fissi LE.
 
 | # | Campo | Filo |
@@ -106,3 +108,65 @@ Scelte: PlayFab ID = quello della skin (vuoto di norma); id chat piattaforma vuo
 cosi' com'e' (-1 se manca); host, insegnante, sub-client falsi; colore = -1 (bianco opaco).
 **Non verificato su cattura**: l'indice di variante (Remove 0 / Add 1, dalla posizione nel `oneOf`; se il client volesse l'`Action` come
 indice sarebbero invertiti) e il valore di default del colore. La lista Add arriva prima dell'`AddPlayer` dello stesso giocatore.
+
+## Confronto con gophertunnel v1.63.0
+
+Riferimento: `vendor/gophertunnel` v1.63.0 (MIT, `CurrentProtocol` 2225, usato da Dragonfly 1.26.60 e provato su client veri). Ordine del
+controller: dove gophertunnel e gli schemi JSON Mojang divergono, vale gophertunnel. Le tabelle precedenti di questo file (SerializedSkin,
+PlayerList) sono sostituite da questa. Il client reale rifiutava il `PlayerList` (errore "invalid enum value readNoHeader failed! packetId: 63")
+perche' la skin era disallineata: il commit c950c80 (PieceType come stringa) curava il sintomo, non la causa.
+
+### Skin (`skin.go`: `Skin.Marshal`, `SkinAnimation.Marshal`, `PersonaPiece.Marshal`, `PersonaPieceTintColour.Marshal`)
+
+| Campo | Nostro (prima) | gophertunnel | Esito |
+|---|---|---|---|
+| SkinColour | i32 LE di "#AARRGGBB" | `BEARGB`: int32 big-endian di `A \| R<<8 \| G<<16 \| B<<24`, cioe' byte B, G, R, A | corretto; in struct e' RGBA, dal login "#b37b62ff" = R G B A, "#0" = 0 |
+| PersonaPiece.PieceType | stringa (c950c80) | `uint32` | corretto (annullata c950c80 per i pezzi) |
+| Tabella `PieceType*` | 30 voci con "coco" prima di "unsupported" (unsupported = 29) | 29 voci, `Unsupported` = 28, nessun "coco" | corretto; "persona_hand" del login vale Hands (9) |
+| PieceTintColours (contatore) | contatore varuint32 delle voci | `Slice` = contatore varuint32 | uguale |
+| PersonaPieceTintColour.PieceType | stringa dal tipo numerico (`PIECE_TYPES`, fuori tabella "unknown") | stringa: `personaPieceTintWireType` (toglie "persona_", "persona_hand" -> "hands"); in lettura il contrario | corretto: il nome del login e' conservato come `String` |
+| PersonaPieceTintColour.Colours | contatore varuint32 + i32 LE ciascuno | 4 colori `BEARGB`, **senza contatore** | corretto (array fisso `[[u8;4];4]`; mancanti = 0; tinte del login lette come "#AARRGGBB") |
+| SkinAnimation.AnimationType / ExpressionType | varuint32 | varuint32 | uguale |
+| Trusted | u8 (`TrustedSkinFlag`, 2) | stringa "true"/"false" (lettura: `EqualFold` con "true") | corretto: scriviamo "true"; in lettura la stringa si scarta |
+| ProfileHash | stringa | stringa | uguale |
+| PlayFabId | non nella skin | non nella skin (e' nella voce del PlayerList) | uguale |
+| ArmSize | u8 (slim 0, wide 1) | `Uint8`, `ArmSizeSlim` 0, `ArmSizeWide` 1 | uguale |
+| Resto (SkinID, ResourcePatch, immagini, cape, geometria, versione motore, AnimationData, CapeID, FullID, bool, ordine) | | | uguale |
+| PersonaPiece.PackID | due u64 LE (bit alti, bassi) | `Writer.UUID`: ogni meta' invertita = due u64 LE | uguale |
+
+`Skin::decode` legge esattamente `Skin.Marshal` (e quindi il corpo di `PlayerSkin`: UUID, skin, nome nuovo, nome vecchio, come `packet/player_skin.go`).
+
+### PlayerList (`player.go` `PlayerListEntry.Marshal`, `packet/player_list.go`)
+
+| Campo | Nostro (prima) | gophertunnel | Esito |
+|---|---|---|---|
+| Variante + azione | varuint32 variante (Remove 0, Add 1) + u8 azione (Add 0, Remove 1) | identico (`playerListAction`) | uguale |
+| UUID, id unico varint64, nome, XUID, PlayFab, id chat, piattaforma i32 | uguali | uguali | uguale |
+| Skin | disallineata (vedi sopra) | `Skin.Marshal` | corretto |
+| Teacher, Host, SubClient | bool | bool | uguale |
+| PlayerColour | i32 LE = -1 | `BEARGB` (B, G, R, A) | corretto (il bianco opaco da' gli stessi byte, ma ora con la funzione giusta) |
+| Voce Remove | variante 0, azione 1, UUID | identico | uguale |
+
+### Altri pacchetti della tappa 2
+
+| Pacchetto | Nostro | gophertunnel | Esito |
+|---|---|---|---|
+| AddPlayer (12) | ordine, UUID, proprieta' sincronizzate 0/0, abilita' (i64, permessi u8 x2, livelli u16/u32/u32/f32 x3), legami 0, blocco passeggero assente, DeviceID, BuildPlatform | stesso ordine e tipi (`AbilityData`, `EntityProperties` = due `Slice`) | uguale; test esistente |
+| AddItemActor (15) | id unico varint64, runtime id, oggetto, pos, vel, dati, da pesca | stesso | uguale |
+| MoveActorAbsolute (18) | runtime id, flag u8 (1 a terra, 2 teletrasporto), pos, 3 angoli in un byte | `ByteFloat` (x / (360/256)), stessi flag | uguale |
+| RemoveActor (14) | varint64 id unico | `ActorUniqueID` | uguale |
+| TakeItemActor (17) | oggetto poi chi raccoglie | stesso | uguale |
+| SetActorMotion (40) | runtime id, vec3, tick varuint64 | stesso | uguale |
+| SetActorData (39) | runtime id, dati, 0 + 0 proprieta', tick varuint64 | stesso | uguale |
+| Animate (44) | generato: origine `Option<u8>`, mano `Option<u8>` (1 byte di presenza + valore) | origine `Optional[string]` (nomi "build", "mine", "attack"...), mano `u8` **sempre presente** | corretto: scritto a mano (`entity::animate`). Con origine e mano assenti i byte erano gia' uguali (`animate_swing` non cambia). Il tipo generato `Animate` resta in `generated.rs` finche' non si rigenera (manca `../bedrock-protocol-docs`); tolto dall'elenco del README |
+| Animate dal client | azione u8 + runtime id | stesso, poi dati f32, origine, mano (ignorati) | uguale |
+| MobEquipment (31) | runtime id, oggetto, slot, slot barra, finestra (u8 x3) | stesso | uguale; test aggiunto |
+| MobArmorEquipment (32) | runtime id, 4 pezzi + corpo (vuoto) | stesso | uguale |
+| Oggetto (`ItemInstance`) | i16 id, u16 conteggio, varuint32 aux, bool + varint32 id pila, varuint32 hash, dati utente con lunghezza (i16 + 2 x u32) | stesso; aria = 8 zeri | uguale |
+| Metadati (`EntityMetadata`) | contatore, per voce: chiave, variante varuint32, tipo u8, valore; tipi Float 3, Int64 7 (varint64) | identico; `EntityDataType` Float32 3, Int64 7 | uguale |
+| Ordine delle voci dei metadati | ordine di chiamata | **chiavi in ordine crescente** (alcune funzioni lo richiedono) | corretto: `write_data` ordina |
+
+### Numeri di `actor::flag` e `actor::key` contro `EntityDataFlag*` / `EntityDataKey*`
+
+Tutti uguali: chiavi Flags 0, Width 53, Height 54; flag Sneaking 1, Sprinting 3, Climb 19, Gliding 32, Breathing 35, HasCollision 48, HasGravity 49,
+Swimming 57. Fissati con un test (`flag_and_key_numbers_match_gophertunnel`).

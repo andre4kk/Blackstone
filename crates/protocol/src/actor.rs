@@ -52,9 +52,12 @@ impl DataValue {
 }
 
 /// Lista di dati sincronizzati (`SynchedActorDataList`): contatore varuint32 e voci `{ ID, Payload }`.
+/// Le voci escono in ordine crescente di chiave, come `Writer.EntityMetadata` di gophertunnel (alcune funzioni lo richiedono).
 pub(crate) fn write_data(w: &mut Writer, data: &[(u32, DataValue)]) {
-    w.var_u32(data.len() as u32);
-    for (id, value) in data {
+    let mut sorted = data.to_vec();
+    sorted.sort_by_key(|(id, _)| *id);
+    w.var_u32(sorted.len() as u32);
+    for (id, value) in &sorted {
         w.var_u32(*id);
         value.write(w);
     }
@@ -94,6 +97,23 @@ mod tests {
         expected.extend(v.0);
         expected.extend([0, 0, 0]);
         assert_eq!(p.body, expected);
+    }
+
+    #[test]
+    fn entries_are_sorted_by_key() {
+        // gophertunnel ordina le chiavi: 0 prima di 53 anche se passate al contrario.
+        let mut w = Writer::default();
+        write_data(&mut w, &[(key::BOUNDING_BOX_WIDTH, DataValue::Float(1.0)), (key::FLAGS, DataValue::Int64(0))]);
+        assert_eq!(w.0[..5], [2, 0, 7, 7, 0]);
+        assert_eq!(w.0[5], 53);
+    }
+
+    #[test]
+    fn flag_and_key_numbers_match_gophertunnel() {
+        // EntityDataKey* / EntityDataFlag* di gophertunnel v1.63.0 (entity_metadata.go).
+        assert_eq!((key::FLAGS, key::BOUNDING_BOX_WIDTH, key::BOUNDING_BOX_HEIGHT), (0, 53, 54));
+        assert_eq!((flag::SNEAKING, flag::SPRINTING, flag::CAN_CLIMB, flag::GLIDING, flag::BREATHING), (1, 3, 19, 32, 35));
+        assert_eq!((flag::HAS_COLLISION, flag::HAS_GRAVITY, flag::SWIMMING), (48, 49, 57));
     }
 
     #[test]

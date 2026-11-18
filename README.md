@@ -117,12 +117,12 @@ python tools/protocolgen.py ../bedrock-protocol-docs/json crates/protocol/src/ge
     AvailableActorIdentifiers CreativeContent VoxelShapes JigsawStructureData InventoryContent InventorySlot \
     MobEquipment PlayerHotbar UpdateBlock SetPlayerGameType UpdatePlayerGameType UpdateAbilities LevelEvent \
     LevelSoundEvent ItemStackResponse BlockActorData ContainerOpen ContainerClose UpdateAttributes \
-    TakeItemActor MoveActorAbsolute RemoveActor SetActorMotion MobArmorEquipment Animate
+    TakeItemActor MoveActorAbsolute RemoveActor SetActorMotion MobArmorEquipment
 ```
 
 Per aggiungere un pacchetto server -> client basta aggiungerne il nome all'elenco e rigenerare. Il generatore
 produce solo la codifica; la lettura dei pacchetti client -> server è scritta a mano in `packets.rs` e `input.rs`.
-`AddPlayer` e `AddItemActor` (dati sincronizzati, `oneOf`) sono scritti a mano in `crates/protocol/src/entity.rs`.
+`AddPlayer`, `AddItemActor` (dati sincronizzati, `oneOf`) e `Animate` (origine stringa, mano u8: il generatore sbaglia i tipi) sono scritti a mano in `crates/protocol/src/entity.rs`.
 Il risultato è stato confrontato byte per byte con un'implementazione indipendente per la 1.26.60.
 
 ## Dati di gioco

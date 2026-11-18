@@ -14,8 +14,9 @@ use std::fmt;
 /// Lato massimo accettato per le immagini (limite dello schema Mojang).
 const MAX_SIDE: u32 = 4096;
 
-/// Nomi dei tipi di pezzo persona (senza il prefisso `persona_`), indicizzati dal valore binario di `persona::PieceType`.
-const PIECE_TYPES: [&str; 30] = [
+/// Nomi dei tipi di pezzo persona (senza il prefisso `persona_`), indicizzati dal valore di `PersonaPiece.PieceType`
+/// (costanti `PieceType*` di gophertunnel v1.63.0: `Unsupported` vale 28, "coco" non esiste).
+const PIECE_TYPES: [&str; 29] = [
     "unknown",
     "skeleton",
     "body",
@@ -44,7 +45,6 @@ const PIECE_TYPES: [&str; 30] = [
     "capes",
     "classic_skin",
     "emote",
-    "coco",
     "unsupported",
 ];
 
@@ -97,7 +97,7 @@ pub struct SkinAnimation {
 #[derive(Clone, Debug, PartialEq)]
 pub struct PersonaPiece {
     pub piece_id: String,
-    /// `persona::PieceType` (indice in `PIECE_TYPES`; sul filo e' il nome).
+    /// Indice in `PIECE_TYPES`; sul filo e' un u32 (gophertunnel `PersonaPiece.PieceType uint32`).
     pub piece_type: u32,
     /// UUID del pacchetto, nell'ordine testuale (vedi `uuid_from_str`).
     pub pack_id: [u8; 16],
@@ -107,9 +107,10 @@ pub struct PersonaPiece {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PieceTint {
-    pub piece_type: u32,
-    /// Colori ARGB (`Color` Mojang = int32).
-    pub colors: Vec<i32>,
+    /// Nome come nei dati del login ("persona_hair", "persona_hand"...): sul filo diventa quello corto (`tint_wire_type`).
+    pub piece_type: String,
+    /// I quattro colori RGBA (R, G, B, A). Sul filo sono `BEARGB` senza contatore; quelli mancanti valgono 0.
+    pub colors: [[u8; 4]; 4],
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -129,8 +130,8 @@ pub struct Skin {
     pub full_id: String,
     /// "slim" o "wide".
     pub arm_size: String,
-    /// "#AARRGGBB".
-    pub color: String,
+    /// Colore base RGBA (R, G, B, A), dal "SkinColor" del login. Sul filo e' `BEARGB`.
+    pub color: [u8; 4],
     pub persona_pieces: Vec<PersonaPiece>,
     pub piece_tints: Vec<PieceTint>,
     pub premium: bool,
@@ -162,28 +163,61 @@ fn image(width: u32, height: u32, data: Vec<u8>) -> Option<SkinImage> {
     (width as usize * height as usize * 4 == data.len()).then_some(SkinImage { width, height, data })
 }
 
-/// Colore "#AARRGGBB" (o "#RRGGBB", opaco) come int32 ARGB.
-fn color_argb(s: &str) -> Option<i32> {
-    let hex = s.strip_prefix('#')?;
-    let v = u32::from_str_radix(hex, 16).ok()?;
-    Some(if hex.len() == 6 { v | 0xff00_0000 } else { v } as i32)
+/// Colore dei tint "#AARRGGBB" (o "#RRGGBB", opaco) come RGBA. Una forma diversa ("#0") vale 0.
+fn tint_rgba(s: &str) -> [u8; 4] {
+    let Some(hex) = s.strip_prefix('#') else { return [0; 4] };
+    let Ok(v) = u32::from_str_radix(hex, 16) else { return [0; 4] };
+    match hex.len() {
+        8 => [(v >> 16) as u8, (v >> 8) as u8, v as u8, (v >> 24) as u8],
+        6 => [(v >> 16) as u8, (v >> 8) as u8, v as u8, 255],
+        _ => [0; 4],
+    }
+}
+
+/// "SkinColor" del login ("#b37b62ff" = R G B A, "#b37b62" opaco, "#0" = 0) come RGBA.
+fn skin_color_rgba(s: &str) -> [u8; 4] {
+    let Some(hex) = s.strip_prefix('#') else { return [0; 4] };
+    let Ok(v) = u32::from_str_radix(hex, 16) else { return [0; 4] };
+    match hex.len() {
+        8 => v.to_be_bytes(),
+        6 => [(v >> 16) as u8, (v >> 8) as u8, v as u8, 255],
+        _ => [0; 4],
+    }
+}
+
+/// `BEARGB` di gophertunnel: int32 big-endian di `A | R<<8 | G<<16 | B<<24`, cioe' i byte B, G, R, A.
+pub(crate) fn write_be_argb(w: &mut Writer, rgba: [u8; 4]) {
+    w.raw(&[rgba[2], rgba[1], rgba[0], rgba[3]]);
+}
+
+/// Inverso di `write_be_argb`.
+pub(crate) fn read_be_argb(r: &mut Reader) -> Option<[u8; 4]> {
+    let (b, g, red, a) = (r.u8()?, r.u8()?, r.u8()?, r.u8()?);
+    Some([red, g, b, a])
 }
 
 fn piece_type(name: &str) -> u32 {
     let name = name.strip_prefix("persona_").unwrap_or(name).to_ascii_lowercase();
+    // Nei dati del login la mano e' al singolare.
+    let name = if name == "hand" { "hands" } else { &name };
     PIECE_TYPES.iter().position(|p| *p == name).unwrap_or(0) as u32
 }
 
-/// Nome sul filo di un tipo di pezzo persona: il client legge `persona::PieceType` come stringa (errore del client del 19/11/2026).
-/// Un valore fuori tabella diventa "unknown".
-fn piece_type_name(v: u32) -> &'static str {
-    PIECE_TYPES.get(v as usize).copied().unwrap_or("unknown")
+/// Nome del tipo di una tinta sul filo (`personaPieceTintWireType`): senza "persona_", e "persona_hand" diventa "hands".
+fn tint_wire_type(login: &str) -> &str {
+    if login == "persona_hand" {
+        return "hands";
+    }
+    login.strip_prefix("persona_").unwrap_or(login)
 }
 
-/// Legge un `PieceType` scritto come stringa; un nome sconosciuto vale 0 ("unknown").
-fn read_piece_type(r: &mut Reader) -> Option<u32> {
-    let name = r.string()?;
-    Some(PIECE_TYPES.iter().position(|p| *p == name).unwrap_or(0) as u32)
+/// Inverso di `tint_wire_type` (`personaPieceTintLoginType`).
+fn tint_login_type(wire: &str) -> String {
+    match wire {
+        "hands" => "persona_hand".to_owned(),
+        "unsupported" => wire.to_owned(),
+        _ => format!("persona_{wire}"),
+    }
 }
 
 /// UUID testuale ("aabbccdd-eeff-...") in 16 byte nell'ordine del testo. `None` se non e' un UUID.
@@ -257,13 +291,12 @@ impl Skin {
             .and_then(Value::as_array)
             .map(|a| {
                 a.iter()
-                    .map(|t| PieceTint {
-                        piece_type: piece_type(&text(t, "PieceType")),
-                        colors: t
-                            .get("Colors")
-                            .and_then(Value::as_array)
-                            .map(|cs| cs.iter().filter_map(|c| color_argb(c.as_str()?)).collect())
-                            .unwrap_or_default(),
+                    .map(|t| {
+                        let mut colors = [[0u8; 4]; 4];
+                        for (slot, c) in colors.iter_mut().zip(t.get("Colors").and_then(Value::as_array).into_iter().flatten()) {
+                            *slot = tint_rgba(c.as_str().unwrap_or_default());
+                        }
+                        PieceTint { piece_type: text(t, "PieceType"), colors }
                     })
                     .collect()
             })
@@ -282,7 +315,7 @@ impl Skin {
             animation_data: b64(c, "SkinAnimationData").unwrap_or_default(),
             cape_id,
             arm_size: text(c, "ArmSize"),
-            color: text(c, "SkinColor"),
+            color: skin_color_rgba(&text(c, "SkinColor")),
             persona_pieces,
             piece_tints,
             premium: flag(c, "PremiumSkin"),
@@ -308,7 +341,7 @@ impl Skin {
             cape_id: String::new(),
             full_id: "versmcbe:steve".into(),
             arm_size: "wide".into(),
-            color: "#00000000".into(),
+            color: [0; 4],
             persona_pieces: Vec::new(),
             piece_tints: Vec::new(),
             premium: false,
@@ -319,7 +352,7 @@ impl Skin {
         }
     }
 
-    /// Scrive la `SerializedSkin` nell'ordine di `SerializedSkin.json` (indici 0..=20).
+    /// Scrive la skin come `Skin.Marshal` di gophertunnel v1.63.0 (confronto campo per campo nelle note della tappa 2).
     pub fn encode(&self, w: &mut Writer) {
         w.string(&self.id);
         w.bytes(&self.resource_patch);
@@ -338,11 +371,11 @@ impl Skin {
         w.string(&self.cape_id);
         w.string(&self.full_id);
         w.u8(u8::from(!self.arm_size.eq_ignore_ascii_case("slim")));
-        w.i32(color_argb(&self.color).unwrap_or(0));
+        write_be_argb(w, self.color);
         w.var_u32(self.persona_pieces.len() as u32);
         for p in &self.persona_pieces {
             w.string(&p.piece_id);
-            w.string(piece_type_name(p.piece_type));
+            w.u32(p.piece_type);
             w.u64(u64::from_be_bytes(p.pack_id[..8].try_into().unwrap()));
             w.u64(u64::from_be_bytes(p.pack_id[8..].try_into().unwrap()));
             w.bool(p.is_default);
@@ -350,10 +383,9 @@ impl Skin {
         }
         w.var_u32(self.piece_tints.len() as u32);
         for t in &self.piece_tints {
-            w.string(piece_type_name(t.piece_type));
-            w.var_u32(t.colors.len() as u32);
-            for c in &t.colors {
-                w.i32(*c);
+            w.string(tint_wire_type(&t.piece_type));
+            for c in t.colors {
+                write_be_argb(w, c);
             }
         }
         w.bool(self.premium);
@@ -361,7 +393,7 @@ impl Skin {
         w.bool(self.cape_on_classic);
         w.bool(self.primary_user);
         w.bool(self.overrides_appearance);
-        w.u8(2); // TrustedSkinFlag::True: il server ha gia' validato la skin
+        w.string("true"); // Trusted: stringa "true"/"false" (gophertunnel); il server ha gia' validato la skin
         w.string(""); // ProfileHash
     }
 }
@@ -384,12 +416,12 @@ impl Skin {
         let cape_id = r.string()?.to_owned();
         let full_id = r.string()?.to_owned();
         let arm_size = if r.u8()? == 0 { "slim" } else { "wide" }.to_owned();
-        let color = format!("#{:08x}", r.i32()? as u32);
+        let color = read_be_argb(r)?;
         let mut persona_pieces = Vec::new();
         for _ in 0..r.var_u32()? {
             persona_pieces.push(PersonaPiece {
                 piece_id: r.string()?.to_owned(),
-                piece_type: read_piece_type(r)?,
+                piece_type: r.u32()?,
                 pack_id: read_uuid(r)?,
                 is_default: r.bool()?,
                 product_id: r.string()?.to_owned(),
@@ -397,15 +429,15 @@ impl Skin {
         }
         let mut piece_tints = Vec::new();
         for _ in 0..r.var_u32()? {
-            let piece_type = read_piece_type(r)?;
-            let mut colors = Vec::new();
-            for _ in 0..r.var_u32()? {
-                colors.push(r.i32()?);
+            let piece_type = tint_login_type(r.string()?);
+            let mut colors = [[0u8; 4]; 4];
+            for c in &mut colors {
+                *c = read_be_argb(r)?;
             }
             piece_tints.push(PieceTint { piece_type, colors });
         }
         let (premium, persona, cape_on_classic, primary_user, overrides_appearance) = (r.bool()?, r.bool()?, r.bool()?, r.bool()?, r.bool()?);
-        r.u8()?; // TrustedSkinFlag
+        r.string()?; // Trusted ("true"/"false")
         r.string()?; // ProfileHash
                      // Come per i dati del login: geometrie e patch viaggiano come JSON, altrimenti la skin e' scartata.
         if (!geometry.is_empty() && serde_json::from_slice::<Value>(&geometry).is_err())
@@ -486,7 +518,7 @@ mod tests {
     fn client_data(w: u32, h: u32) -> Value {
         json!({
             "SkinId": "abc", "SkinData": STANDARD.encode(vec![7u8; (w * h * 4) as usize]), "SkinImageWidth": w, "SkinImageHeight": h,
-            "SkinGeometryData": STANDARD.encode(r#"{"geometry":{}}"#), "ArmSize": "wide", "CapeId": "", "SkinColor": "#ffb37b62",
+            "SkinGeometryData": STANDARD.encode(r#"{"geometry":{}}"#), "ArmSize": "wide", "CapeId": "", "SkinColor": "#b37b62ff",
         })
     }
 
@@ -589,30 +621,126 @@ mod tests {
         c["PieceTintColors"] = json!([{"PieceType": "persona_hair", "Colors": ["#ff112233", "#ff000000", "#ff000000", "#ff000000"]}]);
         let s = Skin::from_client_data(&c).unwrap();
         assert_eq!((s.persona_pieces[0].piece_type, s.persona_pieces[0].pack_id[15]), (14, 0xff));
-        assert_eq!((s.piece_tints[0].piece_type, s.piece_tints[0].colors[0]), (14, 0xff11_2233_u32 as i32));
+        assert_eq!(
+            (s.piece_tints[0].piece_type.as_str(), s.piece_tints[0].colors[0], s.piece_tints[0].colors[1]),
+            ("persona_hair", [0x11, 0x22, 0x33, 0xff], [0, 0, 0, 0xff])
+        );
+        assert_eq!(s.color, [0xb3, 0x7b, 0x62, 0xff]);
     }
 
     #[test]
-    fn piece_type_is_a_string_on_the_wire() {
-        let mut skin = Skin::fallback();
-        skin.persona_pieces = vec![PersonaPiece { piece_id: "p".into(), piece_type: 14, pack_id: [0xaa; 16], is_default: true, product_id: "x".into() }];
-        skin.piece_tints = vec![PieceTint { piece_type: 99, colors: vec![1] }];
+    fn skin_color_parses_login_forms() {
+        assert_eq!(skin_color_rgba("#b37b62ff"), [0xb3, 0x7b, 0x62, 0xff]);
+        assert_eq!(skin_color_rgba("#b37b62"), [0xb3, 0x7b, 0x62, 0xff]);
+        assert_eq!(skin_color_rgba("#0"), [0; 4]);
+        assert_eq!(skin_color_rgba(""), [0; 4]);
+    }
+
+    /// Skin minima 1x1 senza cape, scritta a mano nell'ordine di `Skin.Marshal` di gophertunnel v1.63.0.
+    fn gophertunnel_skin_bytes() -> Vec<u8> {
+        let mut b = vec![2, b'i', b'd']; // SkinID
+        b.extend([2, b'{', b'}']); // SkinResourcePatch
+        b.extend([1, 0, 0, 0, 1, 0, 0, 0]); // SkinImageWidth, SkinImageHeight (u32 LE)
+        b.extend([4, 1, 2, 3, 4]); // SkinData
+        b.push(1); // una animazione:
+        b.extend([1, 0, 0, 0, 1, 0, 0, 0, 4, 9, 9, 9, 9]); // larghezza, altezza, dati
+        b.push(2); // AnimationType varuint32
+        b.extend(1.5f32.to_le_bytes()); // FrameCount
+        b.push(1); // ExpressionType varuint32
+        b.extend([0; 8]); // CapeImageWidth, CapeImageHeight
+        b.push(0); // CapeData vuoto
+        b.extend([2, b'{', b'}']); // SkinGeometry
+        b.extend([3, b'1', b'.', b'0']); // GeometryDataEngineVersion
+        b.push(0); // AnimationData
+        b.push(0); // CapeID
+        b.extend([3, b'f', b'i', b'd']); // FullID
+        b.push(1); // ArmSize: wide
+        b.extend([0x62, 0x7b, 0xb3, 0xff]); // SkinColour BEARGB: B, G, R, A
+        b.push(1); // un pezzo persona:
+        b.extend([1, b'p']); // PieceID
+        b.extend(14u32.to_le_bytes()); // PieceType u32
+        b.extend([8, 7, 6, 5, 4, 3, 2, 1, 16, 15, 14, 13, 12, 11, 10, 9]); // PackID (UUID: due meta' invertite)
+        b.extend([0, 0]); // Default, ProductID vuoto
+        b.push(1); // una tinta:
+        b.extend([4, b'h', b'a', b'i', b'r']); // PieceType stringa corta
+        b.extend([0x33, 0x22, 0x11, 0xff]); // colore 0 (R=11 G=22 B=33 A=ff)
+        b.extend([0; 12]); // altri tre colori, SENZA contatore
+        b.extend([1, 0, 1, 1, 0]); // Premium, Persona, CapeOnClassic, PrimaryUser, OverrideAppearance
+        b.extend([4, b't', b'r', b'u', b'e']); // Trusted come stringa
+        b.push(0); // ProfileHash
+        b
+    }
+
+    fn gophertunnel_skin() -> Skin {
+        Skin {
+            id: "id".into(),
+            play_fab_id: String::new(),
+            resource_patch: b"{}".to_vec(),
+            image: SkinImage { width: 1, height: 1, data: vec![1, 2, 3, 4] },
+            animations: vec![SkinAnimation { image: SkinImage { width: 1, height: 1, data: vec![9; 4] }, animation_type: 2, frames: 1.5, expression: 1 }],
+            cape: SkinImage::default(),
+            geometry: b"{}".to_vec(),
+            geometry_engine_version: b"1.0".to_vec(),
+            animation_data: Vec::new(),
+            cape_id: String::new(),
+            full_id: "fid".into(),
+            arm_size: "wide".into(),
+            color: [0xb3, 0x7b, 0x62, 0xff],
+            persona_pieces: vec![PersonaPiece {
+                piece_id: "p".into(),
+                piece_type: 14,
+                pack_id: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+                is_default: false,
+                product_id: String::new(),
+            }],
+            piece_tints: vec![PieceTint { piece_type: "persona_hair".into(), colors: [[0x11, 0x22, 0x33, 0xff], [0; 4], [0; 4], [0; 4]] }],
+            premium: true,
+            persona: false,
+            cape_on_classic: true,
+            primary_user: true,
+            overrides_appearance: false,
+        }
+    }
+
+    #[test]
+    fn encode_matches_gophertunnel_skin_marshal() {
+        // Layout di `Skin.Marshal` (v1.63.0): colore BEARGB, PieceType u32, tinte con tipo stringa e 4 colori senza contatore,
+        // animazioni con tipo ed espressione varuint32, Trusted come stringa.
         let mut w = Writer::default();
-        skin.encode(&mut w);
-        let b = w.0;
-        // Pezzo: id, tipo come stringa, PackId (due u64), IsDefault, ProductId.
-        let mut piece = vec![1, b'p', 4];
-        piece.extend_from_slice(b"hair");
-        piece.extend_from_slice(&[0xaa; 16]);
-        piece.extend_from_slice(&[1, 1, b'x']);
-        // Tinta: contatore 1, tipo fuori tabella = "unknown", un colore i32 LE.
-        let mut tint = vec![1, 7];
-        tint.extend_from_slice(b"unknown");
-        tint.extend_from_slice(&[1, 1, 0, 0, 0]);
-        let find = |h: &[u8]| b.windows(h.len()).any(|x| x == h);
-        assert!(find(&piece), "pezzo persona");
-        assert!(find(&tint), "tinta");
-        let back = Skin::decode(&mut Reader(&b)).unwrap();
-        assert_eq!((back.persona_pieces[0].piece_type, back.piece_tints[0].piece_type), (14, 0));
+        gophertunnel_skin().encode(&mut w);
+        assert_eq!(w.0, gophertunnel_skin_bytes());
+    }
+
+    #[test]
+    fn decode_accepts_gophertunnel_skin_marshal() {
+        let bytes = gophertunnel_skin_bytes();
+        let mut r = Reader(&bytes);
+        assert_eq!(Skin::decode(&mut r), Some(gophertunnel_skin()));
+        assert_eq!(r.remaining(), 0);
+        // Trusted "false" e un ProfileHash pieno si leggono comunque.
+        let mut other = bytes[..bytes.len() - 6].to_vec();
+        other.extend([5, b'f', b'a', b'l', b's', b'e', 0]);
+        assert!(Skin::decode(&mut Reader(&other)).is_some());
+    }
+
+    #[test]
+    fn tint_type_names_follow_gophertunnel() {
+        assert_eq!(tint_wire_type("persona_hand"), "hands");
+        assert_eq!(tint_wire_type("persona_facial_hair"), "facial_hair");
+        assert_eq!(tint_login_type("hands"), "persona_hand");
+        assert_eq!(tint_login_type("eyes"), "persona_eyes");
+        assert_eq!(tint_login_type("unsupported"), "unsupported");
+        // Costanti PieceType di gophertunnel: Hair 14, Capes 25, Emote 27, Unsupported 28.
+        assert_eq!((piece_type("persona_hair"), piece_type("persona_capes"), piece_type("persona_emote"), piece_type("unsupported")), (14, 25, 27, 28));
+        assert_eq!(piece_type("persona_hand"), 9);
+    }
+
+    #[test]
+    fn be_argb_matches_gophertunnel_writer() {
+        // int32 BE di A | R<<8 | G<<16 | B<<24.
+        let mut w = Writer::default();
+        write_be_argb(&mut w, [0x11, 0x22, 0x33, 0x44]);
+        assert_eq!(w.0, [0x33, 0x22, 0x11, 0x44]);
+        assert_eq!(read_be_argb(&mut Reader(&w.0)), Some([0x11, 0x22, 0x33, 0x44]));
     }
 }
