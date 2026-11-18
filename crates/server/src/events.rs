@@ -1,4 +1,5 @@
 //! Azioni sul mondo che i ganci (plugin e regole del server) possono annullare, e le modifiche ai blocchi che le compongono.
+use crate::inventory::Item;
 
 /// Una modifica a una cella: il blocco (hash dello stato) e se nel secondo strato (liquido) c'è acqua.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -11,6 +12,8 @@ pub(crate) struct BlockChange {
 /// Un'azione di un giocatore sul mondo, mostrata ai ganci prima di applicarla.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum WorldAction {
+    /// Il giocatore butta `item` (una casella dell'inventario, in tutto o in parte): diventa un oggetto a terra.
+    DropItem { pid: u64, item: Item },
     /// Il giocatore rompe il blocco in `pos`, che prima era `old`.
     Break { pid: u64, pos: [i32; 3], old: i32 },
     /// Il giocatore piazza dei blocchi.

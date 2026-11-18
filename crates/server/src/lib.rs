@@ -10,6 +10,7 @@ mod gen_client;
 mod handlers;
 mod interact;
 mod inventory;
+mod items;
 mod join;
 mod nbt;
 mod placement;
@@ -310,6 +311,7 @@ impl Server {
         let start = Instant::now();
         self.stream_tick();
         self.visibility_tick();
+        self.items_tick();
         self.movement_tick();
         self.tick_count += 1;
         self.run_scheduled();

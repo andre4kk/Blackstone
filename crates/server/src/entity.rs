@@ -21,14 +21,18 @@ use bedrock_protocol::{
 use std::collections::{HashMap, HashSet};
 
 /// Il primo ID delle entità che non sono giocatori: sopra ogni `pid` (che parte da 1 e cresce piano), così gli ID non si scontrano.
-#[allow(dead_code)] // serve ai compiti successivi della tappa 2 (oggetti a terra, movimento)
 pub(crate) const FIRST_ENTITY_ID: u64 = 1 << 32;
 
 pub(crate) enum EntityKind {
     /// `pid: None` è un bot (nessuna connessione).
     Player { pid: Option<u64>, name: String, uuid: [u8; 16] },
-    #[allow(dead_code)] // serve ai compiti successivi della tappa 2 (oggetti a terra, movimento)
-    Item { item: inventory::Item, pickup_at: u64, despawn_at: u64, velocity: [f32; 3] },
+    Item {
+        item: inventory::Item,
+        #[allow(dead_code)] // lo legge la raccolta (compito successivo)
+        pickup_at: u64,
+        despawn_at: u64,
+        velocity: [f32; 3],
+    },
 }
 
 pub(crate) struct Entity {
@@ -44,16 +48,27 @@ pub(crate) struct Entity {
     pub moved: bool,
 }
 
+impl Entity {
+    /// La posizione come la vede il client: un oggetto a terra ha il riquadro 0.125 più in basso della sua origine (come Dragonfly).
+    pub fn network_pos(&self) -> [f32; 3] {
+        match self.kind {
+            EntityKind::Item { .. } => [self.pos[0], self.pos[1] + ITEM_NETWORK_OFFSET, self.pos[2]],
+            EntityKind::Player { .. } => self.pos,
+        }
+    }
+}
+
+/// Di quanto il client vede più in alto un oggetto a terra (`NetworkOffset` di Dragonfly).
+const ITEM_NETWORK_OFFSET: f32 = 0.125;
+
 #[derive(Default)]
 pub(crate) struct Entities {
     map: HashMap<u64, Entity>,
-    #[allow(dead_code)]
     next: u64,
 }
 
 impl Entities {
     /// Un ID libero per un'entità che non è un giocatore.
-    #[allow(dead_code)]
     pub fn alloc(&mut self) -> u64 {
         self.next = self.next.max(FIRST_ENTITY_ID - 1) + 1;
         self.next
@@ -119,7 +134,7 @@ impl Server {
         let mut moved: Vec<(u64, Packet)> = Vec::new();
         for e in self.entities.map.values_mut().filter(|e| e.moved) {
             e.moved = false;
-            moved.push((e.id, move_actor_absolute(e.id, e.pos, e.pitch, e.yaw, e.head_yaw, e.on_ground, false)));
+            moved.push((e.id, move_actor_absolute(e.id, e.network_pos(), e.pitch, e.yaw, e.head_yaw, e.on_ground, false)));
         }
         if moved.is_empty() {
             return;
@@ -160,17 +175,26 @@ impl Server {
                 }
                 packets
             }
-            EntityKind::Item { item, velocity, .. } => vec![add_item_actor(e.id as i64, e.id, &item.stack(0), e.pos, *velocity, &[])],
+            EntityKind::Item { item, velocity, .. } => {
+                vec![add_item_actor(e.id as i64, e.id, &item.stack(0), e.network_pos(), *velocity, &self.entity_data(e.id))]
+            }
         }
     }
 
     /// I dati dell'entità (`SetActorData` e `AddPlayer`): per un giocatore i flag di base (gravità, collisioni, arrampicata, respiro)
-    /// più lo stato attuale (accovacciato, in corsa, a nuoto, in planata) e il riquadro 0.6 x 1.8. Vuoti per le entità che non sono giocatori.
+    /// più lo stato attuale (accovacciato, in corsa, a nuoto, in planata) e il riquadro 0.6 x 1.8. Un oggetto a terra ha gravità, collisioni e il riquadro 0.25 x 0.25.
     pub(crate) fn entity_data(&self, id: u64) -> Vec<(u32, DataValue)> {
         let state = match self.entities.get(id).map(|e| &e.kind) {
             Some(EntityKind::Player { pid, .. }) => pid.and_then(|pid| self.players.get(&pid)),
             None => self.players.get(&id), // il giocatore che sta entrando non ha ancora la sua entità
-            Some(EntityKind::Item { .. }) => return Vec::new(),
+            Some(EntityKind::Item { .. }) => {
+                let flags = [flag::HAS_GRAVITY, flag::HAS_COLLISION].iter().fold(0i64, |f, b| f | 1 << b);
+                return vec![
+                    (key::FLAGS, DataValue::Int64(flags)),
+                    (key::BOUNDING_BOX_WIDTH, DataValue::Float(0.25)),
+                    (key::BOUNDING_BOX_HEIGHT, DataValue::Float(0.25)),
+                ];
+            }
         };
         let mut flags = [flag::HAS_GRAVITY, flag::HAS_COLLISION, flag::CAN_CLIMB, flag::BREATHING].iter().fold(0i64, |f, b| f | 1 << b);
         if let Some(p) = state {

@@ -194,7 +194,7 @@ fn hollow(name: &str) -> bool {
 /// Vero se la faccia `face` del blocco con quell'hash è piena, cioè può reggere una torcia, un pulsante, una porta...
 /// Mezze lastre e scale hanno le facce di Dragonfly (`model.Slab`, `model.Stair`); muri e recinzioni sono pieni su e giù, i vetri
 /// sottili solo sotto. Le foglie contano come cubi pieni (vi si appoggiano i rampicanti nel mondo vero).
-pub(super) fn solid_face(hash: i32, face: u8) -> bool {
+pub(crate) fn solid_face(hash: i32, face: u8) -> bool {
     let Some(state) = blocks().state(hash) else { return false };
     let name = short(state);
     if name.ends_with("slab") && state.get("minecraft:vertical_half").is_some() {

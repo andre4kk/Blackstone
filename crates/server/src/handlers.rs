@@ -1,6 +1,7 @@
 //! Un handler per ogni pacchetto che il server sa gestire.
 use crate::{
     entity::{armor_of, EntityKind},
+    events::WorldAction,
     inventory::{window, HOTBAR_SLOTS},
     playerdata, GameMode, Player, Server, HEX_LOGS,
 };
@@ -238,6 +239,15 @@ impl Server {
         if let Some(error) = &result.error {
             log!("[#{pid}] richiesta di pila {} rifiutata: {error}", request.request_id);
         }
+        // Gli oggetti buttati diventano oggetti a terra, a meno che un gancio non lo impedisca: allora tornano nella casella.
+        for (item, (container, slot)) in result.dropped.iter().cloned().zip(result.dropped_from.iter().copied()) {
+            if self.allow(&WorldAction::DropItem { pid, item: item.clone() }) {
+                self.drop_item(pid, item);
+            } else if let Some(p) = self.players.get_mut(&pid) {
+                p.inventory.restore(container, slot, item);
+            }
+        }
+        let Some(p) = self.players.get(&pid) else { return };
         let packets = p.inventory.response(request.request_id, &result);
         self.send(pid, &packets);
         self.send_equipment_changes(pid, &held, &armor);

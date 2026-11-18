@@ -2677,3 +2677,152 @@ mod skin_change {
         assert_eq!(h.server.players[&1].skin_logs, 3);
     }
 }
+
+mod ground_items {
+    use super::blocks::{change, harness_with_chunk, stone};
+    use super::placing::{setup, EYES};
+    use super::*;
+    use crate::entity::EntityKind;
+    use crate::events::WorldAction;
+    use vgen::Dim;
+
+    /// Richiesta con una sola azione Drop di `count` oggetti dalla casella 0 della barra (ID di pila `stack_id`).
+    fn drop_request(request_id: i32, count: u8, stack_id: i32) -> Packet {
+        stack_request_packet(|w| {
+            w.var_i32(request_id);
+            w.var_u32(1);
+            w.var_u32(3); // variante Drop
+            w.u8(3);
+            w.u8(count);
+            slot_bytes(w, 28, 0, stack_id);
+            w.bool(false);
+            w.var_u32(0);
+            w.i32(-1);
+        })
+    }
+
+    fn held_net_id(h: &Harness) -> i32 {
+        h.server.players[&1].inventory.stack_at(28, 0).unwrap().net_id.unwrap()
+    }
+
+    fn items(h: &Harness) -> Vec<(u64, u16, [f32; 3], [f32; 3])> {
+        let mut v: Vec<_> = h
+            .server
+            .entities
+            .iter()
+            .filter_map(|e| match &e.kind {
+                EntityKind::Item { item, velocity, .. } => Some((e.id, item.count, e.pos, *velocity)),
+                _ => None,
+            })
+            .collect();
+        v.sort_by_key(|i| i.0);
+        v
+    }
+
+    /// Un mondo con una pietra piena a y = 70 nel chunk (0, 0) e un oggetto a y = 72 sopra.
+    fn item_over_stone() -> (Harness, u64) {
+        let mut h = harness_with_chunk();
+        h.server.set_blocks(Dim::Overworld, &[change([3, 70, 4], stone(), false)]);
+        let item = crate::inventory::Item { id: registry::items().id("minecraft:stone").unwrap(), count: 1, ..Default::default() };
+        let id = h.server.spawn_item(item, [3.5, 72.0, 4.5], [0.0; 3], 10);
+        (h, id)
+    }
+
+    #[test]
+    fn drop_action_spawns_an_item_entity_and_empties_the_slot() {
+        let mut h = setup(GameMode::Survival);
+        let id = held_net_id(&h);
+        h.server.players.get_mut(&1).unwrap().yaw = 90.0; // verso ovest
+        h.receive(1, &[drop_request(-3, 1, id)]);
+        assert_eq!(h.server.players[&1].inventory.held().count, 63);
+        let dropped = items(&h);
+        assert_eq!(dropped.len(), 1);
+        let (_, count, pos, velocity) = dropped[0];
+        assert_eq!(count, 1);
+        assert!((pos[1] - (EYES[1] - 0.3)).abs() < 1e-4 && pos[0] == EYES[0]);
+        assert!(velocity[0] < -0.29 && velocity[1].abs() < 1e-4 && velocity[2].abs() < 1e-4, "{velocity:?}");
+        let EntityKind::Item { pickup_at, despawn_at, .. } = &h.server.entities.get(dropped[0].0).unwrap().kind else { panic!("oggetto") };
+        assert_eq!((*pickup_at, *despawn_at), (h.server.tick_count + 40, h.server.tick_count + 6000));
+        // Bob (che vede il chunk) lo vede apparire con la velocità e la posizione 0.125 più in alto
+        h.packets_by_player();
+        h.server.visibility_tick();
+        let sent = h.packets_by_player();
+        let add = sent[&2].iter().find(|p| p.id == id::ADD_ITEM_ACTOR).expect("AddItemActor a Bob");
+        assert!(sent.get(&3).is_none_or(|v| v.iter().all(|p| p.id != id::ADD_ITEM_ACTOR)));
+        assert!(add.body.len() > 8);
+    }
+
+    #[test]
+    fn cancelled_drop_keeps_the_item() {
+        let mut h = setup(GameMode::Survival);
+        h.server.hooks.push(Box::new(|a| !matches!(a, WorldAction::DropItem { .. })));
+        let id = held_net_id(&h);
+        h.receive(1, &[drop_request(-3, 5, id)]);
+        assert_eq!(h.server.players[&1].inventory.held().count, 64, "l'oggetto è tornato nella casella");
+        assert!(items(&h).is_empty());
+    }
+
+    #[test]
+    fn item_falls_and_rests_on_stone() {
+        let (mut h, id) = item_over_stone();
+        for _ in 0..40 {
+            h.server.items_tick();
+        }
+        let e = h.server.entities.get(id).unwrap();
+        assert!(e.on_ground);
+        assert!((71.0..=71.3).contains(&e.pos[1]), "{}", e.pos[1]);
+    }
+
+    #[test]
+    fn item_below_the_world_is_despawned() {
+        let mut h = harness_with_chunk();
+        let item = crate::inventory::Item { id: registry::items().id("minecraft:stone").unwrap(), count: 1, ..Default::default() };
+        let id = h.server.spawn_item(item, [3.5, -65.0, 4.5], [0.0; 3], 0);
+        h.server.items_tick();
+        assert!(h.server.entities.get(id).is_none());
+    }
+
+    #[test]
+    fn item_despawns_after_6000_ticks() {
+        let (mut h, id) = item_over_stone();
+        for _ in 0..5999 {
+            h.server.items_tick();
+            h.server.tick_count += 1;
+        }
+        assert!(h.server.entities.get(id).is_some());
+        h.server.tick_count += 1;
+        h.server.items_tick();
+        assert!(h.server.entities.get(id).is_none());
+    }
+
+    #[test]
+    fn item_in_a_chunk_nobody_sees_is_not_announced() {
+        let (mut h, _) = item_over_stone();
+        h.join(1, "Alex");
+        h.packets_by_player();
+        h.server.players.get_mut(&1).unwrap().sent.clear();
+        h.server.items_tick();
+        h.server.visibility_tick();
+        h.server.movement_tick();
+        assert!(h.packets_by_player().is_empty());
+    }
+
+    #[test]
+    fn landed_item_is_moved_for_viewers_with_the_network_offset() {
+        let (mut h, id) = item_over_stone();
+        h.join(1, "Alex");
+        h.server.players.get_mut(&1).unwrap().sent.insert((0, 0));
+        h.server.visibility_tick();
+        h.packets_by_player();
+        for _ in 0..40 {
+            h.server.items_tick();
+            h.server.movement_tick();
+        }
+        let sent = h.packets_by_player();
+        let moves: Vec<_> = sent[&1].iter().filter(|p| p.id == id::MOVE_ACTOR_ABSOLUTE).collect();
+        assert!(!moves.is_empty());
+        let last = bedrock_protocol::entity::move_actor_absolute(id, [3.5, 71.125, 4.5], 0.0, 0.0, 0.0, true, false);
+        assert_eq!(moves.last().unwrap().body, last.body);
+        assert!(sent[&1].iter().any(|p| p.id == id::SET_ACTOR_MOTION), "la caduta cambia la velocità");
+    }
+}

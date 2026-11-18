@@ -51,7 +51,7 @@ pub(crate) mod window {
 }
 
 /// Un oggetto con quantità. Vuoto quando l'ID o la quantità sono zero.
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(crate) struct Item {
     pub id: i16,
     pub count: u16,
@@ -201,6 +201,9 @@ pub(crate) struct StackResult {
     pub changed: Vec<(u8, u8)>,
     /// Perché la richiesta è stata rifiutata (per il log).
     pub error: Option<String>,
+    /// Gli oggetti buttati dalle azioni `Drop` (già tolti dalle caselle) e, in parallelo, la casella da cui vengono: li spawna il server.
+    pub dropped: Vec<Item>,
+    pub dropped_from: Vec<(u8, u8)>,
 }
 
 /// L'inventario di un giocatore: 36 caselle (0-8 barra), mano secondaria, armatura, cursore e casella creata.
@@ -233,6 +236,7 @@ impl Default for Inventory {
 struct Run {
     request_id: i32,
     changed: Vec<(u8, u8)>,
+    dropped: Vec<(Item, (u8, u8))>,
     now: Instant,
 }
 
@@ -330,12 +334,13 @@ impl Inventory {
     /// Esegue una richiesta del client. Se una azione non è valida, tutte le modifiche della richiesta si annullano.
     pub fn handle(&mut self, req: &StackRequest, creative: bool) -> StackResult {
         let backup = self.contents.clone();
-        let mut run = Run { request_id: req.request_id, changed: Vec::new(), now: Instant::now() };
+        let mut run = Run { request_id: req.request_id, changed: Vec::new(), dropped: Vec::new(), now: Instant::now() };
         match self.run(req, creative, &mut run) {
             Ok(()) => {
                 // La casella creata è di passaggio: quello che il client non ha preso (il server non sa quanto sta in una pila) si butta.
                 self.contents.created = Slot::default();
-                StackResult { ok: true, changed: run.changed, error: None }
+                let (dropped, dropped_from) = run.dropped.into_iter().unzip();
+                StackResult { ok: true, changed: run.changed, error: None, dropped, dropped_from }
             }
             Err(error) => {
                 self.contents = backup;
@@ -346,7 +351,7 @@ impl Inventory {
                         changed.push((container, slot));
                     }
                 }
-                StackResult { ok: false, changed, error: Some(error) }
+                StackResult { ok: false, changed, error: Some(error), dropped: Vec::new(), dropped_from: Vec::new() }
             }
         }
     }
@@ -357,12 +362,15 @@ impl Inventory {
             match action {
                 StackAction::Take { count, src, dst } | StackAction::Place { count, src, dst } => self.transfer(run, src, dst, *count)?,
                 StackAction::Swap { src, dst } => self.swap(run, src, dst)?,
-                StackAction::Drop { count, src, .. } => self.remove(run, src, *count)?,
+                StackAction::Drop { count, src, .. } => {
+                    let item = self.remove(run, src, *count)?;
+                    run.dropped.push((item, (src.container, src.slot)));
+                }
                 StackAction::Destroy { count, src } => {
                     if !creative {
                         return Err("Destroy è permessa solo con l'inventario creativo".into());
                     }
-                    self.remove(run, src, *count)?
+                    self.remove(run, src, *count)?;
                 }
                 StackAction::CraftCreative { net_id, .. } => {
                     if !creative {
@@ -472,8 +480,8 @@ impl Inventory {
         Ok(())
     }
 
-    /// Toglie `count` oggetti da una casella (Drop e Destroy). L'oggetto buttato non diventa ancora un'entità nel mondo.
-    fn remove(&mut self, run: &mut Run, src: &SlotRef, count: u8) -> Result<(), String> {
+    /// Toglie `count` oggetti da una casella (Drop e Destroy) e li restituisce: chi li butta li fa diventare un'entità nel mondo.
+    fn remove(&mut self, run: &mut Run, src: &SlotRef, count: u8) -> Result<Item, String> {
         let count = count as u16;
         if count == 0 || count > MAX_STACK {
             return Err(format!("quantità {count} non valida"));
@@ -484,7 +492,24 @@ impl Inventory {
             return Err(format!("si chiedono {count} oggetti ma la casella ne ha {}", if a.is_empty() { 0 } else { a.count }));
         }
         self.put(run, src.container, src.slot, loc, a.with_count(a.count - count));
-        Ok(())
+        Ok(a.with_count(count))
+    }
+
+    /// Rimette in una casella un oggetto buttato che un gancio ha annullato. Se nel frattempo la casella contiene altro, l'oggetto va
+    /// nella prima casella libera dell'inventario; se è pieno, si perde (non può accadere: l'oggetto era appena uscito da lì).
+    pub fn restore(&mut self, container: u8, slot: u8, item: Item) {
+        let Some(loc) = Loc::resolve(container, slot) else { return };
+        let current = self.contents.get(loc).item.clone();
+        if current.is_empty() {
+            return self.fill(loc, item);
+        }
+        if current.with_count(item.count) == item {
+            let merged = current.with_count(current.count + item.count);
+            return self.fill(loc, merged);
+        }
+        if let Some(free) = (0..MAIN_SLOTS as u8).map(Loc::Main).find(|&l| self.contents.get(l).item.is_empty()) {
+            self.fill(free, item);
+        }
     }
 
     /// I pacchetti di risposta a una richiesta: `ItemStackResponse` e, se è stata rifiutata, `InventorySlot` per ogni casella
