@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VersMCBE – catalogo tappa 2: entità e giocatori</title>
+<style>
+  :root { --bg:#fbfaf7; --fg:#1f2328; --muted:#5b636d; --line:#e3ded4; --card:#fff; --accent:#2f6f4e; --warn:#a2541b; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#16181b; --fg:#e8e6e1; --muted:#a3a9b0; --line:#2c3036; --card:#1e2125; --accent:#7cc39d; --warn:#e3a06a; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:20px 16px 60px; }
+  h1 { font-size:1.45rem; margin:.2em 0 .3em; }
+  h2 { font-size:1.15rem; margin:1.8em 0 .5em; border-bottom:1px solid var(--line); padding-bottom:.25em; }
+  h3 { font-size:1rem; margin:1.2em 0 .3em; }
+  p, li { color:var(--fg); }
+  .muted { color:var(--muted); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin:10px 0; }
+  .opt { border-left:3px solid var(--line); padding:4px 0 4px 10px; margin:8px 0; }
+  .opt.rec { border-left-color:var(--accent); }
+  .tag { display:inline-block; font-size:.78rem; padding:1px 7px; border-radius:99px; border:1px solid var(--accent); color:var(--accent); margin-left:4px; }
+  .trap { border-left:3px solid var(--warn); padding:6px 0 6px 10px; }
+  .trap b { color:var(--warn); }
+  table { border-collapse:collapse; width:100%; font-size:.93rem; }
+  td, th { border-bottom:1px solid var(--line); text-align:left; padding:6px 4px; vertical-align:top; }
+  code { font-size:.88em; }
+</style>
+</head>
+<body>
+<main>
+<h1>Tappa 2: entità e altri giocatori</h1>
+<p class="muted">VersMCBE · 18 novembre 2026 · da leggere prima delle domande (una alla volta, A/B/C).</p>
+
+<h2>Dove siamo</h2>
+<div class="card">
+<p>Oggi ogni giocatore è da solo nel suo mondo: gli altri <b>non si vedono</b>. Il server sa chi è collegato (chat, <code>/list</code>), ma non manda a nessuno la lista dei giocatori, i loro corpi, i movimenti o le skin. Non c'è nessuna entità: niente oggetti a terra, niente mob.</p>
+<p>Per la sopravvivenza servono gli oggetti a terra (rompi un blocco → cade l'oggetto → lo raccogli). Sono entità anche loro, quindi questa tappa costruisce la base comune.</p>
+</div>
+
+<h2>Cosa comprende la tappa</h2>
+<table>
+<tr><th>Pezzo</th><th>Cosa vedi nel gioco</th></tr>
+<tr><td>Lista giocatori</td><td>Nomi e skin nel menu di pausa; serve anche per disegnare gli altri.</td></tr>
+<tr><td>Comparire / sparire</td><td>Quando un giocatore si avvicina, entra o esce, il suo corpo appare o scompare.</td></tr>
+<tr><td>Movimento</td><td>Gli altri camminano, saltano, volano, girano la testa in modo fluido.</td></tr>
+<tr><td>Animazioni</td><td>Braccio che colpisce, accovacciarsi, corsa, nuoto, planata.</td></tr>
+<tr><td>Oggetto in mano</td><td>Vedi cosa tiene in mano (e l'armatura) l'altro.</td></tr>
+<tr><td>Skin</td><td>La skin vera di ognuno (anche quelle del Marketplace / persona).</td></tr>
+<tr><td>Nucleo delle entità</td><td>Un registro unico di "cose che esistono nel mondo" con ID, posizione, chi le vede.</td></tr>
+<tr><td>Oggetti a terra</td><td>Lanci un oggetto con <b>Q</b>, rimane a terra, chi ci passa sopra lo raccoglie.</td></tr>
+</table>
+
+<h2>Le scelte</h2>
+
+<h3>1 · Quanto mettere nella tappa</h3>
+<div class="opt rec"><b>A</b> Giocatori visibili + nucleo entità + oggetti a terra (lancio con Q e raccolta) <span class="tag">consigliata</span><br><span class="muted">Chiude il cerchio: la tappa dopo (sopravvivenza) trova le entità già pronte e provate. ~12 compiti, come la tappa 1.</span></div>
+<div class="opt"><b>B</b> Solo giocatori visibili<br><span class="muted">Più corta (~8 compiti), ma il nucleo delle entità va poi rifatto pensando agli oggetti.</span></div>
+<div class="opt"><b>C</b> Anche mob semplici (mucche che camminano)<br><span class="muted">Serve fisica e intelligenza dei mob: raddoppia la tappa. Meglio dopo.</span></div>
+
+<h3>2 · Le skin</h3>
+<div class="opt rec"><b>A</b> Skin vera dal login <span class="tag">consigliata</span><br><span class="muted">Il client manda la skin nel login; la passiamo agli altri (21 campi, immagini fino a qualche centinaio di KB). Va fatta comunque prima o poi.</span></div>
+<div class="opt"><b>B</b> Steve/Alex per tutti, skin vera dopo<br><span class="muted">Più veloce da avere in gioco, ma rimanda il pezzo più pesante.</span></div>
+
+<h3>3 · Come costruire il nucleo delle entità</h3>
+<div class="opt rec"><b>A</b> Registro semplice nel server <span class="tag">consigliata</span><br><span class="muted">Una mappa ID → entità, con un tipo (giocatore, oggetto a terra, …) e i dati comuni (posizione, rotazione, chi la vede). Stesso stile del codice di oggi, facile da esporre ai plugin.</span></div>
+<div class="opt"><b>B</b> ECS (es. <code>hecs</code> / <code>bevy_ecs</code>)<br><span class="muted">Molto flessibile con migliaia di entità, ma cambia il modo di scrivere tutto il server e complica l'API dei plugin.</span></div>
+<div class="opt"><b>C</b> Oggetti con tratti, come Dragonfly<br><span class="muted">Ogni tipo è un tipo Rust con un tratto comune: elegante ma più rigido con lo stato condiviso in Rust.</span></div>
+
+<h3>4 · Movimento degli altri</h3>
+<div class="opt rec"><b>A</b> Ritrasmettere la posizione che manda il client <span class="tag">consigliata</span><br><span class="muted">Il client è già autorevole sul proprio movimento (come oggi). Mandiamo agli altri solo i cambiamenti, 20 volte al secondo.</span></div>
+<div class="opt"><b>B</b> A + controllo base contro i teletrasporti<br><span class="muted">Rifiuta spostamenti impossibili (es. 50 blocchi in un tick) e rimette il giocatore al suo posto. Utile su un server aperto; un po' di lavoro in più.</span></div>
+<div class="opt"><b>C</b> Fisica completa lato server<br><span class="muted">È un anticheat vero: settimane di lavoro. Scartato per ora.</span></div>
+
+<h3>5 · Chi vede chi</h3>
+<div class="opt rec"><b>A</b> Per distanza: vedi chi sta nei chunk che hai caricati <span class="tag">consigliata</span><br><span class="muted">Come vanilla e Dragonfly; regge anche tanti giocatori.</span></div>
+<div class="opt"><b>B</b> Tutti vedono tutti<br><span class="muted">Più semplice, ma manda traffico inutile e i corpi lontani "volano" fuori dai chunk caricati.</span></div>
+
+<h2>Trappole</h2>
+<div class="trap"><b>Provare richiede due giocatori.</b> Oggi il server butta fuori il vecchio ingresso se lo stesso account entra due volte. Soluzioni: <b>(1)</b> un secondo account/dispositivo; <b>(2)</b> un "giocatore finto" lato server (comando tipo <code>/bot</code>) che cammina e salta, per provare da soli <span class="tag">consigliata</span>; <b>(3)</b> un client di prova automatico (abbiamo già un client nei test end-to-end).</div>
+<div class="trap"><b>Formato nuovo dei pacchetti.</b> Con il protocollo 2225 Mojang ha cambiato <code>AddPlayer</code>, <code>PlayerList</code> e i dati delle entità (varianti con etichetta). Dragonfly 1.26.60 è un riferimento, ma i byte vanno verificati sul client vero: come per la gravità, un numero sbagliato non dà errori, fa solo comportare male il gioco.</div>
+<div class="trap"><b>Skin grandi.</b> Una skin può pesare centinaia di KB: va mandata una volta sola per giocatore e non a ogni avvicinamento.</div>
+
+<h2>Scartato (per ora)</h2>
+<ul>
+<li>Mob con intelligenza, generazione dei mob, combattimento → tappa sopravvivenza o dopo.</li>
+<li>Fisica lato server / anticheat completo → troppo lavoro ora.</li>
+<li>NPC con dialoghi, veicoli, cavalcature.</li>
+</ul>
+
+<h2>Tempi e costi</h2>
+<p>Con la scelta consigliata: circa 12 compiti, con subagenti come la tappa 1 (stesso giro: piano, compiti, revisioni, verifica nel gioco). Senza oggetti a terra (1B) circa 8. Le prove nel gioco restano a te; con il giocatore finto le puoi fare da solo.</p>
+</main>
+</body>
+</html>
