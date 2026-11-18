@@ -23,3 +23,6 @@ Thumbs.db
 
 # Impostazioni locali di Claude Code
 .claude/settings.local.json
+
+# Dati esterni scaricati con licenze non ridistribuibili (schemi Mojang, ecc.)
+/vendor/
