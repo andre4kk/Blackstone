@@ -1,0 +1,10405 @@
+{
+"_license": "Da Dragonfly (MIT, https://github.com/df-mc/dragonfly) server/world/vanilla_items.nbt: [versione, component_based, dati NBT di rete in base64].",
+"items": {
+"minecraft:acacia_boat": [
+2,
+false,
+null
+],
+"minecraft:acacia_button": [
+2,
+false,
+null
+],
+"minecraft:acacia_chest_boat": [
+2,
+false,
+null
+],
+"minecraft:acacia_door": [
+2,
+false,
+null
+],
+"minecraft:acacia_double_slab": [
+2,
+false,
+null
+],
+"minecraft:acacia_fence": [
+2,
+false,
+null
+],
+"minecraft:acacia_fence_gate": [
+2,
+false,
+null
+],
+"minecraft:acacia_hanging_sign": [
+2,
+false,
+null
+],
+"minecraft:acacia_leaves": [
+2,
+false,
+null
+],
+"minecraft:acacia_log": [
+2,
+false,
+null
+],
+"minecraft:acacia_planks": [
+2,
+false,
+null
+],
+"minecraft:acacia_pressure_plate": [
+2,
+false,
+null
+],
+"minecraft:acacia_sapling": [
+2,
+false,
+null
+],
+"minecraft:acacia_shelf": [
+2,
+false,
+null
+],
+"minecraft:acacia_sign": [
+2,
+false,
+null
+],
+"minecraft:acacia_slab": [
+2,
+false,
+null
+],
+"minecraft:acacia_stairs": [
+2,
+false,
+null
+],
+"minecraft:acacia_standing_sign": [
+2,
+false,
+null
+],
+"minecraft:acacia_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:acacia_wall_sign": [
+2,
+false,
+null
+],
+"minecraft:acacia_wood": [
+2,
+false,
+null
+],
+"minecraft:activator_rail": [
+2,
+false,
+null
+],
+"minecraft:agent_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:air": [
+2,
+false,
+null
+],
+"minecraft:allay_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:allium": [
+2,
+false,
+null
+],
+"minecraft:allow": [
+2,
+false,
+null
+],
+"minecraft:amethyst_block": [
+2,
+false,
+null
+],
+"minecraft:amethyst_cluster": [
+2,
+false,
+null
+],
+"minecraft:amethyst_shard": [
+2,
+false,
+null
+],
+"minecraft:ancient_debris": [
+2,
+false,
+null
+],
+"minecraft:andesite": [
+2,
+false,
+null
+],
+"minecraft:andesite_double_slab": [
+2,
+false,
+null
+],
+"minecraft:andesite_slab": [
+2,
+false,
+null
+],
+"minecraft:andesite_stairs": [
+2,
+false,
+null
+],
+"minecraft:andesite_wall": [
+2,
+false,
+null
+],
+"minecraft:angler_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:anvil": [
+2,
+false,
+null
+],
+"minecraft:apple": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BAgOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemWAAQoObWluZWNyYWZ0Omljb24KCHRleHR1cmVzCAdkZWZhdWx0BWFwcGxlAAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgIDDHVzZV9kdXJhdGlvbkAACQlpdGVtX3RhZ3MIAhFtaW5lY3JhZnQ6aXNfZm9vZAoWbWluZWNyYWZ0OmRpc3BsYXlfbmFtZQgFdmFsdWUPaXRlbS5hcHBsZS5uYW1lAAoObWluZWNyYWZ0OmZvb2QBDmNhbl9hbHdheXNfZWF0AAMJbnV0cml0aW9uCAUTc2F0dXJhdGlvbl9tb2RpZmllcpqZmT4KEXVzaW5nX2NvbnZlcnRzX3RvAAAKDm1pbmVjcmFmdDp0YWdzCQR0YWdzCAIRbWluZWNyYWZ0OmlzX2Zvb2QAChdtaW5lY3JhZnQ6dXNlX2FuaW1hdGlvbggFdmFsdWUDZWF0AAoXbWluZWNyYWZ0OnVzZV9tb2RpZmllcnMBD2VtaXRfdmlicmF0aW9ucwEFEW1vdmVtZW50X21vZGlmaWVyMzOzPggLc3RhcnRfdXNpbmcGYWx3YXlzBQx1c2VfZHVyYXRpb27NzMw/AAAA"
+],
+"minecraft:archer_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:armadillo_scute": [
+2,
+false,
+null
+],
+"minecraft:armadillo_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:armor_stand": [
+2,
+false,
+null
+],
+"minecraft:arms_up_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:arrow": [
+2,
+true,
+null
+],
+"minecraft:axolotl_bucket": [
+2,
+false,
+null
+],
+"minecraft:axolotl_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:azalea": [
+2,
+false,
+null
+],
+"minecraft:azalea_leaves": [
+2,
+false,
+null
+],
+"minecraft:azalea_leaves_flowered": [
+2,
+false,
+null
+],
+"minecraft:azure_bluet": [
+2,
+false,
+null
+],
+"minecraft:baked_potato": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uCgMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympkZPwgRdXNpbmdfY29udmVydHNfdG8AAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:balloon": [
+2,
+false,
+null
+],
+"minecraft:bamboo": [
+2,
+false,
+null
+],
+"minecraft:bamboo_block": [
+2,
+false,
+null
+],
+"minecraft:bamboo_button": [
+2,
+false,
+null
+],
+"minecraft:bamboo_chest_raft": [
+2,
+false,
+null
+],
+"minecraft:bamboo_door": [
+2,
+false,
+null
+],
+"minecraft:bamboo_double_slab": [
+2,
+false,
+null
+],
+"minecraft:bamboo_fence": [
+2,
+false,
+null
+],
+"minecraft:bamboo_fence_gate": [
+2,
+false,
+null
+],
+"minecraft:bamboo_hanging_sign": [
+2,
+false,
+null
+],
+"minecraft:bamboo_mosaic": [
+2,
+false,
+null
+],
+"minecraft:bamboo_mosaic_double_slab": [
+2,
+false,
+null
+],
+"minecraft:bamboo_mosaic_slab": [
+2,
+false,
+null
+],
+"minecraft:bamboo_mosaic_stairs": [
+2,
+false,
+null
+],
+"minecraft:bamboo_planks": [
+2,
+false,
+null
+],
+"minecraft:bamboo_pressure_plate": [
+2,
+false,
+null
+],
+"minecraft:bamboo_raft": [
+2,
+false,
+null
+],
+"minecraft:bamboo_sapling": [
+2,
+false,
+null
+],
+"minecraft:bamboo_shelf": [
+2,
+false,
+null
+],
+"minecraft:bamboo_sign": [
+2,
+false,
+null
+],
+"minecraft:bamboo_slab": [
+2,
+false,
+null
+],
+"minecraft:bamboo_stairs": [
+2,
+false,
+null
+],
+"minecraft:bamboo_standing_sign": [
+2,
+false,
+null
+],
+"minecraft:bamboo_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:bamboo_wall_sign": [
+2,
+false,
+null
+],
+"minecraft:banner": [
+2,
+false,
+null
+],
+"minecraft:banner_pattern": [
+2,
+false,
+null
+],
+"minecraft:barrel": [
+2,
+false,
+null
+],
+"minecraft:barrier": [
+2,
+false,
+null
+],
+"minecraft:basalt": [
+2,
+false,
+null
+],
+"minecraft:bat_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:beacon": [
+2,
+false,
+null
+],
+"minecraft:bed": [
+2,
+false,
+null
+],
+"minecraft:bedrock": [
+2,
+false,
+null
+],
+"minecraft:bee_nest": [
+2,
+false,
+null
+],
+"minecraft:bee_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:beef": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uBgMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympmZPggRdXNpbmdfY29udmVydHNfdG8AAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:beehive": [
+2,
+false,
+null
+],
+"minecraft:beetroot": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uAgMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympkZPwgRdXNpbmdfY29udmVydHNfdG8AAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:beetroot_seeds": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpzZWVkCAtjcm9wX3Jlc3VsdBJtaW5lY3JhZnQ6YmVldHJvb3QJCHBsYW50X2F0CAISbWluZWNyYWZ0OmZhcm1sYW5kARpwbGFudF9hdF9hbnlfc29saWRfc3VyZmFjZQAIDXBsYW50X2F0X2ZhY2UCdXAAAAA="
+],
+"minecraft:beetroot_soup": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uDAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympkZPwgRdXNpbmdfY29udmVydHNfdG8EYm93bAADGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQIDFm1pbmVjcmFmdDp1c2VfZHVyYXRpb25AAAA="
+],
+"minecraft:bell": [
+2,
+false,
+null
+],
+"minecraft:big_dripleaf": [
+2,
+false,
+null
+],
+"minecraft:birch_boat": [
+2,
+false,
+null
+],
+"minecraft:birch_button": [
+2,
+false,
+null
+],
+"minecraft:birch_chest_boat": [
+2,
+false,
+null
+],
+"minecraft:birch_door": [
+2,
+false,
+null
+],
+"minecraft:birch_double_slab": [
+2,
+false,
+null
+],
+"minecraft:birch_fence": [
+2,
+false,
+null
+],
+"minecraft:birch_fence_gate": [
+2,
+false,
+null
+],
+"minecraft:birch_hanging_sign": [
+2,
+false,
+null
+],
+"minecraft:birch_leaves": [
+2,
+false,
+null
+],
+"minecraft:birch_log": [
+2,
+false,
+null
+],
+"minecraft:birch_planks": [
+2,
+false,
+null
+],
+"minecraft:birch_pressure_plate": [
+2,
+false,
+null
+],
+"minecraft:birch_sapling": [
+2,
+false,
+null
+],
+"minecraft:birch_shelf": [
+2,
+false,
+null
+],
+"minecraft:birch_sign": [
+2,
+false,
+null
+],
+"minecraft:birch_slab": [
+2,
+false,
+null
+],
+"minecraft:birch_stairs": [
+2,
+false,
+null
+],
+"minecraft:birch_standing_sign": [
+2,
+false,
+null
+],
+"minecraft:birch_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:birch_wall_sign": [
+2,
+false,
+null
+],
+"minecraft:birch_wood": [
+2,
+false,
+null
+],
+"minecraft:black_bundle": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemUCCg5taW5lY3JhZnQ6aWNvbgoIdGV4dHVyZXMIEGJ1bmRsZV9vcGVuX2JhY2sWYnVuZGxlX2JsYWNrX29wZW5fYmFjawgRYnVuZGxlX29wZW5fZnJvbnQXYnVuZGxlX2JsYWNrX29wZW5fZnJvbnQIB2RlZmF1bHQMYnVuZGxlX2JsYWNrAAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAocbWluZWNyYWZ0OmJ1bmRsZV9pbnRlcmFjdGlvbgMSbnVtX3ZpZXdhYmxlX3Nsb3RzGAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoWbWluZWNyYWZ0OnN0b3JhZ2VfaXRlbQEaYWxsb3dfbmVzdGVkX3N0b3JhZ2VfaXRlbXMBCQ1hbGxvd2VkX2l0ZW1zAAAJDGJhbm5lZF9pdGVtcwoECARuYW1lFW1pbmVjcmFmdDpzaHVsa2VyX2JveAAIBG5hbWUcbWluZWNyYWZ0OnVuZHllZF9zaHVsa2VyX2JveAADCW1heF9zbG90c4ABAAoebWluZWNyYWZ0OnN0b3JhZ2Vfd2VpZ2h0X2xpbWl0AxBtYXhfd2VpZ2h0X2xpbWl0gAEACiFtaW5lY3JhZnQ6c3RvcmFnZV93ZWlnaHRfbW9kaWZpZXIDFndlaWdodF9pbl9zdG9yYWdlX2l0ZW0IAAAA"
+],
+"minecraft:black_candle": [
+2,
+false,
+null
+],
+"minecraft:black_candle_cake": [
+2,
+false,
+null
+],
+"minecraft:black_carpet": [
+2,
+false,
+null
+],
+"minecraft:black_concrete": [
+2,
+false,
+null
+],
+"minecraft:black_concrete_double_slab": [
+2,
+false,
+null
+],
+"minecraft:black_concrete_powder": [
+2,
+false,
+null
+],
+"minecraft:black_concrete_slab": [
+2,
+false,
+null
+],
+"minecraft:black_concrete_stairs": [
+2,
+false,
+null
+],
+"minecraft:black_cushion": [
+2,
+false,
+null
+],
+"minecraft:black_dye": [
+2,
+false,
+null
+],
+"minecraft:black_glazed_terracotta": [
+2,
+false,
+null
+],
+"minecraft:black_harness": [
+2,
+false,
+null
+],
+"minecraft:black_shulker_box": [
+2,
+false,
+null
+],
+"minecraft:black_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:black_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:black_terracotta": [
+2,
+false,
+null
+],
+"minecraft:black_wool": [
+2,
+false,
+null
+],
+"minecraft:black_wool_double_slab": [
+2,
+false,
+null
+],
+"minecraft:black_wool_slab": [
+2,
+false,
+null
+],
+"minecraft:black_wool_stairs": [
+2,
+false,
+null
+],
+"minecraft:blackstone": [
+2,
+false,
+null
+],
+"minecraft:blackstone_double_slab": [
+2,
+false,
+null
+],
+"minecraft:blackstone_slab": [
+2,
+false,
+null
+],
+"minecraft:blackstone_stairs": [
+2,
+false,
+null
+],
+"minecraft:blackstone_wall": [
+2,
+false,
+null
+],
+"minecraft:blade_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:blast_furnace": [
+2,
+false,
+null
+],
+"minecraft:blaze_powder": [
+2,
+false,
+null
+],
+"minecraft:blaze_rod": [
+2,
+false,
+null
+],
+"minecraft:blaze_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:bleach": [
+2,
+false,
+null
+],
+"minecraft:blue_bundle": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemUCCg5taW5lY3JhZnQ6aWNvbgoIdGV4dHVyZXMIEGJ1bmRsZV9vcGVuX2JhY2sVYnVuZGxlX2JsdWVfb3Blbl9iYWNrCBFidW5kbGVfb3Blbl9mcm9udBZidW5kbGVfYmx1ZV9vcGVuX2Zyb250CAdkZWZhdWx0C2J1bmRsZV9ibHVlAAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAocbWluZWNyYWZ0OmJ1bmRsZV9pbnRlcmFjdGlvbgMSbnVtX3ZpZXdhYmxlX3Nsb3RzGAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoWbWluZWNyYWZ0OnN0b3JhZ2VfaXRlbQEaYWxsb3dfbmVzdGVkX3N0b3JhZ2VfaXRlbXMBCQ1hbGxvd2VkX2l0ZW1zAAAJDGJhbm5lZF9pdGVtcwoECARuYW1lFW1pbmVjcmFmdDpzaHVsa2VyX2JveAAIBG5hbWUcbWluZWNyYWZ0OnVuZHllZF9zaHVsa2VyX2JveAADCW1heF9zbG90c4ABAAoebWluZWNyYWZ0OnN0b3JhZ2Vfd2VpZ2h0X2xpbWl0AxBtYXhfd2VpZ2h0X2xpbWl0gAEACiFtaW5lY3JhZnQ6c3RvcmFnZV93ZWlnaHRfbW9kaWZpZXIDFndlaWdodF9pbl9zdG9yYWdlX2l0ZW0IAAAA"
+],
+"minecraft:blue_candle": [
+2,
+false,
+null
+],
+"minecraft:blue_candle_cake": [
+2,
+false,
+null
+],
+"minecraft:blue_carpet": [
+2,
+false,
+null
+],
+"minecraft:blue_concrete": [
+2,
+false,
+null
+],
+"minecraft:blue_concrete_double_slab": [
+2,
+false,
+null
+],
+"minecraft:blue_concrete_powder": [
+2,
+false,
+null
+],
+"minecraft:blue_concrete_slab": [
+2,
+false,
+null
+],
+"minecraft:blue_concrete_stairs": [
+2,
+false,
+null
+],
+"minecraft:blue_cushion": [
+2,
+false,
+null
+],
+"minecraft:blue_dye": [
+2,
+false,
+null
+],
+"minecraft:blue_egg": [
+2,
+false,
+null
+],
+"minecraft:blue_glazed_terracotta": [
+2,
+false,
+null
+],
+"minecraft:blue_harness": [
+2,
+false,
+null
+],
+"minecraft:blue_ice": [
+2,
+false,
+null
+],
+"minecraft:blue_orchid": [
+2,
+false,
+null
+],
+"minecraft:blue_shulker_box": [
+2,
+false,
+null
+],
+"minecraft:blue_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:blue_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:blue_terracotta": [
+2,
+false,
+null
+],
+"minecraft:blue_wool": [
+2,
+false,
+null
+],
+"minecraft:blue_wool_double_slab": [
+2,
+false,
+null
+],
+"minecraft:blue_wool_slab": [
+2,
+false,
+null
+],
+"minecraft:blue_wool_stairs": [
+2,
+false,
+null
+],
+"minecraft:board": [
+2,
+false,
+null
+],
+"minecraft:boat": [
+2,
+false,
+null
+],
+"minecraft:bogged_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:bolt_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:bone": [
+2,
+false,
+null
+],
+"minecraft:bone_block": [
+2,
+false,
+null
+],
+"minecraft:bone_meal": [
+2,
+false,
+null
+],
+"minecraft:book": [
+2,
+false,
+null
+],
+"minecraft:bookshelf": [
+2,
+false,
+null
+],
+"minecraft:border_block": [
+2,
+false,
+null
+],
+"minecraft:bordure_indented_banner_pattern": [
+2,
+false,
+null
+],
+"minecraft:bow": [
+2,
+false,
+null
+],
+"minecraft:bowl": [
+2,
+false,
+null
+],
+"minecraft:brain_coral": [
+2,
+false,
+null
+],
+"minecraft:brain_coral_block": [
+2,
+false,
+null
+],
+"minecraft:brain_coral_fan": [
+2,
+false,
+null
+],
+"minecraft:brain_coral_wall_fan": [
+2,
+false,
+null
+],
+"minecraft:bread": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uCgMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympkZPwgRdXNpbmdfY29udmVydHNfdG8AAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:breeze_rod": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5CAgOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAEBEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemWAAQoObWluZWNyYWZ0Omljb24KCHRleHR1cmVzCAdkZWZhdWx0CmJyZWV6ZV9yb2QAAAUMbWluaW5nX3NwZWVkAACAPwEOc2hvdWxkX2Rlc3Bhd24BAQ9zdGFja2VkX2J5X2RhdGEAAw11c2VfYW5pbWF0aW9uAAMMdXNlX2R1cmF0aW9uAAAJCWl0ZW1fdGFncwAAChZtaW5lY3JhZnQ6ZGlzcGxheV9uYW1lCAV2YWx1ZRRpdGVtLmJyZWV6ZV9yb2QubmFtZQAKF21pbmVjcmFmdDpoYW5kX2VxdWlwcGVkAQV2YWx1ZQEAAAA="
+],
+"minecraft:breeze_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:brewer_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:brewing_stand": [
+2,
+true,
+null
+],
+"minecraft:brick": [
+2,
+false,
+null
+],
+"minecraft:brick_block": [
+2,
+false,
+null
+],
+"minecraft:brick_double_slab": [
+2,
+false,
+null
+],
+"minecraft:brick_slab": [
+2,
+false,
+null
+],
+"minecraft:brick_stairs": [
+2,
+false,
+null
+],
+"minecraft:brick_wall": [
+2,
+false,
+null
+],
+"minecraft:brown_bundle": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemUCCg5taW5lY3JhZnQ6aWNvbgoIdGV4dHVyZXMIEGJ1bmRsZV9vcGVuX2JhY2sWYnVuZGxlX2Jyb3duX29wZW5fYmFjawgRYnVuZGxlX29wZW5fZnJvbnQXYnVuZGxlX2Jyb3duX29wZW5fZnJvbnQIB2RlZmF1bHQMYnVuZGxlX2Jyb3duAAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAocbWluZWNyYWZ0OmJ1bmRsZV9pbnRlcmFjdGlvbgMSbnVtX3ZpZXdhYmxlX3Nsb3RzGAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoWbWluZWNyYWZ0OnN0b3JhZ2VfaXRlbQEaYWxsb3dfbmVzdGVkX3N0b3JhZ2VfaXRlbXMBCQ1hbGxvd2VkX2l0ZW1zAAAJDGJhbm5lZF9pdGVtcwoECARuYW1lFW1pbmVjcmFmdDpzaHVsa2VyX2JveAAIBG5hbWUcbWluZWNyYWZ0OnVuZHllZF9zaHVsa2VyX2JveAADCW1heF9zbG90c4ABAAoebWluZWNyYWZ0OnN0b3JhZ2Vfd2VpZ2h0X2xpbWl0AxBtYXhfd2VpZ2h0X2xpbWl0gAEACiFtaW5lY3JhZnQ6c3RvcmFnZV93ZWlnaHRfbW9kaWZpZXIDFndlaWdodF9pbl9zdG9yYWdlX2l0ZW0IAAAA"
+],
+"minecraft:brown_candle": [
+2,
+false,
+null
+],
+"minecraft:brown_candle_cake": [
+2,
+false,
+null
+],
+"minecraft:brown_carpet": [
+2,
+false,
+null
+],
+"minecraft:brown_concrete": [
+2,
+false,
+null
+],
+"minecraft:brown_concrete_double_slab": [
+2,
+false,
+null
+],
+"minecraft:brown_concrete_powder": [
+2,
+false,
+null
+],
+"minecraft:brown_concrete_slab": [
+2,
+false,
+null
+],
+"minecraft:brown_concrete_stairs": [
+2,
+false,
+null
+],
+"minecraft:brown_cushion": [
+2,
+false,
+null
+],
+"minecraft:brown_dye": [
+2,
+false,
+null
+],
+"minecraft:brown_egg": [
+2,
+false,
+null
+],
+"minecraft:brown_glazed_terracotta": [
+2,
+false,
+null
+],
+"minecraft:brown_harness": [
+2,
+false,
+null
+],
+"minecraft:brown_mushroom": [
+2,
+false,
+null
+],
+"minecraft:brown_mushroom_block": [
+2,
+false,
+null
+],
+"minecraft:brown_shulker_box": [
+2,
+false,
+null
+],
+"minecraft:brown_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:brown_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:brown_terracotta": [
+2,
+false,
+null
+],
+"minecraft:brown_wool": [
+2,
+false,
+null
+],
+"minecraft:brown_wool_double_slab": [
+2,
+false,
+null
+],
+"minecraft:brown_wool_slab": [
+2,
+false,
+null
+],
+"minecraft:brown_wool_stairs": [
+2,
+false,
+null
+],
+"minecraft:brush": [
+2,
+false,
+null
+],
+"minecraft:bubble_column": [
+2,
+false,
+null
+],
+"minecraft:bubble_coral": [
+2,
+false,
+null
+],
+"minecraft:bubble_coral_block": [
+2,
+false,
+null
+],
+"minecraft:bubble_coral_fan": [
+2,
+false,
+null
+],
+"minecraft:bubble_coral_wall_fan": [
+2,
+false,
+null
+],
+"minecraft:bucket": [
+2,
+false,
+null
+],
+"minecraft:budding_amethyst": [
+2,
+false,
+null
+],
+"minecraft:bundle": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemUCCg5taW5lY3JhZnQ6aWNvbgoIdGV4dHVyZXMIEGJ1bmRsZV9vcGVuX2JhY2sQYnVuZGxlX29wZW5fYmFjawgRYnVuZGxlX29wZW5fZnJvbnQRYnVuZGxlX29wZW5fZnJvbnQIB2RlZmF1bHQGYnVuZGxlAAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAocbWluZWNyYWZ0OmJ1bmRsZV9pbnRlcmFjdGlvbgMSbnVtX3ZpZXdhYmxlX3Nsb3RzGAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoWbWluZWNyYWZ0OnN0b3JhZ2VfaXRlbQEaYWxsb3dfbmVzdGVkX3N0b3JhZ2VfaXRlbXMBCQ1hbGxvd2VkX2l0ZW1zAAAJDGJhbm5lZF9pdGVtcwoECARuYW1lFW1pbmVjcmFmdDpzaHVsa2VyX2JveAAIBG5hbWUcbWluZWNyYWZ0OnVuZHllZF9zaHVsa2VyX2JveAADCW1heF9zbG90c4ABAAoebWluZWNyYWZ0OnN0b3JhZ2Vfd2VpZ2h0X2xpbWl0AxBtYXhfd2VpZ2h0X2xpbWl0gAEACiFtaW5lY3JhZnQ6c3RvcmFnZV93ZWlnaHRfbW9kaWZpZXIDFndlaWdodF9pbl9zdG9yYWdlX2l0ZW0IAAAA"
+],
+"minecraft:burn_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:bush": [
+2,
+false,
+null
+],
+"minecraft:cactus": [
+2,
+false,
+null
+],
+"minecraft:cactus_flower": [
+2,
+false,
+null
+],
+"minecraft:cake": [
+2,
+true,
+null
+],
+"minecraft:calcite": [
+2,
+false,
+null
+],
+"minecraft:calibrated_sculk_sensor": [
+2,
+false,
+null
+],
+"minecraft:camel_husk_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:camel_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:camera": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMID21pbmVjcmFmdDpibG9jaxBtaW5lY3JhZnQ6Y2FtZXJhChBtaW5lY3JhZnQ6Y2FtZXJhBRNibGFja19iYXJzX2R1cmF0aW9uzcxMPgUXYmxhY2tfYmFyc19zY3JlZW5fcmF0aW8K16M9BRBwaWN0dXJlX2R1cmF0aW9uAACAPwUQc2h1dHRlcl9kdXJhdGlvbs3MTD4FFHNodXR0ZXJfc2NyZWVuX3JhdGlvAAAAPwUTc2xpZGVfYXdheV9kdXJhdGlvbs3MTD4AAxZtaW5lY3JhZnQ6dXNlX2R1cmF0aW9uwJoMAAA="
+],
+"minecraft:campfire": [
+2,
+true,
+null
+],
+"minecraft:candle": [
+2,
+false,
+null
+],
+"minecraft:candle_cake": [
+2,
+false,
+null
+],
+"minecraft:carpet": [
+2,
+false,
+null
+],
+"minecraft:carrot": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uBgMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympkZPwgRdXNpbmdfY29udmVydHNfdG8AAAoObWluZWNyYWZ0OnNlZWQIC2Nyb3BfcmVzdWx0EW1pbmVjcmFmdDpjYXJyb3RzCQhwbGFudF9hdAgCEm1pbmVjcmFmdDpmYXJtbGFuZAEacGxhbnRfYXRfYW55X3NvbGlkX3N1cmZhY2UACA1wbGFudF9hdF9mYWNlAnVwAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:carrot_on_a_stick": [
+2,
+false,
+null
+],
+"minecraft:carrots": [
+2,
+false,
+null
+],
+"minecraft:cartography_table": [
+2,
+false,
+null
+],
+"minecraft:carved_pumpkin": [
+2,
+false,
+null
+],
+"minecraft:cat_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:cauldron": [
+2,
+true,
+null
+],
+"minecraft:cave_spider_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:cave_vines": [
+2,
+false,
+null
+],
+"minecraft:cave_vines_body_with_berries": [
+2,
+false,
+null
+],
+"minecraft:cave_vines_head_with_berries": [
+2,
+false,
+null
+],
+"minecraft:chain_command_block": [
+2,
+false,
+null
+],
+"minecraft:chainmail_boots": [
+2,
+false,
+null
+],
+"minecraft:chainmail_chestplate": [
+2,
+false,
+null
+],
+"minecraft:chainmail_helmet": [
+2,
+false,
+null
+],
+"minecraft:chainmail_leggings": [
+2,
+false,
+null
+],
+"minecraft:chalkboard": [
+2,
+false,
+null
+],
+"minecraft:charcoal": [
+2,
+true,
+null
+],
+"minecraft:chemical_heat": [
+2,
+false,
+null
+],
+"minecraft:chemistry_table": [
+2,
+false,
+null
+],
+"minecraft:cherry_boat": [
+2,
+false,
+null
+],
+"minecraft:cherry_button": [
+2,
+false,
+null
+],
+"minecraft:cherry_chest_boat": [
+2,
+false,
+null
+],
+"minecraft:cherry_door": [
+2,
+false,
+null
+],
+"minecraft:cherry_double_slab": [
+2,
+false,
+null
+],
+"minecraft:cherry_fence": [
+2,
+false,
+null
+],
+"minecraft:cherry_fence_gate": [
+2,
+false,
+null
+],
+"minecraft:cherry_hanging_sign": [
+2,
+false,
+null
+],
+"minecraft:cherry_leaves": [
+2,
+false,
+null
+],
+"minecraft:cherry_log": [
+2,
+false,
+null
+],
+"minecraft:cherry_planks": [
+2,
+false,
+null
+],
+"minecraft:cherry_pressure_plate": [
+2,
+false,
+null
+],
+"minecraft:cherry_sapling": [
+2,
+false,
+null
+],
+"minecraft:cherry_shelf": [
+2,
+false,
+null
+],
+"minecraft:cherry_sign": [
+2,
+false,
+null
+],
+"minecraft:cherry_slab": [
+2,
+false,
+null
+],
+"minecraft:cherry_stairs": [
+2,
+false,
+null
+],
+"minecraft:cherry_standing_sign": [
+2,
+false,
+null
+],
+"minecraft:cherry_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:cherry_wall_sign": [
+2,
+false,
+null
+],
+"minecraft:cherry_wood": [
+2,
+false,
+null
+],
+"minecraft:chest": [
+2,
+false,
+null
+],
+"minecraft:chest_boat": [
+2,
+false,
+null
+],
+"minecraft:chest_minecart": [
+2,
+false,
+null
+],
+"minecraft:chicken": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAkHZWZmZWN0cwoCAwlhbXBsaWZpZXIABQZjaGFuY2WamZk+CA1kZXNjcmlwdGlvbklkDXBvdGlvbi5odW5nZXIDCGR1cmF0aW9uPAMCaWQiCARuYW1lBmh1bmdlcgADCW51dHJpdGlvbgQDDW9uX3VzZV9hY3Rpb24BCQxvbl91c2VfcmFuZ2UFBgAAAEEAAABBAAAAQQUTc2F0dXJhdGlvbl9tb2RpZmllcpqZmT4IEXVzaW5nX2NvbnZlcnRzX3RvAAADFm1pbmVjcmFmdDp1c2VfZHVyYXRpb25AAAA="
+],
+"minecraft:chicken_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:chipped_anvil": [
+2,
+false,
+null
+],
+"minecraft:chiseled_bookshelf": [
+2,
+false,
+null
+],
+"minecraft:chiseled_cinnabar": [
+2,
+false,
+null
+],
+"minecraft:chiseled_copper": [
+2,
+false,
+null
+],
+"minecraft:chiseled_deepslate": [
+2,
+false,
+null
+],
+"minecraft:chiseled_nether_bricks": [
+2,
+false,
+null
+],
+"minecraft:chiseled_polished_blackstone": [
+2,
+false,
+null
+],
+"minecraft:chiseled_quartz_block": [
+2,
+false,
+null
+],
+"minecraft:chiseled_red_sandstone": [
+2,
+false,
+null
+],
+"minecraft:chiseled_resin_bricks": [
+2,
+false,
+null
+],
+"minecraft:chiseled_sandstone": [
+2,
+false,
+null
+],
+"minecraft:chiseled_stone_bricks": [
+2,
+false,
+null
+],
+"minecraft:chiseled_sulfur": [
+2,
+false,
+null
+],
+"minecraft:chiseled_tuff": [
+2,
+false,
+null
+],
+"minecraft:chiseled_tuff_bricks": [
+2,
+false,
+null
+],
+"minecraft:chorus_flower": [
+2,
+false,
+null
+],
+"minecraft:chorus_fruit": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAEDDWNvb2xkb3duX3RpbWUoCA1jb29sZG93bl90eXBlC2Nob3J1c2ZydWl0AwludXRyaXRpb24IAw1vbl91c2VfYWN0aW9uAAkMb25fdXNlX3JhbmdlBQYAAABBAAAAQQAAAEEFE3NhdHVyYXRpb25fbW9kaWZpZXKamZk+CBF1c2luZ19jb252ZXJ0c190bwAAAxZtaW5lY3JhZnQ6dXNlX2R1cmF0aW9uQAAA"
+],
+"minecraft:chorus_plant": [
+2,
+false,
+null
+],
+"minecraft:cinnabar": [
+2,
+false,
+null
+],
+"minecraft:cinnabar_brick_double_slab": [
+2,
+false,
+null
+],
+"minecraft:cinnabar_brick_slab": [
+2,
+false,
+null
+],
+"minecraft:cinnabar_brick_stairs": [
+2,
+false,
+null
+],
+"minecraft:cinnabar_brick_wall": [
+2,
+false,
+null
+],
+"minecraft:cinnabar_bricks": [
+2,
+false,
+null
+],
+"minecraft:cinnabar_double_slab": [
+2,
+false,
+null
+],
+"minecraft:cinnabar_slab": [
+2,
+false,
+null
+],
+"minecraft:cinnabar_stairs": [
+2,
+false,
+null
+],
+"minecraft:cinnabar_wall": [
+2,
+false,
+null
+],
+"minecraft:clay": [
+2,
+false,
+null
+],
+"minecraft:clay_ball": [
+2,
+false,
+null
+],
+"minecraft:client_request_placeholder_block": [
+2,
+false,
+null
+],
+"minecraft:clock": [
+2,
+false,
+null
+],
+"minecraft:closed_eyeblossom": [
+2,
+false,
+null
+],
+"minecraft:coal": [
+2,
+true,
+null
+],
+"minecraft:coal_block": [
+2,
+false,
+null
+],
+"minecraft:coal_ore": [
+2,
+false,
+null
+],
+"minecraft:coarse_dirt": [
+2,
+false,
+null
+],
+"minecraft:coast_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:cobbled_deepslate": [
+2,
+false,
+null
+],
+"minecraft:cobbled_deepslate_double_slab": [
+2,
+false,
+null
+],
+"minecraft:cobbled_deepslate_slab": [
+2,
+false,
+null
+],
+"minecraft:cobbled_deepslate_stairs": [
+2,
+false,
+null
+],
+"minecraft:cobbled_deepslate_wall": [
+2,
+false,
+null
+],
+"minecraft:cobblestone": [
+2,
+false,
+null
+],
+"minecraft:cobblestone_double_slab": [
+2,
+false,
+null
+],
+"minecraft:cobblestone_slab": [
+2,
+false,
+null
+],
+"minecraft:cobblestone_wall": [
+2,
+false,
+null
+],
+"minecraft:cocoa": [
+2,
+false,
+null
+],
+"minecraft:cocoa_beans": [
+2,
+false,
+null
+],
+"minecraft:cod": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uBAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVyzczMPQgRdXNpbmdfY29udmVydHNfdG8AAAEZbWluZWNyYWZ0OnN0YWNrZWRfYnlfZGF0YQEDFm1pbmVjcmFmdDp1c2VfZHVyYXRpb25AAAA="
+],
+"minecraft:cod_bucket": [
+2,
+false,
+null
+],
+"minecraft:cod_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:colored_torch_blue": [
+2,
+false,
+null
+],
+"minecraft:colored_torch_bp": [
+2,
+false,
+null
+],
+"minecraft:colored_torch_green": [
+2,
+false,
+null
+],
+"minecraft:colored_torch_purple": [
+2,
+false,
+null
+],
+"minecraft:colored_torch_red": [
+2,
+false,
+null
+],
+"minecraft:colored_torch_rg": [
+2,
+false,
+null
+],
+"minecraft:command_block": [
+2,
+false,
+null
+],
+"minecraft:command_block_minecart": [
+2,
+false,
+null
+],
+"minecraft:comparator": [
+2,
+true,
+null
+],
+"minecraft:compass": [
+2,
+false,
+null
+],
+"minecraft:composter": [
+2,
+false,
+null
+],
+"minecraft:compound": [
+2,
+false,
+null
+],
+"minecraft:compound_creator": [
+2,
+false,
+null
+],
+"minecraft:concrete": [
+2,
+false,
+null
+],
+"minecraft:concrete_powder": [
+2,
+false,
+null
+],
+"minecraft:conduit": [
+2,
+false,
+null
+],
+"minecraft:cooked_beef": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uEAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVyzcxMPwgRdXNpbmdfY29udmVydHNfdG8AAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:cooked_chicken": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uDAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympkZPwgRdXNpbmdfY29udmVydHNfdG8AAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:cooked_cod": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uCgMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympkZPwgRdXNpbmdfY29udmVydHNfdG8AAAEZbWluZWNyYWZ0OnN0YWNrZWRfYnlfZGF0YQEDFm1pbmVjcmFmdDp1c2VfZHVyYXRpb25AAAA="
+],
+"minecraft:cooked_mutton": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uDAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVyzcxMPwgRdXNpbmdfY29udmVydHNfdG8AAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:cooked_porkchop": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uEAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVyzcxMPwgRdXNpbmdfY29udmVydHNfdG8AAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:cooked_rabbit": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uCgMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympkZPwgRdXNpbmdfY29udmVydHNfdG8AAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:cooked_salmon": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uDAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVyzcxMPwgRdXNpbmdfY29udmVydHNfdG8AAAEZbWluZWNyYWZ0OnN0YWNrZWRfYnlfZGF0YQEDFm1pbmVjcmFmdDp1c2VfZHVyYXRpb25AAAA="
+],
+"minecraft:cookie": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uBAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVyzczMPQgRdXNpbmdfY29udmVydHNfdG8AAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:copper_axe": [
+2,
+false,
+null
+],
+"minecraft:copper_bars": [
+2,
+false,
+null
+],
+"minecraft:copper_block": [
+2,
+false,
+null
+],
+"minecraft:copper_boots": [
+2,
+false,
+null
+],
+"minecraft:copper_bulb": [
+2,
+false,
+null
+],
+"minecraft:copper_chain": [
+2,
+false,
+null
+],
+"minecraft:copper_chest": [
+2,
+false,
+null
+],
+"minecraft:copper_chestplate": [
+2,
+false,
+null
+],
+"minecraft:copper_door": [
+2,
+false,
+null
+],
+"minecraft:copper_golem_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:copper_golem_statue": [
+2,
+false,
+null
+],
+"minecraft:copper_grate": [
+2,
+false,
+null
+],
+"minecraft:copper_helmet": [
+2,
+false,
+null
+],
+"minecraft:copper_hoe": [
+2,
+false,
+null
+],
+"minecraft:copper_horse_armor": [
+2,
+false,
+null
+],
+"minecraft:copper_ingot": [
+2,
+false,
+null
+],
+"minecraft:copper_lantern": [
+2,
+false,
+null
+],
+"minecraft:copper_leggings": [
+2,
+false,
+null
+],
+"minecraft:copper_nautilus_armor": [
+2,
+false,
+null
+],
+"minecraft:copper_nugget": [
+2,
+false,
+null
+],
+"minecraft:copper_ore": [
+2,
+false,
+null
+],
+"minecraft:copper_pickaxe": [
+2,
+false,
+null
+],
+"minecraft:copper_shovel": [
+2,
+false,
+null
+],
+"minecraft:copper_spear": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UECBBlbmNoYW50YWJsZV9zbG90C21lbGVlX3NwZWFyAxFlbmNoYW50YWJsZV92YWx1ZRoBBGZvaWwAAwtmcmFtZV9jb3VudAIBDWhhbmRfZXF1aXBwZWQBARJoaWRkZW5faW5fY29tbWFuZHMCAQ5saXF1aWRfY2xpcHBlZAADDm1heF9zdGFja19zaXplAgoObWluZWNyYWZ0Omljb24KCHRleHR1cmVzCAdkZWZhdWx0DGNvcHBlcl9zcGVhcgAABQxtaW5pbmdfc3BlZWQAAIA/AQ5zaG91bGRfZGVzcGF3bgEBD3N0YWNrZWRfYnlfZGF0YQADDXVzZV9hbmltYXRpb24AAwx1c2VfZHVyYXRpb26A5K8BAAkJaXRlbV90YWdzCAQVbWluZWNyYWZ0OmNvcHBlcl90aWVyEm1pbmVjcmFmdDppc19zcGVhcgoSbWluZWNyYWZ0OmNvb2xkb3duCAhjYXRlZ29yeQVzcGVhcgUIZHVyYXRpb26amVk/CAR0eXBlBmF0dGFjawAKEG1pbmVjcmFmdDpkYW1hZ2UCBXZhbHVlAgAAChZtaW5lY3JhZnQ6ZGlzcGxheV9uYW1lCAV2YWx1ZRZpdGVtLmNvcHBlcl9zcGVhci5uYW1lAAoUbWluZWNyYWZ0OmR1cmFiaWxpdHkKDWRhbWFnZV9jaGFuY2UDA21heMgBAwNtaW4AAAMObWF4X2R1cmFiaWxpdHn8AgAKFW1pbmVjcmFmdDplbmNoYW50YWJsZQgEc2xvdAttZWxlZV9zcGVhcgEFdmFsdWUNAAoXbWluZWNyYWZ0OmhhbmRfZXF1aXBwZWQBBXZhbHVlAQAKGG1pbmVjcmFmdDpraW5ldGljX3dlYXBvbgoYbWluZWNyYWZ0OmtpbmV0aWNfd2VhcG9uCg5jcmVhdGl2ZV9yZWFjaAUDbWF4AADwQAUDbWluAAAAQAAKEWRhbWFnZV9jb25kaXRpb25zAgxtYXhfZHVyYXRpb276AAUSbWluX3JlbGF0aXZlX3NwZWVkMzOTQAUJbWluX3NwZWVkAAAAAAAFD2RhbWFnZV9tb2RpZmllcgAAAAAFEWRhbWFnZV9tdWx0aXBsaWVyhetRPwIFZGVsYXkNAAoTZGlzbW91bnRfY29uZGl0aW9ucwIMbWF4X2R1cmF0aW9uUAAFEm1pbl9yZWxhdGl2ZV9zcGVlZAAAAAAFCW1pbl9zcGVlZAAAQEEABQ1oaXRib3hfbWFyZ2luAACAPgoUa25vY2tiYWNrX2NvbmRpdGlvbnMCDG1heF9kdXJhdGlvbqUABRJtaW5fcmVsYXRpdmVfc3BlZWQAAAAABQltaW5fc3BlZWQzM6NAAAoFcmVhY2gFA21heAAAkEAFA21pbgAAAEAAAAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoZbWluZWNyYWZ0OnBpZXJjaW5nX3dlYXBvbgoOY3JlYXRpdmVfcmVhY2gFA21heAAA8EAFA21pbgAAAEAABQ1oaXRib3hfbWFyZ2luAACAPgoFcmVhY2gFA21heAAAkEAFA21pbgAAAEAAAAoUbWluZWNyYWZ0OnJlcGFpcmFibGUJDHJlcGFpcl9pdGVtcwoECQVpdGVtcwoCCARuYW1lFm1pbmVjcmFmdDpjb3BwZXJfc3BlYXIACA1yZXBhaXJfYW1vdW50KWNvbnRleHQub3RoZXItPnF1ZXJ5LnJlbWFpbmluZ19kdXJhYmlsaXR5AAkFaXRlbXMKAggEbmFtZRZtaW5lY3JhZnQ6Y29wcGVyX2luZ290AAgNcmVwYWlyX2Ftb3VudBtxdWVyeS5tYXhfZHVyYWJpbGl0eSAqIDAuMjUAAAoYbWluZWNyYWZ0OnN3aW5nX2R1cmF0aW9uBQV2YWx1ZZqZWT8AChZtaW5lY3JhZnQ6c3dpbmdfc291bmRzCAphdHRhY2tfaGl0HGl0ZW0uY29wcGVyX3NwZWFyLmF0dGFja19oaXQIC2F0dGFja19taXNzHWl0ZW0uY29wcGVyX3NwZWFyLmF0dGFja19taXNzAAoObWluZWNyYWZ0OnRhZ3MJBHRhZ3MIBBVtaW5lY3JhZnQ6Y29wcGVyX3RpZXISbWluZWNyYWZ0OmlzX3NwZWFyAAoXbWluZWNyYWZ0OnVzZV9tb2RpZmllcnMBD2VtaXRfdmlicmF0aW9ucwAFEW1vdmVtZW50X21vZGlmaWVyAACAPwgLc3RhcnRfc291bmQVaXRlbS5jb3BwZXJfc3BlYXIudXNlCAtzdGFydF91c2luZwZhbHdheXMFDHVzZV9kdXJhdGlvbgCgjEcAAAA="
+],
+"minecraft:copper_sword": [
+2,
+false,
+null
+],
+"minecraft:copper_torch": [
+2,
+false,
+null
+],
+"minecraft:copper_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:coral": [
+2,
+false,
+null
+],
+"minecraft:coral_block": [
+2,
+false,
+null
+],
+"minecraft:coral_fan": [
+2,
+false,
+null
+],
+"minecraft:coral_fan_dead": [
+2,
+false,
+null
+],
+"minecraft:cornflower": [
+2,
+false,
+null
+],
+"minecraft:cow_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:cracked_deepslate_bricks": [
+2,
+false,
+null
+],
+"minecraft:cracked_deepslate_tiles": [
+2,
+false,
+null
+],
+"minecraft:cracked_nether_bricks": [
+2,
+false,
+null
+],
+"minecraft:cracked_polished_blackstone_bricks": [
+2,
+false,
+null
+],
+"minecraft:cracked_stone_bricks": [
+2,
+false,
+null
+],
+"minecraft:crafter": [
+2,
+false,
+null
+],
+"minecraft:crafting_table": [
+2,
+false,
+null
+],
+"minecraft:creaking_heart": [
+2,
+false,
+null
+],
+"minecraft:creaking_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:creeper_banner_pattern": [
+2,
+false,
+null
+],
+"minecraft:creeper_head": [
+2,
+false,
+null
+],
+"minecraft:creeper_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:crimson_button": [
+2,
+false,
+null
+],
+"minecraft:crimson_door": [
+2,
+false,
+null
+],
+"minecraft:crimson_double_slab": [
+2,
+false,
+null
+],
+"minecraft:crimson_fence": [
+2,
+false,
+null
+],
+"minecraft:crimson_fence_gate": [
+2,
+false,
+null
+],
+"minecraft:crimson_fungus": [
+2,
+false,
+null
+],
+"minecraft:crimson_hanging_sign": [
+2,
+false,
+null
+],
+"minecraft:crimson_hyphae": [
+2,
+false,
+null
+],
+"minecraft:crimson_nylium": [
+2,
+false,
+null
+],
+"minecraft:crimson_planks": [
+2,
+false,
+null
+],
+"minecraft:crimson_pressure_plate": [
+2,
+false,
+null
+],
+"minecraft:crimson_roots": [
+2,
+false,
+null
+],
+"minecraft:crimson_shelf": [
+2,
+false,
+null
+],
+"minecraft:crimson_sign": [
+2,
+false,
+null
+],
+"minecraft:crimson_slab": [
+2,
+false,
+null
+],
+"minecraft:crimson_stairs": [
+2,
+false,
+null
+],
+"minecraft:crimson_standing_sign": [
+2,
+false,
+null
+],
+"minecraft:crimson_stem": [
+2,
+false,
+null
+],
+"minecraft:crimson_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:crimson_wall_sign": [
+2,
+false,
+null
+],
+"minecraft:crossbow": [
+2,
+false,
+null
+],
+"minecraft:crying_obsidian": [
+2,
+false,
+null
+],
+"minecraft:cut_copper": [
+2,
+false,
+null
+],
+"minecraft:cut_copper_slab": [
+2,
+false,
+null
+],
+"minecraft:cut_copper_stairs": [
+2,
+false,
+null
+],
+"minecraft:cut_red_sandstone": [
+2,
+false,
+null
+],
+"minecraft:cut_red_sandstone_double_slab": [
+2,
+false,
+null
+],
+"minecraft:cut_red_sandstone_slab": [
+2,
+false,
+null
+],
+"minecraft:cut_sandstone": [
+2,
+false,
+null
+],
+"minecraft:cut_sandstone_double_slab": [
+2,
+false,
+null
+],
+"minecraft:cut_sandstone_slab": [
+2,
+false,
+null
+],
+"minecraft:cyan_bundle": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemUCCg5taW5lY3JhZnQ6aWNvbgoIdGV4dHVyZXMIEGJ1bmRsZV9vcGVuX2JhY2sVYnVuZGxlX2N5YW5fb3Blbl9iYWNrCBFidW5kbGVfb3Blbl9mcm9udBZidW5kbGVfY3lhbl9vcGVuX2Zyb250CAdkZWZhdWx0C2J1bmRsZV9jeWFuAAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAocbWluZWNyYWZ0OmJ1bmRsZV9pbnRlcmFjdGlvbgMSbnVtX3ZpZXdhYmxlX3Nsb3RzGAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoWbWluZWNyYWZ0OnN0b3JhZ2VfaXRlbQEaYWxsb3dfbmVzdGVkX3N0b3JhZ2VfaXRlbXMBCQ1hbGxvd2VkX2l0ZW1zAAAJDGJhbm5lZF9pdGVtcwoECARuYW1lFW1pbmVjcmFmdDpzaHVsa2VyX2JveAAIBG5hbWUcbWluZWNyYWZ0OnVuZHllZF9zaHVsa2VyX2JveAADCW1heF9zbG90c4ABAAoebWluZWNyYWZ0OnN0b3JhZ2Vfd2VpZ2h0X2xpbWl0AxBtYXhfd2VpZ2h0X2xpbWl0gAEACiFtaW5lY3JhZnQ6c3RvcmFnZV93ZWlnaHRfbW9kaWZpZXIDFndlaWdodF9pbl9zdG9yYWdlX2l0ZW0IAAAA"
+],
+"minecraft:cyan_candle": [
+2,
+false,
+null
+],
+"minecraft:cyan_candle_cake": [
+2,
+false,
+null
+],
+"minecraft:cyan_carpet": [
+2,
+false,
+null
+],
+"minecraft:cyan_concrete": [
+2,
+false,
+null
+],
+"minecraft:cyan_concrete_double_slab": [
+2,
+false,
+null
+],
+"minecraft:cyan_concrete_powder": [
+2,
+false,
+null
+],
+"minecraft:cyan_concrete_slab": [
+2,
+false,
+null
+],
+"minecraft:cyan_concrete_stairs": [
+2,
+false,
+null
+],
+"minecraft:cyan_cushion": [
+2,
+false,
+null
+],
+"minecraft:cyan_dye": [
+2,
+false,
+null
+],
+"minecraft:cyan_glazed_terracotta": [
+2,
+false,
+null
+],
+"minecraft:cyan_harness": [
+2,
+false,
+null
+],
+"minecraft:cyan_shulker_box": [
+2,
+false,
+null
+],
+"minecraft:cyan_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:cyan_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:cyan_terracotta": [
+2,
+false,
+null
+],
+"minecraft:cyan_wool": [
+2,
+false,
+null
+],
+"minecraft:cyan_wool_double_slab": [
+2,
+false,
+null
+],
+"minecraft:cyan_wool_slab": [
+2,
+false,
+null
+],
+"minecraft:cyan_wool_stairs": [
+2,
+false,
+null
+],
+"minecraft:damaged_anvil": [
+2,
+false,
+null
+],
+"minecraft:dandelion": [
+2,
+false,
+null
+],
+"minecraft:danger_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_boat": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_button": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_chest_boat": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_door": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_double_slab": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_fence": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_fence_gate": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_hanging_sign": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_leaves": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_log": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_planks": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_pressure_plate": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_sapling": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_shelf": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_sign": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_slab": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_stairs": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:dark_oak_wood": [
+2,
+false,
+null
+],
+"minecraft:dark_prismarine": [
+2,
+false,
+null
+],
+"minecraft:dark_prismarine_double_slab": [
+2,
+false,
+null
+],
+"minecraft:dark_prismarine_slab": [
+2,
+false,
+null
+],
+"minecraft:dark_prismarine_stairs": [
+2,
+false,
+null
+],
+"minecraft:darkoak_standing_sign": [
+2,
+false,
+null
+],
+"minecraft:darkoak_wall_sign": [
+2,
+false,
+null
+],
+"minecraft:daylight_detector": [
+2,
+false,
+null
+],
+"minecraft:daylight_detector_inverted": [
+2,
+false,
+null
+],
+"minecraft:dead_brain_coral": [
+2,
+false,
+null
+],
+"minecraft:dead_brain_coral_block": [
+2,
+false,
+null
+],
+"minecraft:dead_brain_coral_fan": [
+2,
+false,
+null
+],
+"minecraft:dead_brain_coral_wall_fan": [
+2,
+false,
+null
+],
+"minecraft:dead_bubble_coral": [
+2,
+false,
+null
+],
+"minecraft:dead_bubble_coral_block": [
+2,
+false,
+null
+],
+"minecraft:dead_bubble_coral_fan": [
+2,
+false,
+null
+],
+"minecraft:dead_bubble_coral_wall_fan": [
+2,
+false,
+null
+],
+"minecraft:dead_fire_coral": [
+2,
+false,
+null
+],
+"minecraft:dead_fire_coral_block": [
+2,
+false,
+null
+],
+"minecraft:dead_fire_coral_fan": [
+2,
+false,
+null
+],
+"minecraft:dead_fire_coral_wall_fan": [
+2,
+false,
+null
+],
+"minecraft:dead_horn_coral": [
+2,
+false,
+null
+],
+"minecraft:dead_horn_coral_block": [
+2,
+false,
+null
+],
+"minecraft:dead_horn_coral_fan": [
+2,
+false,
+null
+],
+"minecraft:dead_horn_coral_wall_fan": [
+2,
+false,
+null
+],
+"minecraft:dead_tube_coral": [
+2,
+false,
+null
+],
+"minecraft:dead_tube_coral_block": [
+2,
+false,
+null
+],
+"minecraft:dead_tube_coral_fan": [
+2,
+false,
+null
+],
+"minecraft:dead_tube_coral_wall_fan": [
+2,
+false,
+null
+],
+"minecraft:deadbush": [
+2,
+false,
+null
+],
+"minecraft:decorated_pot": [
+2,
+false,
+null
+],
+"minecraft:deepslate": [
+2,
+false,
+null
+],
+"minecraft:deepslate_brick_double_slab": [
+2,
+false,
+null
+],
+"minecraft:deepslate_brick_slab": [
+2,
+false,
+null
+],
+"minecraft:deepslate_brick_stairs": [
+2,
+false,
+null
+],
+"minecraft:deepslate_brick_wall": [
+2,
+false,
+null
+],
+"minecraft:deepslate_bricks": [
+2,
+false,
+null
+],
+"minecraft:deepslate_coal_ore": [
+2,
+false,
+null
+],
+"minecraft:deepslate_copper_ore": [
+2,
+false,
+null
+],
+"minecraft:deepslate_diamond_ore": [
+2,
+false,
+null
+],
+"minecraft:deepslate_emerald_ore": [
+2,
+false,
+null
+],
+"minecraft:deepslate_gold_ore": [
+2,
+false,
+null
+],
+"minecraft:deepslate_iron_ore": [
+2,
+false,
+null
+],
+"minecraft:deepslate_lapis_ore": [
+2,
+false,
+null
+],
+"minecraft:deepslate_redstone_ore": [
+2,
+false,
+null
+],
+"minecraft:deepslate_tile_double_slab": [
+2,
+false,
+null
+],
+"minecraft:deepslate_tile_slab": [
+2,
+false,
+null
+],
+"minecraft:deepslate_tile_stairs": [
+2,
+false,
+null
+],
+"minecraft:deepslate_tile_wall": [
+2,
+false,
+null
+],
+"minecraft:deepslate_tiles": [
+2,
+false,
+null
+],
+"minecraft:deny": [
+2,
+false,
+null
+],
+"minecraft:deprecated_anvil": [
+2,
+false,
+null
+],
+"minecraft:deprecated_purpur_block_1": [
+2,
+false,
+null
+],
+"minecraft:deprecated_purpur_block_2": [
+2,
+false,
+null
+],
+"minecraft:detector_rail": [
+2,
+false,
+null
+],
+"minecraft:diamond": [
+2,
+false,
+null
+],
+"minecraft:diamond_axe": [
+2,
+false,
+null
+],
+"minecraft:diamond_block": [
+2,
+false,
+null
+],
+"minecraft:diamond_boots": [
+2,
+false,
+null
+],
+"minecraft:diamond_chestplate": [
+2,
+false,
+null
+],
+"minecraft:diamond_helmet": [
+2,
+false,
+null
+],
+"minecraft:diamond_hoe": [
+2,
+false,
+null
+],
+"minecraft:diamond_horse_armor": [
+2,
+false,
+null
+],
+"minecraft:diamond_leggings": [
+2,
+false,
+null
+],
+"minecraft:diamond_nautilus_armor": [
+2,
+false,
+null
+],
+"minecraft:diamond_ore": [
+2,
+false,
+null
+],
+"minecraft:diamond_pickaxe": [
+2,
+false,
+null
+],
+"minecraft:diamond_shovel": [
+2,
+false,
+null
+],
+"minecraft:diamond_spear": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UICBBlbmNoYW50YWJsZV9zbG90C21lbGVlX3NwZWFyAxFlbmNoYW50YWJsZV92YWx1ZRQBBGZvaWwAAwtmcmFtZV9jb3VudAIBDWhhbmRfZXF1aXBwZWQBARJoaWRkZW5faW5fY29tbWFuZHMCAQ5saXF1aWRfY2xpcHBlZAADDm1heF9zdGFja19zaXplAgoObWluZWNyYWZ0Omljb24KCHRleHR1cmVzCAdkZWZhdWx0DWRpYW1vbmRfc3BlYXIAAAUMbWluaW5nX3NwZWVkAACAPwEOc2hvdWxkX2Rlc3Bhd24BAQ9zdGFja2VkX2J5X2RhdGEAAw11c2VfYW5pbWF0aW9uAAMMdXNlX2R1cmF0aW9ugOSvAQAJCWl0ZW1fdGFncwgGFm1pbmVjcmFmdDpkaWFtb25kX3RpZXIdbWluZWNyYWZ0OnRyYW5zZm9ybWFibGVfaXRlbXMSbWluZWNyYWZ0OmlzX3NwZWFyChJtaW5lY3JhZnQ6Y29vbGRvd24ICGNhdGVnb3J5BXNwZWFyBQhkdXJhdGlvbmZmhj8IBHR5cGUGYXR0YWNrAAoQbWluZWNyYWZ0OmRhbWFnZQIFdmFsdWUEAAAKFm1pbmVjcmFmdDpkaXNwbGF5X25hbWUIBXZhbHVlF2l0ZW0uZGlhbW9uZF9zcGVhci5uYW1lAAoUbWluZWNyYWZ0OmR1cmFiaWxpdHkKDWRhbWFnZV9jaGFuY2UDA21heMgBAwNtaW4AAAMObWF4X2R1cmFiaWxpdHmwGAAKFW1pbmVjcmFmdDplbmNoYW50YWJsZQgEc2xvdAttZWxlZV9zcGVhcgEFdmFsdWUKAAoXbWluZWNyYWZ0OmhhbmRfZXF1aXBwZWQBBXZhbHVlAQAKGG1pbmVjcmFmdDpraW5ldGljX3dlYXBvbgoYbWluZWNyYWZ0OmtpbmV0aWNfd2VhcG9uCg5jcmVhdGl2ZV9yZWFjaAUDbWF4AADwQAUDbWluAAAAQAAKEWRhbWFnZV9jb25kaXRpb25zAgxtYXhfZHVyYXRpb27IAAUSbWluX3JlbGF0aXZlX3NwZWVkMzOTQAUJbWluX3NwZWVkAAAAAAAFD2RhbWFnZV9tb2RpZmllcgAAAAAFEWRhbWFnZV9tdWx0aXBsaWVympmJPwIFZGVsYXkKAAoTZGlzbW91bnRfY29uZGl0aW9ucwIMbWF4X2R1cmF0aW9uPAAFEm1pbl9yZWxhdGl2ZV9zcGVlZAAAAAAFCW1pbl9zcGVlZAAAIEEABQ1oaXRib3hfbWFyZ2luAACAPgoUa25vY2tiYWNrX2NvbmRpdGlvbnMCDG1heF9kdXJhdGlvboIABRJtaW5fcmVsYXRpdmVfc3BlZWQAAAAABQltaW5fc3BlZWQzM6NAAAoFcmVhY2gFA21heAAAkEAFA21pbgAAAEAAAAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoZbWluZWNyYWZ0OnBpZXJjaW5nX3dlYXBvbgoOY3JlYXRpdmVfcmVhY2gFA21heAAA8EAFA21pbgAAAEAABQ1oaXRib3hfbWFyZ2luAACAPgoFcmVhY2gFA21heAAAkEAFA21pbgAAAEAAAAoUbWluZWNyYWZ0OnJlcGFpcmFibGUJDHJlcGFpcl9pdGVtcwoECQVpdGVtcwoCCARuYW1lF21pbmVjcmFmdDpkaWFtb25kX3NwZWFyAAgNcmVwYWlyX2Ftb3VudCljb250ZXh0Lm90aGVyLT5xdWVyeS5yZW1haW5pbmdfZHVyYWJpbGl0eQAJBWl0ZW1zCgIIBG5hbWURbWluZWNyYWZ0OmRpYW1vbmQACA1yZXBhaXJfYW1vdW50G3F1ZXJ5Lm1heF9kdXJhYmlsaXR5ICogMC4yNQAAChhtaW5lY3JhZnQ6c3dpbmdfZHVyYXRpb24FBXZhbHVlZmaGPwAKFm1pbmVjcmFmdDpzd2luZ19zb3VuZHMICmF0dGFja19oaXQdaXRlbS5kaWFtb25kX3NwZWFyLmF0dGFja19oaXQIC2F0dGFja19taXNzHml0ZW0uZGlhbW9uZF9zcGVhci5hdHRhY2tfbWlzcwAKDm1pbmVjcmFmdDp0YWdzCQR0YWdzCAYWbWluZWNyYWZ0OmRpYW1vbmRfdGllch1taW5lY3JhZnQ6dHJhbnNmb3JtYWJsZV9pdGVtcxJtaW5lY3JhZnQ6aXNfc3BlYXIAChdtaW5lY3JhZnQ6dXNlX21vZGlmaWVycwEPZW1pdF92aWJyYXRpb25zAAURbW92ZW1lbnRfbW9kaWZpZXIAAIA/CAtzdGFydF9zb3VuZBZpdGVtLmRpYW1vbmRfc3BlYXIudXNlCAtzdGFydF91c2luZwZhbHdheXMFDHVzZV9kdXJhdGlvbgCgjEcAAAA="
+],
+"minecraft:diamond_sword": [
+2,
+false,
+null
+],
+"minecraft:diorite": [
+2,
+false,
+null
+],
+"minecraft:diorite_double_slab": [
+2,
+false,
+null
+],
+"minecraft:diorite_slab": [
+2,
+false,
+null
+],
+"minecraft:diorite_stairs": [
+2,
+false,
+null
+],
+"minecraft:diorite_wall": [
+2,
+false,
+null
+],
+"minecraft:dirt": [
+2,
+false,
+null
+],
+"minecraft:dirt_with_roots": [
+2,
+false,
+null
+],
+"minecraft:disc_fragment_5": [
+2,
+false,
+null
+],
+"minecraft:disc_press": [
+2,
+false,
+null
+],
+"minecraft:dispenser": [
+2,
+false,
+null
+],
+"minecraft:dolphin_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:donkey_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:double_cut_copper_slab": [
+2,
+false,
+null
+],
+"minecraft:double_plant": [
+2,
+false,
+null
+],
+"minecraft:double_stone_block_slab": [
+2,
+false,
+null
+],
+"minecraft:double_stone_block_slab2": [
+2,
+false,
+null
+],
+"minecraft:double_stone_block_slab3": [
+2,
+false,
+null
+],
+"minecraft:double_stone_block_slab4": [
+2,
+false,
+null
+],
+"minecraft:dragon_breath": [
+2,
+false,
+null
+],
+"minecraft:dragon_egg": [
+2,
+false,
+null
+],
+"minecraft:dragon_head": [
+2,
+false,
+null
+],
+"minecraft:dried_ghast": [
+2,
+false,
+null
+],
+"minecraft:dried_kelp": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uAgMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVyzczMPQgRdXNpbmdfY29udmVydHNfdG8AAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbiAAAA=="
+],
+"minecraft:dried_kelp_block": [
+2,
+false,
+null
+],
+"minecraft:dripstone_block": [
+2,
+false,
+null
+],
+"minecraft:dropper": [
+2,
+false,
+null
+],
+"minecraft:drowned_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:dune_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:dye": [
+2,
+false,
+null
+],
+"minecraft:echo_shard": [
+2,
+false,
+null
+],
+"minecraft:egg": [
+2,
+false,
+null
+],
+"minecraft:elder_guardian_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:element_0": [
+2,
+false,
+null
+],
+"minecraft:element_1": [
+2,
+false,
+null
+],
+"minecraft:element_10": [
+2,
+false,
+null
+],
+"minecraft:element_100": [
+2,
+false,
+null
+],
+"minecraft:element_101": [
+2,
+false,
+null
+],
+"minecraft:element_102": [
+2,
+false,
+null
+],
+"minecraft:element_103": [
+2,
+false,
+null
+],
+"minecraft:element_104": [
+2,
+false,
+null
+],
+"minecraft:element_105": [
+2,
+false,
+null
+],
+"minecraft:element_106": [
+2,
+false,
+null
+],
+"minecraft:element_107": [
+2,
+false,
+null
+],
+"minecraft:element_108": [
+2,
+false,
+null
+],
+"minecraft:element_109": [
+2,
+false,
+null
+],
+"minecraft:element_11": [
+2,
+false,
+null
+],
+"minecraft:element_110": [
+2,
+false,
+null
+],
+"minecraft:element_111": [
+2,
+false,
+null
+],
+"minecraft:element_112": [
+2,
+false,
+null
+],
+"minecraft:element_113": [
+2,
+false,
+null
+],
+"minecraft:element_114": [
+2,
+false,
+null
+],
+"minecraft:element_115": [
+2,
+false,
+null
+],
+"minecraft:element_116": [
+2,
+false,
+null
+],
+"minecraft:element_117": [
+2,
+false,
+null
+],
+"minecraft:element_118": [
+2,
+false,
+null
+],
+"minecraft:element_12": [
+2,
+false,
+null
+],
+"minecraft:element_13": [
+2,
+false,
+null
+],
+"minecraft:element_14": [
+2,
+false,
+null
+],
+"minecraft:element_15": [
+2,
+false,
+null
+],
+"minecraft:element_16": [
+2,
+false,
+null
+],
+"minecraft:element_17": [
+2,
+false,
+null
+],
+"minecraft:element_18": [
+2,
+false,
+null
+],
+"minecraft:element_19": [
+2,
+false,
+null
+],
+"minecraft:element_2": [
+2,
+false,
+null
+],
+"minecraft:element_20": [
+2,
+false,
+null
+],
+"minecraft:element_21": [
+2,
+false,
+null
+],
+"minecraft:element_22": [
+2,
+false,
+null
+],
+"minecraft:element_23": [
+2,
+false,
+null
+],
+"minecraft:element_24": [
+2,
+false,
+null
+],
+"minecraft:element_25": [
+2,
+false,
+null
+],
+"minecraft:element_26": [
+2,
+false,
+null
+],
+"minecraft:element_27": [
+2,
+false,
+null
+],
+"minecraft:element_28": [
+2,
+false,
+null
+],
+"minecraft:element_29": [
+2,
+false,
+null
+],
+"minecraft:element_3": [
+2,
+false,
+null
+],
+"minecraft:element_30": [
+2,
+false,
+null
+],
+"minecraft:element_31": [
+2,
+false,
+null
+],
+"minecraft:element_32": [
+2,
+false,
+null
+],
+"minecraft:element_33": [
+2,
+false,
+null
+],
+"minecraft:element_34": [
+2,
+false,
+null
+],
+"minecraft:element_35": [
+2,
+false,
+null
+],
+"minecraft:element_36": [
+2,
+false,
+null
+],
+"minecraft:element_37": [
+2,
+false,
+null
+],
+"minecraft:element_38": [
+2,
+false,
+null
+],
+"minecraft:element_39": [
+2,
+false,
+null
+],
+"minecraft:element_4": [
+2,
+false,
+null
+],
+"minecraft:element_40": [
+2,
+false,
+null
+],
+"minecraft:element_41": [
+2,
+false,
+null
+],
+"minecraft:element_42": [
+2,
+false,
+null
+],
+"minecraft:element_43": [
+2,
+false,
+null
+],
+"minecraft:element_44": [
+2,
+false,
+null
+],
+"minecraft:element_45": [
+2,
+false,
+null
+],
+"minecraft:element_46": [
+2,
+false,
+null
+],
+"minecraft:element_47": [
+2,
+false,
+null
+],
+"minecraft:element_48": [
+2,
+false,
+null
+],
+"minecraft:element_49": [
+2,
+false,
+null
+],
+"minecraft:element_5": [
+2,
+false,
+null
+],
+"minecraft:element_50": [
+2,
+false,
+null
+],
+"minecraft:element_51": [
+2,
+false,
+null
+],
+"minecraft:element_52": [
+2,
+false,
+null
+],
+"minecraft:element_53": [
+2,
+false,
+null
+],
+"minecraft:element_54": [
+2,
+false,
+null
+],
+"minecraft:element_55": [
+2,
+false,
+null
+],
+"minecraft:element_56": [
+2,
+false,
+null
+],
+"minecraft:element_57": [
+2,
+false,
+null
+],
+"minecraft:element_58": [
+2,
+false,
+null
+],
+"minecraft:element_59": [
+2,
+false,
+null
+],
+"minecraft:element_6": [
+2,
+false,
+null
+],
+"minecraft:element_60": [
+2,
+false,
+null
+],
+"minecraft:element_61": [
+2,
+false,
+null
+],
+"minecraft:element_62": [
+2,
+false,
+null
+],
+"minecraft:element_63": [
+2,
+false,
+null
+],
+"minecraft:element_64": [
+2,
+false,
+null
+],
+"minecraft:element_65": [
+2,
+false,
+null
+],
+"minecraft:element_66": [
+2,
+false,
+null
+],
+"minecraft:element_67": [
+2,
+false,
+null
+],
+"minecraft:element_68": [
+2,
+false,
+null
+],
+"minecraft:element_69": [
+2,
+false,
+null
+],
+"minecraft:element_7": [
+2,
+false,
+null
+],
+"minecraft:element_70": [
+2,
+false,
+null
+],
+"minecraft:element_71": [
+2,
+false,
+null
+],
+"minecraft:element_72": [
+2,
+false,
+null
+],
+"minecraft:element_73": [
+2,
+false,
+null
+],
+"minecraft:element_74": [
+2,
+false,
+null
+],
+"minecraft:element_75": [
+2,
+false,
+null
+],
+"minecraft:element_76": [
+2,
+false,
+null
+],
+"minecraft:element_77": [
+2,
+false,
+null
+],
+"minecraft:element_78": [
+2,
+false,
+null
+],
+"minecraft:element_79": [
+2,
+false,
+null
+],
+"minecraft:element_8": [
+2,
+false,
+null
+],
+"minecraft:element_80": [
+2,
+false,
+null
+],
+"minecraft:element_81": [
+2,
+false,
+null
+],
+"minecraft:element_82": [
+2,
+false,
+null
+],
+"minecraft:element_83": [
+2,
+false,
+null
+],
+"minecraft:element_84": [
+2,
+false,
+null
+],
+"minecraft:element_85": [
+2,
+false,
+null
+],
+"minecraft:element_86": [
+2,
+false,
+null
+],
+"minecraft:element_87": [
+2,
+false,
+null
+],
+"minecraft:element_88": [
+2,
+false,
+null
+],
+"minecraft:element_89": [
+2,
+false,
+null
+],
+"minecraft:element_9": [
+2,
+false,
+null
+],
+"minecraft:element_90": [
+2,
+false,
+null
+],
+"minecraft:element_91": [
+2,
+false,
+null
+],
+"minecraft:element_92": [
+2,
+false,
+null
+],
+"minecraft:element_93": [
+2,
+false,
+null
+],
+"minecraft:element_94": [
+2,
+false,
+null
+],
+"minecraft:element_95": [
+2,
+false,
+null
+],
+"minecraft:element_96": [
+2,
+false,
+null
+],
+"minecraft:element_97": [
+2,
+false,
+null
+],
+"minecraft:element_98": [
+2,
+false,
+null
+],
+"minecraft:element_99": [
+2,
+false,
+null
+],
+"minecraft:element_constructor": [
+2,
+false,
+null
+],
+"minecraft:elytra": [
+2,
+false,
+null
+],
+"minecraft:emerald": [
+2,
+false,
+null
+],
+"minecraft:emerald_block": [
+2,
+false,
+null
+],
+"minecraft:emerald_ore": [
+2,
+false,
+null
+],
+"minecraft:empty_map": [
+2,
+false,
+null
+],
+"minecraft:enchanted_book": [
+2,
+false,
+null
+],
+"minecraft:enchanted_golden_apple": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMBDm1pbmVjcmFmdDpmb2lsAQoObWluZWNyYWZ0OmZvb2QBDmNhbl9hbHdheXNfZWF0AQMNY29vbGRvd25fdGltZQAIDWNvb2xkb3duX3R5cGUACQdlZmZlY3RzCggDCWFtcGxpZmllcgIFBmNoYW5jZQAAgD8IDWRlc2NyaXB0aW9uSWQTcG90aW9uLnJlZ2VuZXJhdGlvbgMIZHVyYXRpb248AwJpZBQIBG5hbWUMcmVnZW5lcmF0aW9uAAMJYW1wbGlmaWVyBgUGY2hhbmNlAACAPwgNZGVzY3JpcHRpb25JZBFwb3Rpb24uYWJzb3JwdGlvbgMIZHVyYXRpb27wAQMCaWQsCARuYW1lCmFic29ycHRpb24AAwlhbXBsaWZpZXIABQZjaGFuY2UAAIA/CA1kZXNjcmlwdGlvbklkEXBvdGlvbi5yZXNpc3RhbmNlAwhkdXJhdGlvbtgEAwJpZBYIBG5hbWUKcmVzaXN0YW5jZQADCWFtcGxpZmllcgAFBmNoYW5jZQAAgD8IDWRlc2NyaXB0aW9uSWQVcG90aW9uLmZpcmVSZXNpc3RhbmNlAwhkdXJhdGlvbtgEAwJpZBgIBG5hbWUPZmlyZV9yZXNpc3RhbmNlAAMJbnV0cml0aW9uCAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympmZPwgRdXNpbmdfY29udmVydHNfdG8AAAEZbWluZWNyYWZ0OnN0YWNrZWRfYnlfZGF0YQEDFm1pbmVjcmFmdDp1c2VfZHVyYXRpb25AAAA="
+],
+"minecraft:enchanting_table": [
+2,
+false,
+null
+],
+"minecraft:end_brick_stairs": [
+2,
+false,
+null
+],
+"minecraft:end_bricks": [
+2,
+false,
+null
+],
+"minecraft:end_crystal": [
+2,
+false,
+null
+],
+"minecraft:end_gateway": [
+2,
+false,
+null
+],
+"minecraft:end_portal": [
+2,
+false,
+null
+],
+"minecraft:end_portal_frame": [
+2,
+false,
+null
+],
+"minecraft:end_rod": [
+2,
+false,
+null
+],
+"minecraft:end_stone": [
+2,
+false,
+null
+],
+"minecraft:end_stone_brick_double_slab": [
+2,
+false,
+null
+],
+"minecraft:end_stone_brick_slab": [
+2,
+false,
+null
+],
+"minecraft:end_stone_brick_wall": [
+2,
+false,
+null
+],
+"minecraft:ender_chest": [
+2,
+false,
+null
+],
+"minecraft:ender_dragon_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:ender_eye": [
+2,
+false,
+null
+],
+"minecraft:ender_pearl": [
+2,
+false,
+null
+],
+"minecraft:enderman_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:endermite_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:evoker_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:experience_bottle": [
+2,
+false,
+null
+],
+"minecraft:explorer_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:exposed_chiseled_copper": [
+2,
+false,
+null
+],
+"minecraft:exposed_copper": [
+2,
+false,
+null
+],
+"minecraft:exposed_copper_bars": [
+2,
+false,
+null
+],
+"minecraft:exposed_copper_bulb": [
+2,
+false,
+null
+],
+"minecraft:exposed_copper_chain": [
+2,
+false,
+null
+],
+"minecraft:exposed_copper_chest": [
+2,
+false,
+null
+],
+"minecraft:exposed_copper_door": [
+2,
+false,
+null
+],
+"minecraft:exposed_copper_golem_statue": [
+2,
+false,
+null
+],
+"minecraft:exposed_copper_grate": [
+2,
+false,
+null
+],
+"minecraft:exposed_copper_lantern": [
+2,
+false,
+null
+],
+"minecraft:exposed_copper_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:exposed_cut_copper": [
+2,
+false,
+null
+],
+"minecraft:exposed_cut_copper_slab": [
+2,
+false,
+null
+],
+"minecraft:exposed_cut_copper_stairs": [
+2,
+false,
+null
+],
+"minecraft:exposed_double_cut_copper_slab": [
+2,
+false,
+null
+],
+"minecraft:exposed_lightning_rod": [
+2,
+false,
+null
+],
+"minecraft:eye_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:farmland": [
+2,
+false,
+null
+],
+"minecraft:feather": [
+2,
+false,
+null
+],
+"minecraft:fence": [
+2,
+false,
+null
+],
+"minecraft:fence_gate": [
+2,
+false,
+null
+],
+"minecraft:fermented_spider_eye": [
+2,
+false,
+null
+],
+"minecraft:fern": [
+2,
+false,
+null
+],
+"minecraft:field_masoned_banner_pattern": [
+2,
+false,
+null
+],
+"minecraft:filled_map": [
+2,
+false,
+null
+],
+"minecraft:fire": [
+2,
+false,
+null
+],
+"minecraft:fire_charge": [
+2,
+false,
+null
+],
+"minecraft:fire_coral": [
+2,
+false,
+null
+],
+"minecraft:fire_coral_block": [
+2,
+false,
+null
+],
+"minecraft:fire_coral_fan": [
+2,
+false,
+null
+],
+"minecraft:fire_coral_wall_fan": [
+2,
+false,
+null
+],
+"minecraft:firefly_bush": [
+2,
+false,
+null
+],
+"minecraft:firework_rocket": [
+2,
+false,
+null
+],
+"minecraft:firework_star": [
+2,
+false,
+null
+],
+"minecraft:fishing_rod": [
+2,
+true,
+null
+],
+"minecraft:fletching_table": [
+2,
+false,
+null
+],
+"minecraft:flint": [
+2,
+false,
+null
+],
+"minecraft:flint_and_steel": [
+2,
+false,
+null
+],
+"minecraft:flow_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:flow_banner_pattern": [
+2,
+false,
+null
+],
+"minecraft:flow_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:flower_banner_pattern": [
+2,
+false,
+null
+],
+"minecraft:flower_pot": [
+2,
+true,
+null
+],
+"minecraft:flowering_azalea": [
+2,
+false,
+null
+],
+"minecraft:flowing_lava": [
+2,
+false,
+null
+],
+"minecraft:flowing_water": [
+2,
+false,
+null
+],
+"minecraft:fox_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:frame": [
+2,
+true,
+null
+],
+"minecraft:friend_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:frog_spawn": [
+2,
+false,
+null
+],
+"minecraft:frog_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:frostbite_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:frosted_ice": [
+2,
+false,
+null
+],
+"minecraft:furnace": [
+2,
+false,
+null
+],
+"minecraft:ghast_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:ghast_tear": [
+2,
+false,
+null
+],
+"minecraft:gilded_blackstone": [
+2,
+false,
+null
+],
+"minecraft:glass": [
+2,
+false,
+null
+],
+"minecraft:glass_bottle": [
+2,
+false,
+null
+],
+"minecraft:glass_pane": [
+2,
+false,
+null
+],
+"minecraft:glistering_melon_slice": [
+2,
+false,
+null
+],
+"minecraft:globe_banner_pattern": [
+2,
+false,
+null
+],
+"minecraft:glow_berries": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uBAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympmZPggRdXNpbmdfY29udmVydHNfdG8AAAoObWluZWNyYWZ0OnNlZWQIC2Nyb3BfcmVzdWx0FG1pbmVjcmFmdDpjYXZlX3ZpbmVzCQhwbGFudF9hdAgECmNhdmVfdmluZXMcY2F2ZV92aW5lc19oZWFkX3dpdGhfYmVycmllcwEacGxhbnRfYXRfYW55X3NvbGlkX3N1cmZhY2UBCA1wbGFudF9hdF9mYWNlBGRvd24AAxZtaW5lY3JhZnQ6dXNlX2R1cmF0aW9uQAAA"
+],
+"minecraft:glow_frame": [
+2,
+true,
+null
+],
+"minecraft:glow_ink_sac": [
+2,
+false,
+null
+],
+"minecraft:glow_lichen": [
+2,
+false,
+null
+],
+"minecraft:glow_squid_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:glow_stick": [
+2,
+false,
+null
+],
+"minecraft:glowingobsidian": [
+2,
+false,
+null
+],
+"minecraft:glowstone": [
+2,
+false,
+null
+],
+"minecraft:glowstone_dust": [
+2,
+false,
+null
+],
+"minecraft:goat_horn": [
+2,
+false,
+null
+],
+"minecraft:goat_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:gold_block": [
+2,
+false,
+null
+],
+"minecraft:gold_ingot": [
+2,
+false,
+null
+],
+"minecraft:gold_nugget": [
+2,
+false,
+null
+],
+"minecraft:gold_ore": [
+2,
+false,
+null
+],
+"minecraft:golden_apple": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAEDDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAkHZWZmZWN0cwoEAwlhbXBsaWZpZXICBQZjaGFuY2UAAIA/CA1kZXNjcmlwdGlvbklkE3BvdGlvbi5yZWdlbmVyYXRpb24DCGR1cmF0aW9uCgMCaWQUCARuYW1lDHJlZ2VuZXJhdGlvbgADCWFtcGxpZmllcgAFBmNoYW5jZQAAgD8IDWRlc2NyaXB0aW9uSWQRcG90aW9uLmFic29ycHRpb24DCGR1cmF0aW9u8AEDAmlkLAgEbmFtZQphYnNvcnB0aW9uAAMJbnV0cml0aW9uCAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympmZPwgRdXNpbmdfY29udmVydHNfdG8AAAEZbWluZWNyYWZ0OnN0YWNrZWRfYnlfZGF0YQEDFm1pbmVjcmFmdDp1c2VfZHVyYXRpb25AAAA="
+],
+"minecraft:golden_axe": [
+2,
+false,
+null
+],
+"minecraft:golden_boots": [
+2,
+false,
+null
+],
+"minecraft:golden_carrot": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uDAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympmZPwgRdXNpbmdfY29udmVydHNfdG8AAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:golden_chestplate": [
+2,
+false,
+null
+],
+"minecraft:golden_dandelion": [
+2,
+false,
+null
+],
+"minecraft:golden_helmet": [
+2,
+false,
+null
+],
+"minecraft:golden_hoe": [
+2,
+false,
+null
+],
+"minecraft:golden_horse_armor": [
+2,
+false,
+null
+],
+"minecraft:golden_leggings": [
+2,
+false,
+null
+],
+"minecraft:golden_nautilus_armor": [
+2,
+false,
+null
+],
+"minecraft:golden_pickaxe": [
+2,
+false,
+null
+],
+"minecraft:golden_rail": [
+2,
+false,
+null
+],
+"minecraft:golden_shovel": [
+2,
+false,
+null
+],
+"minecraft:golden_spear": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UCCBBlbmNoYW50YWJsZV9zbG90C21lbGVlX3NwZWFyAxFlbmNoYW50YWJsZV92YWx1ZSwBBGZvaWwAAwtmcmFtZV9jb3VudAIBDWhhbmRfZXF1aXBwZWQBARJoaWRkZW5faW5fY29tbWFuZHMCAQ5saXF1aWRfY2xpcHBlZAADDm1heF9zdGFja19zaXplAgoObWluZWNyYWZ0Omljb24KCHRleHR1cmVzCAdkZWZhdWx0CmdvbGRfc3BlYXIAAAUMbWluaW5nX3NwZWVkAACAPwEOc2hvdWxkX2Rlc3Bhd24BAQ9zdGFja2VkX2J5X2RhdGEAAw11c2VfYW5pbWF0aW9uAAMMdXNlX2R1cmF0aW9ugOSvAQAJCWl0ZW1fdGFncwgEFW1pbmVjcmFmdDpnb2xkZW5fdGllchJtaW5lY3JhZnQ6aXNfc3BlYXIKEm1pbmVjcmFmdDpjb29sZG93bggIY2F0ZWdvcnkFc3BlYXIFCGR1cmF0aW9uMzNzPwgEdHlwZQZhdHRhY2sAChBtaW5lY3JhZnQ6ZGFtYWdlAgV2YWx1ZQEAAAoWbWluZWNyYWZ0OmRpc3BsYXlfbmFtZQgFdmFsdWUWaXRlbS5nb2xkZW5fc3BlYXIubmFtZQAKFG1pbmVjcmFmdDpkdXJhYmlsaXR5Cg1kYW1hZ2VfY2hhbmNlAwNtYXjIAQMDbWluAAADDm1heF9kdXJhYmlsaXR5PAAKFW1pbmVjcmFmdDplbmNoYW50YWJsZQgEc2xvdAttZWxlZV9zcGVhcgEFdmFsdWUWAAoXbWluZWNyYWZ0OmhhbmRfZXF1aXBwZWQBBXZhbHVlAQAKGG1pbmVjcmFmdDpraW5ldGljX3dlYXBvbgoYbWluZWNyYWZ0OmtpbmV0aWNfd2VhcG9uCg5jcmVhdGl2ZV9yZWFjaAUDbWF4AADwQAUDbWluAAAAQAAKEWRhbWFnZV9jb25kaXRpb25zAgxtYXhfZHVyYXRpb24TAQUSbWluX3JlbGF0aXZlX3NwZWVkMzOTQAUJbWluX3NwZWVkAAAAAAAFD2RhbWFnZV9tb2RpZmllcgAAAAAFEWRhbWFnZV9tdWx0aXBsaWVyMzMzPwIFZGVsYXkOAAoTZGlzbW91bnRfY29uZGl0aW9ucwIMbWF4X2R1cmF0aW9uRgAFEm1pbl9yZWxhdGl2ZV9zcGVlZAAAAAAFCW1pbl9zcGVlZAAAUEEABQ1oaXRib3hfbWFyZ2luAACAPgoUa25vY2tiYWNrX2NvbmRpdGlvbnMCDG1heF9kdXJhdGlvbqoABRJtaW5fcmVsYXRpdmVfc3BlZWQAAAAABQltaW5fc3BlZWQzM6NAAAoFcmVhY2gFA21heAAAkEAFA21pbgAAAEAAAAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoZbWluZWNyYWZ0OnBpZXJjaW5nX3dlYXBvbgoOY3JlYXRpdmVfcmVhY2gFA21heAAA8EAFA21pbgAAAEAABQ1oaXRib3hfbWFyZ2luAACAPgoFcmVhY2gFA21heAAAkEAFA21pbgAAAEAAAAoUbWluZWNyYWZ0OnJlcGFpcmFibGUJDHJlcGFpcl9pdGVtcwoECQVpdGVtcwoCCARuYW1lFm1pbmVjcmFmdDpnb2xkZW5fc3BlYXIACA1yZXBhaXJfYW1vdW50KWNvbnRleHQub3RoZXItPnF1ZXJ5LnJlbWFpbmluZ19kdXJhYmlsaXR5AAkFaXRlbXMKAggEbmFtZRRtaW5lY3JhZnQ6Z29sZF9pbmdvdAAIDXJlcGFpcl9hbW91bnQbcXVlcnkubWF4X2R1cmFiaWxpdHkgKiAwLjI1AAAKGG1pbmVjcmFmdDpzd2luZ19kdXJhdGlvbgUFdmFsdWUzM3M/AAoWbWluZWNyYWZ0OnN3aW5nX3NvdW5kcwgKYXR0YWNrX2hpdBxpdGVtLmdvbGRlbl9zcGVhci5hdHRhY2tfaGl0CAthdHRhY2tfbWlzcx1pdGVtLmdvbGRlbl9zcGVhci5hdHRhY2tfbWlzcwAKDm1pbmVjcmFmdDp0YWdzCQR0YWdzCAQVbWluZWNyYWZ0OmdvbGRlbl90aWVyEm1pbmVjcmFmdDppc19zcGVhcgAKF21pbmVjcmFmdDp1c2VfbW9kaWZpZXJzAQ9lbWl0X3ZpYnJhdGlvbnMABRFtb3ZlbWVudF9tb2RpZmllcgAAgD8IC3N0YXJ0X3NvdW5kFWl0ZW0uZ29sZGVuX3NwZWFyLnVzZQgLc3RhcnRfdXNpbmcGYWx3YXlzBQx1c2VfZHVyYXRpb24AoIxHAAAA"
+],
+"minecraft:golden_sword": [
+2,
+false,
+null
+],
+"minecraft:granite": [
+2,
+false,
+null
+],
+"minecraft:granite_double_slab": [
+2,
+false,
+null
+],
+"minecraft:granite_slab": [
+2,
+false,
+null
+],
+"minecraft:granite_stairs": [
+2,
+false,
+null
+],
+"minecraft:granite_wall": [
+2,
+false,
+null
+],
+"minecraft:grass_block": [
+2,
+false,
+null
+],
+"minecraft:grass_path": [
+2,
+false,
+null
+],
+"minecraft:gravel": [
+2,
+false,
+null
+],
+"minecraft:gray_bundle": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemUCCg5taW5lY3JhZnQ6aWNvbgoIdGV4dHVyZXMIEGJ1bmRsZV9vcGVuX2JhY2sVYnVuZGxlX2dyYXlfb3Blbl9iYWNrCBFidW5kbGVfb3Blbl9mcm9udBZidW5kbGVfZ3JheV9vcGVuX2Zyb250CAdkZWZhdWx0C2J1bmRsZV9ncmF5AAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAocbWluZWNyYWZ0OmJ1bmRsZV9pbnRlcmFjdGlvbgMSbnVtX3ZpZXdhYmxlX3Nsb3RzGAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoWbWluZWNyYWZ0OnN0b3JhZ2VfaXRlbQEaYWxsb3dfbmVzdGVkX3N0b3JhZ2VfaXRlbXMBCQ1hbGxvd2VkX2l0ZW1zAAAJDGJhbm5lZF9pdGVtcwoECARuYW1lFW1pbmVjcmFmdDpzaHVsa2VyX2JveAAIBG5hbWUcbWluZWNyYWZ0OnVuZHllZF9zaHVsa2VyX2JveAADCW1heF9zbG90c4ABAAoebWluZWNyYWZ0OnN0b3JhZ2Vfd2VpZ2h0X2xpbWl0AxBtYXhfd2VpZ2h0X2xpbWl0gAEACiFtaW5lY3JhZnQ6c3RvcmFnZV93ZWlnaHRfbW9kaWZpZXIDFndlaWdodF9pbl9zdG9yYWdlX2l0ZW0IAAAA"
+],
+"minecraft:gray_candle": [
+2,
+false,
+null
+],
+"minecraft:gray_candle_cake": [
+2,
+false,
+null
+],
+"minecraft:gray_carpet": [
+2,
+false,
+null
+],
+"minecraft:gray_concrete": [
+2,
+false,
+null
+],
+"minecraft:gray_concrete_double_slab": [
+2,
+false,
+null
+],
+"minecraft:gray_concrete_powder": [
+2,
+false,
+null
+],
+"minecraft:gray_concrete_slab": [
+2,
+false,
+null
+],
+"minecraft:gray_concrete_stairs": [
+2,
+false,
+null
+],
+"minecraft:gray_cushion": [
+2,
+false,
+null
+],
+"minecraft:gray_dye": [
+2,
+false,
+null
+],
+"minecraft:gray_glazed_terracotta": [
+2,
+false,
+null
+],
+"minecraft:gray_harness": [
+2,
+false,
+null
+],
+"minecraft:gray_shulker_box": [
+2,
+false,
+null
+],
+"minecraft:gray_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:gray_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:gray_terracotta": [
+2,
+false,
+null
+],
+"minecraft:gray_wool": [
+2,
+false,
+null
+],
+"minecraft:gray_wool_double_slab": [
+2,
+false,
+null
+],
+"minecraft:gray_wool_slab": [
+2,
+false,
+null
+],
+"minecraft:gray_wool_stairs": [
+2,
+false,
+null
+],
+"minecraft:green_bundle": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemUCCg5taW5lY3JhZnQ6aWNvbgoIdGV4dHVyZXMIEGJ1bmRsZV9vcGVuX2JhY2sWYnVuZGxlX2dyZWVuX29wZW5fYmFjawgRYnVuZGxlX29wZW5fZnJvbnQXYnVuZGxlX2dyZWVuX29wZW5fZnJvbnQIB2RlZmF1bHQMYnVuZGxlX2dyZWVuAAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAocbWluZWNyYWZ0OmJ1bmRsZV9pbnRlcmFjdGlvbgMSbnVtX3ZpZXdhYmxlX3Nsb3RzGAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoWbWluZWNyYWZ0OnN0b3JhZ2VfaXRlbQEaYWxsb3dfbmVzdGVkX3N0b3JhZ2VfaXRlbXMBCQ1hbGxvd2VkX2l0ZW1zAAAJDGJhbm5lZF9pdGVtcwoECARuYW1lFW1pbmVjcmFmdDpzaHVsa2VyX2JveAAIBG5hbWUcbWluZWNyYWZ0OnVuZHllZF9zaHVsa2VyX2JveAADCW1heF9zbG90c4ABAAoebWluZWNyYWZ0OnN0b3JhZ2Vfd2VpZ2h0X2xpbWl0AxBtYXhfd2VpZ2h0X2xpbWl0gAEACiFtaW5lY3JhZnQ6c3RvcmFnZV93ZWlnaHRfbW9kaWZpZXIDFndlaWdodF9pbl9zdG9yYWdlX2l0ZW0IAAAA"
+],
+"minecraft:green_candle": [
+2,
+false,
+null
+],
+"minecraft:green_candle_cake": [
+2,
+false,
+null
+],
+"minecraft:green_carpet": [
+2,
+false,
+null
+],
+"minecraft:green_concrete": [
+2,
+false,
+null
+],
+"minecraft:green_concrete_double_slab": [
+2,
+false,
+null
+],
+"minecraft:green_concrete_powder": [
+2,
+false,
+null
+],
+"minecraft:green_concrete_slab": [
+2,
+false,
+null
+],
+"minecraft:green_concrete_stairs": [
+2,
+false,
+null
+],
+"minecraft:green_cushion": [
+2,
+false,
+null
+],
+"minecraft:green_dye": [
+2,
+false,
+null
+],
+"minecraft:green_glazed_terracotta": [
+2,
+false,
+null
+],
+"minecraft:green_harness": [
+2,
+false,
+null
+],
+"minecraft:green_shulker_box": [
+2,
+false,
+null
+],
+"minecraft:green_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:green_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:green_terracotta": [
+2,
+false,
+null
+],
+"minecraft:green_wool": [
+2,
+false,
+null
+],
+"minecraft:green_wool_double_slab": [
+2,
+false,
+null
+],
+"minecraft:green_wool_slab": [
+2,
+false,
+null
+],
+"minecraft:green_wool_stairs": [
+2,
+false,
+null
+],
+"minecraft:grindstone": [
+2,
+false,
+null
+],
+"minecraft:guardian_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:gunpowder": [
+2,
+false,
+null
+],
+"minecraft:guster_banner_pattern": [
+2,
+false,
+null
+],
+"minecraft:guster_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:hanging_roots": [
+2,
+false,
+null
+],
+"minecraft:happy_ghast_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:hard_black_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_black_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hard_blue_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_blue_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hard_brown_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_brown_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hard_cyan_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_cyan_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hard_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hard_gray_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_gray_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hard_green_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_green_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hard_light_blue_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_light_blue_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hard_light_gray_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_light_gray_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hard_lime_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_lime_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hard_magenta_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_magenta_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hard_orange_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_orange_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hard_pink_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_pink_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hard_purple_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_purple_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hard_red_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_red_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hard_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hard_white_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_white_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hard_yellow_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:hard_yellow_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:hardened_clay": [
+2,
+false,
+null
+],
+"minecraft:hay_block": [
+2,
+false,
+null
+],
+"minecraft:heart_of_the_sea": [
+2,
+false,
+null
+],
+"minecraft:heart_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:heartbreak_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:heavy_core": [
+2,
+false,
+null
+],
+"minecraft:heavy_weighted_pressure_plate": [
+2,
+false,
+null
+],
+"minecraft:hoglin_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:honey_block": [
+2,
+false,
+null
+],
+"minecraft:honey_bottle": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAEDDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uDAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBCQ5yZW1vdmVfZWZmZWN0cwMCJgUTc2F0dXJhdGlvbl9tb2RpZmllcs3MzD0IEXVzaW5nX2NvbnZlcnRzX3RvDGdsYXNzX2JvdHRsZQADGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZSADFm1pbmVjcmFmdDp1c2VfZHVyYXRpb25QAAA="
+],
+"minecraft:honeycomb": [
+0,
+false,
+null
+],
+"minecraft:honeycomb_block": [
+2,
+false,
+null
+],
+"minecraft:hopper": [
+2,
+true,
+null
+],
+"minecraft:hopper_minecart": [
+2,
+false,
+null
+],
+"minecraft:horn_coral": [
+2,
+false,
+null
+],
+"minecraft:horn_coral_block": [
+2,
+false,
+null
+],
+"minecraft:horn_coral_fan": [
+2,
+false,
+null
+],
+"minecraft:horn_coral_wall_fan": [
+2,
+false,
+null
+],
+"minecraft:horse_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:host_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:howl_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:husk_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:ice": [
+2,
+false,
+null
+],
+"minecraft:ice_bomb": [
+2,
+false,
+null
+],
+"minecraft:ice_crystal": [
+2,
+false,
+null
+],
+"minecraft:icicle": [
+2,
+false,
+null
+],
+"minecraft:infested_chiseled_stone_bricks": [
+2,
+false,
+null
+],
+"minecraft:infested_cobblestone": [
+2,
+false,
+null
+],
+"minecraft:infested_cracked_stone_bricks": [
+2,
+false,
+null
+],
+"minecraft:infested_deepslate": [
+2,
+false,
+null
+],
+"minecraft:infested_mossy_stone_bricks": [
+2,
+false,
+null
+],
+"minecraft:infested_stone": [
+2,
+false,
+null
+],
+"minecraft:infested_stone_bricks": [
+2,
+false,
+null
+],
+"minecraft:info_update": [
+2,
+false,
+null
+],
+"minecraft:info_update2": [
+2,
+false,
+null
+],
+"minecraft:ink_sac": [
+2,
+false,
+null
+],
+"minecraft:invisible_bedrock": [
+2,
+false,
+null
+],
+"minecraft:iron_axe": [
+2,
+false,
+null
+],
+"minecraft:iron_bars": [
+2,
+false,
+null
+],
+"minecraft:iron_block": [
+2,
+false,
+null
+],
+"minecraft:iron_boots": [
+2,
+false,
+null
+],
+"minecraft:iron_chain": [
+2,
+false,
+null
+],
+"minecraft:iron_chestplate": [
+2,
+false,
+null
+],
+"minecraft:iron_door": [
+2,
+false,
+null
+],
+"minecraft:iron_golem_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:iron_helmet": [
+2,
+false,
+null
+],
+"minecraft:iron_hoe": [
+2,
+false,
+null
+],
+"minecraft:iron_horse_armor": [
+2,
+false,
+null
+],
+"minecraft:iron_ingot": [
+2,
+false,
+null
+],
+"minecraft:iron_leggings": [
+2,
+false,
+null
+],
+"minecraft:iron_nautilus_armor": [
+2,
+false,
+null
+],
+"minecraft:iron_nugget": [
+2,
+false,
+null
+],
+"minecraft:iron_ore": [
+2,
+false,
+null
+],
+"minecraft:iron_pickaxe": [
+2,
+false,
+null
+],
+"minecraft:iron_shovel": [
+2,
+false,
+null
+],
+"minecraft:iron_spear": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UGCBBlbmNoYW50YWJsZV9zbG90C21lbGVlX3NwZWFyAxFlbmNoYW50YWJsZV92YWx1ZRwBBGZvaWwAAwtmcmFtZV9jb3VudAIBDWhhbmRfZXF1aXBwZWQBARJoaWRkZW5faW5fY29tbWFuZHMCAQ5saXF1aWRfY2xpcHBlZAADDm1heF9zdGFja19zaXplAgoObWluZWNyYWZ0Omljb24KCHRleHR1cmVzCAdkZWZhdWx0Cmlyb25fc3BlYXIAAAUMbWluaW5nX3NwZWVkAACAPwEOc2hvdWxkX2Rlc3Bhd24BAQ9zdGFja2VkX2J5X2RhdGEAAw11c2VfYW5pbWF0aW9uAAMMdXNlX2R1cmF0aW9ugOSvAQAJCWl0ZW1fdGFncwgEE21pbmVjcmFmdDppcm9uX3RpZXISbWluZWNyYWZ0OmlzX3NwZWFyChJtaW5lY3JhZnQ6Y29vbGRvd24ICGNhdGVnb3J5BXNwZWFyBQhkdXJhdGlvbjMzcz8IBHR5cGUGYXR0YWNrAAoQbWluZWNyYWZ0OmRhbWFnZQIFdmFsdWUDAAAKFm1pbmVjcmFmdDpkaXNwbGF5X25hbWUIBXZhbHVlFGl0ZW0uaXJvbl9zcGVhci5uYW1lAAoUbWluZWNyYWZ0OmR1cmFiaWxpdHkKDWRhbWFnZV9jaGFuY2UDA21heMgBAwNtaW4AAAMObWF4X2R1cmFiaWxpdHn0AwAKFW1pbmVjcmFmdDplbmNoYW50YWJsZQgEc2xvdAttZWxlZV9zcGVhcgEFdmFsdWUOAAoXbWluZWNyYWZ0OmhhbmRfZXF1aXBwZWQBBXZhbHVlAQAKGG1pbmVjcmFmdDpraW5ldGljX3dlYXBvbgoYbWluZWNyYWZ0OmtpbmV0aWNfd2VhcG9uCg5jcmVhdGl2ZV9yZWFjaAUDbWF4AADwQAUDbWluAAAAQAAKEWRhbWFnZV9jb25kaXRpb25zAgxtYXhfZHVyYXRpb27hAAUSbWluX3JlbGF0aXZlX3NwZWVkMzOTQAUJbWluX3NwZWVkAAAAAAAFD2RhbWFnZV9tb2RpZmllcgAAAAAFEWRhbWFnZV9tdWx0aXBsaWVyMzNzPwIFZGVsYXkMAAoTZGlzbW91bnRfY29uZGl0aW9ucwIMbWF4X2R1cmF0aW9uMgAFEm1pbl9yZWxhdGl2ZV9zcGVlZAAAAAAFCW1pbl9zcGVlZAAAMEEABQ1oaXRib3hfbWFyZ2luAACAPgoUa25vY2tiYWNrX2NvbmRpdGlvbnMCDG1heF9kdXJhdGlvbocABRJtaW5fcmVsYXRpdmVfc3BlZWQAAAAABQltaW5fc3BlZWQzM6NAAAoFcmVhY2gFA21heAAAkEAFA21pbgAAAEAAAAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoZbWluZWNyYWZ0OnBpZXJjaW5nX3dlYXBvbgoOY3JlYXRpdmVfcmVhY2gFA21heAAA8EAFA21pbgAAAEAABQ1oaXRib3hfbWFyZ2luAACAPgoFcmVhY2gFA21heAAAkEAFA21pbgAAAEAAAAoUbWluZWNyYWZ0OnJlcGFpcmFibGUJDHJlcGFpcl9pdGVtcwoECQVpdGVtcwoCCARuYW1lFG1pbmVjcmFmdDppcm9uX3NwZWFyAAgNcmVwYWlyX2Ftb3VudCljb250ZXh0Lm90aGVyLT5xdWVyeS5yZW1haW5pbmdfZHVyYWJpbGl0eQAJBWl0ZW1zCgIIBG5hbWUUbWluZWNyYWZ0Omlyb25faW5nb3QACA1yZXBhaXJfYW1vdW50G3F1ZXJ5Lm1heF9kdXJhYmlsaXR5ICogMC4yNQAAChhtaW5lY3JhZnQ6c3dpbmdfZHVyYXRpb24FBXZhbHVlMzNzPwAKFm1pbmVjcmFmdDpzd2luZ19zb3VuZHMICmF0dGFja19oaXQaaXRlbS5pcm9uX3NwZWFyLmF0dGFja19oaXQIC2F0dGFja19taXNzG2l0ZW0uaXJvbl9zcGVhci5hdHRhY2tfbWlzcwAKDm1pbmVjcmFmdDp0YWdzCQR0YWdzCAQTbWluZWNyYWZ0Omlyb25fdGllchJtaW5lY3JhZnQ6aXNfc3BlYXIAChdtaW5lY3JhZnQ6dXNlX21vZGlmaWVycwEPZW1pdF92aWJyYXRpb25zAAURbW92ZW1lbnRfbW9kaWZpZXIAAIA/CAtzdGFydF9zb3VuZBNpdGVtLmlyb25fc3BlYXIudXNlCAtzdGFydF91c2luZwZhbHdheXMFDHVzZV9kdXJhdGlvbgCgjEcAAAA="
+],
+"minecraft:iron_sword": [
+2,
+false,
+null
+],
+"minecraft:iron_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:item.bed": [
+2,
+false,
+null
+],
+"minecraft:item.beetroot": [
+2,
+false,
+null
+],
+"minecraft:item.brewing_stand": [
+2,
+false,
+null
+],
+"minecraft:item.cake": [
+2,
+false,
+null
+],
+"minecraft:item.camera": [
+2,
+false,
+null
+],
+"minecraft:item.campfire": [
+2,
+false,
+null
+],
+"minecraft:item.cauldron": [
+2,
+false,
+null
+],
+"minecraft:item.flower_pot": [
+2,
+false,
+null
+],
+"minecraft:item.frame": [
+2,
+false,
+null
+],
+"minecraft:item.glow_frame": [
+2,
+false,
+null
+],
+"minecraft:item.hopper": [
+2,
+false,
+null
+],
+"minecraft:item.kelp": [
+2,
+false,
+null
+],
+"minecraft:item.nether_sprouts": [
+2,
+false,
+null
+],
+"minecraft:item.nether_wart": [
+2,
+false,
+null
+],
+"minecraft:item.reeds": [
+2,
+false,
+null
+],
+"minecraft:item.soul_campfire": [
+2,
+false,
+null
+],
+"minecraft:item.straw_bed": [
+2,
+false,
+null
+],
+"minecraft:item.wheat": [
+2,
+false,
+null
+],
+"minecraft:jigsaw": [
+2,
+false,
+null
+],
+"minecraft:jukebox": [
+2,
+false,
+null
+],
+"minecraft:jungle_boat": [
+2,
+false,
+null
+],
+"minecraft:jungle_button": [
+2,
+false,
+null
+],
+"minecraft:jungle_chest_boat": [
+2,
+false,
+null
+],
+"minecraft:jungle_door": [
+2,
+false,
+null
+],
+"minecraft:jungle_double_slab": [
+2,
+false,
+null
+],
+"minecraft:jungle_fence": [
+2,
+false,
+null
+],
+"minecraft:jungle_fence_gate": [
+2,
+false,
+null
+],
+"minecraft:jungle_hanging_sign": [
+2,
+false,
+null
+],
+"minecraft:jungle_leaves": [
+2,
+false,
+null
+],
+"minecraft:jungle_log": [
+2,
+false,
+null
+],
+"minecraft:jungle_planks": [
+2,
+false,
+null
+],
+"minecraft:jungle_pressure_plate": [
+2,
+false,
+null
+],
+"minecraft:jungle_sapling": [
+2,
+false,
+null
+],
+"minecraft:jungle_shelf": [
+2,
+false,
+null
+],
+"minecraft:jungle_sign": [
+2,
+false,
+null
+],
+"minecraft:jungle_slab": [
+2,
+false,
+null
+],
+"minecraft:jungle_stairs": [
+2,
+false,
+null
+],
+"minecraft:jungle_standing_sign": [
+2,
+false,
+null
+],
+"minecraft:jungle_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:jungle_wall_sign": [
+2,
+false,
+null
+],
+"minecraft:jungle_wood": [
+2,
+false,
+null
+],
+"minecraft:kelp": [
+2,
+true,
+null
+],
+"minecraft:lab_table": [
+2,
+false,
+null
+],
+"minecraft:ladder": [
+2,
+false,
+null
+],
+"minecraft:lantern": [
+2,
+false,
+null
+],
+"minecraft:lapis_block": [
+2,
+false,
+null
+],
+"minecraft:lapis_lazuli": [
+2,
+false,
+null
+],
+"minecraft:lapis_ore": [
+2,
+false,
+null
+],
+"minecraft:large_amethyst_bud": [
+2,
+false,
+null
+],
+"minecraft:large_fern": [
+2,
+false,
+null
+],
+"minecraft:lava": [
+2,
+false,
+null
+],
+"minecraft:lava_bucket": [
+2,
+false,
+null
+],
+"minecraft:lead": [
+2,
+false,
+null
+],
+"minecraft:leaf_litter": [
+2,
+false,
+null
+],
+"minecraft:leather": [
+2,
+false,
+null
+],
+"minecraft:leather_boots": [
+2,
+false,
+null
+],
+"minecraft:leather_chestplate": [
+2,
+false,
+null
+],
+"minecraft:leather_helmet": [
+2,
+false,
+null
+],
+"minecraft:leather_horse_armor": [
+2,
+false,
+null
+],
+"minecraft:leather_leggings": [
+2,
+false,
+null
+],
+"minecraft:leaves": [
+2,
+false,
+null
+],
+"minecraft:leaves2": [
+2,
+false,
+null
+],
+"minecraft:lectern": [
+2,
+false,
+null
+],
+"minecraft:lever": [
+2,
+false,
+null
+],
+"minecraft:light_block": [
+2,
+false,
+null
+],
+"minecraft:light_block_0": [
+2,
+false,
+null
+],
+"minecraft:light_block_1": [
+2,
+false,
+null
+],
+"minecraft:light_block_10": [
+2,
+false,
+null
+],
+"minecraft:light_block_11": [
+2,
+false,
+null
+],
+"minecraft:light_block_12": [
+2,
+false,
+null
+],
+"minecraft:light_block_13": [
+2,
+false,
+null
+],
+"minecraft:light_block_14": [
+2,
+false,
+null
+],
+"minecraft:light_block_15": [
+2,
+false,
+null
+],
+"minecraft:light_block_2": [
+2,
+false,
+null
+],
+"minecraft:light_block_3": [
+2,
+false,
+null
+],
+"minecraft:light_block_4": [
+2,
+false,
+null
+],
+"minecraft:light_block_5": [
+2,
+false,
+null
+],
+"minecraft:light_block_6": [
+2,
+false,
+null
+],
+"minecraft:light_block_7": [
+2,
+false,
+null
+],
+"minecraft:light_block_8": [
+2,
+false,
+null
+],
+"minecraft:light_block_9": [
+2,
+false,
+null
+],
+"minecraft:light_blue_bundle": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemUCCg5taW5lY3JhZnQ6aWNvbgoIdGV4dHVyZXMIEGJ1bmRsZV9vcGVuX2JhY2sbYnVuZGxlX2xpZ2h0X2JsdWVfb3Blbl9iYWNrCBFidW5kbGVfb3Blbl9mcm9udBxidW5kbGVfbGlnaHRfYmx1ZV9vcGVuX2Zyb250CAdkZWZhdWx0EWJ1bmRsZV9saWdodF9ibHVlAAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAocbWluZWNyYWZ0OmJ1bmRsZV9pbnRlcmFjdGlvbgMSbnVtX3ZpZXdhYmxlX3Nsb3RzGAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoWbWluZWNyYWZ0OnN0b3JhZ2VfaXRlbQEaYWxsb3dfbmVzdGVkX3N0b3JhZ2VfaXRlbXMBCQ1hbGxvd2VkX2l0ZW1zAAAJDGJhbm5lZF9pdGVtcwoECARuYW1lFW1pbmVjcmFmdDpzaHVsa2VyX2JveAAIBG5hbWUcbWluZWNyYWZ0OnVuZHllZF9zaHVsa2VyX2JveAADCW1heF9zbG90c4ABAAoebWluZWNyYWZ0OnN0b3JhZ2Vfd2VpZ2h0X2xpbWl0AxBtYXhfd2VpZ2h0X2xpbWl0gAEACiFtaW5lY3JhZnQ6c3RvcmFnZV93ZWlnaHRfbW9kaWZpZXIDFndlaWdodF9pbl9zdG9yYWdlX2l0ZW0IAAAA"
+],
+"minecraft:light_blue_candle": [
+2,
+false,
+null
+],
+"minecraft:light_blue_candle_cake": [
+2,
+false,
+null
+],
+"minecraft:light_blue_carpet": [
+2,
+false,
+null
+],
+"minecraft:light_blue_concrete": [
+2,
+false,
+null
+],
+"minecraft:light_blue_concrete_double_slab": [
+2,
+false,
+null
+],
+"minecraft:light_blue_concrete_powder": [
+2,
+false,
+null
+],
+"minecraft:light_blue_concrete_slab": [
+2,
+false,
+null
+],
+"minecraft:light_blue_concrete_stairs": [
+2,
+false,
+null
+],
+"minecraft:light_blue_cushion": [
+2,
+false,
+null
+],
+"minecraft:light_blue_dye": [
+2,
+false,
+null
+],
+"minecraft:light_blue_glazed_terracotta": [
+2,
+false,
+null
+],
+"minecraft:light_blue_harness": [
+2,
+false,
+null
+],
+"minecraft:light_blue_shulker_box": [
+2,
+false,
+null
+],
+"minecraft:light_blue_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:light_blue_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:light_blue_terracotta": [
+2,
+false,
+null
+],
+"minecraft:light_blue_wool": [
+2,
+false,
+null
+],
+"minecraft:light_blue_wool_double_slab": [
+2,
+false,
+null
+],
+"minecraft:light_blue_wool_slab": [
+2,
+false,
+null
+],
+"minecraft:light_blue_wool_stairs": [
+2,
+false,
+null
+],
+"minecraft:light_gray_bundle": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemUCCg5taW5lY3JhZnQ6aWNvbgoIdGV4dHVyZXMIEGJ1bmRsZV9vcGVuX2JhY2sbYnVuZGxlX2xpZ2h0X2dyYXlfb3Blbl9iYWNrCBFidW5kbGVfb3Blbl9mcm9udBxidW5kbGVfbGlnaHRfZ3JheV9vcGVuX2Zyb250CAdkZWZhdWx0EWJ1bmRsZV9saWdodF9ncmF5AAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAocbWluZWNyYWZ0OmJ1bmRsZV9pbnRlcmFjdGlvbgMSbnVtX3ZpZXdhYmxlX3Nsb3RzGAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoWbWluZWNyYWZ0OnN0b3JhZ2VfaXRlbQEaYWxsb3dfbmVzdGVkX3N0b3JhZ2VfaXRlbXMBCQ1hbGxvd2VkX2l0ZW1zAAAJDGJhbm5lZF9pdGVtcwoECARuYW1lFW1pbmVjcmFmdDpzaHVsa2VyX2JveAAIBG5hbWUcbWluZWNyYWZ0OnVuZHllZF9zaHVsa2VyX2JveAADCW1heF9zbG90c4ABAAoebWluZWNyYWZ0OnN0b3JhZ2Vfd2VpZ2h0X2xpbWl0AxBtYXhfd2VpZ2h0X2xpbWl0gAEACiFtaW5lY3JhZnQ6c3RvcmFnZV93ZWlnaHRfbW9kaWZpZXIDFndlaWdodF9pbl9zdG9yYWdlX2l0ZW0IAAAA"
+],
+"minecraft:light_gray_candle": [
+2,
+false,
+null
+],
+"minecraft:light_gray_candle_cake": [
+2,
+false,
+null
+],
+"minecraft:light_gray_carpet": [
+2,
+false,
+null
+],
+"minecraft:light_gray_concrete": [
+2,
+false,
+null
+],
+"minecraft:light_gray_concrete_double_slab": [
+2,
+false,
+null
+],
+"minecraft:light_gray_concrete_powder": [
+2,
+false,
+null
+],
+"minecraft:light_gray_concrete_slab": [
+2,
+false,
+null
+],
+"minecraft:light_gray_concrete_stairs": [
+2,
+false,
+null
+],
+"minecraft:light_gray_cushion": [
+2,
+false,
+null
+],
+"minecraft:light_gray_dye": [
+2,
+false,
+null
+],
+"minecraft:light_gray_harness": [
+2,
+false,
+null
+],
+"minecraft:light_gray_shulker_box": [
+2,
+false,
+null
+],
+"minecraft:light_gray_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:light_gray_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:light_gray_terracotta": [
+2,
+false,
+null
+],
+"minecraft:light_gray_wool": [
+2,
+false,
+null
+],
+"minecraft:light_gray_wool_double_slab": [
+2,
+false,
+null
+],
+"minecraft:light_gray_wool_slab": [
+2,
+false,
+null
+],
+"minecraft:light_gray_wool_stairs": [
+2,
+false,
+null
+],
+"minecraft:light_weighted_pressure_plate": [
+2,
+false,
+null
+],
+"minecraft:lightning_rod": [
+2,
+false,
+null
+],
+"minecraft:lilac": [
+2,
+false,
+null
+],
+"minecraft:lily_of_the_valley": [
+2,
+false,
+null
+],
+"minecraft:lime_bundle": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemUCCg5taW5lY3JhZnQ6aWNvbgoIdGV4dHVyZXMIEGJ1bmRsZV9vcGVuX2JhY2sVYnVuZGxlX2xpbWVfb3Blbl9iYWNrCBFidW5kbGVfb3Blbl9mcm9udBZidW5kbGVfbGltZV9vcGVuX2Zyb250CAdkZWZhdWx0C2J1bmRsZV9saW1lAAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAocbWluZWNyYWZ0OmJ1bmRsZV9pbnRlcmFjdGlvbgMSbnVtX3ZpZXdhYmxlX3Nsb3RzGAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoWbWluZWNyYWZ0OnN0b3JhZ2VfaXRlbQEaYWxsb3dfbmVzdGVkX3N0b3JhZ2VfaXRlbXMBCQ1hbGxvd2VkX2l0ZW1zAAAJDGJhbm5lZF9pdGVtcwoECARuYW1lFW1pbmVjcmFmdDpzaHVsa2VyX2JveAAIBG5hbWUcbWluZWNyYWZ0OnVuZHllZF9zaHVsa2VyX2JveAADCW1heF9zbG90c4ABAAoebWluZWNyYWZ0OnN0b3JhZ2Vfd2VpZ2h0X2xpbWl0AxBtYXhfd2VpZ2h0X2xpbWl0gAEACiFtaW5lY3JhZnQ6c3RvcmFnZV93ZWlnaHRfbW9kaWZpZXIDFndlaWdodF9pbl9zdG9yYWdlX2l0ZW0IAAAA"
+],
+"minecraft:lime_candle": [
+2,
+false,
+null
+],
+"minecraft:lime_candle_cake": [
+2,
+false,
+null
+],
+"minecraft:lime_carpet": [
+2,
+false,
+null
+],
+"minecraft:lime_concrete": [
+2,
+false,
+null
+],
+"minecraft:lime_concrete_double_slab": [
+2,
+false,
+null
+],
+"minecraft:lime_concrete_powder": [
+2,
+false,
+null
+],
+"minecraft:lime_concrete_slab": [
+2,
+false,
+null
+],
+"minecraft:lime_concrete_stairs": [
+2,
+false,
+null
+],
+"minecraft:lime_cushion": [
+2,
+false,
+null
+],
+"minecraft:lime_dye": [
+2,
+false,
+null
+],
+"minecraft:lime_glazed_terracotta": [
+2,
+false,
+null
+],
+"minecraft:lime_harness": [
+2,
+false,
+null
+],
+"minecraft:lime_shulker_box": [
+2,
+false,
+null
+],
+"minecraft:lime_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:lime_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:lime_terracotta": [
+2,
+false,
+null
+],
+"minecraft:lime_wool": [
+2,
+false,
+null
+],
+"minecraft:lime_wool_double_slab": [
+2,
+false,
+null
+],
+"minecraft:lime_wool_slab": [
+2,
+false,
+null
+],
+"minecraft:lime_wool_stairs": [
+2,
+false,
+null
+],
+"minecraft:lingering_potion": [
+2,
+false,
+null
+],
+"minecraft:lit_blast_furnace": [
+2,
+false,
+null
+],
+"minecraft:lit_deepslate_redstone_ore": [
+2,
+false,
+null
+],
+"minecraft:lit_furnace": [
+2,
+false,
+null
+],
+"minecraft:lit_pumpkin": [
+2,
+false,
+null
+],
+"minecraft:lit_redstone_lamp": [
+2,
+false,
+null
+],
+"minecraft:lit_redstone_ore": [
+2,
+false,
+null
+],
+"minecraft:lit_smoker": [
+2,
+false,
+null
+],
+"minecraft:llama_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:lodestone": [
+2,
+false,
+null
+],
+"minecraft:lodestone_compass": [
+2,
+false,
+null
+],
+"minecraft:log": [
+2,
+false,
+null
+],
+"minecraft:log2": [
+2,
+false,
+null
+],
+"minecraft:loom": [
+2,
+false,
+null
+],
+"minecraft:mace": [
+2,
+false,
+null
+],
+"minecraft:magenta_bundle": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemUCCg5taW5lY3JhZnQ6aWNvbgoIdGV4dHVyZXMIEGJ1bmRsZV9vcGVuX2JhY2sYYnVuZGxlX21hZ2VudGFfb3Blbl9iYWNrCBFidW5kbGVfb3Blbl9mcm9udBlidW5kbGVfbWFnZW50YV9vcGVuX2Zyb250CAdkZWZhdWx0DmJ1bmRsZV9tYWdlbnRhAAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAocbWluZWNyYWZ0OmJ1bmRsZV9pbnRlcmFjdGlvbgMSbnVtX3ZpZXdhYmxlX3Nsb3RzGAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoWbWluZWNyYWZ0OnN0b3JhZ2VfaXRlbQEaYWxsb3dfbmVzdGVkX3N0b3JhZ2VfaXRlbXMBCQ1hbGxvd2VkX2l0ZW1zAAAJDGJhbm5lZF9pdGVtcwoECARuYW1lFW1pbmVjcmFmdDpzaHVsa2VyX2JveAAIBG5hbWUcbWluZWNyYWZ0OnVuZHllZF9zaHVsa2VyX2JveAADCW1heF9zbG90c4ABAAoebWluZWNyYWZ0OnN0b3JhZ2Vfd2VpZ2h0X2xpbWl0AxBtYXhfd2VpZ2h0X2xpbWl0gAEACiFtaW5lY3JhZnQ6c3RvcmFnZV93ZWlnaHRfbW9kaWZpZXIDFndlaWdodF9pbl9zdG9yYWdlX2l0ZW0IAAAA"
+],
+"minecraft:magenta_candle": [
+2,
+false,
+null
+],
+"minecraft:magenta_candle_cake": [
+2,
+false,
+null
+],
+"minecraft:magenta_carpet": [
+2,
+false,
+null
+],
+"minecraft:magenta_concrete": [
+2,
+false,
+null
+],
+"minecraft:magenta_concrete_double_slab": [
+2,
+false,
+null
+],
+"minecraft:magenta_concrete_powder": [
+2,
+false,
+null
+],
+"minecraft:magenta_concrete_slab": [
+2,
+false,
+null
+],
+"minecraft:magenta_concrete_stairs": [
+2,
+false,
+null
+],
+"minecraft:magenta_cushion": [
+2,
+false,
+null
+],
+"minecraft:magenta_dye": [
+2,
+false,
+null
+],
+"minecraft:magenta_glazed_terracotta": [
+2,
+false,
+null
+],
+"minecraft:magenta_harness": [
+2,
+false,
+null
+],
+"minecraft:magenta_shulker_box": [
+2,
+false,
+null
+],
+"minecraft:magenta_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:magenta_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:magenta_terracotta": [
+2,
+false,
+null
+],
+"minecraft:magenta_wool": [
+2,
+false,
+null
+],
+"minecraft:magenta_wool_double_slab": [
+2,
+false,
+null
+],
+"minecraft:magenta_wool_slab": [
+2,
+false,
+null
+],
+"minecraft:magenta_wool_stairs": [
+2,
+false,
+null
+],
+"minecraft:magma": [
+2,
+false,
+null
+],
+"minecraft:magma_cream": [
+2,
+false,
+null
+],
+"minecraft:magma_cube_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:mangrove_boat": [
+2,
+false,
+null
+],
+"minecraft:mangrove_button": [
+2,
+false,
+null
+],
+"minecraft:mangrove_chest_boat": [
+2,
+false,
+null
+],
+"minecraft:mangrove_door": [
+2,
+false,
+null
+],
+"minecraft:mangrove_double_slab": [
+2,
+false,
+null
+],
+"minecraft:mangrove_fence": [
+2,
+false,
+null
+],
+"minecraft:mangrove_fence_gate": [
+2,
+false,
+null
+],
+"minecraft:mangrove_hanging_sign": [
+2,
+false,
+null
+],
+"minecraft:mangrove_leaves": [
+2,
+false,
+null
+],
+"minecraft:mangrove_log": [
+2,
+false,
+null
+],
+"minecraft:mangrove_planks": [
+2,
+false,
+null
+],
+"minecraft:mangrove_pressure_plate": [
+2,
+false,
+null
+],
+"minecraft:mangrove_propagule": [
+2,
+false,
+null
+],
+"minecraft:mangrove_roots": [
+2,
+false,
+null
+],
+"minecraft:mangrove_shelf": [
+2,
+false,
+null
+],
+"minecraft:mangrove_sign": [
+2,
+false,
+null
+],
+"minecraft:mangrove_slab": [
+2,
+false,
+null
+],
+"minecraft:mangrove_stairs": [
+2,
+false,
+null
+],
+"minecraft:mangrove_standing_sign": [
+2,
+false,
+null
+],
+"minecraft:mangrove_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:mangrove_wall_sign": [
+2,
+false,
+null
+],
+"minecraft:mangrove_wood": [
+2,
+false,
+null
+],
+"minecraft:material_reducer": [
+2,
+false,
+null
+],
+"minecraft:medicine": [
+2,
+false,
+null
+],
+"minecraft:medium_amethyst_bud": [
+2,
+false,
+null
+],
+"minecraft:melon_block": [
+2,
+false,
+null
+],
+"minecraft:melon_seeds": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpzZWVkCAtjcm9wX3Jlc3VsdBRtaW5lY3JhZnQ6bWVsb25fc3RlbQkIcGxhbnRfYXQIAhJtaW5lY3JhZnQ6ZmFybWxhbmQBGnBsYW50X2F0X2FueV9zb2xpZF9zdXJmYWNlAAgNcGxhbnRfYXRfZmFjZQJ1cAAAAA=="
+],
+"minecraft:melon_slice": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uBAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympmZPggRdXNpbmdfY29udmVydHNfdG8AAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:melon_stem": [
+2,
+false,
+null
+],
+"minecraft:milk_bucket": [
+2,
+false,
+null
+],
+"minecraft:minecart": [
+2,
+false,
+null
+],
+"minecraft:miner_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:mob_spawner": [
+2,
+false,
+null
+],
+"minecraft:mojang_banner_pattern": [
+2,
+false,
+null
+],
+"minecraft:monster_egg": [
+2,
+false,
+null
+],
+"minecraft:mooshroom_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:moss_block": [
+2,
+false,
+null
+],
+"minecraft:moss_carpet": [
+2,
+false,
+null
+],
+"minecraft:mossy_cobblestone": [
+2,
+false,
+null
+],
+"minecraft:mossy_cobblestone_double_slab": [
+2,
+false,
+null
+],
+"minecraft:mossy_cobblestone_slab": [
+2,
+false,
+null
+],
+"minecraft:mossy_cobblestone_stairs": [
+2,
+false,
+null
+],
+"minecraft:mossy_cobblestone_wall": [
+2,
+false,
+null
+],
+"minecraft:mossy_stone_brick_double_slab": [
+2,
+false,
+null
+],
+"minecraft:mossy_stone_brick_slab": [
+2,
+false,
+null
+],
+"minecraft:mossy_stone_brick_stairs": [
+2,
+false,
+null
+],
+"minecraft:mossy_stone_brick_wall": [
+2,
+false,
+null
+],
+"minecraft:mossy_stone_bricks": [
+2,
+false,
+null
+],
+"minecraft:mourner_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:moving_block": [
+2,
+false,
+null
+],
+"minecraft:mud": [
+2,
+false,
+null
+],
+"minecraft:mud_brick_double_slab": [
+2,
+false,
+null
+],
+"minecraft:mud_brick_slab": [
+2,
+false,
+null
+],
+"minecraft:mud_brick_stairs": [
+2,
+false,
+null
+],
+"minecraft:mud_brick_wall": [
+2,
+false,
+null
+],
+"minecraft:mud_bricks": [
+2,
+false,
+null
+],
+"minecraft:muddy_mangrove_roots": [
+2,
+false,
+null
+],
+"minecraft:mule_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:mushroom_stem": [
+2,
+false,
+null
+],
+"minecraft:mushroom_stew": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uDAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympkZPwgRdXNpbmdfY29udmVydHNfdG8EYm93bAADGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQIDFm1pbmVjcmFmdDp1c2VfZHVyYXRpb25AAAA="
+],
+"minecraft:music_disc_11": [
+2,
+true,
+null
+],
+"minecraft:music_disc_13": [
+2,
+true,
+null
+],
+"minecraft:music_disc_5": [
+2,
+true,
+null
+],
+"minecraft:music_disc_blocks": [
+2,
+true,
+null
+],
+"minecraft:music_disc_bounce": [
+2,
+true,
+null
+],
+"minecraft:music_disc_cat": [
+2,
+true,
+null
+],
+"minecraft:music_disc_chirp": [
+2,
+true,
+null
+],
+"minecraft:music_disc_creator": [
+2,
+true,
+null
+],
+"minecraft:music_disc_creator_music_box": [
+2,
+true,
+null
+],
+"minecraft:music_disc_far": [
+2,
+true,
+null
+],
+"minecraft:music_disc_lava_chicken": [
+2,
+true,
+null
+],
+"minecraft:music_disc_mall": [
+2,
+true,
+null
+],
+"minecraft:music_disc_mellohi": [
+2,
+true,
+null
+],
+"minecraft:music_disc_otherside": [
+2,
+true,
+null
+],
+"minecraft:music_disc_pigstep": [
+2,
+true,
+null
+],
+"minecraft:music_disc_precipice": [
+2,
+true,
+null
+],
+"minecraft:music_disc_relic": [
+2,
+true,
+null
+],
+"minecraft:music_disc_stal": [
+2,
+true,
+null
+],
+"minecraft:music_disc_strad": [
+2,
+true,
+null
+],
+"minecraft:music_disc_tears": [
+2,
+true,
+null
+],
+"minecraft:music_disc_wait": [
+2,
+true,
+null
+],
+"minecraft:music_disc_ward": [
+2,
+true,
+null
+],
+"minecraft:mutton": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uBAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympmZPggRdXNpbmdfY29udmVydHNfdG8AAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:mycelium": [
+2,
+false,
+null
+],
+"minecraft:name_tag": [
+2,
+false,
+null
+],
+"minecraft:nautilus_shell": [
+2,
+false,
+null
+],
+"minecraft:nautilus_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:nether_brick": [
+2,
+false,
+null
+],
+"minecraft:nether_brick_double_slab": [
+2,
+false,
+null
+],
+"minecraft:nether_brick_fence": [
+2,
+false,
+null
+],
+"minecraft:nether_brick_slab": [
+2,
+false,
+null
+],
+"minecraft:nether_brick_stairs": [
+2,
+false,
+null
+],
+"minecraft:nether_brick_wall": [
+2,
+false,
+null
+],
+"minecraft:nether_gold_ore": [
+2,
+false,
+null
+],
+"minecraft:nether_sprouts": [
+2,
+true,
+null
+],
+"minecraft:nether_star": [
+2,
+false,
+null
+],
+"minecraft:nether_wart": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpzZWVkCAtjcm9wX3Jlc3VsdBVtaW5lY3JhZnQ6bmV0aGVyX3dhcnQJCHBsYW50X2F0CAIJc291bF9zYW5kARpwbGFudF9hdF9hbnlfc29saWRfc3VyZmFjZQAIDXBsYW50X2F0X2ZhY2UCdXAAAAA="
+],
+"minecraft:nether_wart_block": [
+2,
+false,
+null
+],
+"minecraft:netherbrick": [
+2,
+false,
+null
+],
+"minecraft:netherite_axe": [
+2,
+false,
+null
+],
+"minecraft:netherite_block": [
+2,
+false,
+null
+],
+"minecraft:netherite_boots": [
+2,
+false,
+null
+],
+"minecraft:netherite_chestplate": [
+2,
+false,
+null
+],
+"minecraft:netherite_helmet": [
+2,
+false,
+null
+],
+"minecraft:netherite_hoe": [
+2,
+false,
+null
+],
+"minecraft:netherite_horse_armor": [
+2,
+false,
+null
+],
+"minecraft:netherite_ingot": [
+2,
+false,
+null
+],
+"minecraft:netherite_leggings": [
+2,
+false,
+null
+],
+"minecraft:netherite_nautilus_armor": [
+2,
+false,
+null
+],
+"minecraft:netherite_pickaxe": [
+2,
+false,
+null
+],
+"minecraft:netherite_scrap": [
+2,
+false,
+null
+],
+"minecraft:netherite_shovel": [
+2,
+false,
+null
+],
+"minecraft:netherite_spear": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UKCBBlbmNoYW50YWJsZV9zbG90C21lbGVlX3NwZWFyAxFlbmNoYW50YWJsZV92YWx1ZR4BBGZvaWwAAwtmcmFtZV9jb3VudAIBDWhhbmRfZXF1aXBwZWQBARJoaWRkZW5faW5fY29tbWFuZHMCAQ5saXF1aWRfY2xpcHBlZAADDm1heF9zdGFja19zaXplAgoObWluZWNyYWZ0Omljb24KCHRleHR1cmVzCAdkZWZhdWx0D25ldGhlcml0ZV9zcGVhcgAABQxtaW5pbmdfc3BlZWQAAIA/AQ5zaG91bGRfZGVzcGF3bgEBD3N0YWNrZWRfYnlfZGF0YQADDXVzZV9hbmltYXRpb24AAwx1c2VfZHVyYXRpb26A5K8BAAkJaXRlbV90YWdzCAQYbWluZWNyYWZ0Om5ldGhlcml0ZV90aWVyEm1pbmVjcmFmdDppc19zcGVhcgoSbWluZWNyYWZ0OmNvb2xkb3duCAhjYXRlZ29yeQVzcGVhcgUIZHVyYXRpb24zM5M/CAR0eXBlBmF0dGFjawAKEG1pbmVjcmFmdDpkYW1hZ2UCBXZhbHVlBQAAChZtaW5lY3JhZnQ6ZGlzcGxheV9uYW1lCAV2YWx1ZRlpdGVtLm5ldGhlcml0ZV9zcGVhci5uYW1lAAoUbWluZWNyYWZ0OmR1cmFiaWxpdHkKDWRhbWFnZV9jaGFuY2UDA21heMgBAwNtaW4AAAMObWF4X2R1cmFiaWxpdHncHwAKFW1pbmVjcmFmdDplbmNoYW50YWJsZQgEc2xvdAttZWxlZV9zcGVhcgEFdmFsdWUPAAoYbWluZWNyYWZ0OmZpcmVfcmVzaXN0YW50AQV2YWx1ZQEAChdtaW5lY3JhZnQ6aGFuZF9lcXVpcHBlZAEFdmFsdWUBAAoYbWluZWNyYWZ0OmtpbmV0aWNfd2VhcG9uChhtaW5lY3JhZnQ6a2luZXRpY193ZWFwb24KDmNyZWF0aXZlX3JlYWNoBQNtYXgAAPBABQNtaW4AAABAAAoRZGFtYWdlX2NvbmRpdGlvbnMCDG1heF9kdXJhdGlvbq8ABRJtaW5fcmVsYXRpdmVfc3BlZWQzM5NABQltaW5fc3BlZWQAAAAAAAUPZGFtYWdlX21vZGlmaWVyAAAAAAURZGFtYWdlX211bHRpcGxpZXKamZk/AgVkZWxheQgAChNkaXNtb3VudF9jb25kaXRpb25zAgxtYXhfZHVyYXRpb24yAAUSbWluX3JlbGF0aXZlX3NwZWVkAAAAAAUJbWluX3NwZWVkAAAQQQAFDWhpdGJveF9tYXJnaW4AAIA+ChRrbm9ja2JhY2tfY29uZGl0aW9ucwIMbWF4X2R1cmF0aW9ubgAFEm1pbl9yZWxhdGl2ZV9zcGVlZAAAAAAFCW1pbl9zcGVlZDMzo0AACgVyZWFjaAUDbWF4AACQQAUDbWluAAAAQAAAAAoYbWluZWNyYWZ0Om1heF9zdGFja19zaXplAQV2YWx1ZQEAChltaW5lY3JhZnQ6cGllcmNpbmdfd2VhcG9uCg5jcmVhdGl2ZV9yZWFjaAUDbWF4AADwQAUDbWluAAAAQAAFDWhpdGJveF9tYXJnaW4AAIA+CgVyZWFjaAUDbWF4AACQQAUDbWluAAAAQAAAChRtaW5lY3JhZnQ6cmVwYWlyYWJsZQkMcmVwYWlyX2l0ZW1zCgQJBWl0ZW1zCgIIBG5hbWUZbWluZWNyYWZ0Om5ldGhlcml0ZV9zcGVhcgAIDXJlcGFpcl9hbW91bnQpY29udGV4dC5vdGhlci0+cXVlcnkucmVtYWluaW5nX2R1cmFiaWxpdHkACQVpdGVtcwoCCARuYW1lGW1pbmVjcmFmdDpuZXRoZXJpdGVfaW5nb3QACA1yZXBhaXJfYW1vdW50G3F1ZXJ5Lm1heF9kdXJhYmlsaXR5ICogMC4yNQAAChhtaW5lY3JhZnQ6c3dpbmdfZHVyYXRpb24FBXZhbHVlMzOTPwAKFm1pbmVjcmFmdDpzd2luZ19zb3VuZHMICmF0dGFja19oaXQfaXRlbS5uZXRoZXJpdGVfc3BlYXIuYXR0YWNrX2hpdAgLYXR0YWNrX21pc3MgaXRlbS5uZXRoZXJpdGVfc3BlYXIuYXR0YWNrX21pc3MACg5taW5lY3JhZnQ6dGFncwkEdGFncwgEGG1pbmVjcmFmdDpuZXRoZXJpdGVfdGllchJtaW5lY3JhZnQ6aXNfc3BlYXIAChdtaW5lY3JhZnQ6dXNlX21vZGlmaWVycwEPZW1pdF92aWJyYXRpb25zAAURbW92ZW1lbnRfbW9kaWZpZXIAAIA/CAtzdGFydF9zb3VuZBhpdGVtLm5ldGhlcml0ZV9zcGVhci51c2UIC3N0YXJ0X3VzaW5nBmFsd2F5cwUMdXNlX2R1cmF0aW9uAKCMRwAAAA=="
+],
+"minecraft:netherite_sword": [
+2,
+false,
+null
+],
+"minecraft:netherite_upgrade_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:netherrack": [
+2,
+false,
+null
+],
+"minecraft:netherreactor": [
+2,
+false,
+null
+],
+"minecraft:normal_stone_double_slab": [
+2,
+false,
+null
+],
+"minecraft:normal_stone_slab": [
+2,
+false,
+null
+],
+"minecraft:normal_stone_stairs": [
+2,
+false,
+null
+],
+"minecraft:noteblock": [
+2,
+false,
+null
+],
+"minecraft:npc_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:oak_boat": [
+2,
+false,
+null
+],
+"minecraft:oak_chest_boat": [
+2,
+false,
+null
+],
+"minecraft:oak_double_slab": [
+2,
+false,
+null
+],
+"minecraft:oak_fence": [
+2,
+false,
+null
+],
+"minecraft:oak_hanging_sign": [
+2,
+false,
+null
+],
+"minecraft:oak_leaves": [
+2,
+false,
+null
+],
+"minecraft:oak_log": [
+2,
+false,
+null
+],
+"minecraft:oak_planks": [
+2,
+false,
+null
+],
+"minecraft:oak_sapling": [
+2,
+false,
+null
+],
+"minecraft:oak_shelf": [
+2,
+false,
+null
+],
+"minecraft:oak_sign": [
+2,
+false,
+null
+],
+"minecraft:oak_slab": [
+2,
+false,
+null
+],
+"minecraft:oak_stairs": [
+2,
+false,
+null
+],
+"minecraft:oak_wood": [
+2,
+false,
+null
+],
+"minecraft:observer": [
+2,
+false,
+null
+],
+"minecraft:obsidian": [
+2,
+false,
+null
+],
+"minecraft:ocelot_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:ochre_froglight": [
+2,
+false,
+null
+],
+"minecraft:ominous_bottle": [
+2,
+false,
+null
+],
+"minecraft:ominous_trial_key": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5CAgOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemWAAQoObWluZWNyYWZ0Omljb24KCHRleHR1cmVzCAdkZWZhdWx0EW9taW5vdXNfdHJpYWxfa2V5AAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAoWbWluZWNyYWZ0OmRpc3BsYXlfbmFtZQgFdmFsdWUbaXRlbS5vbWlub3VzX3RyaWFsX2tleS5uYW1lAAAA"
+],
+"minecraft:open_eyeblossom": [
+2,
+false,
+null
+],
+"minecraft:orange_bundle": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemUCCg5taW5lY3JhZnQ6aWNvbgoIdGV4dHVyZXMIEGJ1bmRsZV9vcGVuX2JhY2sXYnVuZGxlX29yYW5nZV9vcGVuX2JhY2sIEWJ1bmRsZV9vcGVuX2Zyb250GGJ1bmRsZV9vcmFuZ2Vfb3Blbl9mcm9udAgHZGVmYXVsdA1idW5kbGVfb3JhbmdlAAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAocbWluZWNyYWZ0OmJ1bmRsZV9pbnRlcmFjdGlvbgMSbnVtX3ZpZXdhYmxlX3Nsb3RzGAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoWbWluZWNyYWZ0OnN0b3JhZ2VfaXRlbQEaYWxsb3dfbmVzdGVkX3N0b3JhZ2VfaXRlbXMBCQ1hbGxvd2VkX2l0ZW1zAAAJDGJhbm5lZF9pdGVtcwoECARuYW1lFW1pbmVjcmFmdDpzaHVsa2VyX2JveAAIBG5hbWUcbWluZWNyYWZ0OnVuZHllZF9zaHVsa2VyX2JveAADCW1heF9zbG90c4ABAAoebWluZWNyYWZ0OnN0b3JhZ2Vfd2VpZ2h0X2xpbWl0AxBtYXhfd2VpZ2h0X2xpbWl0gAEACiFtaW5lY3JhZnQ6c3RvcmFnZV93ZWlnaHRfbW9kaWZpZXIDFndlaWdodF9pbl9zdG9yYWdlX2l0ZW0IAAAA"
+],
+"minecraft:orange_candle": [
+2,
+false,
+null
+],
+"minecraft:orange_candle_cake": [
+2,
+false,
+null
+],
+"minecraft:orange_carpet": [
+2,
+false,
+null
+],
+"minecraft:orange_concrete": [
+2,
+false,
+null
+],
+"minecraft:orange_concrete_double_slab": [
+2,
+false,
+null
+],
+"minecraft:orange_concrete_powder": [
+2,
+false,
+null
+],
+"minecraft:orange_concrete_slab": [
+2,
+false,
+null
+],
+"minecraft:orange_concrete_stairs": [
+2,
+false,
+null
+],
+"minecraft:orange_cushion": [
+2,
+false,
+null
+],
+"minecraft:orange_dye": [
+2,
+false,
+null
+],
+"minecraft:orange_glazed_terracotta": [
+2,
+false,
+null
+],
+"minecraft:orange_harness": [
+2,
+false,
+null
+],
+"minecraft:orange_poplar_leaves": [
+2,
+false,
+null
+],
+"minecraft:orange_shulker_box": [
+2,
+false,
+null
+],
+"minecraft:orange_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:orange_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:orange_terracotta": [
+2,
+false,
+null
+],
+"minecraft:orange_tulip": [
+2,
+false,
+null
+],
+"minecraft:orange_wool": [
+2,
+false,
+null
+],
+"minecraft:orange_wool_double_slab": [
+2,
+false,
+null
+],
+"minecraft:orange_wool_slab": [
+2,
+false,
+null
+],
+"minecraft:orange_wool_stairs": [
+2,
+false,
+null
+],
+"minecraft:oxeye_daisy": [
+2,
+false,
+null
+],
+"minecraft:oxidized_chiseled_copper": [
+2,
+false,
+null
+],
+"minecraft:oxidized_copper": [
+2,
+false,
+null
+],
+"minecraft:oxidized_copper_bars": [
+2,
+false,
+null
+],
+"minecraft:oxidized_copper_bulb": [
+2,
+false,
+null
+],
+"minecraft:oxidized_copper_chain": [
+2,
+false,
+null
+],
+"minecraft:oxidized_copper_chest": [
+2,
+false,
+null
+],
+"minecraft:oxidized_copper_door": [
+2,
+false,
+null
+],
+"minecraft:oxidized_copper_golem_statue": [
+2,
+false,
+null
+],
+"minecraft:oxidized_copper_grate": [
+2,
+false,
+null
+],
+"minecraft:oxidized_copper_lantern": [
+2,
+false,
+null
+],
+"minecraft:oxidized_copper_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:oxidized_cut_copper": [
+2,
+false,
+null
+],
+"minecraft:oxidized_cut_copper_slab": [
+2,
+false,
+null
+],
+"minecraft:oxidized_cut_copper_stairs": [
+2,
+false,
+null
+],
+"minecraft:oxidized_double_cut_copper_slab": [
+2,
+false,
+null
+],
+"minecraft:oxidized_lightning_rod": [
+2,
+false,
+null
+],
+"minecraft:packed_ice": [
+2,
+false,
+null
+],
+"minecraft:packed_mud": [
+2,
+false,
+null
+],
+"minecraft:painting": [
+2,
+false,
+null
+],
+"minecraft:pale_hanging_moss": [
+2,
+false,
+null
+],
+"minecraft:pale_moss_block": [
+2,
+false,
+null
+],
+"minecraft:pale_moss_carpet": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_boat": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_button": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_chest_boat": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_door": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_double_slab": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_fence": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_fence_gate": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_hanging_sign": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_leaves": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_log": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_planks": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_pressure_plate": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_sapling": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_shelf": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_sign": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_slab": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_stairs": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_standing_sign": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_wall_sign": [
+2,
+false,
+null
+],
+"minecraft:pale_oak_wood": [
+2,
+false,
+null
+],
+"minecraft:panda_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:paper": [
+2,
+false,
+null
+],
+"minecraft:parched_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:parrot_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:pearlescent_froglight": [
+2,
+false,
+null
+],
+"minecraft:peony": [
+2,
+false,
+null
+],
+"minecraft:petrified_oak_double_slab": [
+2,
+false,
+null
+],
+"minecraft:petrified_oak_slab": [
+2,
+false,
+null
+],
+"minecraft:phantom_membrane": [
+2,
+false,
+null
+],
+"minecraft:phantom_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:photo_item": [
+2,
+false,
+null
+],
+"minecraft:pig_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:piglin_banner_pattern": [
+2,
+false,
+null
+],
+"minecraft:piglin_brute_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:piglin_head": [
+2,
+false,
+null
+],
+"minecraft:piglin_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:pillager_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:pink_bundle": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemUCCg5taW5lY3JhZnQ6aWNvbgoIdGV4dHVyZXMIEGJ1bmRsZV9vcGVuX2JhY2sVYnVuZGxlX3Bpbmtfb3Blbl9iYWNrCBFidW5kbGVfb3Blbl9mcm9udBZidW5kbGVfcGlua19vcGVuX2Zyb250CAdkZWZhdWx0C2J1bmRsZV9waW5rAAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAocbWluZWNyYWZ0OmJ1bmRsZV9pbnRlcmFjdGlvbgMSbnVtX3ZpZXdhYmxlX3Nsb3RzGAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoWbWluZWNyYWZ0OnN0b3JhZ2VfaXRlbQEaYWxsb3dfbmVzdGVkX3N0b3JhZ2VfaXRlbXMBCQ1hbGxvd2VkX2l0ZW1zAAAJDGJhbm5lZF9pdGVtcwoECARuYW1lFW1pbmVjcmFmdDpzaHVsa2VyX2JveAAIBG5hbWUcbWluZWNyYWZ0OnVuZHllZF9zaHVsa2VyX2JveAADCW1heF9zbG90c4ABAAoebWluZWNyYWZ0OnN0b3JhZ2Vfd2VpZ2h0X2xpbWl0AxBtYXhfd2VpZ2h0X2xpbWl0gAEACiFtaW5lY3JhZnQ6c3RvcmFnZV93ZWlnaHRfbW9kaWZpZXIDFndlaWdodF9pbl9zdG9yYWdlX2l0ZW0IAAAA"
+],
+"minecraft:pink_candle": [
+2,
+false,
+null
+],
+"minecraft:pink_candle_cake": [
+2,
+false,
+null
+],
+"minecraft:pink_carpet": [
+2,
+false,
+null
+],
+"minecraft:pink_concrete": [
+2,
+false,
+null
+],
+"minecraft:pink_concrete_double_slab": [
+2,
+false,
+null
+],
+"minecraft:pink_concrete_powder": [
+2,
+false,
+null
+],
+"minecraft:pink_concrete_slab": [
+2,
+false,
+null
+],
+"minecraft:pink_concrete_stairs": [
+2,
+false,
+null
+],
+"minecraft:pink_cushion": [
+2,
+false,
+null
+],
+"minecraft:pink_dye": [
+2,
+false,
+null
+],
+"minecraft:pink_glazed_terracotta": [
+2,
+false,
+null
+],
+"minecraft:pink_harness": [
+2,
+false,
+null
+],
+"minecraft:pink_petals": [
+2,
+false,
+null
+],
+"minecraft:pink_shulker_box": [
+2,
+false,
+null
+],
+"minecraft:pink_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:pink_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:pink_terracotta": [
+2,
+false,
+null
+],
+"minecraft:pink_tulip": [
+2,
+false,
+null
+],
+"minecraft:pink_wool": [
+2,
+false,
+null
+],
+"minecraft:pink_wool_double_slab": [
+2,
+false,
+null
+],
+"minecraft:pink_wool_slab": [
+2,
+false,
+null
+],
+"minecraft:pink_wool_stairs": [
+2,
+false,
+null
+],
+"minecraft:piston": [
+2,
+false,
+null
+],
+"minecraft:piston_arm_collision": [
+2,
+false,
+null
+],
+"minecraft:pitcher_crop": [
+2,
+false,
+null
+],
+"minecraft:pitcher_plant": [
+2,
+false,
+null
+],
+"minecraft:pitcher_pod": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpzZWVkCAtjcm9wX3Jlc3VsdBZtaW5lY3JhZnQ6cGl0Y2hlcl9jcm9wCQhwbGFudF9hdAgCEm1pbmVjcmFmdDpmYXJtbGFuZAEacGxhbnRfYXRfYW55X3NvbGlkX3N1cmZhY2UACA1wbGFudF9hdF9mYWNlAnVwAAAA"
+],
+"minecraft:planks": [
+2,
+false,
+null
+],
+"minecraft:player_head": [
+2,
+false,
+null
+],
+"minecraft:plenty_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:podzol": [
+2,
+false,
+null
+],
+"minecraft:pointed_dripstone": [
+2,
+false,
+null
+],
+"minecraft:poisonous_potato": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAkHZWZmZWN0cwoCAwlhbXBsaWZpZXIABQZjaGFuY2WamRk/CA1kZXNjcmlwdGlvbklkDXBvdGlvbi5wb2lzb24DCGR1cmF0aW9uCgMCaWQmCARuYW1lBnBvaXNvbgADCW51dHJpdGlvbgQDDW9uX3VzZV9hY3Rpb24BCQxvbl91c2VfcmFuZ2UFBgAAAEEAAABBAAAAQQUTc2F0dXJhdGlvbl9tb2RpZmllcpqZmT4IEXVzaW5nX2NvbnZlcnRzX3RvAAADFm1pbmVjcmFmdDp1c2VfZHVyYXRpb25AAAA="
+],
+"minecraft:polar_bear_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:polished_andesite": [
+2,
+false,
+null
+],
+"minecraft:polished_andesite_double_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_andesite_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_andesite_stairs": [
+2,
+false,
+null
+],
+"minecraft:polished_basalt": [
+2,
+false,
+null
+],
+"minecraft:polished_blackstone": [
+2,
+false,
+null
+],
+"minecraft:polished_blackstone_brick_double_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_blackstone_brick_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_blackstone_brick_stairs": [
+2,
+false,
+null
+],
+"minecraft:polished_blackstone_brick_wall": [
+2,
+false,
+null
+],
+"minecraft:polished_blackstone_bricks": [
+2,
+false,
+null
+],
+"minecraft:polished_blackstone_button": [
+2,
+false,
+null
+],
+"minecraft:polished_blackstone_double_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_blackstone_pressure_plate": [
+2,
+false,
+null
+],
+"minecraft:polished_blackstone_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_blackstone_stairs": [
+2,
+false,
+null
+],
+"minecraft:polished_blackstone_wall": [
+2,
+false,
+null
+],
+"minecraft:polished_cinnabar": [
+2,
+false,
+null
+],
+"minecraft:polished_cinnabar_double_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_cinnabar_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_cinnabar_stairs": [
+2,
+false,
+null
+],
+"minecraft:polished_cinnabar_wall": [
+2,
+false,
+null
+],
+"minecraft:polished_deepslate": [
+2,
+false,
+null
+],
+"minecraft:polished_deepslate_double_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_deepslate_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_deepslate_stairs": [
+2,
+false,
+null
+],
+"minecraft:polished_deepslate_wall": [
+2,
+false,
+null
+],
+"minecraft:polished_diorite": [
+2,
+false,
+null
+],
+"minecraft:polished_diorite_double_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_diorite_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_diorite_stairs": [
+2,
+false,
+null
+],
+"minecraft:polished_granite": [
+2,
+false,
+null
+],
+"minecraft:polished_granite_double_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_granite_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_granite_stairs": [
+2,
+false,
+null
+],
+"minecraft:polished_sulfur": [
+2,
+false,
+null
+],
+"minecraft:polished_sulfur_double_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_sulfur_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_sulfur_stairs": [
+2,
+false,
+null
+],
+"minecraft:polished_sulfur_wall": [
+2,
+false,
+null
+],
+"minecraft:polished_tuff": [
+2,
+false,
+null
+],
+"minecraft:polished_tuff_double_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_tuff_slab": [
+2,
+false,
+null
+],
+"minecraft:polished_tuff_stairs": [
+2,
+false,
+null
+],
+"minecraft:polished_tuff_wall": [
+2,
+false,
+null
+],
+"minecraft:poplar_boat": [
+2,
+false,
+null
+],
+"minecraft:poplar_button": [
+2,
+false,
+null
+],
+"minecraft:poplar_chest_boat": [
+2,
+false,
+null
+],
+"minecraft:poplar_door": [
+2,
+false,
+null
+],
+"minecraft:poplar_double_slab": [
+2,
+false,
+null
+],
+"minecraft:poplar_fence": [
+2,
+false,
+null
+],
+"minecraft:poplar_fence_gate": [
+2,
+false,
+null
+],
+"minecraft:poplar_hanging_sign": [
+2,
+false,
+null
+],
+"minecraft:poplar_log": [
+2,
+false,
+null
+],
+"minecraft:poplar_planks": [
+2,
+false,
+null
+],
+"minecraft:poplar_pressure_plate": [
+2,
+false,
+null
+],
+"minecraft:poplar_sapling": [
+2,
+false,
+null
+],
+"minecraft:poplar_shelf": [
+2,
+false,
+null
+],
+"minecraft:poplar_sign": [
+2,
+false,
+null
+],
+"minecraft:poplar_slab": [
+2,
+false,
+null
+],
+"minecraft:poplar_stairs": [
+2,
+false,
+null
+],
+"minecraft:poplar_standing_sign": [
+2,
+false,
+null
+],
+"minecraft:poplar_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:poplar_wall_sign": [
+2,
+false,
+null
+],
+"minecraft:poplar_wood": [
+2,
+false,
+null
+],
+"minecraft:popped_chorus_fruit": [
+2,
+false,
+null
+],
+"minecraft:poppy": [
+2,
+false,
+null
+],
+"minecraft:porkchop": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uBgMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympmZPggRdXNpbmdfY29udmVydHNfdG8AAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:portal": [
+2,
+false,
+null
+],
+"minecraft:portfolio": [
+2,
+false,
+null
+],
+"minecraft:potato": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uAgMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympmZPggRdXNpbmdfY29udmVydHNfdG8AAAoObWluZWNyYWZ0OnNlZWQIC2Nyb3BfcmVzdWx0Em1pbmVjcmFmdDpwb3RhdG9lcwkIcGxhbnRfYXQIAhJtaW5lY3JhZnQ6ZmFybWxhbmQBGnBsYW50X2F0X2FueV9zb2xpZF9zdXJmYWNlAAgNcGxhbnRfYXRfZmFjZQJ1cAADFm1pbmVjcmFmdDp1c2VfZHVyYXRpb25AAAA="
+],
+"minecraft:potatoes": [
+2,
+false,
+null
+],
+"minecraft:potent_sulfur": [
+2,
+false,
+null
+],
+"minecraft:potion": [
+2,
+false,
+null
+],
+"minecraft:powder_snow": [
+2,
+false,
+null
+],
+"minecraft:powder_snow_bucket": [
+2,
+false,
+null
+],
+"minecraft:powered_comparator": [
+2,
+false,
+null
+],
+"minecraft:powered_repeater": [
+2,
+false,
+null
+],
+"minecraft:prismarine": [
+2,
+false,
+null
+],
+"minecraft:prismarine_brick_double_slab": [
+2,
+false,
+null
+],
+"minecraft:prismarine_brick_slab": [
+2,
+false,
+null
+],
+"minecraft:prismarine_bricks": [
+2,
+false,
+null
+],
+"minecraft:prismarine_bricks_stairs": [
+2,
+false,
+null
+],
+"minecraft:prismarine_crystals": [
+2,
+false,
+null
+],
+"minecraft:prismarine_double_slab": [
+2,
+false,
+null
+],
+"minecraft:prismarine_shard": [
+2,
+false,
+null
+],
+"minecraft:prismarine_slab": [
+2,
+false,
+null
+],
+"minecraft:prismarine_stairs": [
+2,
+false,
+null
+],
+"minecraft:prismarine_wall": [
+2,
+false,
+null
+],
+"minecraft:prize_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:pufferfish": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAkHZWZmZWN0cwoGAwlhbXBsaWZpZXICBQZjaGFuY2UAAIA/CA1kZXNjcmlwdGlvbklkDXBvdGlvbi5wb2lzb24DCGR1cmF0aW9ueAMCaWQmCARuYW1lBnBvaXNvbgADCWFtcGxpZmllcgAFBmNoYW5jZQAAgD8IDWRlc2NyaXB0aW9uSWQQcG90aW9uLmNvbmZ1c2lvbgMIZHVyYXRpb24eAwJpZBIIBG5hbWUGbmF1c2VhAAMJYW1wbGlmaWVyBAUGY2hhbmNlAACAPwgNZGVzY3JpcHRpb25JZA1wb3Rpb24uaHVuZ2VyAwhkdXJhdGlvbh4DAmlkIggEbmFtZQZodW5nZXIAAwludXRyaXRpb24CAw1vbl91c2VfYWN0aW9uAQkMb25fdXNlX3JhbmdlBQYAAABBAAAAQQAAAEEFE3NhdHVyYXRpb25fbW9kaWZpZXLNzMw9CBF1c2luZ19jb252ZXJ0c190bwAAARltaW5lY3JhZnQ6c3RhY2tlZF9ieV9kYXRhAQMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:pufferfish_bucket": [
+2,
+false,
+null
+],
+"minecraft:pufferfish_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:pumpkin": [
+2,
+false,
+null
+],
+"minecraft:pumpkin_pie": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uEAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympmZPggRdXNpbmdfY29udmVydHNfdG8AAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:pumpkin_seeds": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpzZWVkCAtjcm9wX3Jlc3VsdBZtaW5lY3JhZnQ6cHVtcGtpbl9zdGVtCQhwbGFudF9hdAgCEm1pbmVjcmFmdDpmYXJtbGFuZAEacGxhbnRfYXRfYW55X3NvbGlkX3N1cmZhY2UACA1wbGFudF9hdF9mYWNlAnVwAAAA"
+],
+"minecraft:pumpkin_stem": [
+2,
+false,
+null
+],
+"minecraft:purple_bundle": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemUCCg5taW5lY3JhZnQ6aWNvbgoIdGV4dHVyZXMIEGJ1bmRsZV9vcGVuX2JhY2sXYnVuZGxlX3B1cnBsZV9vcGVuX2JhY2sIEWJ1bmRsZV9vcGVuX2Zyb250GGJ1bmRsZV9wdXJwbGVfb3Blbl9mcm9udAgHZGVmYXVsdA1idW5kbGVfcHVycGxlAAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAocbWluZWNyYWZ0OmJ1bmRsZV9pbnRlcmFjdGlvbgMSbnVtX3ZpZXdhYmxlX3Nsb3RzGAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoWbWluZWNyYWZ0OnN0b3JhZ2VfaXRlbQEaYWxsb3dfbmVzdGVkX3N0b3JhZ2VfaXRlbXMBCQ1hbGxvd2VkX2l0ZW1zAAAJDGJhbm5lZF9pdGVtcwoECARuYW1lFW1pbmVjcmFmdDpzaHVsa2VyX2JveAAIBG5hbWUcbWluZWNyYWZ0OnVuZHllZF9zaHVsa2VyX2JveAADCW1heF9zbG90c4ABAAoebWluZWNyYWZ0OnN0b3JhZ2Vfd2VpZ2h0X2xpbWl0AxBtYXhfd2VpZ2h0X2xpbWl0gAEACiFtaW5lY3JhZnQ6c3RvcmFnZV93ZWlnaHRfbW9kaWZpZXIDFndlaWdodF9pbl9zdG9yYWdlX2l0ZW0IAAAA"
+],
+"minecraft:purple_candle": [
+2,
+false,
+null
+],
+"minecraft:purple_candle_cake": [
+2,
+false,
+null
+],
+"minecraft:purple_carpet": [
+2,
+false,
+null
+],
+"minecraft:purple_concrete": [
+2,
+false,
+null
+],
+"minecraft:purple_concrete_double_slab": [
+2,
+false,
+null
+],
+"minecraft:purple_concrete_powder": [
+2,
+false,
+null
+],
+"minecraft:purple_concrete_slab": [
+2,
+false,
+null
+],
+"minecraft:purple_concrete_stairs": [
+2,
+false,
+null
+],
+"minecraft:purple_cushion": [
+2,
+false,
+null
+],
+"minecraft:purple_dye": [
+2,
+false,
+null
+],
+"minecraft:purple_glazed_terracotta": [
+2,
+false,
+null
+],
+"minecraft:purple_harness": [
+2,
+false,
+null
+],
+"minecraft:purple_shulker_box": [
+2,
+false,
+null
+],
+"minecraft:purple_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:purple_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:purple_terracotta": [
+2,
+false,
+null
+],
+"minecraft:purple_wool": [
+2,
+false,
+null
+],
+"minecraft:purple_wool_double_slab": [
+2,
+false,
+null
+],
+"minecraft:purple_wool_slab": [
+2,
+false,
+null
+],
+"minecraft:purple_wool_stairs": [
+2,
+false,
+null
+],
+"minecraft:purpur_block": [
+2,
+false,
+null
+],
+"minecraft:purpur_double_slab": [
+2,
+false,
+null
+],
+"minecraft:purpur_pillar": [
+2,
+false,
+null
+],
+"minecraft:purpur_slab": [
+2,
+false,
+null
+],
+"minecraft:purpur_stairs": [
+2,
+false,
+null
+],
+"minecraft:quartz": [
+2,
+false,
+null
+],
+"minecraft:quartz_block": [
+2,
+false,
+null
+],
+"minecraft:quartz_bricks": [
+2,
+false,
+null
+],
+"minecraft:quartz_double_slab": [
+2,
+false,
+null
+],
+"minecraft:quartz_ore": [
+2,
+false,
+null
+],
+"minecraft:quartz_pillar": [
+2,
+false,
+null
+],
+"minecraft:quartz_slab": [
+2,
+false,
+null
+],
+"minecraft:quartz_stairs": [
+2,
+false,
+null
+],
+"minecraft:rabbit": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uBgMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympmZPggRdXNpbmdfY29udmVydHNfdG8AAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:rabbit_foot": [
+2,
+false,
+null
+],
+"minecraft:rabbit_hide": [
+2,
+false,
+null
+],
+"minecraft:rabbit_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:rabbit_stew": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uFAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympkZPwgRdXNpbmdfY29udmVydHNfdG8EYm93bAADGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQIDFm1pbmVjcmFmdDp1c2VfZHVyYXRpb25AAAA="
+],
+"minecraft:rail": [
+2,
+false,
+null
+],
+"minecraft:raiser_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:rapid_fertilizer": [
+2,
+false,
+null
+],
+"minecraft:ravager_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:raw_copper": [
+2,
+false,
+null
+],
+"minecraft:raw_copper_block": [
+2,
+false,
+null
+],
+"minecraft:raw_gold": [
+2,
+false,
+null
+],
+"minecraft:raw_gold_block": [
+2,
+false,
+null
+],
+"minecraft:raw_iron": [
+2,
+false,
+null
+],
+"minecraft:raw_iron_block": [
+2,
+false,
+null
+],
+"minecraft:recovery_compass": [
+2,
+false,
+null
+],
+"minecraft:red_bundle": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemUCCg5taW5lY3JhZnQ6aWNvbgoIdGV4dHVyZXMIEGJ1bmRsZV9vcGVuX2JhY2sUYnVuZGxlX3JlZF9vcGVuX2JhY2sIEWJ1bmRsZV9vcGVuX2Zyb250FWJ1bmRsZV9yZWRfb3Blbl9mcm9udAgHZGVmYXVsdApidW5kbGVfcmVkAAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAocbWluZWNyYWZ0OmJ1bmRsZV9pbnRlcmFjdGlvbgMSbnVtX3ZpZXdhYmxlX3Nsb3RzGAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoWbWluZWNyYWZ0OnN0b3JhZ2VfaXRlbQEaYWxsb3dfbmVzdGVkX3N0b3JhZ2VfaXRlbXMBCQ1hbGxvd2VkX2l0ZW1zAAAJDGJhbm5lZF9pdGVtcwoECARuYW1lFW1pbmVjcmFmdDpzaHVsa2VyX2JveAAIBG5hbWUcbWluZWNyYWZ0OnVuZHllZF9zaHVsa2VyX2JveAADCW1heF9zbG90c4ABAAoebWluZWNyYWZ0OnN0b3JhZ2Vfd2VpZ2h0X2xpbWl0AxBtYXhfd2VpZ2h0X2xpbWl0gAEACiFtaW5lY3JhZnQ6c3RvcmFnZV93ZWlnaHRfbW9kaWZpZXIDFndlaWdodF9pbl9zdG9yYWdlX2l0ZW0IAAAA"
+],
+"minecraft:red_candle": [
+2,
+false,
+null
+],
+"minecraft:red_candle_cake": [
+2,
+false,
+null
+],
+"minecraft:red_carpet": [
+2,
+false,
+null
+],
+"minecraft:red_concrete": [
+2,
+false,
+null
+],
+"minecraft:red_concrete_double_slab": [
+2,
+false,
+null
+],
+"minecraft:red_concrete_powder": [
+2,
+false,
+null
+],
+"minecraft:red_concrete_slab": [
+2,
+false,
+null
+],
+"minecraft:red_concrete_stairs": [
+2,
+false,
+null
+],
+"minecraft:red_cushion": [
+2,
+false,
+null
+],
+"minecraft:red_dye": [
+2,
+false,
+null
+],
+"minecraft:red_flower": [
+2,
+false,
+null
+],
+"minecraft:red_glazed_terracotta": [
+2,
+false,
+null
+],
+"minecraft:red_harness": [
+2,
+false,
+null
+],
+"minecraft:red_mushroom": [
+2,
+false,
+null
+],
+"minecraft:red_mushroom_block": [
+2,
+false,
+null
+],
+"minecraft:red_nether_brick": [
+2,
+false,
+null
+],
+"minecraft:red_nether_brick_double_slab": [
+2,
+false,
+null
+],
+"minecraft:red_nether_brick_slab": [
+2,
+false,
+null
+],
+"minecraft:red_nether_brick_stairs": [
+2,
+false,
+null
+],
+"minecraft:red_nether_brick_wall": [
+2,
+false,
+null
+],
+"minecraft:red_poplar_leaves": [
+2,
+false,
+null
+],
+"minecraft:red_sand": [
+2,
+false,
+null
+],
+"minecraft:red_sandstone": [
+2,
+false,
+null
+],
+"minecraft:red_sandstone_double_slab": [
+2,
+false,
+null
+],
+"minecraft:red_sandstone_slab": [
+2,
+false,
+null
+],
+"minecraft:red_sandstone_stairs": [
+2,
+false,
+null
+],
+"minecraft:red_sandstone_wall": [
+2,
+false,
+null
+],
+"minecraft:red_shrub": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BAgOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemWAAQoObWluZWNyYWZ0Omljb24KCHRleHR1cmVzCAdkZWZhdWx0CXJlZF9zaHJ1YgAABQxtaW5pbmdfc3BlZWQAAIA/AQ5zaG91bGRfZGVzcGF3bgEBD3N0YWNrZWRfYnlfZGF0YQADDXVzZV9hbmltYXRpb24AAwx1c2VfZHVyYXRpb24AAAkJaXRlbV90YWdzAAAKFm1pbmVjcmFmdDpibG9ja19wbGFjZXIBEGFsaWduZWRQbGFjZW1lbnQACAVibG9jaxNtaW5lY3JhZnQ6cmVkX3NocnViARFjYW5Vc2VCbG9ja0FzSWNvbgEBEHJlcGxhY2VCbG9ja0l0ZW0BCQZ1c2Vfb24AAAAKFW1pbmVjcmFmdDpjb21wb3N0YWJsZQERY29tcG9zdGluZ19jaGFuY2UeAAoWbWluZWNyYWZ0OmRpc3BsYXlfbmFtZQgFdmFsdWUTdGlsZS5yZWRfc2hydWIubmFtZQAKHW1pbmVjcmFmdDpwdWJsaXNoZXJfb25fdXNlX29uARNhdXRvU3VjY2VlZE9uQ2xpZW50AAAAAA=="
+],
+"minecraft:red_shulker_box": [
+2,
+false,
+null
+],
+"minecraft:red_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:red_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:red_terracotta": [
+2,
+false,
+null
+],
+"minecraft:red_tulip": [
+2,
+false,
+null
+],
+"minecraft:red_wool": [
+2,
+false,
+null
+],
+"minecraft:red_wool_double_slab": [
+2,
+false,
+null
+],
+"minecraft:red_wool_slab": [
+2,
+false,
+null
+],
+"minecraft:red_wool_stairs": [
+2,
+false,
+null
+],
+"minecraft:redstone": [
+2,
+false,
+null
+],
+"minecraft:redstone_block": [
+2,
+false,
+null
+],
+"minecraft:redstone_lamp": [
+2,
+false,
+null
+],
+"minecraft:redstone_ore": [
+2,
+false,
+null
+],
+"minecraft:redstone_torch": [
+2,
+false,
+null
+],
+"minecraft:redstone_wire": [
+2,
+false,
+null
+],
+"minecraft:reinforced_deepslate": [
+2,
+false,
+null
+],
+"minecraft:repeater": [
+2,
+true,
+null
+],
+"minecraft:repeating_command_block": [
+2,
+false,
+null
+],
+"minecraft:reserved6": [
+2,
+false,
+null
+],
+"minecraft:resin_block": [
+2,
+false,
+null
+],
+"minecraft:resin_brick": [
+2,
+false,
+null
+],
+"minecraft:resin_brick_double_slab": [
+2,
+false,
+null
+],
+"minecraft:resin_brick_slab": [
+2,
+false,
+null
+],
+"minecraft:resin_brick_stairs": [
+2,
+false,
+null
+],
+"minecraft:resin_brick_wall": [
+2,
+false,
+null
+],
+"minecraft:resin_bricks": [
+2,
+false,
+null
+],
+"minecraft:resin_clump": [
+2,
+false,
+null
+],
+"minecraft:respawn_anchor": [
+2,
+false,
+null
+],
+"minecraft:rib_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:rose_bush": [
+2,
+false,
+null
+],
+"minecraft:rotten_flesh": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAkHZWZmZWN0cwoCAwlhbXBsaWZpZXIABQZjaGFuY2XNzEw/CA1kZXNjcmlwdGlvbklkDXBvdGlvbi5odW5nZXIDCGR1cmF0aW9uPAMCaWQiCARuYW1lBmh1bmdlcgADCW51dHJpdGlvbggDDW9uX3VzZV9hY3Rpb24BCQxvbl91c2VfcmFuZ2UFBgAAAEEAAABBAAAAQQUTc2F0dXJhdGlvbl9tb2RpZmllcs3MzD0IEXVzaW5nX2NvbnZlcnRzX3RvAAADFm1pbmVjcmFmdDp1c2VfZHVyYXRpb25AAAA="
+],
+"minecraft:saddle": [
+2,
+false,
+null
+],
+"minecraft:salmon": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uBAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVyzczMPQgRdXNpbmdfY29udmVydHNfdG8AAAEZbWluZWNyYWZ0OnN0YWNrZWRfYnlfZGF0YQEDFm1pbmVjcmFmdDp1c2VfZHVyYXRpb25AAAA="
+],
+"minecraft:salmon_bucket": [
+2,
+false,
+null
+],
+"minecraft:salmon_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:sand": [
+2,
+false,
+null
+],
+"minecraft:sandstone": [
+2,
+false,
+null
+],
+"minecraft:sandstone_double_slab": [
+2,
+false,
+null
+],
+"minecraft:sandstone_slab": [
+2,
+false,
+null
+],
+"minecraft:sandstone_stairs": [
+2,
+false,
+null
+],
+"minecraft:sandstone_wall": [
+2,
+false,
+null
+],
+"minecraft:sapling": [
+2,
+false,
+null
+],
+"minecraft:scaffolding": [
+2,
+false,
+null
+],
+"minecraft:scrape_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:sculk": [
+2,
+false,
+null
+],
+"minecraft:sculk_catalyst": [
+2,
+false,
+null
+],
+"minecraft:sculk_sensor": [
+2,
+false,
+null
+],
+"minecraft:sculk_shrieker": [
+2,
+false,
+null
+],
+"minecraft:sculk_vein": [
+2,
+false,
+null
+],
+"minecraft:sea_lantern": [
+2,
+false,
+null
+],
+"minecraft:sea_pickle": [
+2,
+false,
+null
+],
+"minecraft:seagrass": [
+2,
+false,
+null
+],
+"minecraft:sentry_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:shaper_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:sheaf_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:shears": [
+2,
+false,
+null
+],
+"minecraft:sheep_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:shelf_mushroom": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BAgOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemWAAQUMbWluaW5nX3NwZWVkAACAPwEOc2hvdWxkX2Rlc3Bhd24BAQ9zdGFja2VkX2J5X2RhdGEAAw11c2VfYW5pbWF0aW9uAAMMdXNlX2R1cmF0aW9uAAAJCWl0ZW1fdGFncwgCHG1pbmVjcmFmdDptdXNocm9vbXNfZm9yX3N0ZXcKFm1pbmVjcmFmdDpibG9ja19wbGFjZXIBEGFsaWduZWRQbGFjZW1lbnQACAVibG9jaxhtaW5lY3JhZnQ6c2hlbGZfbXVzaHJvb20BEWNhblVzZUJsb2NrQXNJY29uAQEQcmVwbGFjZUJsb2NrSXRlbQEJBnVzZV9vbgAAAAoVbWluZWNyYWZ0OmNvbXBvc3RhYmxlARFjb21wb3N0aW5nX2NoYW5jZUEAChZtaW5lY3JhZnQ6ZGlzcGxheV9uYW1lCAV2YWx1ZRh0aWxlLnNoZWxmX211c2hyb29tLm5hbWUACh1taW5lY3JhZnQ6cHVibGlzaGVyX29uX3VzZV9vbgETYXV0b1N1Y2NlZWRPbkNsaWVudAAACg5taW5lY3JhZnQ6dGFncwkEdGFncwgCHG1pbmVjcmFmdDptdXNocm9vbXNfZm9yX3N0ZXcAAAA="
+],
+"minecraft:shelter_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:shield": [
+2,
+false,
+null
+],
+"minecraft:short_dry_grass": [
+2,
+false,
+null
+],
+"minecraft:short_grass": [
+2,
+false,
+null
+],
+"minecraft:shroomlight": [
+2,
+false,
+null
+],
+"minecraft:shulker_box": [
+2,
+false,
+null
+],
+"minecraft:shulker_shell": [
+2,
+false,
+null
+],
+"minecraft:shulker_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:silence_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:silver_glazed_terracotta": [
+2,
+false,
+null
+],
+"minecraft:silverfish_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:skeleton_horse_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:skeleton_skull": [
+2,
+false,
+null
+],
+"minecraft:skeleton_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:skull": [
+2,
+false,
+null
+],
+"minecraft:skull_banner_pattern": [
+2,
+false,
+null
+],
+"minecraft:skull_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:slime": [
+2,
+false,
+null
+],
+"minecraft:slime_ball": [
+2,
+false,
+null
+],
+"minecraft:slime_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:small_amethyst_bud": [
+2,
+false,
+null
+],
+"minecraft:small_dripleaf_block": [
+2,
+false,
+null
+],
+"minecraft:smithing_table": [
+2,
+false,
+null
+],
+"minecraft:smoker": [
+2,
+false,
+null
+],
+"minecraft:smooth_basalt": [
+2,
+false,
+null
+],
+"minecraft:smooth_quartz": [
+2,
+false,
+null
+],
+"minecraft:smooth_quartz_double_slab": [
+2,
+false,
+null
+],
+"minecraft:smooth_quartz_slab": [
+2,
+false,
+null
+],
+"minecraft:smooth_quartz_stairs": [
+2,
+false,
+null
+],
+"minecraft:smooth_red_sandstone": [
+2,
+false,
+null
+],
+"minecraft:smooth_red_sandstone_double_slab": [
+2,
+false,
+null
+],
+"minecraft:smooth_red_sandstone_slab": [
+2,
+false,
+null
+],
+"minecraft:smooth_red_sandstone_stairs": [
+2,
+false,
+null
+],
+"minecraft:smooth_sandstone": [
+2,
+false,
+null
+],
+"minecraft:smooth_sandstone_double_slab": [
+2,
+false,
+null
+],
+"minecraft:smooth_sandstone_slab": [
+2,
+false,
+null
+],
+"minecraft:smooth_sandstone_stairs": [
+2,
+false,
+null
+],
+"minecraft:smooth_stone": [
+2,
+false,
+null
+],
+"minecraft:smooth_stone_double_slab": [
+2,
+false,
+null
+],
+"minecraft:smooth_stone_slab": [
+2,
+false,
+null
+],
+"minecraft:sniffer_egg": [
+2,
+false,
+null
+],
+"minecraft:sniffer_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:snort_pottery_sherd": [
+2,
+false,
+null
+],
+"minecraft:snout_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:snow": [
+2,
+false,
+null
+],
+"minecraft:snow_golem_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:snow_layer": [
+2,
+false,
+null
+],
+"minecraft:snowball": [
+2,
+true,
+null
+],
+"minecraft:soul_campfire": [
+2,
+true,
+null
+],
+"minecraft:soul_fire": [
+2,
+false,
+null
+],
+"minecraft:soul_lantern": [
+2,
+false,
+null
+],
+"minecraft:soul_sand": [
+2,
+false,
+null
+],
+"minecraft:soul_soil": [
+2,
+false,
+null
+],
+"minecraft:soul_torch": [
+2,
+false,
+null
+],
+"minecraft:sparkler": [
+2,
+false,
+null
+],
+"minecraft:spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:spider_eye": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAkHZWZmZWN0cwoCAwlhbXBsaWZpZXIABQZjaGFuY2UAAIA/CA1kZXNjcmlwdGlvbklkDXBvdGlvbi5wb2lzb24DCGR1cmF0aW9uCgMCaWQmCARuYW1lBnBvaXNvbgADCW51dHJpdGlvbgQDDW9uX3VzZV9hY3Rpb24BCQxvbl91c2VfcmFuZ2UFBgAAAEEAAABBAAAAQQUTc2F0dXJhdGlvbl9tb2RpZmllcs3MTD8IEXVzaW5nX2NvbnZlcnRzX3RvAAADFm1pbmVjcmFmdDp1c2VfZHVyYXRpb25AAAA="
+],
+"minecraft:spider_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:spire_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:splash_potion": [
+2,
+false,
+null
+],
+"minecraft:sponge": [
+2,
+false,
+null
+],
+"minecraft:spore_blossom": [
+2,
+false,
+null
+],
+"minecraft:spruce_boat": [
+2,
+false,
+null
+],
+"minecraft:spruce_button": [
+2,
+false,
+null
+],
+"minecraft:spruce_chest_boat": [
+2,
+false,
+null
+],
+"minecraft:spruce_door": [
+2,
+false,
+null
+],
+"minecraft:spruce_double_slab": [
+2,
+false,
+null
+],
+"minecraft:spruce_fence": [
+2,
+false,
+null
+],
+"minecraft:spruce_fence_gate": [
+2,
+false,
+null
+],
+"minecraft:spruce_hanging_sign": [
+2,
+false,
+null
+],
+"minecraft:spruce_leaves": [
+2,
+false,
+null
+],
+"minecraft:spruce_log": [
+2,
+false,
+null
+],
+"minecraft:spruce_planks": [
+2,
+false,
+null
+],
+"minecraft:spruce_pressure_plate": [
+2,
+false,
+null
+],
+"minecraft:spruce_sapling": [
+2,
+false,
+null
+],
+"minecraft:spruce_shelf": [
+2,
+false,
+null
+],
+"minecraft:spruce_sign": [
+2,
+false,
+null
+],
+"minecraft:spruce_slab": [
+2,
+false,
+null
+],
+"minecraft:spruce_stairs": [
+2,
+false,
+null
+],
+"minecraft:spruce_standing_sign": [
+2,
+false,
+null
+],
+"minecraft:spruce_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:spruce_wall_sign": [
+2,
+false,
+null
+],
+"minecraft:spruce_wood": [
+2,
+false,
+null
+],
+"minecraft:spyglass": [
+2,
+false,
+null
+],
+"minecraft:squid_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:stained_glass": [
+2,
+false,
+null
+],
+"minecraft:stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:stained_hardened_clay": [
+2,
+false,
+null
+],
+"minecraft:standing_banner": [
+2,
+false,
+null
+],
+"minecraft:standing_sign": [
+2,
+false,
+null
+],
+"minecraft:stick": [
+2,
+false,
+null
+],
+"minecraft:sticky_piston": [
+2,
+false,
+null
+],
+"minecraft:sticky_piston_arm_collision": [
+2,
+false,
+null
+],
+"minecraft:stone": [
+2,
+false,
+null
+],
+"minecraft:stone_axe": [
+2,
+false,
+null
+],
+"minecraft:stone_block_slab": [
+2,
+false,
+null
+],
+"minecraft:stone_block_slab2": [
+2,
+false,
+null
+],
+"minecraft:stone_block_slab3": [
+2,
+false,
+null
+],
+"minecraft:stone_block_slab4": [
+2,
+false,
+null
+],
+"minecraft:stone_brick_double_slab": [
+2,
+false,
+null
+],
+"minecraft:stone_brick_slab": [
+2,
+false,
+null
+],
+"minecraft:stone_brick_stairs": [
+2,
+false,
+null
+],
+"minecraft:stone_brick_wall": [
+2,
+false,
+null
+],
+"minecraft:stone_bricks": [
+2,
+false,
+null
+],
+"minecraft:stone_button": [
+2,
+false,
+null
+],
+"minecraft:stone_hoe": [
+2,
+false,
+null
+],
+"minecraft:stone_pickaxe": [
+2,
+false,
+null
+],
+"minecraft:stone_pressure_plate": [
+2,
+false,
+null
+],
+"minecraft:stone_shovel": [
+2,
+false,
+null
+],
+"minecraft:stone_spear": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UECBBlbmNoYW50YWJsZV9zbG90C21lbGVlX3NwZWFyAxFlbmNoYW50YWJsZV92YWx1ZQoBBGZvaWwAAwtmcmFtZV9jb3VudAIBDWhhbmRfZXF1aXBwZWQBARJoaWRkZW5faW5fY29tbWFuZHMCAQ5saXF1aWRfY2xpcHBlZAADDm1heF9zdGFja19zaXplAgoObWluZWNyYWZ0Omljb24KCHRleHR1cmVzCAdkZWZhdWx0C3N0b25lX3NwZWFyAAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvboDkrwEACQlpdGVtX3RhZ3MIBBRtaW5lY3JhZnQ6c3RvbmVfdGllchJtaW5lY3JhZnQ6aXNfc3BlYXIKEm1pbmVjcmFmdDpjb29sZG93bggIY2F0ZWdvcnkFc3BlYXIFCGR1cmF0aW9uAABAPwgEdHlwZQZhdHRhY2sAChBtaW5lY3JhZnQ6ZGFtYWdlAgV2YWx1ZQIAAAoWbWluZWNyYWZ0OmRpc3BsYXlfbmFtZQgFdmFsdWUVaXRlbS5zdG9uZV9zcGVhci5uYW1lAAoUbWluZWNyYWZ0OmR1cmFiaWxpdHkKDWRhbWFnZV9jaGFuY2UDA21heMgBAwNtaW4AAAMObWF4X2R1cmFiaWxpdHmEAgAKFW1pbmVjcmFmdDplbmNoYW50YWJsZQgEc2xvdAttZWxlZV9zcGVhcgEFdmFsdWUFAAoXbWluZWNyYWZ0OmhhbmRfZXF1aXBwZWQBBXZhbHVlAQAKGG1pbmVjcmFmdDpraW5ldGljX3dlYXBvbgoYbWluZWNyYWZ0OmtpbmV0aWNfd2VhcG9uCg5jcmVhdGl2ZV9yZWFjaAUDbWF4AADwQAUDbWluAAAAQAAKEWRhbWFnZV9jb25kaXRpb25zAgxtYXhfZHVyYXRpb24TAQUSbWluX3JlbGF0aXZlX3NwZWVkMzOTQAUJbWluX3NwZWVkAAAAAAAFD2RhbWFnZV9tb2RpZmllcgAAAAAFEWRhbWFnZV9tdWx0aXBsaWVyhetRPwIFZGVsYXkOAAoTZGlzbW91bnRfY29uZGl0aW9ucwIMbWF4X2R1cmF0aW9uWgAFEm1pbl9yZWxhdGl2ZV9zcGVlZAAAAAAFCW1pbl9zcGVlZAAAUEEABQ1oaXRib3hfbWFyZ2luAACAPgoUa25vY2tiYWNrX2NvbmRpdGlvbnMCDG1heF9kdXJhdGlvbrQABRJtaW5fcmVsYXRpdmVfc3BlZWQAAAAABQltaW5fc3BlZWQzM6NAAAoFcmVhY2gFA21heAAAkEAFA21pbgAAAEAAAAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoZbWluZWNyYWZ0OnBpZXJjaW5nX3dlYXBvbgoOY3JlYXRpdmVfcmVhY2gFA21heAAA8EAFA21pbgAAAEAABQ1oaXRib3hfbWFyZ2luAACAPgoFcmVhY2gFA21heAAAkEAFA21pbgAAAEAAAAoUbWluZWNyYWZ0OnJlcGFpcmFibGUJDHJlcGFpcl9pdGVtcwoECQVpdGVtcwoCCARuYW1lFW1pbmVjcmFmdDpzdG9uZV9zcGVhcgAIDXJlcGFpcl9hbW91bnQpY29udGV4dC5vdGhlci0+cXVlcnkucmVtYWluaW5nX2R1cmFiaWxpdHkACQVpdGVtcwoCCAR0YWdzLHEuYWxsX3RhZ3MoJ21pbmVjcmFmdDpzdG9uZV90b29sX21hdGVyaWFscycpAAgNcmVwYWlyX2Ftb3VudBtxdWVyeS5tYXhfZHVyYWJpbGl0eSAqIDAuMjUAAAoYbWluZWNyYWZ0OnN3aW5nX2R1cmF0aW9uBQV2YWx1ZQAAQD8AChZtaW5lY3JhZnQ6c3dpbmdfc291bmRzCAphdHRhY2tfaGl0G2l0ZW0uc3RvbmVfc3BlYXIuYXR0YWNrX2hpdAgLYXR0YWNrX21pc3McaXRlbS5zdG9uZV9zcGVhci5hdHRhY2tfbWlzcwAKDm1pbmVjcmFmdDp0YWdzCQR0YWdzCAQUbWluZWNyYWZ0OnN0b25lX3RpZXISbWluZWNyYWZ0OmlzX3NwZWFyAAoXbWluZWNyYWZ0OnVzZV9tb2RpZmllcnMBD2VtaXRfdmlicmF0aW9ucwAFEW1vdmVtZW50X21vZGlmaWVyAACAPwgLc3RhcnRfc291bmQUaXRlbS5zdG9uZV9zcGVhci51c2UIC3N0YXJ0X3VzaW5nBmFsd2F5cwUMdXNlX2R1cmF0aW9uAKCMRwAAAA=="
+],
+"minecraft:stone_stairs": [
+2,
+false,
+null
+],
+"minecraft:stone_sword": [
+2,
+false,
+null
+],
+"minecraft:stonebrick": [
+2,
+false,
+null
+],
+"minecraft:stonecutter": [
+2,
+false,
+null
+],
+"minecraft:stonecutter_block": [
+2,
+false,
+null
+],
+"minecraft:straw_bed": [
+2,
+false,
+null
+],
+"minecraft:stray_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:strider_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:string": [
+2,
+true,
+null
+],
+"minecraft:stripped_acacia_log": [
+2,
+false,
+null
+],
+"minecraft:stripped_acacia_wood": [
+2,
+false,
+null
+],
+"minecraft:stripped_bamboo_block": [
+2,
+false,
+null
+],
+"minecraft:stripped_birch_log": [
+2,
+false,
+null
+],
+"minecraft:stripped_birch_wood": [
+2,
+false,
+null
+],
+"minecraft:stripped_cherry_log": [
+2,
+false,
+null
+],
+"minecraft:stripped_cherry_wood": [
+2,
+false,
+null
+],
+"minecraft:stripped_crimson_hyphae": [
+2,
+false,
+null
+],
+"minecraft:stripped_crimson_stem": [
+2,
+false,
+null
+],
+"minecraft:stripped_dark_oak_log": [
+2,
+false,
+null
+],
+"minecraft:stripped_dark_oak_wood": [
+2,
+false,
+null
+],
+"minecraft:stripped_jungle_log": [
+2,
+false,
+null
+],
+"minecraft:stripped_jungle_wood": [
+2,
+false,
+null
+],
+"minecraft:stripped_mangrove_log": [
+2,
+false,
+null
+],
+"minecraft:stripped_mangrove_wood": [
+2,
+false,
+null
+],
+"minecraft:stripped_oak_log": [
+2,
+false,
+null
+],
+"minecraft:stripped_oak_wood": [
+2,
+false,
+null
+],
+"minecraft:stripped_pale_oak_log": [
+2,
+false,
+null
+],
+"minecraft:stripped_pale_oak_wood": [
+2,
+false,
+null
+],
+"minecraft:stripped_poplar_log": [
+2,
+false,
+null
+],
+"minecraft:stripped_poplar_wood": [
+2,
+false,
+null
+],
+"minecraft:stripped_spruce_log": [
+2,
+false,
+null
+],
+"minecraft:stripped_spruce_wood": [
+2,
+false,
+null
+],
+"minecraft:stripped_warped_hyphae": [
+2,
+false,
+null
+],
+"minecraft:stripped_warped_stem": [
+2,
+false,
+null
+],
+"minecraft:structure_block": [
+2,
+false,
+null
+],
+"minecraft:structure_void": [
+2,
+false,
+null
+],
+"minecraft:sugar": [
+2,
+false,
+null
+],
+"minecraft:sugar_cane": [
+2,
+true,
+null
+],
+"minecraft:sulfur": [
+2,
+false,
+null
+],
+"minecraft:sulfur_brick_double_slab": [
+2,
+false,
+null
+],
+"minecraft:sulfur_brick_slab": [
+2,
+false,
+null
+],
+"minecraft:sulfur_brick_stairs": [
+2,
+false,
+null
+],
+"minecraft:sulfur_brick_wall": [
+2,
+false,
+null
+],
+"minecraft:sulfur_bricks": [
+2,
+false,
+null
+],
+"minecraft:sulfur_cube_bucket": [
+2,
+false,
+null
+],
+"minecraft:sulfur_cube_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:sulfur_double_slab": [
+2,
+false,
+null
+],
+"minecraft:sulfur_slab": [
+2,
+false,
+null
+],
+"minecraft:sulfur_spike": [
+2,
+false,
+null
+],
+"minecraft:sulfur_stairs": [
+2,
+false,
+null
+],
+"minecraft:sulfur_wall": [
+2,
+false,
+null
+],
+"minecraft:sunflower": [
+2,
+false,
+null
+],
+"minecraft:suspicious_gravel": [
+2,
+false,
+null
+],
+"minecraft:suspicious_sand": [
+2,
+false,
+null
+],
+"minecraft:suspicious_stew": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAEDDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uDAMNb25fdXNlX2FjdGlvbgIJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympkZPwgRdXNpbmdfY29udmVydHNfdG8EYm93bAADGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQIDFm1pbmVjcmFmdDp1c2VfZHVyYXRpb25AAAA="
+],
+"minecraft:sweet_berries": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uBAMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVympmZPggRdXNpbmdfY29udmVydHNfdG8AAAoObWluZWNyYWZ0OnNlZWQIC2Nyb3BfcmVzdWx0Gm1pbmVjcmFmdDpzd2VldF9iZXJyeV9idXNoCQhwbGFudF9hdAgUCGZhcm1sYW5kBWdyYXNzBGRpcnQLY29hcnNlX2RpcnQGcG9kem9sCm1vc3NfYmxvY2sIbXljZWxpdW0DbXVkFG11ZGR5X21hbmdyb3ZlX3Jvb3RzD2RpcnRfd2l0aF9yb290cwEacGxhbnRfYXRfYW55X3NvbGlkX3N1cmZhY2UACA1wbGFudF9hdF9mYWNlAnVwAAMWbWluZWNyYWZ0OnVzZV9kdXJhdGlvbkAAAA=="
+],
+"minecraft:sweet_berry_bush": [
+2,
+false,
+null
+],
+"minecraft:tadpole_bucket": [
+2,
+false,
+null
+],
+"minecraft:tadpole_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:tall_dry_grass": [
+2,
+false,
+null
+],
+"minecraft:tall_grass": [
+2,
+false,
+null
+],
+"minecraft:tallgrass": [
+2,
+false,
+null
+],
+"minecraft:target": [
+2,
+false,
+null
+],
+"minecraft:tide_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:tinted_glass": [
+2,
+false,
+null
+],
+"minecraft:tnt": [
+2,
+false,
+null
+],
+"minecraft:tnt_minecart": [
+2,
+false,
+null
+],
+"minecraft:torch": [
+2,
+false,
+null
+],
+"minecraft:torchflower": [
+2,
+false,
+null
+],
+"minecraft:torchflower_crop": [
+2,
+false,
+null
+],
+"minecraft:torchflower_seeds": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpzZWVkCAtjcm9wX3Jlc3VsdBptaW5lY3JhZnQ6dG9yY2hmbG93ZXJfY3JvcAkIcGxhbnRfYXQIAhJtaW5lY3JhZnQ6ZmFybWxhbmQBGnBsYW50X2F0X2FueV9zb2xpZF9zdXJmYWNlAAgNcGxhbnRfYXRfZmFjZQJ1cAAAAA=="
+],
+"minecraft:totem_of_undying": [
+2,
+false,
+null
+],
+"minecraft:trader_llama_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:trapdoor": [
+2,
+false,
+null
+],
+"minecraft:trapped_chest": [
+2,
+false,
+null
+],
+"minecraft:trial_key": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5CAgOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemWAAQoObWluZWNyYWZ0Omljb24KCHRleHR1cmVzCAdkZWZhdWx0CXRyaWFsX2tleQAABQxtaW5pbmdfc3BlZWQAAIA/AQ5zaG91bGRfZGVzcGF3bgEBD3N0YWNrZWRfYnlfZGF0YQADDXVzZV9hbmltYXRpb24AAwx1c2VfZHVyYXRpb24AAAkJaXRlbV90YWdzAAAKFm1pbmVjcmFmdDpkaXNwbGF5X25hbWUIBXZhbHVlE2l0ZW0udHJpYWxfa2V5Lm5hbWUAAAA="
+],
+"minecraft:trial_spawner": [
+2,
+false,
+null
+],
+"minecraft:trident": [
+2,
+false,
+null
+],
+"minecraft:trip_wire": [
+2,
+false,
+null
+],
+"minecraft:tripwire_hook": [
+2,
+false,
+null
+],
+"minecraft:tropical_fish": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpmb29kAQ5jYW5fYWx3YXlzX2VhdAADDWNvb2xkb3duX3RpbWUACA1jb29sZG93bl90eXBlAAMJbnV0cml0aW9uAgMNb25fdXNlX2FjdGlvbgEJDG9uX3VzZV9yYW5nZQUGAAAAQQAAAEEAAABBBRNzYXR1cmF0aW9uX21vZGlmaWVyzczMPQgRdXNpbmdfY29udmVydHNfdG8AAAEZbWluZWNyYWZ0OnN0YWNrZWRfYnlfZGF0YQEDFm1pbmVjcmFmdDp1c2VfZHVyYXRpb25AAAA="
+],
+"minecraft:tropical_fish_bucket": [
+2,
+false,
+null
+],
+"minecraft:tropical_fish_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:tube_coral": [
+2,
+false,
+null
+],
+"minecraft:tube_coral_block": [
+2,
+false,
+null
+],
+"minecraft:tube_coral_fan": [
+2,
+false,
+null
+],
+"minecraft:tube_coral_wall_fan": [
+2,
+false,
+null
+],
+"minecraft:tuff": [
+2,
+false,
+null
+],
+"minecraft:tuff_brick_double_slab": [
+2,
+false,
+null
+],
+"minecraft:tuff_brick_slab": [
+2,
+false,
+null
+],
+"minecraft:tuff_brick_stairs": [
+2,
+false,
+null
+],
+"minecraft:tuff_brick_wall": [
+2,
+false,
+null
+],
+"minecraft:tuff_bricks": [
+2,
+false,
+null
+],
+"minecraft:tuff_double_slab": [
+2,
+false,
+null
+],
+"minecraft:tuff_slab": [
+2,
+false,
+null
+],
+"minecraft:tuff_stairs": [
+2,
+false,
+null
+],
+"minecraft:tuff_wall": [
+2,
+false,
+null
+],
+"minecraft:turtle_egg": [
+2,
+false,
+null
+],
+"minecraft:turtle_helmet": [
+2,
+false,
+null
+],
+"minecraft:turtle_scute": [
+2,
+false,
+null
+],
+"minecraft:turtle_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:twisting_vines": [
+2,
+false,
+null
+],
+"minecraft:underwater_tnt": [
+2,
+false,
+null
+],
+"minecraft:underwater_torch": [
+2,
+false,
+null
+],
+"minecraft:undyed_shulker_box": [
+2,
+false,
+null
+],
+"minecraft:unknown": [
+2,
+false,
+null
+],
+"minecraft:unlit_redstone_torch": [
+2,
+false,
+null
+],
+"minecraft:unpowered_comparator": [
+2,
+false,
+null
+],
+"minecraft:unpowered_repeater": [
+2,
+false,
+null
+],
+"minecraft:vault": [
+2,
+false,
+null
+],
+"minecraft:verdant_froglight": [
+2,
+false,
+null
+],
+"minecraft:vex_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:vex_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:villager_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:vindicator_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:vine": [
+2,
+false,
+null
+],
+"minecraft:wall_banner": [
+2,
+false,
+null
+],
+"minecraft:wall_sign": [
+2,
+false,
+null
+],
+"minecraft:wandering_trader_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:ward_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:warden_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:warped_button": [
+2,
+false,
+null
+],
+"minecraft:warped_door": [
+2,
+false,
+null
+],
+"minecraft:warped_double_slab": [
+2,
+false,
+null
+],
+"minecraft:warped_fence": [
+2,
+false,
+null
+],
+"minecraft:warped_fence_gate": [
+2,
+false,
+null
+],
+"minecraft:warped_fungus": [
+2,
+false,
+null
+],
+"minecraft:warped_fungus_on_a_stick": [
+2,
+true,
+null
+],
+"minecraft:warped_hanging_sign": [
+2,
+false,
+null
+],
+"minecraft:warped_hyphae": [
+2,
+false,
+null
+],
+"minecraft:warped_nylium": [
+2,
+false,
+null
+],
+"minecraft:warped_planks": [
+2,
+false,
+null
+],
+"minecraft:warped_pressure_plate": [
+2,
+false,
+null
+],
+"minecraft:warped_roots": [
+2,
+false,
+null
+],
+"minecraft:warped_shelf": [
+2,
+false,
+null
+],
+"minecraft:warped_sign": [
+2,
+false,
+null
+],
+"minecraft:warped_slab": [
+2,
+false,
+null
+],
+"minecraft:warped_stairs": [
+2,
+false,
+null
+],
+"minecraft:warped_standing_sign": [
+2,
+false,
+null
+],
+"minecraft:warped_stem": [
+2,
+false,
+null
+],
+"minecraft:warped_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:warped_wall_sign": [
+2,
+false,
+null
+],
+"minecraft:warped_wart_block": [
+2,
+false,
+null
+],
+"minecraft:water": [
+2,
+false,
+null
+],
+"minecraft:water_bucket": [
+2,
+false,
+null
+],
+"minecraft:waterlily": [
+2,
+false,
+null
+],
+"minecraft:waxed_chiseled_copper": [
+2,
+false,
+null
+],
+"minecraft:waxed_copper": [
+2,
+false,
+null
+],
+"minecraft:waxed_copper_bars": [
+2,
+false,
+null
+],
+"minecraft:waxed_copper_bulb": [
+2,
+false,
+null
+],
+"minecraft:waxed_copper_chain": [
+2,
+false,
+null
+],
+"minecraft:waxed_copper_chest": [
+2,
+false,
+null
+],
+"minecraft:waxed_copper_door": [
+2,
+false,
+null
+],
+"minecraft:waxed_copper_golem_statue": [
+2,
+false,
+null
+],
+"minecraft:waxed_copper_grate": [
+2,
+false,
+null
+],
+"minecraft:waxed_copper_lantern": [
+2,
+false,
+null
+],
+"minecraft:waxed_copper_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:waxed_cut_copper": [
+2,
+false,
+null
+],
+"minecraft:waxed_cut_copper_slab": [
+2,
+false,
+null
+],
+"minecraft:waxed_cut_copper_stairs": [
+2,
+false,
+null
+],
+"minecraft:waxed_double_cut_copper_slab": [
+2,
+false,
+null
+],
+"minecraft:waxed_exposed_chiseled_copper": [
+2,
+false,
+null
+],
+"minecraft:waxed_exposed_copper": [
+2,
+false,
+null
+],
+"minecraft:waxed_exposed_copper_bars": [
+2,
+false,
+null
+],
+"minecraft:waxed_exposed_copper_bulb": [
+2,
+false,
+null
+],
+"minecraft:waxed_exposed_copper_chain": [
+2,
+false,
+null
+],
+"minecraft:waxed_exposed_copper_chest": [
+2,
+false,
+null
+],
+"minecraft:waxed_exposed_copper_door": [
+2,
+false,
+null
+],
+"minecraft:waxed_exposed_copper_golem_statue": [
+2,
+false,
+null
+],
+"minecraft:waxed_exposed_copper_grate": [
+2,
+false,
+null
+],
+"minecraft:waxed_exposed_copper_lantern": [
+2,
+false,
+null
+],
+"minecraft:waxed_exposed_copper_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:waxed_exposed_cut_copper": [
+2,
+false,
+null
+],
+"minecraft:waxed_exposed_cut_copper_slab": [
+2,
+false,
+null
+],
+"minecraft:waxed_exposed_cut_copper_stairs": [
+2,
+false,
+null
+],
+"minecraft:waxed_exposed_double_cut_copper_slab": [
+2,
+false,
+null
+],
+"minecraft:waxed_exposed_lightning_rod": [
+2,
+false,
+null
+],
+"minecraft:waxed_lightning_rod": [
+2,
+false,
+null
+],
+"minecraft:waxed_oxidized_chiseled_copper": [
+2,
+false,
+null
+],
+"minecraft:waxed_oxidized_copper": [
+2,
+false,
+null
+],
+"minecraft:waxed_oxidized_copper_bars": [
+2,
+false,
+null
+],
+"minecraft:waxed_oxidized_copper_bulb": [
+2,
+false,
+null
+],
+"minecraft:waxed_oxidized_copper_chain": [
+2,
+false,
+null
+],
+"minecraft:waxed_oxidized_copper_chest": [
+2,
+false,
+null
+],
+"minecraft:waxed_oxidized_copper_door": [
+2,
+false,
+null
+],
+"minecraft:waxed_oxidized_copper_golem_statue": [
+2,
+false,
+null
+],
+"minecraft:waxed_oxidized_copper_grate": [
+2,
+false,
+null
+],
+"minecraft:waxed_oxidized_copper_lantern": [
+2,
+false,
+null
+],
+"minecraft:waxed_oxidized_copper_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:waxed_oxidized_cut_copper": [
+2,
+false,
+null
+],
+"minecraft:waxed_oxidized_cut_copper_slab": [
+2,
+false,
+null
+],
+"minecraft:waxed_oxidized_cut_copper_stairs": [
+2,
+false,
+null
+],
+"minecraft:waxed_oxidized_double_cut_copper_slab": [
+2,
+false,
+null
+],
+"minecraft:waxed_oxidized_lightning_rod": [
+2,
+false,
+null
+],
+"minecraft:waxed_weathered_chiseled_copper": [
+2,
+false,
+null
+],
+"minecraft:waxed_weathered_copper": [
+2,
+false,
+null
+],
+"minecraft:waxed_weathered_copper_bars": [
+2,
+false,
+null
+],
+"minecraft:waxed_weathered_copper_bulb": [
+2,
+false,
+null
+],
+"minecraft:waxed_weathered_copper_chain": [
+2,
+false,
+null
+],
+"minecraft:waxed_weathered_copper_chest": [
+2,
+false,
+null
+],
+"minecraft:waxed_weathered_copper_door": [
+2,
+false,
+null
+],
+"minecraft:waxed_weathered_copper_golem_statue": [
+2,
+false,
+null
+],
+"minecraft:waxed_weathered_copper_grate": [
+2,
+false,
+null
+],
+"minecraft:waxed_weathered_copper_lantern": [
+2,
+false,
+null
+],
+"minecraft:waxed_weathered_copper_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:waxed_weathered_cut_copper": [
+2,
+false,
+null
+],
+"minecraft:waxed_weathered_cut_copper_slab": [
+2,
+false,
+null
+],
+"minecraft:waxed_weathered_cut_copper_stairs": [
+2,
+false,
+null
+],
+"minecraft:waxed_weathered_double_cut_copper_slab": [
+2,
+false,
+null
+],
+"minecraft:waxed_weathered_lightning_rod": [
+2,
+false,
+null
+],
+"minecraft:wayfinder_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:weathered_chiseled_copper": [
+2,
+false,
+null
+],
+"minecraft:weathered_copper": [
+2,
+false,
+null
+],
+"minecraft:weathered_copper_bars": [
+2,
+false,
+null
+],
+"minecraft:weathered_copper_bulb": [
+2,
+false,
+null
+],
+"minecraft:weathered_copper_chain": [
+2,
+false,
+null
+],
+"minecraft:weathered_copper_chest": [
+2,
+false,
+null
+],
+"minecraft:weathered_copper_door": [
+2,
+false,
+null
+],
+"minecraft:weathered_copper_golem_statue": [
+2,
+false,
+null
+],
+"minecraft:weathered_copper_grate": [
+2,
+false,
+null
+],
+"minecraft:weathered_copper_lantern": [
+2,
+false,
+null
+],
+"minecraft:weathered_copper_trapdoor": [
+2,
+false,
+null
+],
+"minecraft:weathered_cut_copper": [
+2,
+false,
+null
+],
+"minecraft:weathered_cut_copper_slab": [
+2,
+false,
+null
+],
+"minecraft:weathered_cut_copper_stairs": [
+2,
+false,
+null
+],
+"minecraft:weathered_double_cut_copper_slab": [
+2,
+false,
+null
+],
+"minecraft:weathered_lightning_rod": [
+2,
+false,
+null
+],
+"minecraft:web": [
+2,
+false,
+null
+],
+"minecraft:weeping_vines": [
+2,
+false,
+null
+],
+"minecraft:wet_sponge": [
+2,
+false,
+null
+],
+"minecraft:wheat": [
+2,
+false,
+null
+],
+"minecraft:wheat_seeds": [
+0,
+false,
+"CgAKCmNvbXBvbmVudHMKDm1pbmVjcmFmdDpzZWVkCAtjcm9wX3Jlc3VsdA9taW5lY3JhZnQ6d2hlYXQJCHBsYW50X2F0CAISbWluZWNyYWZ0OmZhcm1sYW5kARpwbGFudF9hdF9hbnlfc29saWRfc3VyZmFjZQAIDXBsYW50X2F0X2ZhY2UCdXAAAAA="
+],
+"minecraft:white_bundle": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemUCCg5taW5lY3JhZnQ6aWNvbgoIdGV4dHVyZXMIEGJ1bmRsZV9vcGVuX2JhY2sWYnVuZGxlX3doaXRlX29wZW5fYmFjawgRYnVuZGxlX29wZW5fZnJvbnQXYnVuZGxlX3doaXRlX29wZW5fZnJvbnQIB2RlZmF1bHQMYnVuZGxlX3doaXRlAAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAocbWluZWNyYWZ0OmJ1bmRsZV9pbnRlcmFjdGlvbgMSbnVtX3ZpZXdhYmxlX3Nsb3RzGAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoWbWluZWNyYWZ0OnN0b3JhZ2VfaXRlbQEaYWxsb3dfbmVzdGVkX3N0b3JhZ2VfaXRlbXMBCQ1hbGxvd2VkX2l0ZW1zAAAJDGJhbm5lZF9pdGVtcwoECARuYW1lFW1pbmVjcmFmdDpzaHVsa2VyX2JveAAIBG5hbWUcbWluZWNyYWZ0OnVuZHllZF9zaHVsa2VyX2JveAADCW1heF9zbG90c4ABAAoebWluZWNyYWZ0OnN0b3JhZ2Vfd2VpZ2h0X2xpbWl0AxBtYXhfd2VpZ2h0X2xpbWl0gAEACiFtaW5lY3JhZnQ6c3RvcmFnZV93ZWlnaHRfbW9kaWZpZXIDFndlaWdodF9pbl9zdG9yYWdlX2l0ZW0IAAAA"
+],
+"minecraft:white_candle": [
+2,
+false,
+null
+],
+"minecraft:white_candle_cake": [
+2,
+false,
+null
+],
+"minecraft:white_carpet": [
+2,
+false,
+null
+],
+"minecraft:white_concrete": [
+2,
+false,
+null
+],
+"minecraft:white_concrete_double_slab": [
+2,
+false,
+null
+],
+"minecraft:white_concrete_powder": [
+2,
+false,
+null
+],
+"minecraft:white_concrete_slab": [
+2,
+false,
+null
+],
+"minecraft:white_concrete_stairs": [
+2,
+false,
+null
+],
+"minecraft:white_cushion": [
+2,
+false,
+null
+],
+"minecraft:white_dye": [
+2,
+false,
+null
+],
+"minecraft:white_glazed_terracotta": [
+2,
+false,
+null
+],
+"minecraft:white_harness": [
+2,
+false,
+null
+],
+"minecraft:white_shulker_box": [
+2,
+false,
+null
+],
+"minecraft:white_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:white_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:white_terracotta": [
+2,
+false,
+null
+],
+"minecraft:white_tulip": [
+2,
+false,
+null
+],
+"minecraft:white_wool": [
+2,
+false,
+null
+],
+"minecraft:white_wool_double_slab": [
+2,
+false,
+null
+],
+"minecraft:white_wool_slab": [
+2,
+false,
+null
+],
+"minecraft:white_wool_stairs": [
+2,
+false,
+null
+],
+"minecraft:wild_armor_trim_smithing_template": [
+2,
+false,
+null
+],
+"minecraft:wildflowers": [
+2,
+false,
+null
+],
+"minecraft:wind_charge": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemWAAQoObWluZWNyYWZ0Omljb24KCHRleHR1cmVzCAdkZWZhdWx0C3dpbmRfY2hhcmdlAAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAoSbWluZWNyYWZ0OmNvb2xkb3duCAhjYXRlZ29yeQt3aW5kX2NoYXJnZQUIZHVyYXRpb24AAAA/CAR0eXBlA3VzZQAKFm1pbmVjcmFmdDpkaXNwbGF5X25hbWUIBXZhbHVlFWl0ZW0ud2luZF9jaGFyZ2UubmFtZQAKFG1pbmVjcmFmdDpwcm9qZWN0aWxlBRZtaW5pbXVtX2NyaXRpY2FsX3Bvd2VyAAAAAAgRcHJvamVjdGlsZV9lbnRpdHkibWluZWNyYWZ0OndpbmRfY2hhcmdlX3Byb2plY3RpbGU8PgAKE21pbmVjcmFmdDp0aHJvd2FibGUBEmRvX3N3aW5nX2FuaW1hdGlvbgEFEmxhdW5jaF9wb3dlcl9zY2FsZQAAwD8FEW1heF9kcmF3X2R1cmF0aW9uAAAAAAUQbWF4X2xhdW5jaF9wb3dlcgAAwD8FEW1pbl9kcmF3X2R1cmF0aW9uAAAAAAEcc2NhbGVfcG93ZXJfYnlfZHJhd19kdXJhdGlvbgAAAAA="
+],
+"minecraft:witch_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:wither_rose": [
+2,
+false,
+null
+],
+"minecraft:wither_skeleton_skull": [
+2,
+false,
+null
+],
+"minecraft:wither_skeleton_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:wither_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:wolf_armor": [
+2,
+true,
+null
+],
+"minecraft:wolf_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:wood": [
+2,
+false,
+null
+],
+"minecraft:wooden_axe": [
+2,
+false,
+null
+],
+"minecraft:wooden_button": [
+2,
+false,
+null
+],
+"minecraft:wooden_door": [
+2,
+false,
+null
+],
+"minecraft:wooden_hoe": [
+2,
+false,
+null
+],
+"minecraft:wooden_pickaxe": [
+2,
+false,
+null
+],
+"minecraft:wooden_pressure_plate": [
+2,
+false,
+null
+],
+"minecraft:wooden_shovel": [
+2,
+false,
+null
+],
+"minecraft:wooden_slab": [
+2,
+false,
+null
+],
+"minecraft:wooden_spear": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UCCBBlbmNoYW50YWJsZV9zbG90C21lbGVlX3NwZWFyAxFlbmNoYW50YWJsZV92YWx1ZR4BBGZvaWwAAwtmcmFtZV9jb3VudAIBDWhhbmRfZXF1aXBwZWQBARJoaWRkZW5faW5fY29tbWFuZHMCAQ5saXF1aWRfY2xpcHBlZAADDm1heF9zdGFja19zaXplAgoObWluZWNyYWZ0Omljb24KCHRleHR1cmVzCAdkZWZhdWx0Cndvb2Rfc3BlYXIAAAUMbWluaW5nX3NwZWVkAACAPwEOc2hvdWxkX2Rlc3Bhd24BAQ9zdGFja2VkX2J5X2RhdGEAAw11c2VfYW5pbWF0aW9uAAMMdXNlX2R1cmF0aW9ugOSvAQAJCWl0ZW1fdGFncwgEFW1pbmVjcmFmdDp3b29kZW5fdGllchJtaW5lY3JhZnQ6aXNfc3BlYXIKEm1pbmVjcmFmdDpjb29sZG93bggIY2F0ZWdvcnkFc3BlYXIFCGR1cmF0aW9uZmYmPwgEdHlwZQZhdHRhY2sAChBtaW5lY3JhZnQ6ZGFtYWdlAgV2YWx1ZQEAAAoWbWluZWNyYWZ0OmRpc3BsYXlfbmFtZQgFdmFsdWUWaXRlbS53b29kZW5fc3BlYXIubmFtZQAKFG1pbmVjcmFmdDpkdXJhYmlsaXR5Cg1kYW1hZ2VfY2hhbmNlAwNtYXjIAQMDbWluAAADDm1heF9kdXJhYmlsaXR5eAAKFW1pbmVjcmFmdDplbmNoYW50YWJsZQgEc2xvdAttZWxlZV9zcGVhcgEFdmFsdWUPAAoObWluZWNyYWZ0OmZ1ZWwFCGR1cmF0aW9uAAAgQQAKF21pbmVjcmFmdDpoYW5kX2VxdWlwcGVkAQV2YWx1ZQEAChhtaW5lY3JhZnQ6a2luZXRpY193ZWFwb24KGG1pbmVjcmFmdDpraW5ldGljX3dlYXBvbgoOY3JlYXRpdmVfcmVhY2gFA21heAAA8EAFA21pbgAAAEAAChFkYW1hZ2VfY29uZGl0aW9ucwIMbWF4X2R1cmF0aW9uLAEFEm1pbl9yZWxhdGl2ZV9zcGVlZDMzk0AFCW1pbl9zcGVlZAAAAAAABQ9kYW1hZ2VfbW9kaWZpZXIAAAAABRFkYW1hZ2VfbXVsdGlwbGllcjMzMz8CBWRlbGF5DwAKE2Rpc21vdW50X2NvbmRpdGlvbnMCDG1heF9kdXJhdGlvbmQABRJtaW5fcmVsYXRpdmVfc3BlZWQAAAAABQltaW5fc3BlZWQAAGBBAAUNaGl0Ym94X21hcmdpbgAAgD4KFGtub2NrYmFja19jb25kaXRpb25zAgxtYXhfZHVyYXRpb27IAAUSbWluX3JlbGF0aXZlX3NwZWVkAAAAAAUJbWluX3NwZWVkMzOjQAAKBXJlYWNoBQNtYXgAAJBABQNtaW4AAABAAAAAChhtaW5lY3JhZnQ6bWF4X3N0YWNrX3NpemUBBXZhbHVlAQAKGW1pbmVjcmFmdDpwaWVyY2luZ193ZWFwb24KDmNyZWF0aXZlX3JlYWNoBQNtYXgAAPBABQNtaW4AAABAAAUNaGl0Ym94X21hcmdpbgAAgD4KBXJlYWNoBQNtYXgAAJBABQNtaW4AAABAAAAKFG1pbmVjcmFmdDpyZXBhaXJhYmxlCQxyZXBhaXJfaXRlbXMKBAkFaXRlbXMKAggEbmFtZRZtaW5lY3JhZnQ6d29vZGVuX3NwZWFyAAgNcmVwYWlyX2Ftb3VudCljb250ZXh0Lm90aGVyLT5xdWVyeS5yZW1haW5pbmdfZHVyYWJpbGl0eQAJBWl0ZW1zCgIIBHRhZ3MecS5hbGxfdGFncygnbWluZWNyYWZ0OnBsYW5rcycpAAgNcmVwYWlyX2Ftb3VudBtxdWVyeS5tYXhfZHVyYWJpbGl0eSAqIDAuMjUAAAoYbWluZWNyYWZ0OnN3aW5nX2R1cmF0aW9uBQV2YWx1ZWZmJj8AChZtaW5lY3JhZnQ6c3dpbmdfc291bmRzCAphdHRhY2tfaGl0HGl0ZW0ud29vZGVuX3NwZWFyLmF0dGFja19oaXQIC2F0dGFja19taXNzHWl0ZW0ud29vZGVuX3NwZWFyLmF0dGFja19taXNzAAoObWluZWNyYWZ0OnRhZ3MJBHRhZ3MIBBVtaW5lY3JhZnQ6d29vZGVuX3RpZXISbWluZWNyYWZ0OmlzX3NwZWFyAAoXbWluZWNyYWZ0OnVzZV9tb2RpZmllcnMBD2VtaXRfdmlicmF0aW9ucwAFEW1vdmVtZW50X21vZGlmaWVyAACAPwgLc3RhcnRfc291bmQVaXRlbS53b29kZW5fc3BlYXIudXNlCAtzdGFydF91c2luZwZhbHdheXMFDHVzZV9kdXJhdGlvbgCgjEcAAAA="
+],
+"minecraft:wooden_sword": [
+2,
+false,
+null
+],
+"minecraft:wool": [
+2,
+false,
+null
+],
+"minecraft:writable_book": [
+2,
+false,
+null
+],
+"minecraft:written_book": [
+2,
+false,
+null
+],
+"minecraft:yellow_bundle": [
+1,
+true,
+"CgAKCmNvbXBvbmVudHMKD2l0ZW1fcHJvcGVydGllcwEOYWxsb3dfb2ZmX2hhbmQAARdjYW5fZGVzdHJveV9pbl9jcmVhdGl2ZQEDEWNyZWF0aXZlX2NhdGVnb3J5BggOY3JlYXRpdmVfZ3JvdXAAAwZkYW1hZ2UACBBlbmNoYW50YWJsZV9zbG90BG5vbmUDEWVuY2hhbnRhYmxlX3ZhbHVlAAEEZm9pbAADC2ZyYW1lX2NvdW50AgENaGFuZF9lcXVpcHBlZAABEmhpZGRlbl9pbl9jb21tYW5kcwIBDmxpcXVpZF9jbGlwcGVkAAMObWF4X3N0YWNrX3NpemUCCg5taW5lY3JhZnQ6aWNvbgoIdGV4dHVyZXMIEGJ1bmRsZV9vcGVuX2JhY2sXYnVuZGxlX3llbGxvd19vcGVuX2JhY2sIEWJ1bmRsZV9vcGVuX2Zyb250GGJ1bmRsZV95ZWxsb3dfb3Blbl9mcm9udAgHZGVmYXVsdA1idW5kbGVfeWVsbG93AAAFDG1pbmluZ19zcGVlZAAAgD8BDnNob3VsZF9kZXNwYXduAQEPc3RhY2tlZF9ieV9kYXRhAAMNdXNlX2FuaW1hdGlvbgADDHVzZV9kdXJhdGlvbgAACQlpdGVtX3RhZ3MAAAocbWluZWNyYWZ0OmJ1bmRsZV9pbnRlcmFjdGlvbgMSbnVtX3ZpZXdhYmxlX3Nsb3RzGAAKGG1pbmVjcmFmdDptYXhfc3RhY2tfc2l6ZQEFdmFsdWUBAAoWbWluZWNyYWZ0OnN0b3JhZ2VfaXRlbQEaYWxsb3dfbmVzdGVkX3N0b3JhZ2VfaXRlbXMBCQ1hbGxvd2VkX2l0ZW1zAAAJDGJhbm5lZF9pdGVtcwoECARuYW1lFW1pbmVjcmFmdDpzaHVsa2VyX2JveAAIBG5hbWUcbWluZWNyYWZ0OnVuZHllZF9zaHVsa2VyX2JveAADCW1heF9zbG90c4ABAAoebWluZWNyYWZ0OnN0b3JhZ2Vfd2VpZ2h0X2xpbWl0AxBtYXhfd2VpZ2h0X2xpbWl0gAEACiFtaW5lY3JhZnQ6c3RvcmFnZV93ZWlnaHRfbW9kaWZpZXIDFndlaWdodF9pbl9zdG9yYWdlX2l0ZW0IAAAA"
+],
+"minecraft:yellow_candle": [
+2,
+false,
+null
+],
+"minecraft:yellow_candle_cake": [
+2,
+false,
+null
+],
+"minecraft:yellow_carpet": [
+2,
+false,
+null
+],
+"minecraft:yellow_concrete": [
+2,
+false,
+null
+],
+"minecraft:yellow_concrete_double_slab": [
+2,
+false,
+null
+],
+"minecraft:yellow_concrete_powder": [
+2,
+false,
+null
+],
+"minecraft:yellow_concrete_slab": [
+2,
+false,
+null
+],
+"minecraft:yellow_concrete_stairs": [
+2,
+false,
+null
+],
+"minecraft:yellow_cushion": [
+2,
+false,
+null
+],
+"minecraft:yellow_dye": [
+2,
+false,
+null
+],
+"minecraft:yellow_glazed_terracotta": [
+2,
+false,
+null
+],
+"minecraft:yellow_harness": [
+2,
+false,
+null
+],
+"minecraft:yellow_poplar_leaves": [
+2,
+false,
+null
+],
+"minecraft:yellow_shulker_box": [
+2,
+false,
+null
+],
+"minecraft:yellow_stained_glass": [
+2,
+false,
+null
+],
+"minecraft:yellow_stained_glass_pane": [
+2,
+false,
+null
+],
+"minecraft:yellow_terracotta": [
+2,
+false,
+null
+],
+"minecraft:yellow_wool": [
+2,
+false,
+null
+],
+"minecraft:yellow_wool_double_slab": [
+2,
+false,
+null
+],
+"minecraft:yellow_wool_slab": [
+2,
+false,
+null
+],
+"minecraft:yellow_wool_stairs": [
+2,
+false,
+null
+],
+"minecraft:zoglin_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:zombie_head": [
+2,
+false,
+null
+],
+"minecraft:zombie_horse_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:zombie_nautilus_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:zombie_pigman_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:zombie_spawn_egg": [
+2,
+false,
+null
+],
+"minecraft:zombie_villager_spawn_egg": [
+2,
+false,
+null
+]
+}
+}

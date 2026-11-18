@@ -63,22 +63,33 @@ fn nbt_empty_lists(names: &[&str]) -> Vec<u8> {
 }
 
 /// Oggetti vanilla (nome + ID) dai dati ufficiali di Mojang, già codificati: sono uguali per tutti i giocatori.
-fn item_registry() -> &'static Packet {
-    static PACKET: OnceLock<Packet> = OnceLock::new();
-    PACKET.get_or_init(|| {
-        let item_data = include_str!("../data/items.txt")
-            .lines()
-            .filter_map(|l| l.split_once('\t'))
-            .map(|(name, id)| ItemData {
+/// Voci di `ItemRegistry`: nome e ID da `items.txt`, versione, `component_based` e dati dei componenti da Dragonfly
+/// (`items_meta.json`, estratto con `tools/extract_item_meta.py`). Il client collega un oggetto al suo blocco solo con la
+/// versione giusta: mandando tutto come "legacy" i blocchi nuovi (assi di warped…) restavano oggetti senza texture.
+/// Gli oggetti che Dragonfly non conosce prendono la versione 2 (None), quella di quasi tutti gli oggetti vanilla.
+pub(crate) fn item_entries() -> Vec<ItemData> {
+    use base64::{engine::general_purpose::STANDARD, Engine};
+    let meta: serde_json::Value = serde_json::from_str(include_str!("../data/items_meta.json")).expect("items_meta.json non valido");
+    let meta = &meta["items"];
+    include_str!("../data/items.txt")
+        .lines()
+        .filter_map(|l| l.split_once('\t'))
+        .map(|(name, id)| {
+            let m = &meta[name];
+            ItemData {
                 item_name: name.into(),
                 item_id: id.parse().expect("ID oggetto non valido in items.txt"),
-                item_version: enums::item_version::LEGACY,
-                item_component_data: EMPTY_NBT.to_vec(),
-                ..Default::default()
-            })
-            .collect();
-        ItemRegistry { item_data }.packet()
-    })
+                is_component_based: m[1].as_bool().unwrap_or(false),
+                item_version: m[0].as_i64().unwrap_or(enums::item_version::NONE as i64) as i32,
+                item_component_data: m[2].as_str().map_or_else(|| EMPTY_NBT.to_vec(), |b| STANDARD.decode(b).expect("dati dei componenti non validi")),
+            }
+        })
+        .collect()
+}
+
+fn item_registry() -> &'static Packet {
+    static PACKET: OnceLock<Packet> = OnceLock::new();
+    PACKET.get_or_init(|| ItemRegistry { item_data: item_entries() }.packet())
 }
 
 /// Bit di `UpdateAbilities` (P§7.2).

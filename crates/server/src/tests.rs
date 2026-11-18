@@ -562,6 +562,19 @@ fn start_flying_in_survival_is_rejected() {
     assert_eq!(abilities[0].body, abilities_body(1, GameMode::Survival, false), "in sopravvivenza il volo si rifiuta");
 }
 
+#[test]
+fn item_registry_keeps_vanilla_versions_and_components() {
+    let entries = crate::join::item_entries();
+    let get = |name: &str| entries.iter().find(|e| e.item_name == name).unwrap_or_else(|| panic!("manca {name}"));
+    for block in ["minecraft:warped_planks", "minecraft:oak_planks", "minecraft:stone"] {
+        assert_eq!(get(block).item_version, 2, "{block}: i blocchi hanno versione None, altrimenti il client non trova il blocco");
+    }
+    let apple = get("minecraft:apple");
+    assert!(apple.is_component_based && apple.item_version == 1, "la mela è un oggetto data-driven");
+    assert!(apple.item_component_data.len() > 100 && apple.item_component_data[..2] == [0x0a, 0], "componenti come radice NBT di rete");
+    assert_eq!(get("minecraft:warped_planks").item_id, -243, "gli ID restano quelli di items.txt");
+}
+
 /// `Interact` del client: azione e runtime id del bersaglio (la posizione opzionale manca).
 fn interact(action: u8, target: u32) -> Packet {
     let mut body = vec![action];
