@@ -39,6 +39,15 @@ pub mod id {
     pub const ITEM_STACK_RESPONSE: u32 = 148;
     pub const UPDATE_PLAYER_GAME_TYPE: u32 = 151;
     pub const UPDATE_ABILITIES: u32 = 187;
+    pub const ADD_PLAYER: u32 = 12;
+    pub const REMOVE_ACTOR: u32 = 14;
+    pub const ADD_ITEM_ACTOR: u32 = 15;
+    pub const TAKE_ITEM_ACTOR: u32 = 17;
+    pub const MOVE_ACTOR_ABSOLUTE: u32 = 18;
+    pub const MOB_ARMOR_EQUIPMENT: u32 = 32;
+    pub const SET_ACTOR_MOTION: u32 = 40;
+    pub const PLAYER_LIST: u32 = 63;
+    pub const PLAYER_SKIN: u32 = 93;
 }
 
 /// Client -> server: primo pacchetto, dichiara il protocollo del client.

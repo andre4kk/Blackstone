@@ -1983,6 +1983,129 @@ impl Encode for UpdateAttributes {
     }
 }
 
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct TakeItemActor {
+    pub item_runtime_id: u64,
+    pub actor_runtime_id: u64,
+}
+
+impl Encode for TakeItemActor {
+    fn encode(&self, w: &mut Writer) {
+        w.var_u64(self.item_runtime_id);
+        w.var_u64(self.actor_runtime_id);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct MoveActorAbsoluteData {
+    pub actor_runtime_id: u64,
+    pub header: u8,
+    pub position: Vec3,
+    pub rotation_x: u8,
+    pub rotation_y: u8,
+    pub rotation_y_head: u8,
+}
+
+impl Encode for MoveActorAbsoluteData {
+    fn encode(&self, w: &mut Writer) {
+        w.var_u64(self.actor_runtime_id);
+        w.u8(self.header);
+        self.position.encode(w);
+        w.u8(self.rotation_x);
+        w.u8(self.rotation_y);
+        w.u8(self.rotation_y_head);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct MoveActorAbsolute {
+    pub move_data: MoveActorAbsoluteData,
+}
+
+impl Encode for MoveActorAbsolute {
+    fn encode(&self, w: &mut Writer) {
+        self.move_data.encode(w);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RemoveActor {
+    pub target_actor_id: i64,
+}
+
+impl Encode for RemoveActor {
+    fn encode(&self, w: &mut Writer) {
+        w.var_i64(self.target_actor_id);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct SetActorMotion {
+    pub target_runtime_id: u64,
+    pub motion: Vec3,
+    pub tick: u64,
+}
+
+impl Encode for SetActorMotion {
+    fn encode(&self, w: &mut Writer) {
+        w.var_u64(self.target_runtime_id);
+        self.motion.encode(w);
+        w.var_u64(self.tick);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct MobArmorEquipment {
+    pub target_runtime_id: u64,
+    pub head: ItemStack,
+    pub torso: ItemStack,
+    pub legs: ItemStack,
+    pub feet: ItemStack,
+    pub body: ItemStack,
+}
+
+impl Encode for MobArmorEquipment {
+    fn encode(&self, w: &mut Writer) {
+        w.var_u64(self.target_runtime_id);
+        self.head.encode(w);
+        self.torso.encode(w);
+        self.legs.encode(w);
+        self.feet.encode(w);
+        self.body.encode(w);
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Animate {
+    pub action: u8,
+    pub target_actor_runtime_id: u64,
+    pub data: f32,
+    pub swing_source: Option<u8>,
+    pub hand: Option<u8>,
+}
+
+impl Encode for Animate {
+    fn encode(&self, w: &mut Writer) {
+        w.u8(self.action);
+        w.var_u64(self.target_actor_runtime_id);
+        w.f32(self.data);
+        match &self.swing_source {
+            Some(v) => {
+                w.u8(1);
+                w.u8(*v);
+            }
+            None => w.u8(0),
+        }
+        match &self.hand {
+            Some(v) => {
+                w.u8(1);
+                w.u8(*v);
+            }
+            None => w.u8(0),
+        }
+    }
+}
+
 impl ServerPacket for StartGame {
     const ID: u32 = 11;
 }
@@ -2083,8 +2206,50 @@ impl ServerPacket for UpdateAttributes {
     const ID: u32 = 29;
 }
 
+impl ServerPacket for TakeItemActor {
+    const ID: u32 = 17;
+}
+
+impl ServerPacket for MoveActorAbsolute {
+    const ID: u32 = 18;
+}
+
+impl ServerPacket for RemoveActor {
+    const ID: u32 = 14;
+}
+
+impl ServerPacket for SetActorMotion {
+    const ID: u32 = 40;
+}
+
+impl ServerPacket for MobArmorEquipment {
+    const ID: u32 = 32;
+}
+
+impl ServerPacket for Animate {
+    const ID: u32 = 44;
+}
+
 /// Valori degli enum degli schemi (i campi sono interi: si usano queste costanti).
 pub mod enums {
+    pub mod actor_swing_source {
+        pub const NONE: u8 = 0;
+        pub const BUILD: u8 = 1;
+        pub const MINE: u8 = 2;
+        pub const INTERACT: u8 = 3;
+        pub const ATTACK: u8 = 4;
+        pub const USE_ITEM: u8 = 5;
+        pub const THROW_ITEM: u8 = 6;
+        pub const DROP_ITEM: u8 = 7;
+        pub const EVENT: u8 = 8;
+    }
+    pub mod animate_packet_payload_action {
+        pub const NO_ACTION: u8 = 0;
+        pub const SWING: u8 = 1;
+        pub const WAKE_UP: u8 = 3;
+        pub const CRITICAL_HIT: u8 = 4;
+        pub const MAGIC_CRITICAL_HIT: u8 = 5;
+    }
     pub mod chat_restriction_level {
         pub const NONE: u8 = 0;
         pub const DROPPED: u8 = 1;
@@ -2226,6 +2391,10 @@ pub mod enums {
         pub const THE_END: i32 = 4;
         pub const VOID: i32 = 5;
         pub const UNDEFINED: i32 = 6;
+    }
+    pub mod hand_slot {
+        pub const MAINHAND: u8 = 0;
+        pub const OFFHAND: u8 = 1;
     }
     pub mod item_version {
         pub const LEGACY: i32 = 0;

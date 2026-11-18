@@ -188,6 +188,21 @@ impl PlayerAction {
     }
 }
 
+/// `Animate` (44) dal client: il braccio che oscilla. Sul filo l'azione è un u8 (schema 2225), non un varint come nei protocolli vecchi;
+/// seguono dati f32 e due opzionali (origine dell'oscillazione, mano) che il server non usa.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Animate {
+    pub action: i32,
+    pub runtime_id: u64,
+}
+
+impl Animate {
+    pub fn decode(body: &[u8]) -> Option<Self> {
+        let r = &mut Reader(body);
+        Some(Self { action: r.u8()? as i32, runtime_id: r.var_u64()? })
+    }
+}
+
 /// Uno slot di un contenitore nelle richieste. L'ID di pila è un i32 fisso (come gophertunnel).
 #[derive(Clone, Debug, PartialEq)]
 pub struct SlotRef {
@@ -879,6 +894,18 @@ mod tests {
         for n in 0..w.0.len() {
             assert!(PlayerAction::decode(&w.0[..n]).is_none(), "tagliato a {n}");
         }
+    }
+
+    #[test]
+    fn animate_decodes_action_byte_and_runtime_id() {
+        let mut w = Writer::default();
+        w.u8(1); // oscillazione
+        w.var_u64(300);
+        w.f32(0.0);
+        w.u8(0); // origine assente
+        w.u8(0); // mano assente
+        assert_eq!(Animate::decode(&w.0), Some(Animate { action: 1, runtime_id: 300 }));
+        assert!(Animate::decode(&w.0[..2]).is_none());
     }
 
     #[test]

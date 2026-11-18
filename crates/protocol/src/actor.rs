@@ -18,10 +18,14 @@ pub mod key {
 /// Bit della chiave `FLAGS` (`ActorFlags`). Dal protocollo 560 CAN_DASH(46) ha spostato di uno tutti i successivi
 /// (changelog_560 di bedrock-protocol-docs): gravità 49, collisioni 48. Con 48 il giocatore restava senza gravità.
 pub mod flag {
+    pub const SNEAKING: u32 = 1;
+    pub const SPRINTING: u32 = 3;
     pub const CAN_CLIMB: u32 = 19;
+    pub const GLIDING: u32 = 32;
     pub const BREATHING: u32 = 35;
     pub const HAS_COLLISION: u32 = 48;
     pub const HAS_GRAVITY: u32 = 49;
+    pub const SWIMMING: u32 = 56;
 }
 
 /// Un valore sincronizzato; il numero è sia l'indice di variante sia il `DataItemType`.
@@ -46,15 +50,20 @@ impl DataValue {
     }
 }
 
+/// Lista di dati sincronizzati (`SynchedActorDataList`): contatore varuint32 e voci `{ ID, Payload }`.
+pub(crate) fn write_data(w: &mut Writer, data: &[(u32, DataValue)]) {
+    w.var_u32(data.len() as u32);
+    for (id, value) in data {
+        w.var_u32(*id);
+        value.write(w);
+    }
+}
+
 /// `SetActorData` senza proprietà sincronizzate, al tick 0.
 pub fn set_actor_data(runtime_id: u64, data: &[(u32, DataValue)]) -> Packet {
     let mut w = Writer::default();
     w.var_u64(runtime_id);
-    w.var_u32(data.len() as u32);
-    for (id, value) in data {
-        w.var_u32(*id);
-        value.write(&mut w);
-    }
+    write_data(&mut w, data);
     w.var_u32(0); // proprietà intere
     w.var_u32(0); // proprietà float
     w.var_u64(0); // tick
