@@ -255,28 +255,43 @@ fn has_water(view: &impl BlockView, pos: [i32; 3]) -> Option<bool> {
     Some(view.water(pos) || is_water(view.block(pos)?))
 }
 
-/// Vero se la pianta può stare in `pos` (terreno, e per la canna l'acqua accanto, per il cactus le celle libere); `None` se serve
-/// una cella fuori dal mondo caricato.
-pub(super) fn plant_supported(view: &impl BlockView, pos: [i32; 3], plant: Plant) -> Option<bool> {
-    // nome del blocco sotto la cella `p`
-    let below = |p: [i32; 3]| -> Option<&'static str> { name_of(view.block(side(p, DOWN))?) };
-    // quanto può essere alta una pila di canne o di cactus prima di arrendersi (il mondo è alto 384 blocchi)
+/// Una pila di canne, cactus o bambù: il nome conta come "dello stesso tipo" per camminare lungo la colonna.
+fn stacked(name: &str) -> bool {
+    matches!(name, "reeds" | "cactus" | "bamboo" | "bamboo_sapling")
+}
+
+/// Un blocco che regge qualcosa in senso strutturale: non è aria, liquido o erba sostituibile, né un blocco non pieno noto.
+fn structural(hash: i32) -> bool {
+    !super::replaceable(hash) && name_of(hash).is_none_or(|n| !hollow(n))
+}
+
+/// Vero se la pianta può stare in `pos`; `None` se serve una cella fuori dal mondo caricato. Con `strict` (il piazzamento) il
+/// terreno deve essere nella lista di Dragonfly (D§4.6); senza (le reazioni dei vicini, anche su piante nate col mondo) basta che
+/// sotto ci sia un blocco che regge, così un fiore sul muschio non sparisce per un vicino. Per la canna conta anche l'acqua accanto al
+/// terreno, per il cactus l'aria ai quattro lati; per canna, cactus e bambù il terreno è quello della base della pila.
+pub(super) fn plant_supported(view: &impl BlockView, pos: [i32; 3], plant: Plant, strict: bool) -> Option<bool> {
+    // quanto può essere alta una pila prima di arrendersi (il mondo è alto 384 blocchi)
     const STACK: usize = 400;
-    // la base di una pila di `stacked` (canne, cactus): la cella più in basso che ha ancora quel blocco sotto di sé
-    let base_of = |stacked: &str| -> Option<[i32; 3]> {
+    // la base della pila che comincia sotto `pos`: la cella più in basso che ha ancora un blocco dello stesso tipo sotto di sé
+    let base_of = |same: fn(&str) -> bool| -> Option<[i32; 3]> {
         let mut base = pos;
         for _ in 0..STACK {
-            if below(base)? != stacked {
+            if !name_of(view.block(side(base, DOWN))?).is_some_and(same) {
                 break;
             }
             base = side(base, DOWN);
         }
         Some(base)
     };
+    // il terreno sotto la cella `p` regge la pianta
+    let holds = |p: [i32; 3]| -> Option<bool> {
+        let below = view.block(side(p, DOWN))?;
+        Some(if strict { name_of(below).is_some_and(|n| soil_accepts(n, plant)) } else { structural(below) })
+    };
     match plant {
         Plant::SugarCane => {
-            let base = base_of("reeds")?;
-            if !soil_accepts(below(base)?, plant) {
+            let base = base_of(|n| n == "reeds")?;
+            if !holds(base)? {
                 return Some(false);
             }
             // l'acqua deve toccare il terreno su cui poggia la base
@@ -293,7 +308,7 @@ pub(super) fn plant_supported(view: &impl BlockView, pos: [i32; 3], plant: Plant
         }
         Plant::Cactus => {
             // ogni cella della pila ha l'aria ai quattro lati
-            let base = base_of("cactus")?;
+            let base = base_of(|n| n == "cactus")?;
             let mut cell = pos;
             loop {
                 for face in HORIZONTAL {
@@ -306,10 +321,10 @@ pub(super) fn plant_supported(view: &impl BlockView, pos: [i32; 3], plant: Plant
                 }
                 cell = side(cell, DOWN);
             }
-            Some(soil_accepts(below(base)?, plant))
+            holds(base)
         }
-        Plant::Bamboo => Some(matches!(below(pos)?, "bamboo" | "bamboo_sapling") || soil_accepts(below(pos)?, plant)),
-        _ => Some(soil_accepts(below(pos)?, plant)),
+        Plant::Bamboo => holds(base_of(|n| matches!(n, "bamboo" | "bamboo_sapling"))?),
+        _ => holds(pos),
     }
 }
 
@@ -549,7 +564,7 @@ fn double_plant(view: &impl BlockView, pos: [i32; 3], state: &BlockState, plant:
     if flag(state, "upper_block_bit") {
         partner(side(pos, DOWN), false)
     } else {
-        Some(partner(side(pos, UP), true)? && plant_supported(view, pos, plant)?)
+        Some(partner(side(pos, UP), true)? && plant_supported(view, pos, plant, false)?)
     }
 }
 
@@ -593,7 +608,7 @@ fn fate(view: &impl BlockView, pos: [i32; 3], hash: i32) -> Fate {
         if state.get("upper_block_bit").is_some() {
             keep(double_plant(view, pos, state, plant))
         } else {
-            keep(plant_supported(view, pos, plant))
+            keep(plant_supported(view, pos, plant, false))
         }
     } else if name == "vine" {
         vine(view, pos, state).unwrap_or(Fate::Stay)
@@ -614,6 +629,17 @@ pub(crate) fn updates(changed: &[[i32; 3]], view: &impl BlockView) -> Vec<BlockC
     for &cell in changed {
         cells.insert(cell);
         cells.extend((0..=EAST).map(|face| side(cell, face)));
+    }
+    // una pila di canne, cactus o bambù regge o cade tutta insieme: si guardano anche le celle uguali sopra quelle già in esame
+    // (nei due giri a disposizione una colonna alta non arriverebbe in fondo un vicino alla volta)
+    for pos in cells.clone() {
+        let mut above = pos;
+        while view.block(above).and_then(name_of).is_some_and(stacked) {
+            above = side(above, UP);
+            if !view.block(above).and_then(name_of).is_some_and(stacked) || !cells.insert(above) {
+                break;
+            }
+        }
     }
     cells
         .into_iter()
@@ -835,11 +861,13 @@ mod tests {
         assert!(put_all(&mut f, [1, 10, 0], "minecraft:stone").is_empty(), "un vicino non la tocca");
         remove(&mut f, [0, 9, 0]);
         assert_eq!(f.name([0, 10, 0]), "air");
-        // terra che diventa pietra
+        // la terra che diventa pietra regge ancora (le reazioni chiedono solo un appoggio vero); diventando un blocco che non regge no
         let mut g = floor();
         put_all(&mut g, [0, 9, 0], "minecraft:dirt");
         build(&mut g, [0, 9, 0], crate::placement::UP, "minecraft:oak_sapling");
         put_all(&mut g, [0, 9, 0], "minecraft:stone");
+        assert_eq!(g.name([0, 10, 0]), "oak_sapling");
+        put_all(&mut g, [0, 9, 0], "minecraft:torch");
         assert_eq!(g.name([0, 10, 0]), "air");
         // piante alte: via la metà bassa sparisce l'alta, e viceversa; senza terra spariscono tutt'e due (secondo giro)
         for (gone, kept) in [([0, 10, 0], [0, 11, 0]), ([0, 11, 0], [0, 10, 0])] {
@@ -872,6 +900,74 @@ mod tests {
         build(&mut k, [0, 9, 0], crate::placement::UP, "minecraft:cactus");
         put_all(&mut k, [1, 10, 0], "minecraft:stone");
         assert_eq!(k.name([0, 10, 0]), "air");
+    }
+
+    /// Alza una colonna di `name` di `height` celle sopra `soil_pos`, direttamente nel mondo (senza piazzarla).
+    fn column(f: &mut Fake, soil_pos: [i32; 3], name: &str, height: i32) {
+        for y in 1..=height {
+            put_all(f, [soil_pos[0], soil_pos[1] + y, soil_pos[2]], name);
+        }
+    }
+
+    #[test]
+    fn tall_stacks_fall_together() {
+        // canna da tre, cactus da tre, bambù da cinque: tolto il terreno cade tutta la colonna, non solo le prime due celle
+        for (soil, name, height) in
+            [("minecraft:sand", "minecraft:reeds", 3), ("minecraft:sand", "minecraft:cactus", 3), ("minecraft:dirt", "minecraft:bamboo", 5)]
+        {
+            let mut f = floor();
+            put_all(&mut f, [0, 9, 0], soil);
+            put_all(&mut f, [1, 9, 0], "minecraft:water");
+            column(&mut f, [0, 9, 0], name, height);
+            assert_eq!(f.name([0, 9 + height, 0]), name.trim_start_matches("minecraft:"), "{name}: la colonna c'è");
+            // un vicino che cambia non la tocca
+            assert!(put_all(&mut f, [3, 10, 3], "minecraft:stone").is_empty(), "{name}");
+            let gone = remove(&mut f, [0, 9, 0]);
+            assert_eq!(gone.len() as i32, height, "{name}: tutte le celle");
+            for y in 10..10 + height {
+                assert_eq!(f.name([0, y, 0]), "air", "{name} in y {y}");
+            }
+        }
+        // spezzata nel mezzo: restano quelle sotto, cadono quelle sopra (anche oltre la prima sopra)
+        let mut f = floor();
+        put_all(&mut f, [0, 9, 0], "minecraft:dirt");
+        column(&mut f, [0, 9, 0], "minecraft:bamboo", 5);
+        remove(&mut f, [0, 11, 0]);
+        assert_eq!(
+            (f.name([0, 10, 0]), f.name([0, 12, 0]), f.name([0, 13, 0]), f.name([0, 14, 0])),
+            ("bamboo".into(), "air".into(), "air".into(), "air".into())
+        );
+    }
+
+    #[test]
+    fn plants_from_the_world_survive_unusual_soil() {
+        // un fiore nato col mondo su muschio (non è nelle liste di piazzamento): resta quando un vicino cambia...
+        let mut f = floor();
+        put_all(&mut f, [0, 9, 0], "minecraft:moss_block");
+        put_all(&mut f, [0, 10, 0], "minecraft:poppy");
+        assert!(put_all(&mut f, [1, 10, 0], "minecraft:stone").is_empty());
+        assert!(remove(&mut f, [1, 10, 0]).is_empty());
+        assert!(remove(&mut f, [1, 9, 0]).is_empty(), "il terreno accanto non conta");
+        assert_eq!(f.name([0, 10, 0]), "poppy");
+        // ...e anche se si cambia il blocco sotto con un altro che regge
+        assert!(put_all(&mut f, [0, 9, 0], "minecraft:clay").is_empty());
+        assert_eq!(f.name([0, 10, 0]), "poppy");
+        // ma muore se il muschio sparisce
+        remove(&mut f, [0, 9, 0]);
+        assert_eq!(f.name([0, 10, 0]), "air");
+        // la pianta alta nata col mondo su terra radicata sta in piedi
+        let mut h = floor();
+        put_all(&mut h, [0, 9, 0], "minecraft:dirt_with_roots");
+        build_free(&mut h, [0, 10, 0], "minecraft:tall_grass");
+        assert!(put_all(&mut h, [1, 10, 0], "minecraft:stone").is_empty());
+        assert_eq!((h.name([0, 10, 0]), h.name([0, 11, 0])), ("tall_grass".into(), "tall_grass".into()));
+    }
+
+    /// Una pianta alta nata col mondo: le due metà messe direttamente, senza passare dal piazzamento.
+    fn build_free(f: &mut Fake, pos: [i32; 3], name: &str) {
+        let lower = blocks().state(hash(name)).unwrap().with("upper_block_bit", StateValue::Byte(0)).hash();
+        let upper = blocks().state(hash(name)).unwrap().with("upper_block_bit", StateValue::Byte(1)).hash();
+        set(f, &[BlockChange { pos, hash: lower, water: false }, BlockChange { pos: [pos[0], pos[1] + 1, pos[2]], hash: upper, water: false }]);
     }
 
     #[test]

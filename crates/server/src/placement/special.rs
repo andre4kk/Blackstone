@@ -240,7 +240,7 @@ fn vine(ctx: &PlaceCtx, view: &impl BlockView) -> Option<Vec<BlockChange>> {
 /// Piante basse (D§4.6): serve il terreno giusto sotto (e per la canna l'acqua accanto, per il cactus l'aria attorno).
 fn single_plant(ctx: &PlaceCtx, view: &impl BlockView, plant: neighbors::Plant) -> Option<Vec<BlockChange>> {
     let ctx = normalize(ctx, view)?;
-    if neighbors::plant_supported(view, ctx.target(), plant) != Some(true) {
+    if neighbors::plant_supported(view, ctx.target(), plant, true) != Some(true) {
         return None;
     }
     place_generic(&ctx, view)
@@ -250,7 +250,7 @@ fn single_plant(ctx: &PlaceCtx, view: &impl BlockView, plant: neighbors::Plant) 
 fn double_plant(ctx: &PlaceCtx, view: &impl BlockView, state: &BlockState, plant: neighbors::Plant) -> Option<Vec<BlockChange>> {
     let ctx = normalize(ctx, view)?;
     let target = ctx.target();
-    if neighbors::plant_supported(view, target, plant) != Some(true) {
+    if neighbors::plant_supported(view, target, plant, true) != Some(true) {
         return None;
     }
     let mut lower = rules::orient(state, &ctx);
