@@ -36,6 +36,7 @@ impl Server {
                 self.broadcast(Text::new(text_type::RAW, format!("§e{name} ha lasciato il gioco")));
             }
         }
+        self.remove_player_entity(pid);
     }
 
     pub(crate) fn message(&mut self, pid: u64, data: &[u8]) {

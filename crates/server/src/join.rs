@@ -384,6 +384,7 @@ impl Server {
         p.last_chunk = chunk_of(p.pos[0], p.pos[2]);
         let eyes = p.pos;
         let name = self.name(pid);
+        self.add_player_entity(pid);
         self.tell(pid, "§aBenvenuto sul server Rust! Scrivi /help per i comandi.");
         self.broadcast(Text::new(text_type::RAW, format!("§e{name} è entrato nel gioco")));
         self.send_abilities(pid);

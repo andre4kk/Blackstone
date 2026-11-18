@@ -55,6 +55,17 @@ impl Harness {
         out
     }
 
+    /// Tutti i pacchetti inviati da quando si è letto l'ultima volta, per destinatario (`packets_to` scarta quelli degli altri).
+    fn packets_by_player(&mut self) -> std::collections::HashMap<u64, Vec<Packet>> {
+        let mut out: std::collections::HashMap<u64, Vec<Packet>> = Default::default();
+        while let Ok(cmd) = self.sent.try_recv() {
+            if let Command::Send(to, data) = cmd {
+                out.entry(to).or_default().extend(Session::default().decode(&data).unwrap());
+            }
+        }
+        out
+    }
+
     /// Porta un giocatore fino a "nel mondo": login, raggio, inizializzato.
     fn join(&mut self, pid: u64, name: &str) {
         self.server.open(pid);
@@ -2292,5 +2303,124 @@ mod entities {
         let b = h.server.entities.alloc();
         assert_eq!(a, FIRST_ENTITY_ID);
         assert_eq!(b, FIRST_ENTITY_ID + 1);
+    }
+}
+
+mod player_list {
+    use super::*;
+    use crate::{entity::EntityKind, playerdata};
+    use bedrock_protocol::{
+        entity::{player_list_add, player_list_remove, PlayerListEntry},
+        skin::uuid_bytes,
+    };
+
+    fn count(packets: &[Packet], packet_id: u32) -> usize {
+        packets.iter().filter(|p| p.id == packet_id).count()
+    }
+
+    fn uuid_of(h: &Harness, pid: u64) -> [u8; 16] {
+        let info = h.server.players[&pid].info.as_ref().unwrap();
+        uuid_bytes(info, &playerdata::identity(info))
+    }
+
+    /// La voce di `pid` come la deve scrivere il server.
+    fn expected_add(h: &Harness, pids: &[u64]) -> Packet {
+        let entries: Vec<PlayerListEntry> = pids
+            .iter()
+            .map(|&pid| {
+                let info = h.server.players[&pid].info.as_ref().unwrap();
+                PlayerListEntry {
+                    uuid: uuid_of(h, pid),
+                    unique_id: pid as i64,
+                    name: info.name.clone(),
+                    xuid: info.xuid.clone().unwrap_or_default(),
+                    platform_chat_id: String::new(),
+                    build_platform: info.device_os.map_or(-1, |d| d as i32),
+                    skin: &info.skin,
+                    teacher: false,
+                    host: false,
+                    sub_client: false,
+                }
+            })
+            .collect();
+        player_list_add(&entries)
+    }
+
+    fn only(packets: Vec<Packet>, packet_id: u32) -> Packet {
+        let mut v: Vec<Packet> = packets.into_iter().filter(|p| p.id == packet_id).collect();
+        assert_eq!(v.len(), 1, "un solo pacchetto {packet_id}");
+        v.remove(0)
+    }
+
+    #[test]
+    fn joining_player_gets_the_full_list_and_others_get_him() {
+        let mut h = Harness::new();
+        h.join(1, "Alice");
+        h.packets_to(1);
+        h.join(2, "Bob");
+        let mut sent = h.packets_by_player();
+        let to_bob = only(sent.remove(&2).unwrap(), id::PLAYER_LIST);
+        assert_eq!(to_bob.body, expected_add(&h, &[1, 2]).body, "Bob riceve Alice e Bob");
+        let to_alice = only(sent.remove(&1).unwrap(), id::PLAYER_LIST);
+        assert_eq!(to_alice.body, expected_add(&h, &[2]).body, "Alice riceve solo Bob");
+        let e = h.server.entities.get(2).expect("Bob è un'entità");
+        assert!(matches!(&e.kind, EntityKind::Player { pid: Some(2), name, uuid } if name == "Bob" && *uuid == uuid_of(&h, 2)));
+    }
+
+    #[test]
+    fn quitting_player_disappears_for_everyone() {
+        let mut h = Harness::new();
+        h.join(1, "Alice");
+        h.join(2, "Bob");
+        for pid in [1, 2] {
+            h.server.players.get_mut(&pid).unwrap().sent.insert((0, 0));
+        }
+        h.server.visibility_tick();
+        h.packets_by_player();
+        let bob = uuid_of(&h, 2);
+        h.server.close(2);
+        let to_alice = h.packets_to(1);
+        assert_eq!(count(&to_alice, id::REMOVE_ACTOR), 1, "Alice vedeva Bob");
+        assert_eq!(only(to_alice, id::PLAYER_LIST).body, player_list_remove(&[bob]).body);
+        assert!(h.server.entities.get(2).is_none(), "Bob non resta nel registro");
+        assert!(h.server.players[&1].visible.is_empty());
+    }
+
+    #[test]
+    fn quitting_player_nobody_saw_only_leaves_the_list() {
+        let mut h = Harness::new();
+        h.join(1, "Alice");
+        h.join(2, "Bob");
+        h.packets_to(1);
+        h.server.close(2);
+        let to_alice = h.packets_to(1);
+        assert_eq!(count(&to_alice, id::REMOVE_ACTOR), 0);
+        assert_eq!(count(&to_alice, id::PLAYER_LIST), 1);
+    }
+
+    #[test]
+    fn two_players_in_the_same_chunks_see_each_other() {
+        let mut h = Harness::new();
+        h.join(1, "Alice");
+        h.join(2, "Bob");
+        for pid in [1, 2] {
+            h.server.players.get_mut(&pid).unwrap().sent.insert((0, 0));
+        }
+        h.packets_by_player();
+        h.server.visibility_tick();
+        let sent = h.packets_by_player();
+        for pid in [1, 2] {
+            assert_eq!(count(&sent[&pid], id::ADD_PLAYER), 1, "#{pid} vede l'altro e non se stesso");
+        }
+        h.server.visibility_tick();
+        assert_eq!(count(&h.packets_to(1), id::ADD_PLAYER), 0);
+    }
+
+    #[test]
+    fn entity_position_follows_the_player() {
+        let mut h = Harness::new();
+        h.join(1, "Alice");
+        h.server.on_move(1, [40.5, 12.62, -3.5]);
+        assert_eq!(h.server.entities.get(1).unwrap().pos, [40.5, 12.62, -3.5]);
     }
 }

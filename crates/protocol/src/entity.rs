@@ -6,6 +6,7 @@ use crate::generated::{
     MobArmorEquipment, MoveActorAbsolute, MoveActorAbsoluteData, RemoveActor, SerializedAbilitiesDataSerializedLayer, SetActorMotion, TakeItemActor, Vec3,
 };
 use crate::item::ItemStack;
+use crate::skin::Skin;
 use crate::wire::{Encode, ServerPacket, Writer};
 use crate::{id, Packet};
 
@@ -83,6 +84,63 @@ pub fn add_player(p: &AddPlayerData) -> Packet {
     w.string(&p.device_id);
     w.i32(p.build_platform);
     Packet::new(id::ADD_PLAYER, w.0)
+}
+
+/// Una voce "aggiungi" della `PlayerList` (63): un giocatore con la sua skin.
+pub struct PlayerListEntry<'a> {
+    /// UUID nell'ordine testuale (primi 8 byte = bit più significativi).
+    pub uuid: [u8; 16],
+    pub unique_id: i64,
+    pub name: String,
+    pub xuid: String,
+    pub platform_chat_id: String,
+    pub build_platform: i32,
+    pub skin: &'a Skin,
+    pub teacher: bool,
+    pub host: bool,
+    pub sub_client: bool,
+}
+
+/// `mce::UUID` = due u64 little-endian: prima i bit alti, poi quelli bassi.
+fn write_uuid(w: &mut Writer, uuid: &[u8; 16]) {
+    w.u64(u64::from_be_bytes(uuid[..8].try_into().unwrap()));
+    w.u64(u64::from_be_bytes(uuid[8..].try_into().unwrap()));
+}
+
+/// `PlayerList` (63) con solo voci "aggiungi". Ogni voce è una variante con etichetta: indice di variante (posizione nel `oneOf`:
+/// Remove 0, Add 1) e poi i campi della voce, che iniziano con il suo byte `Action` (Add 0).
+pub fn player_list_add(entries: &[PlayerListEntry]) -> Packet {
+    let mut w = Writer::default();
+    w.var_u32(entries.len() as u32);
+    for e in entries {
+        w.var_u32(1);
+        w.u8(0);
+        write_uuid(&mut w, &e.uuid);
+        w.var_i64(e.unique_id);
+        w.string(&e.name);
+        w.string(&e.xuid);
+        w.string(&e.skin.play_fab_id);
+        w.string(&e.platform_chat_id);
+        w.i32(e.build_platform);
+        e.skin.encode(&mut w);
+        w.bool(e.teacher);
+        w.bool(e.host);
+        w.bool(e.sub_client);
+        w.i32(-1); // colore del giocatore: bianco opaco (ARGB)
+    }
+    Packet::new(id::PLAYER_LIST, w.0)
+}
+
+/// `PlayerList` (63) con solo voci "rimuovi" (variante 0, `Action` 1, UUID).
+pub fn player_list_remove(uuids: &[[u8; 16]]) -> Packet {
+    let mut w = Writer::default();
+    w.var_u32(uuids.len() as u32);
+    for u in uuids {
+        w.var_u32(0);
+        w.u8(1);
+        write_uuid(&mut w, u);
+    }
+    Packet::new(id::PLAYER_LIST, w.0)
 }
 
 /// `AddItemActor` (15): un oggetto a terra. Mai da pesca.
@@ -277,6 +335,53 @@ mod tests {
         assert_eq!(p.body[0], 6);
         assert_eq!(p.body[1..1 + w.0.len()], w.0[..]);
         assert_eq!(p.body.len(), 1 + w.0.len() + 4 * 8);
+    }
+
+    #[test]
+    fn player_list_add_layout() {
+        let skin = Skin::fallback();
+        let uuid: [u8; 16] = core::array::from_fn(|i| i as u8 + 1);
+        let e = PlayerListEntry {
+            uuid,
+            unique_id: 5,
+            name: "Al".into(),
+            xuid: "99".into(),
+            platform_chat_id: "".into(),
+            build_platform: 7,
+            skin: &skin,
+            teacher: false,
+            host: true,
+            sub_client: false,
+        };
+        let p = player_list_add(&[e]);
+        assert_eq!(p.id, id::PLAYER_LIST);
+        let mut expected = vec![1, 1, 0]; // una voce, variante Add (seconda del oneOf), Action Add = 0
+        expected.extend(0x0102030405060708u64.to_le_bytes());
+        expected.extend(0x090a0b0c0d0e0f10u64.to_le_bytes());
+        expected.push(10); // id unico 5 (zigzag)
+        expected.extend([2, b'A', b'l', 2, b'9', b'9']); // nome, XUID
+        expected.extend([0, 0]); // PlayFab ID (skin di ripiego: vuoto), id chat piattaforma
+        expected.extend(7i32.to_le_bytes());
+        let mut w = Writer::default();
+        skin.encode(&mut w);
+        expected.extend(w.0);
+        expected.extend([0, 1, 0]); // insegnante, host, sub-client
+        expected.extend((-1i32).to_le_bytes()); // colore
+        assert_eq!(p.body, expected);
+    }
+
+    #[test]
+    fn player_list_remove_layout() {
+        let a: [u8; 16] = core::array::from_fn(|i| i as u8 + 1);
+        let b = [0xffu8; 16];
+        let p = player_list_remove(&[a, b]);
+        assert_eq!(p.id, id::PLAYER_LIST);
+        let mut expected = vec![2, 0, 1]; // due voci; variante Remove (prima del oneOf), Action Remove = 1
+        expected.extend(0x0102030405060708u64.to_le_bytes());
+        expected.extend(0x090a0b0c0d0e0f10u64.to_le_bytes());
+        expected.extend([0, 1]);
+        expected.extend([0xff; 16]);
+        assert_eq!(p.body, expected);
     }
 
     #[test]

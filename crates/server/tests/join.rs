@@ -163,7 +163,8 @@ fn client(port: u16, mode: Mode) {
     let (start, mut buf, mut session, mut stage, mut chunks) = (Instant::now(), vec![0u8; 2048], Session::default(), 0, 0);
     let mut pending: Vec<u8> = Vec::new();
     let mut sync = [0usize; 4];
-    // Solo `Mode::Generated`: chunk e biomi ricevuti e centro (in chunk) dopo il movimento.
+    let mut player_lists = 0usize; // PlayerList con il giocatore stesso, una sola volta
+                                   // Solo `Mode::Generated`: chunk e biomi ricevuti e centro (in chunk) dopo il movimento.
     let mut seen: HashSet<(i32, i32)> = HashSet::new();
     let (mut biomes, mut moved_to) = (false, None::<(i32, i32)>);
     let limit = Duration::from_secs(if mode == Mode::Generated { 30 } else { 10 });
@@ -225,6 +226,7 @@ fn client(port: u16, mode: Mode) {
                             match p.id {
                                 x if x == BiomeDefinitionList::ID => biomes = true,
                                 x if x == NetworkChunkPublisherUpdate::ID || x == id::TEXT || count_sync(x, &mut sync) => {}
+                                x if x == id::PLAYER_LIST => player_lists += 1,
                                 x if x == LevelChunk::ID => {
                                     let mut b = &p.body[..];
                                     let pos = (varint::read_signed(&mut b).unwrap(), varint::read_signed(&mut b).unwrap());
@@ -240,6 +242,7 @@ fn client(port: u16, mode: Mode) {
                         assert!(!biomes, "la BiomeDefinitionList non va mandata senza SEND=biomes");
                         assert_eq!(seen.len(), EXPECTED_CHUNKS, "chunk attorno allo spawn");
                         assert_eq!(sync, [1, 1, 3, 1], "modalità, abilità, inventario/mano secondaria/armatura e barra, una volta sola");
+                        assert_eq!(player_lists, 1, "la PlayerList con il giocatore, una volta sola");
                         assert!(seen.iter().all(|&(x, z)| x.abs() <= RADIUS && z.abs() <= RADIUS), "solo chunk vicini allo spawn: {seen:?}");
                         // Sposta il giocatore di 5 chunk in X (lo spawn finto è in 8, 61, 8).
                         moved_to = Some((5, 0));
@@ -282,6 +285,7 @@ fn client(port: u16, mode: Mode) {
                         for p in &packets {
                             match p.id {
                                 x if x == NetworkChunkPublisherUpdate::ID || x == BiomeDefinitionList::ID || count_sync(x, &mut sync) => {}
+                                x if x == id::PLAYER_LIST => player_lists += 1,
                                 id::TEXT => {}
                                 x if x == LevelChunk::ID => chunks += 1,
                                 other => panic!("pacchetto inatteso durante lo streaming: {other}"),
@@ -291,6 +295,7 @@ fn client(port: u16, mode: Mode) {
                             continue;
                         }
                         assert_eq!(sync, [1, 1, 3, 1], "modalità, abilità, inventario/mano secondaria/armatura e barra, una volta sola");
+                        assert_eq!(player_lists, 1, "la PlayerList con il giocatore, una volta sola");
                         // Chat: il client si spaccia per "Hacker", ma il server usa il nome verificato dal login.
                         Packet::new(id::TEXT, Text::chat("Hacker", "ciao").encode())
                     }

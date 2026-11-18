@@ -4,8 +4,6 @@ mod breaking;
 mod chat;
 pub mod config;
 mod disk;
-// Le parti non ancora usate (despawn, get, get_mut, campi degli oggetti) servono ai compiti successivi della tappa 2.
-#[allow(dead_code)]
 mod entity;
 mod events;
 mod gen_client;

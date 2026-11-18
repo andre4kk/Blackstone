@@ -48,7 +48,7 @@ vecchio `mTeleported` è stato rinominato `mForceMove`; gophertunnel: `OnGround 
 varint32. Il client manda lo stesso pacchetto: `input::Animate` legge solo azione e runtime id e ignora il resto. Il campo
 `action` è `i32` (come da piano) ma si legge un solo byte.
 
-**PlayerList (63) / PlayerSkin (93)**: non implementati qui.
+**PlayerSkin (93)**: non implementato qui (Task 7). **PlayerList (63)**: vedi sezione dedicata sotto.
 
 ## Numeri dei flag (`actor::flag`, chiave `FLAGS` = bitset i64)
 
@@ -86,3 +86,21 @@ Ordine = `x-ordinal-index` di `SerializedSkin.json` (tipi di `SkinImage`, `Anima
 Incerti da confermare con una cattura reale del PlayerList: contatore dei `Colors`, larghezza di `TrustedSkinFlag`, endianness di `ArmSize`/`PieceType` (qui u8 e u32 fissi come da schema).
 
 UUID nel PlayerList (Task 4): `skin::uuid_bytes` restituisce i 16 byte **nell'ordine del testo** ("aabbccdd-eeff-..." -> aa bb cc dd ee ff ...). Bedrock scrive l'UUID come due u64 little-endian (Most Significant Bits poi Least Significant Bits, come `mce::UUID` sopra): quindi scrivere `u64::from_be_bytes(b[..8])` e `u64::from_be_bytes(b[8..])` con `Writer::u64` (little-endian), come fa `Skin::encode` per `PackId`. Ordine non verificato su gophertunnel (non e' in `vendor/`): controllare con la cattura.
+
+
+## PlayerList (63), `entity::player_list_add` / `player_list_remove`
+
+Schemi: `PlayerListPacketPayload.json`, `PlayerListAddEntry.json`, `PlayerListRemoveEntry.json`. Il corpo e' un array: contatore varuint32,
+poi per ogni voce una **variante con etichetta** (`oneOf`, `x-control-value-type: uint32`, stessa regola di `ItemStackRequest`, tappa1 §1):
+indice di variante varuint32 = posizione nel `oneOf` (**Remove 0, Add 1**), poi i campi della voce, che iniziano col suo byte `Action`
+(u8: Add 0, Remove 1). Il server manda sempre liste di una sola specie.
+
+| Voce | Campi in ordine (`x-ordinal-index`) |
+|---|---|
+| Add | 0 Action u8 = 0; 1 UUID (due u64 LE, bit alti poi bassi); 2 id unico varint64 zigzag (= `pid`); 3 nome; 4 XUID; 5 PlayFab ID; 6 id online piattaforma (chat); 7 piattaforma di build i32 fisso; 8 `SerializedSkin`; 9 insegnante bool; 10 host bool; 11 sub-client bool; 12 colore giocatore i32 fisso (ARGB) |
+| Remove | 0 Action u8 = 1; 1 UUID |
+
+Scelte: PlayFab ID = quello della skin (vuoto di norma); id chat piattaforma vuoto; piattaforma di build = `DeviceOS` del login passato
+cosi' com'e' (-1 se manca); host, insegnante, sub-client falsi; colore = -1 (bianco opaco).
+**Non verificato su cattura**: l'indice di variante (Remove 0 / Add 1, dalla posizione nel `oneOf`; se il client volesse l'`Action` come
+indice sarebbero invertiti) e il valore di default del colore. La lista Add arriva prima dell'`AddPlayer` dello stesso giocatore.
