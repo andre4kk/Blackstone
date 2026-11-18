@@ -117,18 +117,24 @@ impl UseItem {
     }
 }
 
-/// Salta gli slot legacy opzionali: presenza + [contenitore u8, lista di slot u8].
-fn skip_legacy_slots(r: &mut Reader) -> Option<()> {
-    r.optional(|r| {
+/// Caselle che il client chiede di rimandargli (`LegacySetItemSlots`): presenza + [contenitore u8, lista di caselle u8].
+/// Il client le nomina poi con l'ID della sua richiesta legacy finché il server non le rimanda con l'ID vero.
+pub type LegacySlots = Vec<(u8, Vec<u8>)>;
+
+fn read_legacy_slots(r: &mut Reader) -> Option<LegacySlots> {
+    let slots = r.optional(|r| {
+        let mut out = Vec::new();
         for _ in 0..r.var_u32()? {
-            r.u8()?;
+            let container = r.u8()?;
+            let mut slots = Vec::new();
             for _ in 0..r.var_u32()? {
-                r.u8()?;
+                slots.push(r.u8()?);
             }
+            out.push((container, slots));
         }
-        Some(())
+        Some(out)
     })?;
-    Some(())
+    Some(slots.unwrap_or_default())
 }
 
 /// Salta le `InventoryAction`: il server non le usa, l'inventario passa dalle richieste di pila.
@@ -149,6 +155,7 @@ fn skip_inventory_actions(r: &mut Reader) -> Option<()> {
 #[derive(Clone, Debug, PartialEq)]
 pub struct InventoryTransaction {
     pub legacy_request_id: i32,
+    pub legacy_slots: LegacySlots,
     pub kind: u32,
     pub use_item: Option<UseItem>,
 }
@@ -157,11 +164,11 @@ impl InventoryTransaction {
     pub fn decode(body: &[u8]) -> Option<Self> {
         let r = &mut Reader(body);
         let legacy_request_id = r.var_i32()?;
-        skip_legacy_slots(r)?;
+        let legacy_slots = read_legacy_slots(r)?;
         let kind = r.var_u32()?;
         skip_inventory_actions(r)?;
         let use_item = if kind == 2 { Some(UseItem::read(r)?) } else { None };
-        Some(Self { legacy_request_id, kind, use_item })
+        Some(Self { legacy_request_id, legacy_slots, kind, use_item })
     }
 }
 
@@ -386,6 +393,8 @@ pub struct PlayerAuthInput {
     pub tick: u64,
     pub delta: [f32; 3],
     pub item_use: Option<UseItem>,
+    /// Le caselle da rimandare chieste insieme all'uso dell'oggetto.
+    pub legacy_slots: LegacySlots,
     pub stack_request: Option<StackRequest>,
     pub block_actions: Vec<BlockAction>,
 }
@@ -433,15 +442,19 @@ impl PlayerAuthInput {
             tick: r.var_u64()?,
             delta: r.vec3()?,
             item_use: None,
+            legacy_slots: Vec::new(),
             stack_request: None,
             block_actions: Vec::new(),
         };
-        p.item_use = r.optional(|r| {
+        if let Some((slots, u)) = r.optional(|r| {
             r.var_i32()?; // id legacy della richiesta
-            skip_legacy_slots(r)?;
+            let slots = read_legacy_slots(r)?;
             skip_inventory_actions(r)?;
-            UseItem::read(r)
-        })?;
+            Some((slots, UseItem::read(r)?))
+        })? {
+            p.legacy_slots = slots;
+            p.item_use = Some(u);
+        }
         if r.bool()? {
             match StackRequest::read(r)? {
                 Some(q) => p.stack_request = Some(q),
@@ -656,6 +669,7 @@ mod tests {
         w.raw(&REAL_CAPTURE[4..]); // dal tipo di azione in poi
         let t = InventoryTransaction::decode(&w.0).expect("leggibile");
         assert_eq!(t.legacy_request_id, -2);
+        assert_eq!(t.legacy_slots, vec![(12, vec![3, 4])]);
         assert_eq!(t.use_item.expect("uso").pos, [-155, 72, -2]);
     }
 

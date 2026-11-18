@@ -10,7 +10,10 @@ use bedrock_protocol::{
     entity::animate_swing,
     generated::{BlockPos, ContainerClose, ContainerOpen, MobEquipment},
     id,
-    input::{flag, interact_action, use_item, Animate, Interact, InventoryTransaction, ItemStackRequestPacket, PlayerAction, PlayerAuthInput, StackRequest},
+    input::{
+        flag, interact_action, use_item, Animate, Interact, InventoryTransaction, ItemStackRequestPacket, LegacySlots, PlayerAction, PlayerAuthInput,
+        StackRequest,
+    },
     login,
     packets::{
         disconnect_reason, pack_response, play_status, text_type, Disconnect, Login, NetworkSettings, PacketViolationWarning, PlayStatus,
@@ -194,6 +197,7 @@ impl Server {
         if let Some(u) = input.item_use.as_ref().filter(|u| input.has(flag::PERFORM_ITEM_INTERACTION) && u.action == use_item::DESTROY) {
             self.break_block(pid, u.pos);
         }
+        self.resend_legacy_slots(pid, &input.legacy_slots);
     }
 
     /// Pacchetto `PlayerAction`: inizio, fine e abbandono della rottura di un blocco, e rottura creativa.
@@ -210,10 +214,23 @@ impl Server {
         let Some(transaction) = InventoryTransaction::decode(body) else {
             return log!("[#{pid}] InventoryTransaction illeggibile ({} byte): ignorata", body.len());
         };
-        match transaction.use_item {
+        match &transaction.use_item {
             Some(u) if u.action == use_item::DESTROY => self.break_block(pid, u.pos),
-            Some(u) if u.action == use_item::PLACE => self.place_item(pid, &u),
+            Some(u) if u.action == use_item::PLACE => self.place_item(pid, u),
             _ => {}
+        }
+        self.resend_legacy_slots(pid, &transaction.legacy_slots);
+    }
+
+    /// Rimanda le caselle che il client ha chiesto con `LegacySetItemSlots` (al più 2 contenitori x 2 caselle, come Dragonfly), anche
+    /// se non sono cambiate: fino ad allora il client le nomina con l'ID della sua richiesta legacy, che il server non conosce, e le
+    /// richieste di pila successive su quelle caselle (per esempio buttare con Q) venivano rifiutate.
+    pub(crate) fn resend_legacy_slots(&self, pid: u64, slots: &LegacySlots) {
+        let Some(p) = self.players.get(&pid) else { return };
+        let packets: Vec<Packet> =
+            slots.iter().take(2).flat_map(|(container, list)| list.iter().take(2).filter_map(|&slot| p.inventory.slot_packet_at(*container, slot))).collect();
+        if !packets.is_empty() {
+            self.send(pid, &packets);
         }
     }
 

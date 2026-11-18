@@ -45,13 +45,27 @@ pub fn parse(login: &Login) -> Result<PlayerInfo, String> {
     Ok(PlayerInfo {
         name,
         xuid: text(token.as_ref(), "xid").or_else(|| text(extra.as_ref(), "XUID")),
-        uuid: text(extra.as_ref(), "identity"),
+        // Login vecchio: `identity` della catena. Login nuovo (Token OpenID): `leguuid` se c'è, altrimenti il client lo ricava
+        // dall'XUID come `identityFromXUID` di gophertunnel; con un altro UUID il server scartava i `PlayerSkin` del giocatore.
+        uuid: text(extra.as_ref(), "identity")
+            .or_else(|| text(token.as_ref(), "leguuid"))
+            .or_else(|| text(token.as_ref(), "xid").map(|x| identity_from_xuid(&x))),
         device_os: data.get("DeviceOS").and_then(Value::as_i64),
         game_version: text(Some(&data), "GameVersion"),
         authentication_type: identity.get("AuthenticationType").and_then(Value::as_i64),
         skin: Skin::from_client_data(&data).unwrap_or_else(Skin::fallback),
         token_claim_keys: token.as_ref().map(|t| keys(t).into_iter().map(str::to_owned).collect()).unwrap_or_default(),
     })
+}
+
+/// UUID versione 3 da MD5("pocket-auth-1-xuid:" + XUID), in forma testuale: lo stesso che il client usa per sé (gophertunnel `identityFromXUID`).
+pub fn identity_from_xuid(xuid: &str) -> String {
+    use md5::{Digest, Md5};
+    let mut id: [u8; 16] = Md5::new().chain_update(b"pocket-auth-1-xuid:").chain_update(xuid.as_bytes()).finalize().into();
+    id[6] = id[6] & 0x0f | 0x30;
+    id[8] = id[8] & 0x3f | 0x80;
+    let h: String = id.iter().map(|b| format!("{b:02x}")).collect();
+    format!("{}-{}-{}-{}-{}", &h[..8], &h[8..12], &h[12..16], &h[16..20], &h[20..])
 }
 
 /// Payload di un JWT (senza verificarne la firma).
@@ -85,6 +99,18 @@ mod tests {
         let p = login(&identity, &jwt(json!({"ThirdPartyName": "Altro", "DeviceOS": 7, "GameVersion": "1.26.63"})));
         assert_eq!((p.name.as_str(), p.xuid.as_deref(), p.uuid.as_deref()), ("Steve", Some("123"), Some("uuid-1")));
         assert_eq!((p.device_os, p.game_version.as_deref()), (Some(7), Some("1.26.63")));
+    }
+
+    #[test]
+    fn uuid_from_xuid_matches_the_client() {
+        // UUID letto nel PlayerSkin vero del client (19/11/2026) per l'XUID 2535406382079041.
+        assert_eq!(identity_from_xuid("2535406382079041"), "b4830f52-6498-3b60-a272-fcafe64230ef");
+        // Login nuovo senza `leguuid`: il giocatore prende quello ricavato dall'XUID.
+        let identity = json!({"AuthenticationType": 0, "Certificate": "", "Token": jwt(json!({"xid": "2535406382079041", "xname": "Gamer"}))}).to_string();
+        assert_eq!(login(&identity, &jwt(json!({}))).uuid.as_deref(), Some("b4830f52-6498-3b60-a272-fcafe64230ef"));
+        // con `leguuid` vale quello
+        let identity = json!({"AuthenticationType": 0, "Certificate": "", "Token": jwt(json!({"xid": "1", "xname": "G", "leguuid": "abc"}))}).to_string();
+        assert_eq!(login(&identity, &jwt(json!({}))).uuid.as_deref(), Some("abc"));
     }
 
     #[test]

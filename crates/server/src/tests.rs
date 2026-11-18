@@ -1014,6 +1014,27 @@ mod breaking {
     }
 
     #[test]
+    fn legacy_slots_are_resent_with_the_real_stack_id() {
+        // Il client chiede di riavere la casella 3 della barra (contenitore 28) dopo una sua richiesta legacy (-8):
+        // senza risposta la nomina con -8 e il lancio con Q successivo veniva rifiutato.
+        let mut h = setup(GameMode::Creative);
+        drop(outbox(&mut h.sent));
+        let mut w = Writer::default();
+        w.var_i32(-8);
+        w.u8(1);
+        w.var_u32(1);
+        w.u8(28);
+        w.var_u32(1);
+        w.u8(3);
+        w.var_u32(0); // tipo normale
+        w.var_u32(0); // niente azioni
+        h.receive(1, &[Packet::new(id::INVENTORY_TRANSACTION, w.0)]);
+        let out = outbox(&mut h.sent);
+        let want = h.server.players[&1].inventory.slot_packet_at(28, 3).unwrap();
+        assert!(out.iter().any(|(to, p)| *to == 1 && p.id == id::INVENTORY_SLOT && p.body == want.body), "la casella 3 rimandata ad Alice");
+    }
+
+    #[test]
     fn a_refused_break_resends_the_neighbours_too() {
         let mut h = setup(GameMode::Creative);
         let above = [ROCK[0], ROCK[1] + 1, ROCK[2]];
