@@ -2591,3 +2591,89 @@ mod player_list {
         assert_eq!(count(&sent[&2], id::MOB_ARMOR_EQUIPMENT), 1);
     }
 }
+
+mod skin_change {
+    use super::*;
+    use bedrock_protocol::skin::{player_skin_packet, PlayerSkinChange, Skin};
+
+    fn uuid_of(h: &Harness, pid: u64) -> [u8; 16] {
+        match h.server.entities.get(pid).unwrap().kind {
+            crate::entity::EntityKind::Player { uuid, .. } => uuid,
+            _ => unreachable!(),
+        }
+    }
+
+    fn new_skin() -> Skin {
+        let mut s = Skin::fallback();
+        s.id = "nuova".into();
+        s.full_id = "nuova".into();
+        s.image.data = [1, 2, 3, 255].repeat(64 * 64);
+        s
+    }
+
+    fn change(uuid: [u8; 16]) -> Packet {
+        player_skin_packet(&PlayerSkinChange { uuid, skin: new_skin(), new_name: "n".into(), old_name: "o".into() })
+    }
+
+    #[test]
+    fn skin_change_reaches_everyone_and_is_stored() {
+        let mut h = Harness::new();
+        h.join(1, "Alice");
+        h.join(2, "Bob");
+        h.packets_by_player();
+        let alice = uuid_of(&h, 1);
+        h.receive(1, &[change(alice)]);
+        let sent = h.packets_by_player();
+        for pid in [1, 2] {
+            let skins: Vec<_> = sent[&pid].iter().filter(|p| p.id == id::PLAYER_SKIN).collect();
+            assert_eq!(skins.len(), 1, "#{pid} riceve il cambio (anche chi non vede Alice)");
+            let got = PlayerSkinChange::decode(&skins[0].body).unwrap();
+            assert_eq!((got.uuid, got.skin), (alice, new_skin()));
+        }
+        assert_eq!(h.server.players[&1].info.as_ref().unwrap().skin, new_skin());
+        h.join(3, "Carol");
+        let to_carol = h.packets_to(3);
+        let list = to_carol.iter().find(|p| p.id == id::PLAYER_LIST).unwrap();
+        let mut w = Writer::default();
+        new_skin().encode(&mut w);
+        assert!(list.body.windows(w.0.len()).any(|s| s == w.0.as_slice()), "la lista dei nuovi contiene la nuova skin");
+    }
+
+    #[test]
+    fn skin_change_with_wrong_uuid_is_ignored() {
+        let mut h = Harness::new();
+        h.join(1, "Alice");
+        h.join(2, "Bob");
+        h.packets_by_player();
+        let before = h.server.players[&1].info.as_ref().unwrap().skin.clone();
+        let bob = uuid_of(&h, 2);
+        h.receive(1, &[change(bob)]);
+        let sent = h.packets_by_player();
+        assert!(sent.values().flatten().all(|p| p.id != id::PLAYER_SKIN));
+        assert_eq!(h.server.players[&1].info.as_ref().unwrap().skin, before);
+        assert_eq!(h.server.players[&2].info.as_ref().unwrap().skin, before);
+    }
+
+    #[test]
+    fn skin_change_before_spawn_or_malformed_is_ignored() {
+        let mut h = Harness::new();
+        h.join(1, "Alice");
+        h.server.open(2);
+        h.receive(2, &[login("Bob")]);
+        h.packets_by_player();
+        h.receive(2, &[change([0; 16])]);
+        h.receive(1, &[Packet::new(id::PLAYER_SKIN, vec![1, 2, 3])]);
+        assert!(h.packets_by_player().values().flatten().all(|p| p.id != id::PLAYER_SKIN));
+    }
+
+    #[test]
+    fn skin_change_hex_is_logged_only_a_few_times() {
+        let mut h = Harness::new();
+        h.join(1, "Alice");
+        let alice = uuid_of(&h, 1);
+        for _ in 0..5 {
+            h.receive(1, &[change(alice)]);
+        }
+        assert_eq!(h.server.players[&1].skin_logs, 3);
+    }
+}

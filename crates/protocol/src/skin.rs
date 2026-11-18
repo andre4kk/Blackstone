@@ -1,6 +1,12 @@
 //! Skin del giocatore, letta dai dati del client del login e scritta come `SerializedSkin` (PlayerList / PlayerSkin).
 //! Layout dei byte: docs/superpowers/notes/2026-11-19-protocollo-tappa2.md (sezione SerializedSkin).
-use crate::wire::Writer;
+use crate::{
+    entity::{read_uuid, write_uuid},
+    id,
+    reader::Reader,
+    wire::Writer,
+    Packet,
+};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use serde_json::Value;
 use std::fmt;
@@ -66,6 +72,15 @@ impl SkinImage {
         w.u32(self.width);
         w.u32(self.height);
         w.bytes(&self.data);
+    }
+
+    /// Larghezza, altezza e byte RGBA: i byte devono coincidere con le dimensioni.
+    fn decode(r: &mut Reader) -> Option<SkinImage> {
+        let (width, height) = (r.u32()?, r.u32()?);
+        if width > MAX_SIDE || height > MAX_SIDE {
+            return None;
+        }
+        image(width, height, r.bytes()?.to_vec())
     }
 }
 
@@ -281,7 +296,7 @@ impl Skin {
             cape_id: String::new(),
             full_id: "versmcbe:steve".into(),
             arm_size: "wide".into(),
-            color: "#0".into(),
+            color: "#00000000".into(),
             persona_pieces: Vec::new(),
             piece_tints: Vec::new(),
             premium: false,
@@ -337,6 +352,103 @@ impl Skin {
         w.u8(2); // TrustedSkinFlag::True: il server ha gia' validato la skin
         w.string(""); // ProfileHash
     }
+}
+
+impl Skin {
+    /// Legge una `SerializedSkin` (inverso di `encode`). `None` se i byte finiscono, le immagini sono incoerenti o il JSON e' malformato.
+    /// Il flag "fidato" e l'hash del profilo si leggono e si scartano: il server decide da solo cosa e' fidato.
+    pub fn decode(r: &mut Reader) -> Option<Skin> {
+        let id = r.string()?.to_owned();
+        let resource_patch = r.bytes()?.to_vec();
+        let img = SkinImage::decode(r)?;
+        let mut animations = Vec::new();
+        for _ in 0..r.var_u32()? {
+            animations.push(SkinAnimation { image: SkinImage::decode(r)?, animation_type: r.var_u32()?, frames: r.f32()?, expression: r.var_u32()? });
+        }
+        let cape = SkinImage::decode(r)?;
+        let geometry = r.bytes()?.to_vec();
+        let geometry_engine_version = r.bytes()?.to_vec();
+        let animation_data = r.bytes()?.to_vec();
+        let cape_id = r.string()?.to_owned();
+        let full_id = r.string()?.to_owned();
+        let arm_size = if r.u8()? == 0 { "slim" } else { "wide" }.to_owned();
+        let color = format!("#{:08x}", r.i32()? as u32);
+        let mut persona_pieces = Vec::new();
+        for _ in 0..r.var_u32()? {
+            persona_pieces.push(PersonaPiece {
+                piece_id: r.string()?.to_owned(),
+                piece_type: r.u32()?,
+                pack_id: read_uuid(r)?,
+                is_default: r.bool()?,
+                product_id: r.string()?.to_owned(),
+            });
+        }
+        let mut piece_tints = Vec::new();
+        for _ in 0..r.var_u32()? {
+            let piece_type = r.u32()?;
+            let mut colors = Vec::new();
+            for _ in 0..r.var_u32()? {
+                colors.push(r.i32()?);
+            }
+            piece_tints.push(PieceTint { piece_type, colors });
+        }
+        let (premium, persona, cape_on_classic, primary_user, overrides_appearance) = (r.bool()?, r.bool()?, r.bool()?, r.bool()?, r.bool()?);
+        r.u8()?; // TrustedSkinFlag
+        r.string()?; // ProfileHash
+                     // Come per i dati del login: geometrie e patch viaggiano come JSON, altrimenti la skin e' scartata.
+        if (!geometry.is_empty() && serde_json::from_slice::<Value>(&geometry).is_err())
+            || (!resource_patch.is_empty() && serde_json::from_slice::<Value>(&resource_patch).is_err())
+        {
+            return None;
+        }
+        Some(Skin {
+            id,
+            play_fab_id: String::new(),
+            resource_patch,
+            image: img,
+            animations,
+            cape,
+            geometry,
+            geometry_engine_version,
+            animation_data,
+            cape_id,
+            full_id,
+            arm_size,
+            color,
+            persona_pieces,
+            piece_tints,
+            premium,
+            persona,
+            cape_on_classic,
+            primary_user,
+            overrides_appearance,
+        })
+    }
+}
+
+/// `PlayerSkin` (93): un giocatore cambia skin. Layout di `PlayerSkinPacketPayload.json`: UUID, skin, nome nuovo e nome vecchio.
+#[derive(Clone, Debug, PartialEq)]
+pub struct PlayerSkinChange {
+    pub uuid: [u8; 16],
+    pub skin: Skin,
+    pub new_name: String,
+    pub old_name: String,
+}
+
+impl PlayerSkinChange {
+    pub fn decode(body: &[u8]) -> Option<Self> {
+        let mut r = Reader(body);
+        Some(Self { uuid: read_uuid(&mut r)?, skin: Skin::decode(&mut r)?, new_name: r.string()?.to_owned(), old_name: r.string()?.to_owned() })
+    }
+}
+
+pub fn player_skin_packet(change: &PlayerSkinChange) -> Packet {
+    let mut w = Writer::default();
+    write_uuid(&mut w, &change.uuid);
+    change.skin.encode(&mut w);
+    w.string(&change.new_name);
+    w.string(&change.old_name);
+    Packet::new(id::PLAYER_SKIN, w.0)
 }
 
 /// UUID del giocatore: quello del login se valido, altrimenti uno derivato dall'identita' (stabile, versione 3, variante RFC 4122).
@@ -418,6 +530,43 @@ mod tests {
             w.0.len()
         };
         assert_eq!(len(128) - len(64), 64 * 64 * 4);
+    }
+
+    #[test]
+    fn skin_change_round_trips() {
+        let mut c = client_data(64, 64);
+        c["AnimatedImageData"] = json!([{"Image": STANDARD.encode(vec![1u8; 32 * 32 * 4]), "ImageWidth": 32, "ImageHeight": 32, "Type": 1, "Frames": 2.0, "AnimationExpression": 1}]);
+        c["PersonaPieces"] =
+            json!([{"IsDefault": true, "PackId": "00112233-4455-6677-8899-aabbccddeeff", "PieceId": "p", "PieceType": "persona_hair", "ProductId": "x"}]);
+        c["PieceTintColors"] = json!([{"PieceType": "persona_hair", "Colors": ["#ff112233"]}]);
+        c["ArmSize"] = json!("slim");
+        c["CapeId"] = json!("cape1");
+        c["CapeImageWidth"] = json!(64);
+        c["CapeImageHeight"] = json!(32);
+        c["CapeData"] = json!(STANDARD.encode(vec![9u8; 64 * 32 * 4]));
+        let change = PlayerSkinChange {
+            uuid: uuid_from_str("00112233-4455-6677-8899-aabbccddeeff").unwrap(),
+            skin: Skin::from_client_data(&c).unwrap(),
+            new_name: "nuova".into(),
+            old_name: "vecchia".into(),
+        };
+        let packet = player_skin_packet(&change);
+        assert_eq!(packet.id, crate::id::PLAYER_SKIN);
+        assert_eq!(PlayerSkinChange::decode(&packet.body), Some(change));
+    }
+
+    #[test]
+    fn skin_change_truncated_or_incoherent_is_none() {
+        let change = PlayerSkinChange { uuid: [1; 16], skin: Skin::fallback(), new_name: String::new(), old_name: String::new() };
+        let body = player_skin_packet(&change).body;
+        assert_eq!(PlayerSkinChange::decode(&body).as_ref(), Some(&change));
+        for cut in [0, 10, 40, body.len() - 1] {
+            assert!(PlayerSkinChange::decode(&body[..cut]).is_none(), "tagliato a {cut}");
+        }
+        // Immagine con dimensioni che non tornano con i byte.
+        let mut skin = Skin::fallback();
+        skin.image.height = 32;
+        assert!(PlayerSkinChange::decode(&player_skin_packet(&PlayerSkinChange { skin, ..change }).body).is_none());
     }
 
     #[test]

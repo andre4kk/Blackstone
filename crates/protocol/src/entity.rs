@@ -102,9 +102,17 @@ pub struct PlayerListEntry<'a> {
 }
 
 /// `mce::UUID` = due u64 little-endian: prima i bit alti, poi quelli bassi.
-fn write_uuid(w: &mut Writer, uuid: &[u8; 16]) {
+pub(crate) fn write_uuid(w: &mut Writer, uuid: &[u8; 16]) {
     w.u64(u64::from_be_bytes(uuid[..8].try_into().unwrap()));
     w.u64(u64::from_be_bytes(uuid[8..].try_into().unwrap()));
+}
+
+/// Inverso di `write_uuid`.
+pub(crate) fn read_uuid(r: &mut crate::reader::Reader) -> Option<[u8; 16]> {
+    let mut out = [0u8; 16];
+    out[..8].copy_from_slice(&r.u64()?.to_be_bytes());
+    out[8..].copy_from_slice(&r.u64()?.to_be_bytes());
+    Some(out)
 }
 
 /// `PlayerList` (63) con solo voci "aggiungi". Ogni voce è una variante con etichetta: indice di variante (posizione nel `oneOf`:

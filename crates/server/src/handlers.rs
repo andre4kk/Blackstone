@@ -1,6 +1,6 @@
 //! Un handler per ogni pacchetto che il server sa gestire.
 use crate::{
-    entity::armor_of,
+    entity::{armor_of, EntityKind},
     inventory::{window, HOTBAR_SLOTS},
     playerdata, GameMode, Player, Server, HEX_LOGS,
 };
@@ -15,6 +15,7 @@ use bedrock_protocol::{
         disconnect_reason, pack_response, play_status, text_type, Disconnect, Login, NetworkSettings, PacketViolationWarning, PlayStatus,
         RequestNetworkSettings, ResourcePackClientResponse, ResourcePackStack, ResourcePacksInfo, Text,
     },
+    skin::{player_skin_packet, PlayerSkinChange},
     wire::ServerPacket,
     Packet, PROTOCOL, VERSION,
 };
@@ -65,6 +66,7 @@ impl Server {
             | id::ITEM_STACK_REQUEST
             | id::MOB_EQUIPMENT
             | id::ANIMATE
+            | id::PLAYER_SKIN
             | id::PLAYER_ACTION
             | id::INVENTORY_TRANSACTION => spawned,
             _ => true,
@@ -87,6 +89,7 @@ impl Server {
             id::ITEM_STACK_REQUEST => self.item_stack_request(pid, &packet.body),
             id::MOB_EQUIPMENT => self.mob_equipment(pid, &packet.body),
             id::ANIMATE => self.animate(pid, &packet.body),
+            id::PLAYER_SKIN => self.player_skin(pid, &packet.body),
             id::INTERACT => self.interact_packet(pid, &packet.body),
             id::CONTAINER_CLOSE => self.container_close(pid, &packet.body),
             id::PLAYER_ACTION => self.player_action(pid, &packet.body),
@@ -247,6 +250,29 @@ impl Server {
         };
         if a.action == 1 {
             self.broadcast_to_viewers(pid, &[animate_swing(pid)]);
+        }
+    }
+
+    /// Il giocatore cambia skin: si salva (i nuovi entrati la vedranno nella lista) e la ricevono tutti quelli nel mondo, lui compreso.
+    /// Un cambio con l'UUID di un altro giocatore si ignora.
+    fn player_skin(&mut self, pid: u64, body: &[u8]) {
+        if let Some(p) = self.players.get_mut(&pid).filter(|p| p.skin_logs < HEX_LOGS) {
+            p.skin_logs += 1;
+            log!("[#{pid}] PlayerSkin ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
+        }
+        let Some(change) = PlayerSkinChange::decode(body) else {
+            return log!("[#{pid}] PlayerSkin illeggibile ({} byte): ignorato", body.len());
+        };
+        let Some(EntityKind::Player { uuid, .. }) = self.entities.get(pid).map(|e| &e.kind) else { return };
+        if change.uuid != *uuid {
+            return log!("[#{pid}] PlayerSkin con l'UUID di un altro giocatore: ignorato");
+        }
+        let Some(info) = self.players.get_mut(&pid).and_then(|p| p.info.as_mut()) else { return };
+        info.skin = change.skin.clone();
+        let packet = player_skin_packet(&change);
+        let inside: Vec<u64> = self.players.iter().filter(|(_, p)| p.spawned).map(|(&id, _)| id).collect();
+        for other in inside {
+            self.send(other, std::slice::from_ref(&packet));
         }
     }
 

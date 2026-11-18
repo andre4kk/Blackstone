@@ -126,6 +126,8 @@ struct Player {
     /// (al massimo `HEX_LOGS`): servono a verificare nel gioco le codifiche non sicure.
     stack_logs: u8,
     action_logs: u8,
+    /// Quanti `PlayerSkin` sono già stati loggati in esadecimale (al massimo `HEX_LOGS`).
+    skin_logs: u8,
     /// Blocco che il giocatore ha cominciato a rompere (Start/Continue) e non ha ancora rotto né abbandonato.
     breaking: Option<[i32; 3]>,
     /// Rotazione dall'ultimo `PlayerAuthInput` (gradi): 0 = sud, 90 = ovest, -90 = est, 180 = nord. Serve a orientare i blocchi piazzati.
