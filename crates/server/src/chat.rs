@@ -1,5 +1,5 @@
 //! Chat e comandi.
-use crate::{GameMode, Server};
+use crate::{entity::EntityKind, GameMode, Server};
 use bedrock_net::log;
 use bedrock_protocol::{
     generated::UpdatePlayerGameType,
@@ -15,6 +15,7 @@ const COMMANDS: &[(&str, &str)] = &[
     ("help", "elenco dei comandi"),
     ("list", "giocatori online"),
     ("tps", "prestazioni del server"),
+    ("bot [nome|rimuovi]", "crea un giocatore finto che si muove, o li toglie tutti"),
     ("say <testo>", "messaggio a tutti"),
     ("gamemode <modalità>", "cambia la tua modalità di gioco"),
 ];
@@ -94,10 +95,26 @@ impl Server {
                 self.tell(pid, &format!("Comandi:\n{}", list.join("\n")));
             }
             "list" => {
-                let names: Vec<_> = self.players.iter().filter(|(_, p)| p.spawned).map(|(&id, _)| self.name(id)).collect();
+                let mut names: Vec<_> = self.players.iter().filter(|(_, p)| p.spawned).map(|(&id, _)| self.name(id)).collect();
+                names.extend(self.bots.iter().filter_map(|b| match &self.entities.get(b.id)?.kind {
+                    EntityKind::Player { name, .. } => Some(name.clone()),
+                    _ => None,
+                }));
                 self.tell(pid, &format!("Giocatori online ({}): {}", names.len(), names.join(", ")));
             }
             "tps" => self.tell(pid, &format!("TPS: §a{:.1}§r (tick medio {:.2} ms)", self.tps(), self.mspt)),
+            "bot" => match args.trim() {
+                "rimuovi" => {
+                    self.remove_bots();
+                    self.tell(pid, "Bot rimossi.");
+                }
+                name => {
+                    let name = if name.is_empty() { "Bot" } else { name };
+                    if self.spawn_bot(pid, name) != 0 {
+                        self.tell(pid, &format!("Bot §e{name}§r creato qui. Per toglierli: /bot rimuovi"));
+                    }
+                }
+            },
             "say" if !args.trim().is_empty() => self.broadcast(Text::new(text_type::RAW, format!("§d[Server] {}", args.trim()))),
             "say" => self.tell(pid, "Uso: /say <testo>"),
             "gamemode" | "gm" => match GameMode::parse(args.trim()) {

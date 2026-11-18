@@ -158,7 +158,10 @@ impl Server {
             EntityKind::Player { pid, name, uuid } => {
                 let player = pid.and_then(|pid| self.players.get(&pid));
                 let mode = player.map_or(GameMode::default(), |p| p.mode);
-                let held = player.map_or_else(ItemStack::air, |p| p.inventory.held().stack(0));
+                let held = match player {
+                    Some(p) => p.inventory.held().stack(0),
+                    None => self.bots.iter().find(|b| b.id == e.id).map_or_else(ItemStack::air, |b| b.held.stack(0)),
+                };
                 let mut packets = vec![add_player(&AddPlayerData {
                     uuid: *uuid,
                     name: name.clone(),
@@ -187,6 +190,7 @@ impl Server {
     /// I dati dell'entità (`SetActorData` e `AddPlayer`): per un giocatore i flag di base (gravità, collisioni, arrampicata, respiro)
     /// più lo stato attuale (accovacciato, in corsa, a nuoto, in planata) e il riquadro 0.6 x 1.8. Un oggetto a terra ha gravità, collisioni e il riquadro 0.25 x 0.25.
     pub(crate) fn entity_data(&self, id: u64) -> Vec<(u32, DataValue)> {
+        let bot_sneaking = self.bots.iter().any(|b| b.id == id && b.sneaking);
         let state = match self.entities.get(id).map(|e| &e.kind) {
             Some(EntityKind::Player { pid, .. }) => pid.and_then(|pid| self.players.get(&pid)),
             None => self.players.get(&id), // il giocatore che sta entrando non ha ancora la sua entità
@@ -200,6 +204,7 @@ impl Server {
             }
         };
         let mut flags = [flag::HAS_GRAVITY, flag::HAS_COLLISION, flag::CAN_CLIMB, flag::BREATHING].iter().fold(0i64, |f, b| f | 1 << b);
+        flags |= (bot_sneaking as i64) << flag::SNEAKING;
         if let Some(p) = state {
             for (on, bit) in [(p.sneaking, flag::SNEAKING), (p.sprinting, flag::SPRINTING), (p.swimming, flag::SWIMMING), (p.gliding, flag::GLIDING)] {
                 flags |= (on as i64) << bit;
@@ -248,11 +253,11 @@ impl Server {
         }
     }
 
-    /// La `PlayerList` che aggiunge questi giocatori (ordinati per `pid`); chi non è nel mondo o non ha fatto il login si salta.
-    fn player_list_add_packet(&self, pids: &[u64]) -> Option<Packet> {
+    /// La `PlayerList` che aggiunge questi giocatori (ordinati per `pid`) e questi bot; chi non è nel mondo o non ha fatto il login si salta.
+    pub(crate) fn player_list_add_packet(&self, pids: &[u64], bots: &[u64]) -> Option<Packet> {
         let mut pids = pids.to_vec();
         pids.sort_unstable();
-        let entries: Vec<PlayerListEntry> = pids
+        let mut entries: Vec<PlayerListEntry> = pids
             .iter()
             .filter_map(|pid| {
                 let info = self.players.get(pid)?.info.as_ref()?;
@@ -271,6 +276,21 @@ impl Server {
                 })
             })
             .collect();
+        entries.extend(self.bots.iter().filter(|b| bots.contains(&b.id)).filter_map(|b| {
+            let EntityKind::Player { uuid, name, .. } = &self.entities.get(b.id)?.kind else { return None };
+            Some(PlayerListEntry {
+                uuid: *uuid,
+                unique_id: b.id as i64,
+                name: name.clone(),
+                xuid: String::new(),
+                platform_chat_id: String::new(),
+                build_platform: -1,
+                skin: &b.skin,
+                teacher: false,
+                host: false,
+                sub_client: false,
+            })
+        }));
         (!entries.is_empty()).then(|| player_list_add(&entries))
     }
 
@@ -292,10 +312,11 @@ impl Server {
         };
         self.entities.insert(entity);
         let inside: Vec<u64> = self.players.iter().filter(|(_, p)| p.spawned).map(|(&id, _)| id).collect();
-        if let Some(all) = self.player_list_add_packet(&inside) {
+        let bots: Vec<u64> = self.bots.iter().map(|b| b.id).collect();
+        if let Some(all) = self.player_list_add_packet(&inside, &bots) {
             self.send(pid, &[all]);
         }
-        if let Some(own) = self.player_list_add_packet(&[pid]) {
+        if let Some(own) = self.player_list_add_packet(&[pid], &[]) {
             for other in inside.into_iter().filter(|&id| id != pid) {
                 self.send(other, std::slice::from_ref(&own));
             }

@@ -1,5 +1,6 @@
 //! Logica di gioco: riceve i pacchetti decodificati dal trasporto e risponde.
 mod biomes;
+mod bot;
 mod breaking;
 mod chat;
 pub mod config;
@@ -232,6 +233,8 @@ struct Server {
     flat_warned: bool,
     /// Entità del mondo (giocatori visti dagli altri, oggetti a terra).
     entities: entity::Entities,
+    /// Giocatori finti (`/bot`), con ciò che serve a mostrarli e animarli.
+    bots: Vec<bot::Bot>,
 }
 
 impl Server {
@@ -263,6 +266,7 @@ impl Server {
             scheduled: Vec::new(),
             flat_warned: false,
             entities: entity::Entities::default(),
+            bots: Vec::new(),
         }
     }
 
@@ -310,6 +314,7 @@ impl Server {
     fn tick(&mut self) {
         let start = Instant::now();
         self.stream_tick();
+        self.bots_tick();
         self.visibility_tick();
         self.items_tick();
         self.pickup_tick();

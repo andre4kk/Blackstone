@@ -83,7 +83,7 @@ La sequenza segue quella dei server di riferimento (gophertunnel / Dragonfly).
 
 - Ciclo di gioco a 20 tick al secondo (`Server::tick`), con misura di TPS e durata media del tick (`/tps`).
 - Chat tra i giocatori. Il nome viene dal login e non dal messaggio, ma le firme del login non sono ancora verificate (vedi "Sicurezza").
-- Comandi: `/help`, `/list`, `/tps`, `/say <testo>`, `/gamemode <modo>` (`/gm`).
+- Comandi: `/help`, `/list`, `/tps`, `/say <testo>`, `/gamemode <modo>` (`/gm`), `/bot [nome]` (crea un giocatore finto) e `/bot rimuovi`.
 - Annunci di ingresso e uscita.
 - Movimento: dal `PlayerAuthInput` si legge la posizione (occhi); a ogni cambio di chunk il client riceve il nuovo centro
   (`NetworkChunkPublisherUpdate`) e il server manda i chunk mancanti (al massimo 8 per giocatore per tick, dal più vicino).
@@ -97,8 +97,12 @@ La sequenza segue quella dei server di riferimento (gophertunnel / Dragonfly).
   con regole di orientamento (scale, lastre, porte, letti, torce, muri, ecc.), aggiornamento dei vicini, interazioni
   (porte, botole, cancelli, leve, bottoni). Le modifiche si salvano ogni 60 s e alla chiusura; l'inventario e la modalità
   del giocatore sono salvati nel LevelDB in formato Bedrock (un nuovo ingresso con la stessa identità espelle il vecchio).
-- Ancora NON gestiti: drop e sopravvivenza (tappa 2), animazioni, visibilità tra giocatori. Limiti noti e lista di prova nel
-  gioco: `docs/superpowers/notes/2026-11-19-verifica-tappa1.md`.
+- Tappa 2 (entità e giocatori): i giocatori si vedono tra loro (`PlayerList`, `AddPlayer`, movimento, testa, braccio,
+  accovacciamento, oggetto in mano, skin), gli oggetti a terra si lanciano e si raccolgono. `/bot [nome]` crea un giocatore
+  finto con la tua skin che gira in cerchio (raggio 3), salta, agita il braccio, si accovaccia, cambia oggetto e lancia pietre
+  (create dal nulla): serve a provare tutto con un solo account. I bot restano anche se chi li ha creati esce; `/bot rimuovi` li toglie.
+  Lista di prova nel gioco: `docs/superpowers/notes/2026-11-19-verifica-tappa2.md`.
+- Ancora NON gestiti: sopravvivenza (danni, fame), mob. Limiti noti della tappa 1: `docs/superpowers/notes/2026-11-19-verifica-tappa1.md`.
 
 Gli ID di rete dei blocchi sono hash FNV-1a dello stato (`crates/server/src/world.rs`): non serve nessuna tabella dei blocchi.
 

@@ -2976,3 +2976,92 @@ mod ground_items {
         assert!(h.packets_by_player().is_empty());
     }
 }
+
+mod bot {
+    use super::*;
+    use crate::entity::EntityKind;
+
+    fn count(packets: &[Packet], packet_id: u32) -> usize {
+        packets.iter().filter(|p| p.id == packet_id).count()
+    }
+
+    fn has_name(packets: &[Packet], packet_id: u32, name: &str) -> bool {
+        packets.iter().filter(|p| p.id == packet_id).any(|p| p.body.windows(name.len()).any(|w| w == name.as_bytes()))
+    }
+
+    /// Alice (che crea i bot) e Bob (lo spettatore) vedono entrambi il chunk (0, 0), dove gira il bot.
+    fn two_players() -> Harness {
+        let mut h = Harness::new();
+        h.join(1, "Alice");
+        h.join(2, "Bob");
+        for pid in [1, 2] {
+            let p = h.server.players.get_mut(&pid).unwrap();
+            p.pos = [8.5, 70.0, 8.5];
+            p.sent.insert((0, 0));
+        }
+        h.packets_by_player();
+        h
+    }
+
+    #[test]
+    fn bot_appears_in_list_and_moves() {
+        let mut h = two_players();
+        h.receive(1, &[command("/bot Prova")]);
+        let to_bob = h.packets_to(2);
+        assert!(has_name(&to_bob, id::PLAYER_LIST, "Prova"), "la voce del bot va a tutti");
+        for _ in 0..20 {
+            h.server.tick();
+        }
+        let to_bob = h.packets_to(2);
+        assert!(has_name(&to_bob, id::ADD_PLAYER, "Prova"), "Bob vede il corpo del bot");
+        assert!(count(&to_bob, id::MOVE_ACTOR_ABSOLUTE) > 0, "il bot si muove");
+    }
+
+    #[test]
+    fn bot_throws_items() {
+        let mut h = two_players();
+        h.receive(1, &[command("/bot Prova")]);
+        for _ in 0..200 {
+            h.server.tick();
+        }
+        assert!(h.server.entities.iter().any(|e| matches!(e.kind, EntityKind::Item { .. })), "dopo 200 tick il bot ha lanciato una pietra");
+    }
+
+    #[test]
+    fn bot_remove_cleans_everything() {
+        let mut h = two_players();
+        h.receive(1, &[command("/bot Prova")]);
+        h.server.tick();
+        h.packets_by_player();
+        h.receive(1, &[command("/bot rimuovi")]);
+        let mut sent = h.packets_by_player();
+        let to_bob = sent.remove(&2).unwrap();
+        assert_eq!(count(&to_bob, id::REMOVE_ACTOR), 1);
+        assert_eq!(count(&to_bob, id::PLAYER_LIST), 1);
+        assert!(sent.remove(&1).unwrap().iter().any(|p| p.id == id::PLAYER_LIST), "anche chi l'ha creato lo toglie dalla lista");
+        assert!(!h.server.entities.iter().any(|e| matches!(e.kind, EntityKind::Player { pid: None, .. })));
+        assert!(h.server.bots.is_empty());
+        h.server.tick();
+        assert_eq!(count(&h.packets_to(2), id::MOVE_ACTOR_ABSOLUTE), 0, "nessun movimento di un bot che non c'è più");
+    }
+
+    #[test]
+    fn newcomer_gets_bots_in_the_list() {
+        let mut h = two_players();
+        h.receive(1, &[command("/bot Prova")]);
+        h.packets_by_player();
+        h.join(3, "Carol");
+        let to_carol = h.packets_to(3);
+        assert!(has_name(&to_carol, id::PLAYER_LIST, "Prova"));
+    }
+
+    #[test]
+    fn list_shows_bots() {
+        let mut h = two_players();
+        h.receive(1, &[command("/bot Prova")]);
+        h.texts_to(1);
+        h.receive(1, &[command("/list")]);
+        let texts = h.texts_to(1);
+        assert!(texts.iter().any(|t| t.message.contains("Prova") && t.message.contains("(3)")), "{:?}", texts.iter().map(|t| &t.message).collect::<Vec<_>>());
+    }
+}
