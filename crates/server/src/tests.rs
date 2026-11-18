@@ -1081,13 +1081,13 @@ mod placing {
     use vgen::Dim;
 
     /// La pietra su cui si clicca e la cella sopra, dove va il blocco piazzato.
-    const ROCK: [i32; 3] = [3, 10, 4];
-    const TOP: [i32; 3] = [3, 11, 4];
+    pub(super) const ROCK: [i32; 3] = [3, 10, 4];
+    pub(super) const TOP: [i32; 3] = [3, 11, 4];
     /// Occhi di Alice: tre blocchi a est della pietra, i piedi a y 10.
-    const EYES: [f32; 3] = [6.5, 11.62, 4.5];
+    pub(super) const EYES: [f32; 3] = [6.5, 11.62, 4.5];
 
     /// Un mondo con una pietra in `ROCK`; Alice (1) in modalità `mode` con in mano 64 pietre (casella 0), Bob (2) vede il chunk, Carol (3) no.
-    fn setup(mode: GameMode) -> Harness {
+    pub(super) fn setup(mode: GameMode) -> Harness {
         let mut h = harness_with_chunk();
         for (pid, name) in [(1, "Alice"), (2, "Bob"), (3, "Carol")] {
             h.join(pid, name);
@@ -1108,7 +1108,7 @@ mod placing {
     }
 
     /// Tutti i pacchetti inviati da quando si è letto l'ultima volta, con il destinatario.
-    fn packets(sent: &mut UnboundedReceiver<Command>) -> Vec<(u64, Packet)> {
+    pub(super) fn packets(sent: &mut UnboundedReceiver<Command>) -> Vec<(u64, Packet)> {
         let mut out = Vec::new();
         while let Ok(cmd) = sent.try_recv() {
             if let Command::Send(to, data) = cmd {
@@ -1119,7 +1119,7 @@ mod placing {
     }
 
     /// `InventoryTransaction` di tipo ItemUse con azione Place sul blocco `pos`, faccia `face`, con `held` in mano secondo il client.
-    fn place_packet(pos: [i32; 3], face: u8, held: &ItemStack) -> Packet {
+    pub(super) fn place_packet(pos: [i32; 3], face: u8, held: &ItemStack) -> Packet {
         let mut w = Writer::default();
         w.var_i32(0); // id legacy
         w.u8(0); // niente slot legacy
@@ -1151,7 +1151,7 @@ mod placing {
     }
 
     /// L'oggetto in mano ad Alice come lo vede il suo client.
-    fn held(h: &Harness) -> ItemStack {
+    pub(super) fn held(h: &Harness) -> ItemStack {
         h.server.players[&1].inventory.held().stack(1)
     }
 
@@ -1170,7 +1170,7 @@ mod placing {
         assert_eq!(cells, [(1, ROCK, rock, 0), (1, ROCK, none, 1), (1, TOP, top, 0), (1, TOP, none, 1)]);
     }
 
-    fn counting_hook(h: &mut Harness, allow: bool) -> Arc<Mutex<Vec<WorldAction>>> {
+    pub(super) fn counting_hook(h: &mut Harness, allow: bool) -> Arc<Mutex<Vec<WorldAction>>> {
         let seen = Arc::new(Mutex::new(Vec::new()));
         let log = seen.clone();
         h.server.hooks.push(Box::new(move |a| {
@@ -1355,7 +1355,7 @@ mod placing {
     }
 
     /// Mette in mano ad Alice (casella 1) l'oggetto del menu creativo con quel nome e quell'aux.
-    fn hold_creative(h: &mut Harness, name: &str, aux: u32) {
+    pub(super) fn hold_creative(h: &mut Harness, name: &str, aux: u32) {
         let net_id = registry::creative().1.iter().position(|c| c.name == name && c.meta == aux).unwrap() as u32 + 1;
         h.receive(1, &[stack_request_packet(|w| craft_and_place(w, -2, net_id, 1))]);
         h.receive(1, &[mob_equipment(1, 1)]);
@@ -1453,5 +1453,295 @@ mod placing {
         let state = registry::blocks().state(hash).unwrap();
         assert_eq!(state.name, "minecraft:oak_stairs");
         assert_eq!(state.get("weirdo_direction"), Some(&registry::StateValue::Int(3)));
+    }
+}
+
+// ---------- interazioni col tasto destro ----------
+
+mod interacting {
+    use super::blocks::{air, change, stone, updates};
+    use super::placing::{counting_hook, held, hold_creative, packets, place_packet, setup, TOP};
+    use super::*;
+    use crate::{
+        events::WorldAction,
+        registry::{blocks, StateValue},
+    };
+    use bedrock_protocol::generated::{LevelSoundEvent, UpdateBlock};
+    use vgen::Dim;
+
+    /// La metà alta della porta sta sopra `TOP`.
+    const UPPER: [i32; 3] = [3, 12, 4];
+    /// Il pulsante sta sulla faccia est della pietra (che lo regge).
+    const BUTTON: [i32; 3] = [4, 10, 4];
+    const EAST: u8 = 5;
+    /// La cella accanto alla porta, dove va una pietra piazzata contro di lei.
+    const BESIDE: [i32; 3] = [4, 11, 4];
+
+    fn door(name: &str, upper: bool, open: bool) -> i32 {
+        let base = blocks().state(blocks().default_hash(name).unwrap()).unwrap();
+        base.with("upper_block_bit", StateValue::Byte(upper as u8)).with("open_bit", StateValue::Byte(open as u8)).hash()
+    }
+
+    fn put_door(h: &mut Harness, name: &str) {
+        h.server.set_blocks(Dim::Overworld, &[change(TOP, door(name, false, false), false), change(UPPER, door(name, true, false), false)]);
+        assert_eq!(h.server.block_at(Dim::Overworld, UPPER), Some((door(name, true, false), false)), "la porta regge sulla pietra");
+    }
+
+    /// Mette il pulsante e restituisce il suo stato su e quello premuto.
+    fn put_button(h: &mut Harness, name: &str) -> (i32, i32) {
+        let base = blocks().state(blocks().default_hash(name).unwrap()).unwrap().with("facing_direction", StateValue::Int(EAST as i32));
+        let (up, down) = (base.with("button_pressed_bit", StateValue::Byte(0)).hash(), base.with("button_pressed_bit", StateValue::Byte(1)).hash());
+        h.server.set_blocks(Dim::Overworld, &[change(BUTTON, up, false)]);
+        assert_eq!(h.server.block_at(Dim::Overworld, BUTTON), Some((up, false)), "il pulsante regge sulla pietra");
+        (up, down)
+    }
+
+    fn at(h: &Harness, pos: [i32; 3]) -> i32 {
+        h.server.block_at(Dim::Overworld, pos).unwrap().0
+    }
+
+    /// Alice, con la mano vuota (la casella 5 non ha nulla), clicca la faccia est di `pos`.
+    fn click_with_empty_hand(h: &mut Harness, pos: [i32; 3]) {
+        h.receive(1, &[mob_equipment(5, 5)]);
+        h.receive(1, &[place_packet(pos, EAST, &ItemStack::air())]);
+    }
+
+    /// I suoni arrivati: (destinatario, nome, dato).
+    fn sounds(out: &[(u64, Packet)]) -> Vec<(u64, String, i32)> {
+        out.iter()
+            .filter(|(_, p)| p.id == LevelSoundEvent::ID)
+            .map(|(to, p)| {
+                let r = &mut Reader(&p.body);
+                let name = r.string().unwrap().to_string();
+                r.vec3().unwrap();
+                (*to, name, r.var_i32().unwrap())
+            })
+            .collect()
+    }
+
+    fn updates_in(out: &[(u64, Packet)]) -> Vec<(u64, [i32; 3])> {
+        out.iter().filter(|(_, p)| p.id == UpdateBlock::ID).map(|(to, p)| (*to, Reader(&p.body).block_pos().unwrap())).collect()
+    }
+
+    #[test]
+    fn right_click_opens_the_door_with_a_block_in_hand_and_tells_the_viewers() {
+        let mut h = setup(GameMode::Creative);
+        put_door(&mut h, "minecraft:wooden_door");
+        let seen = counting_hook(&mut h, true);
+        drop(packets(&mut h.sent));
+        let in_hand = held(&h);
+        h.receive(1, &[place_packet(TOP, EAST, &in_hand)]);
+        let open = door("minecraft:wooden_door", false, true);
+        assert_eq!((at(&h, TOP), at(&h, UPPER)), (open, door("minecraft:wooden_door", true, true)));
+        assert_eq!(at(&h, BESIDE), air(), "nessuna pietra piazzata accanto");
+        assert!(matches!(seen.lock().unwrap().as_slice(), [WorldAction::Interact { pid: 1, changes }] if changes.len() == 2));
+        assert!(h.server.chunks[&(0, 0, 0)].dirty, "il chunk si salva");
+        let out = packets(&mut h.sent);
+        let mut cells = updates_in(&out);
+        cells.sort();
+        assert_eq!(cells, [(1, TOP), (1, TOP), (1, UPPER), (1, UPPER), (2, TOP), (2, TOP), (2, UPPER), (2, UPPER)], "Alice e Bob, non Carol");
+        let mut heard = sounds(&out);
+        heard.sort();
+        assert_eq!(heard, [(1, "door.open".to_string(), open), (2, "door.open".to_string(), open)]);
+        assert_eq!(h.server.players[&1].inventory.held().count, 64, "non consuma nulla");
+        // di nuovo, dalla metà alta: si chiude
+        h.receive(1, &[place_packet(UPPER, EAST, &in_hand)]);
+        assert_eq!((at(&h, TOP), at(&h, UPPER)), (door("minecraft:wooden_door", false, false), door("minecraft:wooden_door", true, false)));
+        assert!(sounds(&packets(&mut h.sent)).iter().all(|(_, name, _)| name == "door.close"));
+    }
+
+    #[test]
+    fn sneaking_with_block_places_instead_of_opening() {
+        let mut h = setup(GameMode::Creative);
+        put_door(&mut h, "minecraft:wooden_door");
+        h.server.players.get_mut(&1).unwrap().sneaking = true;
+        h.receive(1, &[place_packet(TOP, EAST, &held(&h))]);
+        assert_eq!(at(&h, TOP), door("minecraft:wooden_door", false, false), "la porta resta chiusa");
+        assert_eq!(at(&h, BESIDE), stone(), "la pietra va accanto alla porta");
+        // accovacciato con la mano vuota si apre lo stesso
+        click_with_empty_hand(&mut h, TOP);
+        assert_eq!(at(&h, TOP), door("minecraft:wooden_door", false, true));
+    }
+
+    #[test]
+    fn iron_door_is_placed_against_not_opened() {
+        let mut h = setup(GameMode::Creative);
+        put_door(&mut h, "minecraft:iron_door");
+        h.receive(1, &[place_packet(TOP, EAST, &held(&h))]);
+        assert_eq!(at(&h, TOP), door("minecraft:iron_door", false, false));
+        assert_eq!(at(&h, BESIDE), stone());
+        // con la mano vuota il clic non fa nulla e non manda nulla
+        drop(packets(&mut h.sent));
+        click_with_empty_hand(&mut h, TOP);
+        assert_eq!(at(&h, TOP), door("minecraft:iron_door", false, false));
+        assert!(packets(&mut h.sent).is_empty());
+    }
+
+    #[test]
+    fn creative_survival_and_adventure_use_doors_but_spectators_do_not() {
+        for (mode, works) in [(GameMode::Creative, true), (GameMode::Survival, true), (GameMode::Adventure, true), (GameMode::Spectator, false)] {
+            let mut h = setup(mode);
+            put_door(&mut h, "minecraft:wooden_door");
+            drop(packets(&mut h.sent));
+            h.receive(1, &[place_packet(TOP, EAST, &held(&h))]);
+            let opened = at(&h, TOP) == door("minecraft:wooden_door", false, true);
+            assert_eq!(opened, works, "{mode:?}");
+            if !works {
+                // lo stato vero va al solo autore, per tutte e due le metà, e la pietra non si piazza al posto della porta
+                let mut cells: Vec<_> = updates(&mut h.sent).iter().filter(|u| u.4 == 0).map(|u| (u.0, u.1, u.2)).collect();
+                cells.sort();
+                let (low, high) = (door("minecraft:wooden_door", false, false) as u32, door("minecraft:wooden_door", true, false) as u32);
+                assert_eq!(cells, [(1, TOP, low), (1, UPPER, high)]);
+                assert_eq!(at(&h, BESIDE), air());
+            }
+            assert_eq!(h.server.players[&1].inventory.held().count, 64, "{mode:?}: una porta non consuma l'oggetto");
+        }
+    }
+
+    #[test]
+    fn out_of_reach_and_vetoed_interactions_are_reverted() {
+        let mut h = setup(GameMode::Creative);
+        put_door(&mut h, "minecraft:wooden_door");
+        h.server.players.get_mut(&1).unwrap().pos = [40.5, 11.62, 4.5];
+        drop(packets(&mut h.sent));
+        h.receive(1, &[place_packet(TOP, EAST, &held(&h))]);
+        assert_eq!(at(&h, TOP), door("minecraft:wooden_door", false, false));
+        let got = updates(&mut h.sent);
+        assert!(!got.is_empty() && got.iter().all(|u| u.0 == 1), "lo stato vero va ad Alice sola");
+        // sopravvivenza: la portata è 8
+        let mut h = setup(GameMode::Survival);
+        put_door(&mut h, "minecraft:wooden_door");
+        h.server.players.get_mut(&1).unwrap().pos = [12.5, 11.62, 4.5];
+        h.receive(1, &[place_packet(TOP, EAST, &held(&h))]);
+        assert_eq!(at(&h, TOP), door("minecraft:wooden_door", false, false));
+        // un gancio che annulla
+        let mut h = setup(GameMode::Creative);
+        put_door(&mut h, "minecraft:wooden_door");
+        let seen = counting_hook(&mut h, false);
+        drop(packets(&mut h.sent));
+        h.receive(1, &[place_packet(TOP, EAST, &held(&h))]);
+        assert_eq!(seen.lock().unwrap().len(), 1);
+        assert_eq!(at(&h, TOP), door("minecraft:wooden_door", false, false));
+        assert_eq!(at(&h, BESIDE), air(), "e non piazza al suo posto");
+        let got = updates(&mut h.sent);
+        assert!(!got.is_empty() && got.iter().all(|u| u.0 == 1), "lo stato vero va ad Alice sola");
+    }
+
+    #[test]
+    fn lever_works_through_the_packet_even_with_a_door_in_hand() {
+        let mut h = setup(GameMode::Creative);
+        let lever = blocks().state(blocks().default_hash("minecraft:lever").unwrap()).unwrap().with("lever_direction", StateValue::Str("east".into()));
+        h.server.set_blocks(Dim::Overworld, &[change(BUTTON, lever.hash(), false)]);
+        assert_eq!(at(&h, BUTTON), lever.hash(), "la leva regge sulla pietra");
+        drop(packets(&mut h.sent));
+        h.receive(1, &[place_packet(BUTTON, EAST, &held(&h))]);
+        let on = lever.with("open_bit", StateValue::Byte(1)).hash();
+        assert_eq!(at(&h, BUTTON), on);
+        assert_eq!(sounds(&packets(&mut h.sent)).iter().map(|s| s.1.as_str()).collect::<Vec<_>>(), ["power.on", "power.on"]);
+        h.receive(1, &[place_packet(BUTTON, EAST, &held(&h))]);
+        assert_eq!(at(&h, BUTTON), lever.hash());
+        // una porta in mano (che non è un blocco già pronto): la leva si usa comunque
+        hold_creative(&mut h, "minecraft:wooden_door", 0);
+        h.receive(1, &[place_packet(BUTTON, EAST, &held(&h))]);
+        assert_eq!(at(&h, BUTTON), on);
+    }
+
+    /// Alice preme il pulsante con la mano vuota; restituisce lo stato su e quello premuto.
+    fn press(h: &mut Harness, name: &str) -> (i32, i32) {
+        let (up, down) = put_button(h, name);
+        click_with_empty_hand(h, BUTTON);
+        assert_eq!(at(h, BUTTON), down, "{name} premuto");
+        (up, down)
+    }
+
+    fn assert_resets_after(name: &str, ticks: u64) {
+        let mut h = setup(GameMode::Creative);
+        let (up, down) = press(&mut h, name);
+        drop(packets(&mut h.sent));
+        for n in 1..ticks {
+            h.server.tick();
+            assert_eq!(at(&h, BUTTON), down, "{name}: ancora premuto dopo {n} tick");
+        }
+        h.server.tick();
+        assert_eq!(at(&h, BUTTON), up, "{name}: su dopo {ticks} tick");
+        let out = packets(&mut h.sent);
+        assert!(updates_in(&out).contains(&(2, BUTTON)), "Bob vede il pulsante risalire");
+        assert_eq!(sounds(&out).first().map(|s| s.1.as_str()), Some("button.click_off"));
+        assert!(h.server.scheduled.is_empty(), "appuntamento consumato");
+        assert!(h.server.chunks[&(0, 0, 0)].dirty);
+    }
+
+    #[test]
+    fn wooden_button_resets_after_30_ticks() {
+        assert_resets_after("minecraft:wooden_button", 30);
+        assert_resets_after("minecraft:birch_button", 30);
+    }
+
+    #[test]
+    fn stone_button_resets_after_20_ticks() {
+        assert_resets_after("minecraft:stone_button", 20);
+        assert_resets_after("minecraft:polished_blackstone_button", 20);
+    }
+
+    #[test]
+    fn pressing_a_pressed_button_does_nothing_and_keeps_one_reset() {
+        let mut h = setup(GameMode::Creative);
+        let (up, down) = press(&mut h, "minecraft:stone_button");
+        for _ in 0..10 {
+            h.server.tick();
+        }
+        drop(packets(&mut h.sent));
+        click_with_empty_hand(&mut h, BUTTON);
+        assert!(packets(&mut h.sent).is_empty(), "nessun cambio, nessun suono");
+        assert_eq!(h.server.scheduled.len(), 1);
+        for _ in 0..9 {
+            h.server.tick();
+        }
+        assert_eq!(at(&h, BUTTON), down);
+        h.server.tick();
+        assert_eq!(at(&h, BUTTON), up, "risale 20 tick dopo la prima pressione, non dopo il secondo clic");
+    }
+
+    #[test]
+    fn button_reset_skipped_if_block_changed() {
+        let mut h = setup(GameMode::Creative);
+        press(&mut h, "minecraft:wooden_button");
+        h.server.set_blocks(Dim::Overworld, &[change(BUTTON, stone(), false)]);
+        drop(packets(&mut h.sent));
+        for _ in 0..40 {
+            h.server.tick();
+        }
+        assert_eq!(at(&h, BUTTON), stone(), "la pietra non è toccata");
+        assert!(h.server.scheduled.is_empty());
+        assert!(updates_in(&packets(&mut h.sent)).is_empty(), "nessun aggiornamento");
+    }
+
+    #[test]
+    fn button_reset_waits_for_an_unloaded_chunk() {
+        let mut h = setup(GameMode::Creative);
+        let (up, _) = press(&mut h, "minecraft:stone_button");
+        let chunk = h.server.chunks.remove(&(0, 0, 0)).unwrap();
+        // senza `tick()`, che rigenererebbe il chunk mancante: il tempo passa e si guardano gli appuntamenti
+        h.server.tick_count += 30;
+        h.server.run_scheduled();
+        assert_eq!(h.server.scheduled.len(), 1, "scaduto ma il chunk non c'è: aspetta");
+        h.server.chunks.insert((0, 0, 0), chunk);
+        h.server.run_scheduled();
+        assert_eq!((at(&h, BUTTON), h.server.scheduled.len()), (up, 0));
+    }
+
+    #[test]
+    fn a_pressed_button_without_an_appointment_gets_one_when_clicked() {
+        // un pulsante salvato premuto: al riavvio nessuno lo farebbe risalire
+        let mut h = setup(GameMode::Creative);
+        let (up, down) = put_button(&mut h, "minecraft:wooden_button");
+        h.server.set_blocks(Dim::Overworld, &[change(BUTTON, down, false)]);
+        assert!(h.server.scheduled.is_empty());
+        click_with_empty_hand(&mut h, BUTTON);
+        assert_eq!(h.server.scheduled.len(), 1);
+        for _ in 0..30 {
+            h.server.tick();
+        }
+        assert_eq!(at(&h, BUTTON), up);
     }
 }

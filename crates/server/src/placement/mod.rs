@@ -10,11 +10,7 @@ use crate::{
     GameMode, Server,
 };
 use bedrock_net::log;
-use bedrock_protocol::{
-    generated::{LevelSoundEvent, Vec3},
-    input::UseItem,
-    wire::ServerPacket,
-};
+use bedrock_protocol::input::UseItem;
 use vgen::Dim;
 
 pub(crate) mod neighbors;
@@ -52,7 +48,6 @@ pub(crate) struct PlaceCtx {
     pub feet: [f32; 3],
     /// Hash dello stato del blocco dell'oggetto in mano.
     pub block: i32,
-    #[allow(dead_code)] // lo leggono le interazioni (accovacciato: si piazza invece di aprire)
     pub sneaking: bool,
 }
 
@@ -244,10 +239,12 @@ fn held_block(held: &Item) -> Option<i32> {
 }
 
 impl Server {
-    /// Il giocatore usa l'oggetto in mano su un blocco con l'azione Place. Se in mano ha un blocco e tutti i controlli
-    /// passano (modalità, oggetto uguale a quello del client, portata, spazio libero, ganci) il blocco si piazza: chi vede
-    /// il chunk riceve l'aggiornamento e il suono; in sopravvivenza si consuma un oggetto, in creativo no. Altrimenti si
-    /// rimanda al solo autore lo stato vero del blocco cliccato e di quello accanto. Una mano senza blocchi non fa nulla.
+    /// Il giocatore usa l'oggetto in mano su un blocco con l'azione Place. Se il blocco cliccato è interattivo (porta, leva...)
+    /// e il giocatore non è accovacciato con qualcosa in mano, lo si attiva (vedi `interact`) e non si piazza nulla. Altrimenti,
+    /// se in mano ha un blocco e tutti i controlli passano (modalità, oggetto uguale a quello del client, portata, spazio libero,
+    /// ganci) il blocco si piazza: chi vede il chunk riceve l'aggiornamento e il suono; in sopravvivenza si consuma un oggetto,
+    /// in creativo no. Altrimenti si rimanda al solo autore lo stato vero del blocco cliccato e di quello accanto. Una mano senza
+    /// blocchi non fa nulla.
     pub(crate) fn place_item(&mut self, pid: u64, u: &UseItem) {
         let Some(p) = self.players.get(&pid).filter(|p| p.spawned) else { return };
         if u.face > EAST {
@@ -259,7 +256,17 @@ impl Server {
         if !held.same_kind(&Item::kind_of(&u.held)) {
             return self.refuse_place(pid, u, "l'oggetto in mano non è quello del server");
         }
-        let Some(block) = held_block(&held) else { return };
+        let dim = Dim::Overworld;
+        let feet = [eyes[0], eyes[1] - EYE_HEIGHT, eyes[2]];
+        let block = held_block(&held);
+        let ctx = PlaceCtx { clicked: u.pos, face: u.face, click: u.click_pos, yaw, feet, block: block.unwrap_or_default(), sneaking };
+        // Un blocco interattivo (porta, leva...) si attiva invece di piazzare, a meno che si sia accovacciati con qualcosa in mano (D§5).
+        if (!ctx.sneaking || held.is_empty()) && self.interact(pid, u, &ctx, mode, eyes) {
+            return;
+        }
+        if block.is_none() {
+            return;
+        }
         let creative = mode == GameMode::Creative;
         if !matches!(mode, GameMode::Creative | GameMode::Survival) {
             return self.refuse_place(pid, u, "modalità senza modifica del mondo");
@@ -267,9 +274,6 @@ impl Server {
         if !in_reach(eyes, u.pos, creative) {
             return self.refuse_place(pid, u, "fuori portata");
         }
-        let dim = Dim::Overworld;
-        let feet = [eyes[0], eyes[1] - EYE_HEIGHT, eyes[2]];
-        let ctx = PlaceCtx { clicked: u.pos, face: u.face, click: u.click_pos, yaw, feet, block, sneaking };
         let Some(changes) = place(&ctx, &WorldView { server: self, dim }) else {
             return self.refuse_place(pid, u, "blocco non piazzabile lì");
         };
@@ -296,21 +300,7 @@ impl Server {
             }
         }
         for c in &changes {
-            let sound = LevelSoundEvent {
-                sound_event: "place".into(),
-                position: Vec3 { x: c.pos[0] as f32 + 0.5, y: c.pos[1] as f32 + 0.5, z: c.pos[2] as f32 + 0.5 },
-                data: c.hash,
-                actor_identifier: String::new(),
-                is_baby: false,
-                is_global: false,
-                actor_unique_id: -1,
-                fire_at_position: None,
-            }
-            .packet();
-            let chunk = (c.pos[0].div_euclid(16), c.pos[2].div_euclid(16));
-            for (&viewer, _) in self.players.iter().filter(|(_, p)| p.sent.contains(&chunk)) {
-                self.send(viewer, std::slice::from_ref(&sound));
-            }
+            self.play_sound("place", c.pos, c.hash);
         }
         if !creative {
             if let Some(packet) = self.players.get_mut(&pid).and_then(|p| p.inventory.consume_held()) {

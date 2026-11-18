@@ -6,7 +6,7 @@ use crate::registry::{blocks, BlockState, StateValue};
 
 /// Direzione orizzontale, nell'ordine di Dragonfly (`cube.Direction`): nord, sud, ovest, est.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum Dir {
+pub(crate) enum Dir {
     North,
     South,
     West,
@@ -16,7 +16,7 @@ pub(super) enum Dir {
 impl Dir {
     /// Verso dove guarda un giocatore con quella rotazione (0 = sud, 90 = ovest, -90 = est, 180 = nord), come `Rotation.Direction`.
     /// Gli angoli si riportano a [0, 360): 135 è ovest, 136 nord, 315 est (-45), 316 sud.
-    pub(super) fn from_yaw(yaw: f32) -> Dir {
+    pub(crate) fn from_yaw(yaw: f32) -> Dir {
         let y = yaw.rem_euclid(360.0);
         if y <= 45.0 || y > 315.0 {
             Dir::South
@@ -40,7 +40,7 @@ impl Dir {
         }
     }
 
-    pub(super) fn opposite(self) -> Dir {
+    pub(crate) fn opposite(self) -> Dir {
         match self {
             Dir::North => Dir::South,
             Dir::South => Dir::North,
@@ -62,7 +62,7 @@ impl Dir {
         self.rotate_right().opposite()
     }
 
-    pub(super) fn name(self) -> &'static str {
+    pub(crate) fn name(self) -> &'static str {
         match self {
             Dir::North => "north",
             Dir::South => "south",

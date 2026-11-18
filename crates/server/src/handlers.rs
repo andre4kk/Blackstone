@@ -136,8 +136,8 @@ impl Server {
         }
     }
 
-    /// Pacchetto `InventoryTransaction`: l'uso di un oggetto con azione Destroy rompe un blocco, con azione Place ne piazza uno.
-    /// Gli altri usi e gli altri tipi di transazione li gestiranno le interazioni.
+    /// Pacchetto `InventoryTransaction`: l'uso di un oggetto con azione Destroy rompe un blocco, con azione Place attiva il blocco
+    /// cliccato (porta, leva...) o ne piazza uno. Gli altri usi e gli altri tipi di transazione non servono ancora.
     fn inventory_transaction(&mut self, pid: u64, body: &[u8]) {
         let Some(transaction) = InventoryTransaction::decode(body) else {
             return log!("[#{pid}] InventoryTransaction illeggibile ({} byte): ignorata", body.len());

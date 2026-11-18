@@ -7,6 +7,7 @@ mod disk;
 mod events;
 mod gen_client;
 mod handlers;
+mod interact;
 mod inventory;
 mod join;
 mod nbt;
@@ -165,8 +166,10 @@ struct Server {
     max_radius: i32,
     /// Ganci che possono annullare le azioni dei giocatori sul mondo (vedi [`Server::allow`]).
     hooks: Vec<Hook>,
-    /// Tick eseguiti finora: scandiscono il salvataggio automatico.
+    /// Tick eseguiti finora: scandiscono il salvataggio automatico e le modifiche programmate.
     tick_count: u64,
+    /// Modifiche di blocchi programmate per un tick futuro (i pulsanti che risalgono): vedi [`Server::schedule`].
+    scheduled: Vec<interact::Scheduled>,
     /// Già detto nel log che le modifiche al mondo piatto di ripiego non si salvano.
     flat_warned: bool,
 }
@@ -197,6 +200,7 @@ impl Server {
             max_radius: join::MAX_RADIUS,
             hooks: Vec::new(),
             tick_count: 0,
+            scheduled: Vec::new(),
             flat_warned: false,
         }
     }
@@ -243,6 +247,7 @@ impl Server {
         let start = Instant::now();
         self.stream_tick();
         self.tick_count += 1;
+        self.run_scheduled();
         if self.tick_count.is_multiple_of(AUTOSAVE_TICKS) {
             let saved = self.save_dirty();
             if saved > 0 {
