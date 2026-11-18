@@ -304,6 +304,7 @@ impl Server {
         let start = Instant::now();
         self.stream_tick();
         self.visibility_tick();
+        self.movement_tick();
         self.tick_count += 1;
         self.run_scheduled();
         if self.tick_count.is_multiple_of(AUTOSAVE_TICKS) {

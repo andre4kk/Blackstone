@@ -2423,4 +2423,49 @@ mod player_list {
         h.server.on_move(1, [40.5, 12.62, -3.5]);
         assert_eq!(h.server.entities.get(1).unwrap().pos, [40.5, 12.62, -3.5]);
     }
+
+    /// Alice, Bob e Carol: Alice e Bob nel chunk (0, 0), Carol senza chunk inviati. Dopo la visibilità si svuotano i pacchetti.
+    fn three_players() -> Harness {
+        let mut h = Harness::new();
+        h.join(1, "Alice");
+        h.join(2, "Bob");
+        h.join(3, "Carol");
+        for pid in [1, 2] {
+            h.server.players.get_mut(&pid).unwrap().sent.insert((0, 0));
+        }
+        h.server.visibility_tick();
+        h.server.movement_tick();
+        h.packets_by_player();
+        h
+    }
+
+    fn pai_at(x: f32) -> Packet {
+        Packet::new(id::PLAYER_AUTH_INPUT, auth_input_body(x, 70.0, 3.0))
+    }
+
+    #[test]
+    fn movement_is_sent_once_per_tick_to_viewers_only() {
+        let mut h = three_players();
+        h.receive(1, &[pai_at(1.0), pai_at(2.0), pai_at(3.0)]);
+        h.server.movement_tick();
+        let sent = h.packets_by_player();
+        let moves: Vec<&Packet> = sent[&2].iter().filter(|p| p.id == id::MOVE_ACTOR_ABSOLUTE).collect();
+        assert_eq!(moves.len(), 1);
+        assert_eq!(moves[0].body, bedrock_protocol::entity::move_actor_absolute(1, [3.0, 70.0, 3.0], 0.0, 0.0, 0.0, false, false).body);
+        assert_eq!(count(sent.get(&1).map_or(&[][..], |v| v), id::MOVE_ACTOR_ABSOLUTE), 0, "Alice non vede se stessa");
+        assert_eq!(count(sent.get(&3).map_or(&[][..], |v| v), id::MOVE_ACTOR_ABSOLUTE), 0, "Carol è fuori vista");
+        h.server.movement_tick();
+        assert!(h.packets_by_player().get(&2).is_none_or(|v| count(v, id::MOVE_ACTOR_ABSOLUTE) == 0), "il giro dopo non c'è più nulla");
+    }
+
+    #[test]
+    fn unchanged_position_sends_nothing() {
+        let mut h = three_players();
+        h.receive(1, &[pai_at(1.0)]);
+        h.server.movement_tick();
+        h.packets_by_player();
+        h.receive(1, &[pai_at(1.0)]);
+        h.server.movement_tick();
+        assert!(h.packets_by_player().get(&2).is_none_or(|v| count(v, id::MOVE_ACTOR_ABSOLUTE) == 0));
+    }
 }

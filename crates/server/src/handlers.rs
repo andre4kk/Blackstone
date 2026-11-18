@@ -99,6 +99,18 @@ impl Server {
         }
     }
 
+    /// Porta nell'entità del giocatore la rotazione (già letta in `Player`) e, se il pacchetto si è letto per intero, testa e contatto col suolo.
+    /// Segna `moved` solo se qualcosa è cambiato davvero (per la posizione ci pensa `on_move`).
+    fn update_entity_motion(&mut self, pid: u64, input: Option<&PlayerAuthInput>) {
+        let Some(p) = self.players.get(&pid) else { return };
+        let (pitch, yaw) = (p.pitch, p.yaw);
+        let Some(e) = self.entities.get_mut(pid) else { return };
+        let head_yaw = input.map(|i| i.head_yaw).filter(|v| v.is_finite()).unwrap_or(e.head_yaw);
+        let on_ground = input.map_or(e.on_ground, |i| i.has(flag::VERTICAL_COLLISION));
+        e.moved |= e.pitch != pitch || e.yaw != yaw || e.head_yaw != head_yaw || e.on_ground != on_ground;
+        (e.pitch, e.yaw, e.head_yaw, e.on_ground) = (pitch, yaw, head_yaw, on_ground);
+    }
+
     /// Input del giocatore: la posizione e l'eventuale richiesta di pila (flag 36). I valori non finiti o fuori dal mondo si scartano.
     /// Se il corpo non si legge per intero (il layout dopo la posizione non è verificato sul client reale) si logga
     /// la prima volta e si usa comunque la posizione: il movimento non deve dipendere dal resto del pacchetto.
@@ -145,6 +157,7 @@ impl Server {
         // Limite del mondo di Minecraft: 30 milioni di blocchi per lato.
         if position.iter().all(|v| v.is_finite() && v.abs() <= 30_000_000.0) {
             self.on_move(pid, position);
+            self.update_entity_motion(pid, input.as_ref());
         }
         if let Some(request) = request {
             self.stack_request(pid, &request);

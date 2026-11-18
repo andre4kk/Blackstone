@@ -3,7 +3,7 @@
 use crate::{inventory, join::ability_layers, playerdata, streaming::chunk_of, GameMode, Server};
 use bedrock_protocol::{
     actor::{flag, key, DataValue},
-    entity::{add_item_actor, add_player, player_list_add, player_list_remove, remove_actor, AddPlayerData, PlayerListEntry},
+    entity::{add_item_actor, add_player, move_actor_absolute, player_list_add, player_list_remove, remove_actor, AddPlayerData, PlayerListEntry},
     item::ItemStack,
     skin::uuid_bytes,
     Packet,
@@ -29,10 +29,8 @@ pub(crate) struct Entity {
     pub pitch: f32,
     pub yaw: f32,
     pub head_yaw: f32,
-    #[allow(dead_code)] // letto dall'invio del movimento (compito successivo)
     pub on_ground: bool,
     /// Da mandare agli spettatori al prossimo giro.
-    #[allow(dead_code)]
     pub moved: bool,
 }
 
@@ -98,6 +96,26 @@ impl Server {
                 self.send(pid, &out);
             }
             self.players.get_mut(&pid).unwrap().visible = should;
+        }
+    }
+
+    /// Manda a ogni spettatore, al massimo una volta per giro, la posizione e le rotazioni (corpo e testa) delle entità che si sono mosse.
+    pub(crate) fn movement_tick(&mut self) {
+        let mut moved: Vec<(u64, Packet)> = Vec::new();
+        for e in self.entities.map.values_mut().filter(|e| e.moved) {
+            e.moved = false;
+            moved.push((e.id, move_actor_absolute(e.id, e.pos, e.pitch, e.yaw, e.head_yaw, e.on_ground, false)));
+        }
+        if moved.is_empty() {
+            return;
+        }
+        moved.sort_unstable_by_key(|(id, _)| *id);
+        let pids: Vec<u64> = self.players.iter().filter(|(_, p)| p.spawned && !p.visible.is_empty()).map(|(&pid, _)| pid).collect();
+        for pid in pids {
+            let out: Vec<Packet> = moved.iter().filter(|(id, _)| self.players[&pid].visible.contains(id)).map(|(_, p)| p.clone()).collect();
+            if !out.is_empty() {
+                self.send(pid, &out);
+            }
         }
     }
 

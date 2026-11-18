@@ -54,7 +54,8 @@ impl Server {
         let Some(p) = self.players.get_mut(&pid) else { return };
         p.pos = pos;
         if let Some(e) = self.entities.get_mut(pid) {
-            e.pos = pos; // il corpo agli altri segue gli occhi (l'invio del movimento è a parte)
+            e.moved |= e.pos != pos;
+            e.pos = pos; // il corpo agli altri segue gli occhi; il `movement_tick` lo manda agli spettatori
         }
         let chunk = chunk_of(pos[0], pos[2]);
         if chunk == p.last_chunk || !p.spawned {

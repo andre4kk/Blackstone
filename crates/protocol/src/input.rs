@@ -21,6 +21,8 @@ pub mod flag {
     pub const PERFORM_ITEM_INTERACTION: u32 = 34;
     pub const PERFORM_BLOCK_ACTIONS: u32 = 35;
     pub const PERFORM_ITEM_STACK_REQUEST: u32 = 36;
+    /// Il client ha urtato qualcosa in verticale (a terra o contro un soffitto).
+    pub const VERTICAL_COLLISION: u32 = 50;
 }
 
 /// `ItemUseActionType`.
