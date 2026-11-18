@@ -65,6 +65,7 @@ impl Server {
     pub(crate) fn set_mode(&mut self, pid: u64, mode: GameMode) {
         let Some(p) = self.players.get_mut(&pid) else { return };
         p.mode = mode;
+        p.flying &= mode == GameMode::Creative; // fuori dalla creativa non si vola (lo spettatore vola col suo livello)
         log!("[#{pid}] modalità di gioco: {mode:?}");
         self.send_abilities(pid);
         self.tell(pid, &format!("Modalità di gioco impostata a {}.", mode.name()));

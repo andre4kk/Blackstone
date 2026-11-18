@@ -101,8 +101,9 @@ mod ability {
     pub const LAYER_SPECTATOR: u16 = 2;
 }
 
-/// Quali abilità ha il giocatore in una modalità (come Dragonfly, `SendAbilities`). Se sta volando lo decide il client.
-pub(crate) fn abilities_for(mode: GameMode) -> u32 {
+/// Quali abilità ha il giocatore in una modalità (come Dragonfly, `SendAbilities`). Il volo lo chiede il client
+/// (`StartFlying`/`StopFlying` in `PlayerAuthInput`) e il server lo conferma qui.
+pub(crate) fn abilities_for(mode: GameMode, flying: bool) -> u32 {
     use ability::*;
     if mode == GameMode::Spectator {
         // Lo spettatore ha come livello base quello di un giocatore normale: il resto lo aggiunge il livello sopra.
@@ -111,6 +112,9 @@ pub(crate) fn abilities_for(mode: GameMode) -> u32 {
     let mut values = DOORS_AND_SWITCHES | OPEN_CONTAINERS | ATTACK_PLAYERS | ATTACK_MOBS;
     if mode == GameMode::Creative {
         values |= MAY_FLY | INVULNERABLE | INSTANT_BUILD;
+        if flying {
+            values |= FLYING;
+        }
     }
     if matches!(mode, GameMode::Survival | GameMode::Creative) {
         values |= BUILD | MINE;
@@ -119,7 +123,7 @@ pub(crate) fn abilities_for(mode: GameMode) -> u32 {
 }
 
 /// Livelli di abilità per la modalità: il livello base e, per lo spettatore, quello che lo fa volare senza collisioni.
-fn ability_layers(mode: GameMode) -> Vec<SerializedAbilitiesDataSerializedLayer> {
+pub(crate) fn ability_layers(mode: GameMode, flying: bool) -> Vec<SerializedAbilitiesDataSerializedLayer> {
     let layer = |serialized_layer, abilities_set, ability_values| SerializedAbilitiesDataSerializedLayer {
         serialized_layer,
         abilities_set,
@@ -135,7 +139,7 @@ fn ability_layers(mode: GameMode) -> Vec<SerializedAbilitiesDataSerializedLayer>
             BUILD | MINE | DOORS_AND_SWITCHES | OPEN_CONTAINERS | ATTACK_PLAYERS | ATTACK_MOBS | INVULNERABLE | FLYING | MAY_FLY | INSTANT_BUILD | NO_CLIP;
         layers.push(layer(LAYER_SPECTATOR, set, INVULNERABLE | FLYING | NO_CLIP));
     }
-    layers.push(layer(ability::LAYER_BASE, ability::ALL, abilities_for(mode)));
+    layers.push(layer(ability::LAYER_BASE, ability::ALL, abilities_for(mode, flying)));
     layers
 }
 
@@ -399,9 +403,21 @@ impl Server {
             target_player_raw_id: pid as i64,
             player_permissions: enums::player_permission_level::MEMBER,
             command_permissions: 0,
-            layers: ability_layers(p.mode),
+            layers: ability_layers(p.mode, p.flying),
         };
         self.send(pid, &[SetPlayerGameType { player_game_type: p.mode as i32 }.packet(), UpdateAbilities { data }.packet()]);
+    }
+
+    /// Solo le abilità (`UpdateAbilities`): la risposta a `StartFlying`/`StopFlying`, come Dragonfly `SendAbilities`.
+    pub(crate) fn send_only_abilities(&self, pid: u64) {
+        let Some(p) = self.players.get(&pid) else { return };
+        let data = SerializedAbilitiesData {
+            target_player_raw_id: pid as i64,
+            player_permissions: enums::player_permission_level::MEMBER,
+            command_permissions: 0,
+            layers: ability_layers(p.mode, p.flying),
+        };
+        self.send(pid, &[UpdateAbilities { data }.packet()]);
     }
 
     /// Inventario, mano secondaria e armatura, e quale casella della barra è in mano.

@@ -140,6 +140,8 @@ struct Player {
     started: bool,
     /// Vero tra l'apertura dell'inventario (`Interact` OpenInventory) e la sua chiusura: un secondo `ContainerOpen` farebbe crashare il client.
     inventory_open: bool,
+    /// Volo confermato dal server (`StartFlying`/`StopFlying`): entra nel livello di abilità mandato al client.
+    flying: bool,
 }
 
 /// Il caricamento dei dati salvati di un giocatore (vedi `playerdata`).

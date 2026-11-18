@@ -1,7 +1,7 @@
 //! Un handler per ogni pacchetto che il server sa gestire.
 use crate::{
     inventory::{window, HOTBAR_SLOTS},
-    playerdata, Player, Server, HEX_LOGS,
+    playerdata, GameMode, Player, Server, HEX_LOGS,
 };
 use bedrock_net::log;
 use bedrock_protocol::{
@@ -115,6 +115,18 @@ impl Server {
                     (player.pitch, player.yaw) = (input.pitch, input.yaw);
                 }
                 player.sneaking = input.has(flag::SNEAKING);
+                // Il volo va sempre confermato o rifiutato con UpdateAbilities (changelog 776): senza risposta il client resta sospeso.
+                let fly_request = if input.has(flag::START_FLYING) {
+                    Some(true)
+                } else if input.has(flag::STOP_FLYING) {
+                    Some(false)
+                } else {
+                    None
+                };
+                if let Some(wants) = fly_request {
+                    // Si vola solo dove la modalità lo permette; lo spettatore vola sempre (lo tiene in aria il suo livello).
+                    player.flying = wants && player.mode == GameMode::Creative;
+                }
                 (input.position, input.stack_request.clone(), Some(input))
             }
             None => {
@@ -135,6 +147,9 @@ impl Server {
         }
         if let Some(request) = request {
             self.stack_request(pid, &request);
+        }
+        if input.as_ref().is_some_and(|i| i.has(flag::START_FLYING) || i.has(flag::STOP_FLYING)) {
+            self.send_only_abilities(pid);
         }
         let Some(input) = input else { return };
         // Prima le azioni di rottura nell'ordine in cui il client le ha scritte, poi l'uso di un oggetto su un blocco.

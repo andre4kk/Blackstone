@@ -15,6 +15,9 @@ pub mod flag {
     pub const SNEAKING: u32 = 8;
     pub const START_SNEAKING: u32 = 27;
     pub const STOP_SNEAKING: u32 = 28;
+    /// Il client vuole iniziare/smettere di volare (doppio salto): il server risponde con `UpdateAbilities`.
+    pub const START_FLYING: u32 = 42;
+    pub const STOP_FLYING: u32 = 43;
     pub const PERFORM_ITEM_INTERACTION: u32 = 34;
     pub const PERFORM_BLOCK_ACTIONS: u32 = 35;
     pub const PERFORM_ITEM_STACK_REQUEST: u32 = 36;

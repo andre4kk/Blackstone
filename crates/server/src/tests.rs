@@ -500,6 +500,68 @@ fn the_player_gets_its_actor_data_with_gravity_on_spawn() {
     assert_eq!(data[0].body, bedrock_protocol::actor::player_data(1).body);
 }
 
+/// `PlayerAuthInput` minimo con un solo flag di input, posizione (0, 70, 0).
+fn pai_with_flag(input_flag: i32) -> Vec<u8> {
+    let mut w = Writer::default();
+    for v in [0.0, 0.0, 0.0, 70.0, 0.0, 0.0, 0.0, 0.0] {
+        w.f32(v);
+    }
+    w.var_u32(1);
+    w.var_i32(input_flag);
+    w.var_u32(1); // modalità di input
+    w.var_u32(0);
+    w.var_i32(2);
+    w.f32(0.0);
+    w.f32(0.0);
+    w.var_u64(10);
+    (0..3).for_each(|_| w.f32(0.0));
+    w.u8(0); // niente transazione
+    w.u8(0); // niente richiesta di pila
+    w.u8(0); // niente azioni di blocco
+    w.u8(0);
+    w.u8(0);
+    (0..7).for_each(|_| w.f32(0.0));
+    w.0
+}
+
+/// Il corpo di `UpdateAbilities` che il server manda a `pid` per la modalità e lo stato di volo.
+fn abilities_body(pid: u64, mode: GameMode, flying: bool) -> Vec<u8> {
+    let data = bedrock_protocol::generated::SerializedAbilitiesData {
+        target_player_raw_id: pid as i64,
+        player_permissions: bedrock_protocol::generated::enums::player_permission_level::MEMBER,
+        command_permissions: 0,
+        layers: crate::join::ability_layers(mode, flying),
+    };
+    UpdateAbilities { data }.packet().body
+}
+
+#[test]
+fn start_and_stop_flying_are_answered_with_update_abilities() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    h.packets_to(1);
+    h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_flag(42))]);
+    let abilities: Vec<Packet> = h.packets_to(1).into_iter().filter(|p| p.id == UpdateAbilities::ID).collect();
+    assert_eq!(abilities.len(), 1, "StartFlying va accettato o rifiutato con UpdateAbilities");
+    assert_eq!(abilities[0].body, abilities_body(1, GameMode::Creative, true), "in creativa si vola");
+    h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_flag(43))]);
+    let abilities: Vec<Packet> = h.packets_to(1).into_iter().filter(|p| p.id == UpdateAbilities::ID).collect();
+    assert_eq!(abilities.len(), 1, "StopFlying va confermato, altrimenti il client resta sospeso");
+    assert_eq!(abilities[0].body, abilities_body(1, GameMode::Creative, false));
+}
+
+#[test]
+fn start_flying_in_survival_is_rejected() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    h.server.set_mode(1, GameMode::Survival);
+    h.packets_to(1);
+    h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_flag(42))]);
+    let abilities: Vec<Packet> = h.packets_to(1).into_iter().filter(|p| p.id == UpdateAbilities::ID).collect();
+    assert_eq!(abilities.len(), 1);
+    assert_eq!(abilities[0].body, abilities_body(1, GameMode::Survival, false), "in sopravvivenza il volo si rifiuta");
+}
+
 /// `Interact` del client: azione e runtime id del bersaglio (la posizione opzionale manca).
 fn interact(action: u8, target: u32) -> Packet {
     let mut body = vec![action];
