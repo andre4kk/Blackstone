@@ -261,6 +261,7 @@ mod tests {
             game_version: None,
             authentication_type: None,
             token_claim_keys: Vec::new(),
+            skin: bedrock_protocol::skin::Skin::fallback(),
         }
     }
 

@@ -58,3 +58,31 @@ crate e verificata sul gioco (CAN_CLIMB 19, BREATHING 35, HAS_COLLISION 48, HAS_
 da CAN_DASH 46 nel protocollo 560, changelog_560) e i nomi `EntityDataFlag*` di gophertunnel/Dragonfly
 (`entity_metadata.go` li usa per sneaking, sprinting, swimming, gliding). I quattro valori seguono la stessa tabella
 PocketMine `EntityMetadataFlags` (SNEAKING 1, SPRINTING 3, GLIDING 32, SWIMMING 56 nella tabella precedente al 560): NON verificati su una cattura del client. SWIMMING è 57 perché `changelog_560_11_10_22.md` lo elenca tra i flag spostati di uno da CAN_DASH(46); decisione del controller (le doc Mojang fanno fede).
+
+## SerializedSkin (implementata in `crates/protocol/src/skin.rs`, `Skin::encode`)
+
+Ordine = `x-ordinal-index` di `SerializedSkin.json` (tipi di `SkinImage`, `AnimatedImageData`, `SerializedPersonaPieceHandle`, `TintMapColor`). Regole del generatore: struct = campi in ordine, array/mappe = contatore varuint32, wrapper a un solo intero (`Color`) = intero, interi senza `Compression` = fissi LE.
+
+| # | Campo | Filo |
+|---|---|---|
+| 0 | ID | stringa |
+| 1 | ResourcePatch | stringa (JSON) |
+| 2 | ImageData (`SkinImage`) | width u32, height u32, ImageBytes (varuint32 + byte) |
+| 3 | AnimatedImageData | contatore varuint32; per voce: SkinImage, AnimatedTextureType **varuint32** (Compression), Frames f32, AnimationExpression **varuint32** |
+| 4 | CapeImageData | SkinImage (senza cape: 0, 0, 0 byte) |
+| 5 | GeometryData | stringa (JSON) |
+| 6 | GeometryDataMinEngineVersion | stringa |
+| 7 | AnimationData | stringa |
+| 8 | CapeID | stringa |
+| 9 | FullID | stringa |
+| 10 | ArmSize | **u8** (Slim 0, Wide 1), non stringa come in gophertunnel |
+| 11 | SkinColor (`Color`) | i32 LE, ARGB (da "#AARRGGBB") |
+| 12 | PersonaPieces | contatore; per voce: PieceId stringa, PieceType u32 fisso, PackId (`mce::UUID`: Most Significant u64 poi Least Significant u64, LE), IsDefaultPiece bool, ProductId stringa |
+| 13 | PieceTintColors | mappa: contatore; per voce: chiave PieceType u32 fisso, valore `TintMapColor` = array `Colors` (contatore varuint32 + i32 LE ciascuno; lo schema dice min=max=4 ma il generatore scrive comunque il contatore: **non verificato su cattura**) |
+| 14-18 | IsPremium, IsPersona, IsPersonaCapeOnClassicSkin, IsPrimaryUser, OverridesPlayerAppearance | bool |
+| 19 | TrustedSkinFlag | enum (Unset 0, False 1, True 2), **larghezza non verificata**: scritto come u8; il server manda 2 |
+| 20 | ProfileHash | stringa (vuota) |
+
+Incerti da confermare con una cattura reale del PlayerList: contatore dei `Colors`, larghezza di `TrustedSkinFlag`, endianness di `ArmSize`/`PieceType` (qui u8 e u32 fissi come da schema).
+
+UUID nel PlayerList (Task 4): `skin::uuid_bytes` restituisce i 16 byte **nell'ordine del testo** ("aabbccdd-eeff-..." -> aa bb cc dd ee ff ...). Bedrock scrive l'UUID come due u64 little-endian (Most Significant Bits poi Least Significant Bits, come `mce::UUID` sopra): quindi scrivere `u64::from_be_bytes(b[..8])` e `u64::from_be_bytes(b[8..])` con `Writer::u64` (little-endian), come fa `Skin::encode` per `PackId`. Ordine non verificato su gophertunnel (non e' in `vendor/`): controllare con la cattura.

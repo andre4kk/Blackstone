@@ -11,6 +11,7 @@ pub mod item;
 pub mod login;
 pub mod packets;
 pub mod reader;
+pub mod skin;
 pub mod varint;
 pub mod wire;
 pub use packets::id;

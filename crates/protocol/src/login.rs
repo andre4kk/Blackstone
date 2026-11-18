@@ -2,6 +2,7 @@
 //! ATTENZIONE: le firme dei JWT NON vengono verificate. Chiunque può dichiararsi chiunque: va bene per lo
 //! sviluppo, ma prima di aprire il server al pubblico serve la verifica contro le chiavi di Microsoft/Mojang.
 use crate::packets::Login;
+use crate::skin::Skin;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use serde_json::Value;
 
@@ -16,6 +17,8 @@ pub struct PlayerInfo {
     pub authentication_type: Option<i64>,
     /// Chiavi del Token OpenID, per capire cosa ha mandato il client quando l'XUID non si trova.
     pub token_claim_keys: Vec<String>,
+    /// Skin dichiarata nei dati del client; se manca o e' malformata, Steve di ripiego.
+    pub skin: Skin,
 }
 
 /// Estrae le informazioni del giocatore. In caso di errore ritorna una descrizione di cosa è stato trovato.
@@ -46,6 +49,7 @@ pub fn parse(login: &Login) -> Result<PlayerInfo, String> {
         device_os: data.get("DeviceOS").and_then(Value::as_i64),
         game_version: text(Some(&data), "GameVersion"),
         authentication_type: identity.get("AuthenticationType").and_then(Value::as_i64),
+        skin: Skin::from_client_data(&data).unwrap_or_else(Skin::fallback),
         token_claim_keys: token.as_ref().map(|t| keys(t).into_iter().map(str::to_owned).collect()).unwrap_or_default(),
     })
 }
@@ -107,6 +111,15 @@ mod tests {
     fn reports_what_it_found_when_name_is_missing() {
         let err = parse(&Login { protocol: 1, identity: r#"{"Foo":1}"#, client_data: &jwt(json!({"Bar": 2})) }).unwrap_err();
         assert!(err.contains("Foo") && err.contains("Bar"), "{err}");
+    }
+
+    #[test]
+    fn login_without_skin_uses_fallback_and_with_skin_reads_it() {
+        use base64::engine::general_purpose::STANDARD;
+        let identity = r#"{"AuthenticationType":2,"Certificate":"","Token":"x"}"#;
+        assert_eq!(login(identity, &jwt(json!({"ThirdPartyName": "Solo"}))).skin, Skin::fallback());
+        let data = json!({"ThirdPartyName": "Solo", "SkinId": "s1", "SkinImageWidth": 1, "SkinImageHeight": 1, "SkinData": STANDARD.encode([1u8, 2, 3, 4])});
+        assert_eq!(login(identity, &jwt(data)).skin.id, "s1");
     }
 
     #[test]
