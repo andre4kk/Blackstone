@@ -12,8 +12,8 @@ use bedrock_protocol::{
         enums::{self, container_enum_name},
         AvailableActorIdentifiers, BlockPos, ChunkRadiusUpdated, CreativeContent, CreativeGroupInfoPayload, CreativeItemEntryPayload, FullContainerName,
         InventoryContent, ItemData, ItemRegistry, JigsawStructureData, LevelSettings, NetworkChunkPublisherUpdate, NetworkItemInstanceDescriptorData,
-        PlayerHotbar, SerializedAbilitiesData, SerializedAbilitiesDataSerializedLayer, SetPlayerGameType, SpawnSettings, StartGame, UpdateAbilities, Vec3,
-        VoxelShapes,
+        PlayerHotbar, SerializedAbilitiesData, SerializedAbilitiesDataSerializedLayer, SetPlayerGameType, SpawnSettings, StartGame,
+        SyncedPlayerMovementSettings, UpdateAbilities, Vec3, VoxelShapes,
     },
     id,
     item::ItemStack,
@@ -224,6 +224,8 @@ impl Server {
                 ..Default::default()
             },
             level_name: "Mondo".into(),
+            // La rottura dei blocchi la decide il client (azioni di rottura + UseItem Destroy) e il server la controlla: P§8.
+            movement_settings: SyncedPlayerMovementSettings { rewind_history_size: 0, server_authoritative_block_breaking: false },
             multiplayer_correlation_id: format!("rust-{pid}"),
             enable_item_stack_net_manager: true,
             server_version: VERSION.into(),

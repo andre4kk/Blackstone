@@ -116,7 +116,6 @@ pub(crate) struct Chunk {
     pub(crate) block_entities: Vec<BlockEntity>,
     pub dirty: bool,
     /// Vero per il mondo piatto di ripiego (`Chunk::flat`): le sue modifiche non si salvano mai.
-    #[allow(dead_code)] // lo legge `Server::set_blocks`
     pub(crate) fallback: bool,
 }
 
@@ -164,7 +163,6 @@ impl Chunk {
     }
 
     /// Posizione di (y) nel chunk: indice nel vettore delle sezioni e y locale; `None` fuori dall'altezza della dimensione.
-    #[allow(dead_code)] // lo usano la rottura e il piazzamento dei blocchi
     fn locate(&self, y: i32) -> Option<(usize, usize)> {
         let (lowest, count) = Self::section_range(self.dim);
         let slot = y.div_euclid(16) - lowest;
@@ -172,7 +170,6 @@ impl Chunk {
     }
 
     /// Hash del blocco alle coordinate locali `lx`, `lz` (0..16) e `y` assoluta; aria se la sezione manca o `y` è fuori dal mondo.
-    #[allow(dead_code)] // lo usano la rottura e il piazzamento dei blocchi
     pub fn block(&self, lx: usize, y: i32, lz: usize) -> i32 {
         match self.locate(y).and_then(|(slot, ly)| self.sections[slot].as_ref().map(|s| (s, ly))) {
             Some((s, ly)) => s.palette[s.blocks[(lx * 16 + lz) * 16 + ly] as usize],
@@ -181,7 +178,6 @@ impl Chunk {
     }
 
     /// Vero se nel secondo strato (liquido) di quella cella c'è acqua.
-    #[allow(dead_code)] // lo usano la rottura e il piazzamento dei blocchi
     pub fn water(&self, lx: usize, y: i32, lz: usize) -> bool {
         match self.locate(y).and_then(|(slot, ly)| self.sections[slot].as_ref().map(|s| (s, ly))) {
             Some((s, ly)) => s.water.as_ref().is_some_and(|m| {
@@ -194,7 +190,6 @@ impl Chunk {
 
     /// Cambia il blocco (e l'acqua del secondo strato) di una cella. Crea la sezione se manca, aggiunge `hash` alla palette
     /// se serve e segna il chunk come modificato. Fuori dall'altezza della dimensione non fa nulla.
-    #[allow(dead_code)] // lo usano la rottura e il piazzamento dei blocchi
     pub fn set_block(&mut self, lx: usize, y: i32, lz: usize, hash: i32, water: bool) {
         let Some((slot, ly)) = self.locate(y) else { return };
         let air = block_hash("minecraft:air", &[]);

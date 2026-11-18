@@ -1,5 +1,6 @@
 //! Logica di gioco: riceve i pacchetti decodificati dal trasporto e risponde.
 mod biomes;
+mod breaking;
 mod chat;
 pub mod config;
 mod disk;
@@ -94,6 +95,10 @@ struct Player {
     /// (al massimo `HEX_LOGS`): servono a verificare nel gioco le codifiche non sicure.
     stack_logs: u8,
     action_logs: u8,
+    /// Blocco che il giocatore ha cominciato a rompere (Start/Continue) e non ha ancora rotto né abbandonato.
+    breaking: Option<[i32; 3]>,
+    /// Ultimo blocco di cui si è tentata la rottura, col tick: la stessa rottura chiesta due volte nello stesso tick vale una.
+    last_break: Option<(u64, [i32; 3])>,
 }
 
 /// Quanti pacchetti per giocatore si registrano in esadecimale (richieste di pila e input con azioni).
@@ -149,12 +154,10 @@ struct Server {
     /// Raggio massimo di chunk concesso ai giocatori.
     max_radius: i32,
     /// Ganci che possono annullare le azioni dei giocatori sul mondo (vedi [`Server::allow`]).
-    #[allow(dead_code)] // i ganci li registrerà chi vorrà annullare le azioni
     hooks: Vec<Hook>,
     /// Tick eseguiti finora: scandiscono il salvataggio automatico.
     tick_count: u64,
     /// Già detto nel log che le modifiche al mondo piatto di ripiego non si salvano.
-    #[allow(dead_code)] // lo usa `set_blocks`
     flat_warned: bool,
 }
 
@@ -245,7 +248,6 @@ impl Server {
 
     /// Blocco alla posizione `pos` (x, y, z) della dimensione: hash dello stato e se nel secondo strato c'è acqua.
     /// `None` se il chunk non è in memoria o `y` è fuori dall'altezza del mondo.
-    #[allow(dead_code)] // lo usano la rottura e il piazzamento dei blocchi
     pub(crate) fn block_at(&self, dim: Dim, pos: [i32; 3]) -> Option<(i32, bool)> {
         let (min, max) = dim.height_range();
         if !(min..max).contains(&pos[1]) {
@@ -258,7 +260,6 @@ impl Server {
 
     /// Applica le modifiche ai chunk in memoria (quelle fuori dal mondo o in chunk non caricati si scartano) e le manda
     /// a chi ha quel chunk in `sent`: `UpdateBlock` per lo strato 0 (blocco) e per lo strato 1 (acqua o aria).
-    #[allow(dead_code)] // lo usano la rottura e il piazzamento dei blocchi
     pub(crate) fn set_blocks(&mut self, dim: Dim, changes: &[BlockChange]) {
         let (min, max) = dim.height_range();
         let mut applied = Vec::with_capacity(changes.len());
@@ -285,7 +286,6 @@ impl Server {
     }
 
     /// Rimanda a un solo giocatore lo stato vero dei blocchi in `positions` (per annullare ciò che il suo client ha già fatto).
-    #[allow(dead_code)] // lo usano la rottura e il piazzamento dei blocchi
     pub(crate) fn resend_blocks(&self, pid: u64, dim: Dim, positions: &[[i32; 3]]) {
         let packets: Vec<Packet> =
             positions.iter().filter_map(|&pos| self.block_at(dim, pos).map(|(hash, water)| update_packets(pos, hash, water))).flatten().collect();
@@ -295,7 +295,6 @@ impl Server {
     }
 
     /// Mostra l'azione ai ganci: `false` se almeno uno la annulla (allora chi chiama non deve cambiare nulla).
-    #[allow(dead_code)] // lo usano la rottura e il piazzamento dei blocchi
     pub(crate) fn allow(&mut self, action: &WorldAction) -> bool {
         self.hooks.iter_mut().all(|hook| hook(action))
     }
@@ -310,7 +309,6 @@ impl Server {
 }
 
 /// `UpdateBlock` per lo strato 0 (il blocco) e per lo strato 1 (acqua se `water`, altrimenti aria); flag 3 = vicini + rete.
-#[allow(dead_code)] // lo usano `set_blocks` e `resend_blocks`
 fn update_packets(pos: [i32; 3], hash: i32, water: bool) -> [Packet; 2] {
     let layer = |runtime_id: i32, layer: u32| {
         UpdateBlock { block_position: BlockPos { x: pos[0], y: pos[1], z: pos[2] }, block_runtime_id: runtime_id as u32, flags: 3, layer }.packet()

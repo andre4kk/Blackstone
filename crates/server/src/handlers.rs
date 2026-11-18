@@ -4,7 +4,7 @@ use bedrock_net::log;
 use bedrock_protocol::{
     generated::MobEquipment,
     id,
-    input::{flag, ItemStackRequestPacket, PlayerAuthInput, StackRequest},
+    input::{flag, use_item, InventoryTransaction, ItemStackRequestPacket, PlayerAction, PlayerAuthInput, StackRequest},
     login,
     packets::{
         disconnect_reason, pack_response, play_status, text_type, Disconnect, Login, NetworkSettings, PacketViolationWarning, PlayStatus,
@@ -46,7 +46,7 @@ impl Server {
         let allowed = match packet.id {
             id::LOGIN => !logged_in,
             id::RESOURCE_PACK_CLIENT_RESPONSE | id::REQUEST_CHUNK_RADIUS | id::SET_LOCAL_PLAYER_AS_INITIALIZED => logged_in,
-            id::TEXT | id::COMMAND_REQUEST | id::ITEM_STACK_REQUEST | id::MOB_EQUIPMENT => spawned,
+            id::TEXT | id::COMMAND_REQUEST | id::ITEM_STACK_REQUEST | id::MOB_EQUIPMENT | id::PLAYER_ACTION | id::INVENTORY_TRANSACTION => spawned,
             _ => true,
         };
         if !allowed {
@@ -65,7 +65,9 @@ impl Server {
             id::PLAYER_AUTH_INPUT => self.player_auth_input(pid, &packet.body),
             id::ITEM_STACK_REQUEST => self.item_stack_request(pid, &packet.body),
             id::MOB_EQUIPMENT => self.mob_equipment(pid, &packet.body),
-            id::ANIMATE | id::PLAYER_ACTION | id::INTERACT | id::EMOTE_LIST => {}
+            id::PLAYER_ACTION => self.player_action(pid, &packet.body),
+            id::INVENTORY_TRANSACTION => self.inventory_transaction(pid, &packet.body),
+            id::ANIMATE | id::INTERACT | id::EMOTE_LIST => {}
             id::SERVERBOUND_LOADING_SCREEN | id::CLIENT_CACHE_STATUS => {} // il client dichiara se usa la cache dei chunk: per ora non serve
             id::PACKET_VIOLATION_WARNING => self.packet_violation(pid, &packet.body),
             other => {
@@ -81,14 +83,14 @@ impl Server {
     /// la prima volta e si usa comunque la posizione: il movimento non deve dipendere dal resto del pacchetto.
     fn player_auth_input(&mut self, pid: u64, body: &[u8]) {
         let Some(player) = self.players.get_mut(&pid).filter(|p| p.spawned) else { return };
-        let (position, request) = match PlayerAuthInput::decode(body) {
+        let (position, request, input) = match PlayerAuthInput::decode(body) {
             Some(input) => {
                 let has_actions = [flag::PERFORM_ITEM_INTERACTION, flag::PERFORM_BLOCK_ACTIONS, flag::PERFORM_ITEM_STACK_REQUEST].iter().any(|&f| input.has(f));
                 if has_actions && player.action_logs < HEX_LOGS {
                     player.action_logs += 1;
                     log!("[#{pid}] PlayerAuthInput con azioni (flag {:#x}, {} byte): {:02x?}", input.flags, body.len(), &body[..body.len().min(400)]);
                 }
-                (input.position, input.stack_request)
+                (input.position, input.stack_request.clone(), Some(input))
             }
             None => {
                 if !std::mem::replace(&mut player.pai_logged, true) {
@@ -96,7 +98,7 @@ impl Server {
                     log!("[#{pid}] PlayerAuthInput illeggibile ({} byte): {head:02x?}", body.len());
                 }
                 let Some((_, _, position)) = PlayerAuthInput::decode_rotation_position(body) else { return };
-                (position, None)
+                (position, None, None)
             }
         };
         // Limite del mondo di Minecraft: 30 milioni di blocchi per lato.
@@ -105,6 +107,35 @@ impl Server {
         }
         if let Some(request) = request {
             self.stack_request(pid, &request);
+        }
+        let Some(input) = input else { return };
+        // Prima le azioni di rottura nell'ordine in cui il client le ha scritte, poi l'uso di un oggetto su un blocco.
+        if input.has(flag::PERFORM_BLOCK_ACTIONS) {
+            for a in &input.block_actions {
+                self.block_action(pid, a.action, a.pos);
+            }
+        }
+        if let Some(u) = input.item_use.as_ref().filter(|u| input.has(flag::PERFORM_ITEM_INTERACTION) && u.action == use_item::DESTROY) {
+            self.break_block(pid, u.pos);
+        }
+    }
+
+    /// Pacchetto `PlayerAction`: inizio, fine e abbandono della rottura di un blocco, e rottura creativa.
+    fn player_action(&mut self, pid: u64, body: &[u8]) {
+        match PlayerAction::decode(body) {
+            Some(a) => self.block_action(pid, a.action, a.pos),
+            None => log!("[#{pid}] PlayerAction illeggibile ({} byte): ignorato", body.len()),
+        }
+    }
+
+    /// Pacchetto `InventoryTransaction`: per ora conta solo l'uso di un oggetto con azione Destroy (rottura di un blocco);
+    /// gli altri usi e gli altri tipi di transazione li gestiranno il piazzamento e le interazioni.
+    fn inventory_transaction(&mut self, pid: u64, body: &[u8]) {
+        let Some(transaction) = InventoryTransaction::decode(body) else {
+            return log!("[#{pid}] InventoryTransaction illeggibile ({} byte): ignorata", body.len());
+        };
+        if let Some(u) = transaction.use_item.filter(|u| u.action == use_item::DESTROY) {
+            self.break_block(pid, u.pos);
         }
     }
 

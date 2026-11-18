@@ -463,24 +463,24 @@ mod blocks {
     use bedrock_protocol::generated::UpdateBlock;
     use vgen::Dim;
 
-    fn stone() -> i32 {
+    pub(super) fn stone() -> i32 {
         block_hash("minecraft:stone", &[])
     }
 
-    fn air() -> i32 {
+    pub(super) fn air() -> i32 {
         block_hash("minecraft:air", &[])
     }
 
-    fn water() -> i32 {
+    pub(super) fn water() -> i32 {
         block_hash("minecraft:water", &[("liquid_depth", State::Int(0))])
     }
 
-    fn grass() -> i32 {
+    pub(super) fn grass() -> i32 {
         block_hash("minecraft:grass_block", &[])
     }
 
     /// Tutti i pacchetti `UpdateBlock` inviati da quando si è letto l'ultima volta: (destinatario, posizione, hash, flag, strato).
-    fn updates(sent: &mut UnboundedReceiver<Command>) -> Vec<(u64, [i32; 3], u32, u32, u32)> {
+    pub(super) fn updates(sent: &mut UnboundedReceiver<Command>) -> Vec<(u64, [i32; 3], u32, u32, u32)> {
         let mut out = Vec::new();
         while let Ok(cmd) = sent.try_recv() {
             if let Command::Send(to, data) = cmd {
@@ -494,13 +494,13 @@ mod blocks {
         out
     }
 
-    fn harness_with_chunk() -> Harness {
+    pub(super) fn harness_with_chunk() -> Harness {
         let mut h = Harness::new();
         h.server.chunks.insert((0, 0, 0), Chunk::flat(Dim::Overworld, 0, 0));
         h
     }
 
-    fn change(pos: [i32; 3], hash: i32, water: bool) -> BlockChange {
+    pub(super) fn change(pos: [i32; 3], hash: i32, water: bool) -> BlockChange {
         BlockChange { pos, hash, water }
     }
 
@@ -642,5 +642,424 @@ mod blocks {
         assert_eq!(h.server.block_at(Dim::Overworld, [0, 10, 0]), Some((stone(), false)), "la modifica c'è in memoria");
         assert!(!h.server.chunks[&(0, 0, 0)].dirty, "ma non si salva");
         assert!(h.server.flat_warned, "avviso nel log dato");
+    }
+}
+
+// ---------- rottura dei blocchi ----------
+
+mod breaking {
+    use super::blocks::{air, change, harness_with_chunk, stone, updates, water};
+    use super::*;
+    use crate::{
+        events::WorldAction,
+        world::{block_hash, State},
+    };
+    use bedrock_protocol::{
+        generated::{LevelEvent, UpdateBlock},
+        input::{player_action, use_item},
+    };
+    use std::sync::{Arc, Mutex};
+    use vgen::Dim;
+
+    const ROCK: [i32; 3] = [3, 10, 4];
+    const NEAR: [f32; 3] = [3.5, 11.6, 4.5];
+
+    /// Un mondo con una pietra in `ROCK`, Alice (1, che vede il chunk) in modalità `mode` vicino alla pietra, Bob (2, lo vede) e Carol (3, no).
+    fn setup(mode: GameMode) -> Harness {
+        let mut h = harness_with_chunk();
+        for (pid, name) in [(1, "Alice"), (2, "Bob"), (3, "Carol")] {
+            h.join(pid, name);
+        }
+        for pid in [1, 2] {
+            h.server.players.get_mut(&pid).unwrap().sent.insert((0, 0));
+        }
+        h.server.players.get_mut(&3).unwrap().sent.clear();
+        let alice = h.server.players.get_mut(&1).unwrap();
+        (alice.mode, alice.pos) = (mode, NEAR);
+        h.server.set_blocks(Dim::Overworld, &[change(ROCK, stone(), false)]);
+        let chunk = h.server.chunks.get_mut(&(0, 0, 0)).unwrap();
+        (chunk.fallback, chunk.dirty) = (false, false); // come un chunk vero: le modifiche si salvano
+        (1..=3).for_each(|pid| drop(h.packets_to(pid)));
+        h
+    }
+
+    /// Passa al tick successivo senza far girare il resto del gioco: un blocco già tentato si può riprovare.
+    fn next_tick(h: &mut Harness) {
+        h.server.tick_count += 1;
+    }
+
+    /// Tutti i pacchetti inviati da quando si è letto l'ultima volta, con il destinatario.
+    fn outbox(sent: &mut UnboundedReceiver<Command>) -> Vec<(u64, Packet)> {
+        let mut out = Vec::new();
+        while let Ok(cmd) = sent.try_recv() {
+            if let Command::Send(to, data) = cmd {
+                out.extend(Session::default().decode(&data).unwrap().into_iter().map(|p| (to, p)));
+            }
+        }
+        out
+    }
+
+    /// I `LevelEvent` di `outbox`: (destinatario, evento, posizione, dati).
+    fn events(outbox: &[(u64, Packet)]) -> Vec<(u64, i32, [f32; 3], i32)> {
+        outbox
+            .iter()
+            .filter(|(_, p)| p.id == LevelEvent::ID)
+            .map(|(to, p)| {
+                let r = &mut Reader(&p.body);
+                (*to, r.var_i32().unwrap(), r.vec3().unwrap(), r.var_i32().unwrap())
+            })
+            .collect()
+    }
+
+    /// Un `PlayerAction` (36) con `runtime_id` 1.
+    fn action(kind: i32, pos: [i32; 3]) -> Packet {
+        let mut w = Writer::default();
+        w.var_u64(1);
+        w.var_i32(kind);
+        pos.iter().chain(&[0, 0, 0]).for_each(|&c| w.var_i32(c));
+        w.var_i32(1); // faccia
+        Packet::new(id::PLAYER_ACTION, w.0)
+    }
+
+    /// `UseItem` (aria in mano) con quell'azione sul blocco `pos`.
+    fn use_item_bytes(w: &mut Writer, kind: i32, pos: [i32; 3]) {
+        w.var_i32(kind);
+        w.u8(1); // trigger
+        pos.iter().for_each(|&c| w.var_i32(c));
+        w.u8(1); // faccia
+        w.var_i32(0); // casella
+        w.u8(0); // mano
+        ItemStack::air().encode(w);
+        (0..6).for_each(|_| w.f32(0.5)); // posizione del giocatore e punto cliccato
+        w.var_u32(0); // blocco secondo il client
+        w.u8(1);
+        w.u8(0);
+    }
+
+    /// `PlayerAuthInput` con gli occhi in `eyes`, l'eventuale `UseItem` (flag 34) e le azioni di blocco (flag 35).
+    fn pai(eyes: [f32; 3], item: Option<(i32, [i32; 3])>, blocks: &[(i32, [i32; 3])]) -> Packet {
+        let mut w = Writer::default();
+        for v in [0.0, 0.0, eyes[0], eyes[1], eyes[2], 0.0, 0.0, 0.0] {
+            w.f32(v);
+        }
+        let flags: Vec<i32> = [item.map(|_| 34), (!blocks.is_empty()).then_some(35)].into_iter().flatten().collect();
+        w.var_u32(flags.len() as u32);
+        flags.iter().for_each(|&f| w.var_i32(f));
+        w.var_u32(1); // modalità di input
+        w.var_u32(0);
+        w.var_i32(2);
+        (0..2).for_each(|_| w.f32(0.0));
+        w.var_u64(10);
+        (0..3).for_each(|_| w.f32(0.0));
+        match item {
+            Some((kind, pos)) => {
+                w.u8(1);
+                w.var_i32(0); // id legacy
+                w.u8(0); // niente slot legacy
+                w.var_u32(0); // niente azioni
+                use_item_bytes(&mut w, kind, pos);
+            }
+            None => w.u8(0),
+        }
+        w.u8(0); // niente richiesta di pila
+        if blocks.is_empty() {
+            w.u8(0);
+        } else {
+            w.u8(1);
+            w.var_u32(blocks.len() as u32);
+            for (kind, pos) in blocks {
+                w.var_i32(*kind);
+                pos.iter().for_each(|&c| w.var_i32(c));
+                w.var_i32(1);
+            }
+        }
+        w.u8(0); // niente veicolo
+        w.u8(0);
+        (0..7).for_each(|_| w.f32(0.0));
+        Packet::new(id::PLAYER_AUTH_INPUT, w.0)
+    }
+
+    /// `InventoryTransaction` di tipo ItemUse.
+    fn transaction(kind: i32, pos: [i32; 3]) -> Packet {
+        let mut w = Writer::default();
+        w.var_i32(0); // id legacy
+        w.u8(0); // niente slot legacy
+        w.var_u32(2); // tipo ItemUse
+        w.var_u32(0); // niente azioni
+        use_item_bytes(&mut w, kind, pos);
+        Packet::new(id::INVENTORY_TRANSACTION, w.0)
+    }
+
+    /// Un gancio che registra le azioni che vede e risponde `allow`.
+    fn counting_hook(h: &mut Harness, allow: bool) -> Arc<Mutex<Vec<WorldAction>>> {
+        let seen = Arc::new(Mutex::new(Vec::new()));
+        let log = seen.clone();
+        h.server.hooks.push(Box::new(move |a| {
+            log.lock().unwrap().push(a.clone());
+            allow
+        }));
+        seen
+    }
+
+    fn assert_broken(h: &Harness) {
+        assert_eq!(h.server.block_at(Dim::Overworld, ROCK), Some((air(), false)));
+        assert!(h.server.chunks[&(0, 0, 0)].dirty, "il chunk si salva");
+    }
+
+    fn assert_untouched(h: &Harness) {
+        assert_eq!(h.server.block_at(Dim::Overworld, ROCK), Some((stone(), false)));
+        assert!(!h.server.chunks[&(0, 0, 0)].dirty);
+    }
+
+    /// Il blocco non è cambiato e lo stato vero è stato rimandato al solo autore, senza effetti di rottura.
+    fn assert_reverted(h: &mut Harness) {
+        assert_untouched(h);
+        let out = outbox(&mut h.sent);
+        assert!(events(&out).is_empty());
+        let state: Vec<_> = out.iter().filter(|(_, p)| p.id == UpdateBlock::ID).map(|(to, _)| *to).collect();
+        assert_eq!(state, [1, 1], "strato 0 e strato 1, solo ad Alice");
+    }
+
+    #[test]
+    fn creative_break_sets_air_and_notifies() {
+        let mut h = setup(GameMode::Creative);
+        let seen = counting_hook(&mut h, true);
+        h.receive(1, &[action(player_action::CREATIVE_DESTROY, ROCK)]);
+        assert_broken(&h);
+        assert_eq!(seen.lock().unwrap().as_slice(), [WorldAction::Break { pid: 1, pos: ROCK, old: stone() }]);
+        let out = outbox(&mut h.sent);
+        // UpdateBlock (blocco e acqua) a chi vede il chunk; a Carol niente
+        let mut blocks: Vec<_> = out.iter().filter(|(_, p)| p.id == UpdateBlock::ID).map(|(to, p)| (*to, Reader(&p.body).block_pos().unwrap())).collect();
+        blocks.sort();
+        assert_eq!(blocks, [(1, ROCK), (1, ROCK), (2, ROCK), (2, ROCK)]);
+        // LevelEvent 2001 con l'hash del blocco rotto, al centro del blocco
+        assert_eq!(events(&out), [(1, 2001, [3.5, 10.5, 4.5], stone()), (2, 2001, [3.5, 10.5, 4.5], stone())]);
+    }
+
+    #[test]
+    fn break_sends_air_to_the_viewers() {
+        let mut h = setup(GameMode::Creative);
+        h.receive(1, &[action(player_action::CREATIVE_DESTROY, ROCK)]);
+        let mut got = updates(&mut h.sent);
+        got.sort(); // l'ordine dei giocatori non è fissato
+        assert_eq!(got, [(1, ROCK, air() as u32, 3, 0), (1, ROCK, air() as u32, 3, 1), (2, ROCK, air() as u32, 3, 0), (2, ROCK, air() as u32, 3, 1)]);
+    }
+
+    #[test]
+    fn break_via_use_item_destroy() {
+        let mut h = setup(GameMode::Creative);
+        h.receive(1, &[pai(NEAR, Some((use_item::DESTROY, ROCK)), &[])]);
+        assert_broken(&h);
+        assert_eq!(events(&outbox(&mut h.sent)).len(), 2, "evento di rottura a chi vede il chunk");
+    }
+
+    #[test]
+    fn break_via_inventory_transaction_destroy() {
+        let mut h = setup(GameMode::Survival);
+        h.receive(1, &[transaction(use_item::DESTROY, ROCK)]);
+        assert_broken(&h);
+        // un uso diverso (piazzare, usare) non rompe nulla
+        let mut h = setup(GameMode::Survival);
+        h.receive(1, &[transaction(use_item::PLACE, ROCK), transaction(use_item::USE, ROCK)]);
+        assert_untouched(&h);
+    }
+
+    #[test]
+    fn survival_breaks_instantly_through_start_and_stop() {
+        let mut h = setup(GameMode::Survival);
+        h.receive(1, &[pai(NEAR, None, &[(player_action::START_BREAK, ROCK), (player_action::STOP_BREAK, ROCK)])]);
+        assert_broken(&h);
+        let mut h = setup(GameMode::Survival);
+        h.receive(1, &[pai(NEAR, None, &[(player_action::CONTINUE_DESTROY, ROCK), (player_action::PREDICT_DESTROY, ROCK)])]);
+        assert_broken(&h);
+        let mut h = setup(GameMode::Survival); // le stesse azioni arrivano anche come PlayerAction
+        h.receive(1, &[action(player_action::START_BREAK, ROCK), action(player_action::STOP_BREAK, ROCK)]);
+        assert_broken(&h);
+    }
+
+    #[test]
+    fn stop_break_without_start_or_after_abort_or_elsewhere_breaks_nothing() {
+        let mut h = setup(GameMode::Survival);
+        let elsewhere = [ROCK[0] + 1, ROCK[1], ROCK[2]];
+        h.receive(1, &[action(player_action::STOP_BREAK, ROCK)]);
+        h.receive(1, &[action(player_action::START_BREAK, ROCK), action(player_action::ABORT_BREAK, ROCK), action(player_action::STOP_BREAK, ROCK)]);
+        h.receive(1, &[action(player_action::START_BREAK, ROCK), action(player_action::STOP_BREAK, elsewhere)]);
+        h.receive(1, &[action(player_action::STOP_BREAK, ROCK)]);
+        h.receive(1, &[action(player_action::START_BREAK, ROCK), action(player_action::CRACK, ROCK)]);
+        assert_untouched(&h);
+    }
+
+    #[test]
+    fn break_out_of_reach_is_reverted() {
+        let mut h = setup(GameMode::Creative);
+        let seen = counting_hook(&mut h, true);
+        h.server.players.get_mut(&1).unwrap().pos = [3.5, 30.0, 4.5]; // 19.5 dal centro del blocco
+        h.receive(1, &[action(player_action::CREATIVE_DESTROY, ROCK)]);
+        assert_reverted(&mut h);
+        assert!(seen.lock().unwrap().is_empty(), "i ganci non vedono un'azione fuori portata");
+        // in sopravvivenza il limite è 8 blocchi
+        let mut h = setup(GameMode::Survival);
+        h.server.players.get_mut(&1).unwrap().pos = [3.5, 19.0, 4.5]; // 8.5
+        h.receive(1, &[transaction(use_item::DESTROY, ROCK)]);
+        assert_reverted(&mut h);
+        next_tick(&mut h);
+        h.server.players.get_mut(&1).unwrap().pos = [3.5, 18.0, 4.5]; // 7.5
+        h.receive(1, &[transaction(use_item::DESTROY, ROCK)]);
+        assert_broken(&h);
+    }
+
+    #[test]
+    fn reach_uses_the_position_of_the_same_input() {
+        let mut h = setup(GameMode::Creative);
+        h.server.players.get_mut(&1).unwrap().pos = [3.5, 300.0, 4.5];
+        h.receive(1, &[pai(NEAR, Some((use_item::DESTROY, ROCK)), &[])]);
+        assert_broken(&h);
+    }
+
+    #[test]
+    fn spectator_and_adventure_cannot_break() {
+        for mode in [GameMode::Spectator, GameMode::Adventure] {
+            let mut h = setup(mode);
+            let seen = counting_hook(&mut h, true);
+            h.receive(1, &[action(player_action::CREATIVE_DESTROY, ROCK)]);
+            next_tick(&mut h);
+            h.receive(1, &[transaction(use_item::DESTROY, ROCK)]);
+            next_tick(&mut h);
+            h.receive(1, &[pai(NEAR, Some((use_item::DESTROY, ROCK)), &[(player_action::START_BREAK, ROCK), (player_action::STOP_BREAK, ROCK)])]);
+            assert!(seen.lock().unwrap().is_empty(), "{mode:?}");
+            assert_untouched(&h);
+            let sent = updates(&mut h.sent);
+            assert_eq!(sent.len(), 6, "{mode:?}: tre rifiuti, due strati ciascuno");
+            assert!(sent.iter().all(|u| u.0 == 1 && u.1 == ROCK), "{mode:?}: lo stato vero va solo ad Alice");
+            assert!(sent.iter().any(|u| u.2 == stone() as u32 && u.4 == 0), "{mode:?}");
+        }
+    }
+
+    #[test]
+    fn creative_destroy_is_only_for_creative_players() {
+        let mut h = setup(GameMode::Survival);
+        h.receive(1, &[action(player_action::CREATIVE_DESTROY, ROCK)]);
+        assert_reverted(&mut h);
+    }
+
+    #[test]
+    fn a_hook_can_cancel_the_break() {
+        let mut h = setup(GameMode::Creative);
+        let seen = counting_hook(&mut h, false);
+        h.receive(1, &[action(player_action::CREATIVE_DESTROY, ROCK)]);
+        assert_reverted(&mut h);
+        assert_eq!(seen.lock().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn breaking_waterlogged_kelp_leaves_water() {
+        let mut h = setup(GameMode::Creative);
+        let kelp = block_hash("minecraft:kelp", &[("kelp_age", State::Int(3))]);
+        h.server.set_blocks(Dim::Overworld, &[change(ROCK, kelp, true)]);
+        drop(h.packets_to(1));
+        h.receive(1, &[action(player_action::CREATIVE_DESTROY, ROCK)]);
+        assert_eq!(h.server.block_at(Dim::Overworld, ROCK), Some((air(), true)), "il blocco sparisce, l'acqua resta");
+        assert_eq!(updates(&mut h.sent)[..2], [(1, ROCK, air() as u32, 3, 0), (1, ROCK, water() as u32, 3, 1)]);
+        assert!(h.server.chunks[&(0, 0, 0)].water(3, 10, 4));
+    }
+
+    #[test]
+    fn double_break_same_tick_happens_once() {
+        for allow in [true, false] {
+            let mut h = setup(GameMode::Creative);
+            let seen = counting_hook(&mut h, allow);
+            // PlayerAction 13 e UseItem Destroy sulla stessa posizione, nello stesso tick (anche in due pacchetti diversi)
+            let both = [action(player_action::CREATIVE_DESTROY, ROCK), pai(NEAR, Some((use_item::DESTROY, ROCK)), &[]), transaction(use_item::DESTROY, ROCK)];
+            h.receive(1, &both);
+            assert_eq!(seen.lock().unwrap().len(), 1, "un solo Break (il gancio lascia passare: {allow})");
+            assert_eq!(events(&outbox(&mut h.sent)).len(), if allow { 2 } else { 0 });
+        }
+        // nel tick dopo lo stesso punto si rompe di nuovo
+        let mut h = setup(GameMode::Creative);
+        let seen = counting_hook(&mut h, true);
+        h.receive(1, &[action(player_action::CREATIVE_DESTROY, ROCK)]);
+        h.server.set_blocks(Dim::Overworld, &[change(ROCK, stone(), false)]);
+        h.receive(1, &[action(player_action::CREATIVE_DESTROY, ROCK)]);
+        assert_eq!(seen.lock().unwrap().len(), 1, "stesso tick");
+        next_tick(&mut h);
+        h.receive(1, &[action(player_action::CREATIVE_DESTROY, ROCK)]);
+        assert_eq!(seen.lock().unwrap().len(), 2, "tick successivo");
+    }
+
+    #[test]
+    fn break_air_does_nothing() {
+        let mut h = setup(GameMode::Creative);
+        let seen = counting_hook(&mut h, true);
+        h.receive(1, &[action(player_action::CREATIVE_DESTROY, [3, 12, 4]), transaction(use_item::DESTROY, [3, 13, 4])]);
+        assert!(seen.lock().unwrap().is_empty());
+        assert!(outbox(&mut h.sent).is_empty(), "nessun pacchetto a nessuno");
+        assert!(!h.server.chunks[&(0, 0, 0)].dirty);
+    }
+
+    #[test]
+    fn break_in_unloaded_chunk_or_outside_the_world_does_nothing() {
+        let mut h = setup(GameMode::Creative);
+        let seen = counting_hook(&mut h, true);
+        for pos in [[40, 10, 4], [3, 400, 4], [3, -100, 4], [i32::MAX, i32::MIN, i32::MAX]] {
+            h.receive(1, &[action(player_action::CREATIVE_DESTROY, pos)]);
+        }
+        assert!(seen.lock().unwrap().is_empty());
+        assert!(outbox(&mut h.sent).is_empty());
+    }
+
+    #[test]
+    fn bedrock_and_liquids_resist_survival_but_bedrock_breaks_in_creative() {
+        let bedrock = block_hash("minecraft:bedrock", &[("infiniburn_bit", State::Byte(0))]);
+        let lava = block_hash("minecraft:lava", &[("liquid_depth", State::Int(0))]);
+        for hash in [bedrock, lava, water_block()] {
+            let mut h = setup(GameMode::Survival);
+            h.server.set_blocks(Dim::Overworld, &[change(ROCK, hash, false)]);
+            h.server.chunks.get_mut(&(0, 0, 0)).unwrap().dirty = false;
+            drop(h.packets_to(1));
+            h.receive(1, &[transaction(use_item::DESTROY, ROCK)]);
+            assert_eq!(h.server.block_at(Dim::Overworld, ROCK), Some((hash, false)));
+            assert!(!updates(&mut h.sent).is_empty(), "stato vero rimandato");
+        }
+        let mut h = setup(GameMode::Creative);
+        h.server.set_blocks(Dim::Overworld, &[change(ROCK, bedrock, false)]);
+        h.receive(1, &[action(player_action::CREATIVE_DESTROY, ROCK)]);
+        assert_eq!(h.server.block_at(Dim::Overworld, ROCK), Some((air(), false)));
+    }
+
+    fn water_block() -> i32 {
+        block_hash("minecraft:water", &[("liquid_depth", State::Int(0))])
+    }
+
+    #[test]
+    fn malformed_or_early_break_packets_are_ignored() {
+        let mut h = setup(GameMode::Creative);
+        let seen = counting_hook(&mut h, true);
+        let good = action(player_action::CREATIVE_DESTROY, ROCK).body;
+        for cut in 0..good.len() {
+            h.receive(1, &[Packet::new(id::PLAYER_ACTION, good[..cut].to_vec())]);
+        }
+        h.receive(1, &[Packet::new(id::INVENTORY_TRANSACTION, vec![0, 0, 2, 0, 2, 1])]);
+        assert!(seen.lock().unwrap().is_empty());
+        assert_untouched(&h);
+        // un giocatore non ancora nel mondo non rompe nulla
+        h.server.open(9);
+        h.receive(9, &[action(player_action::CREATIVE_DESTROY, ROCK)]);
+        assert!(seen.lock().unwrap().is_empty());
+        assert_untouched(&h);
+    }
+
+    #[test]
+    fn in_reach_limits() {
+        use crate::breaking::in_reach;
+        let eyes = [0.5, 0.5, 0.5];
+        assert!(in_reach(eyes, [0, 0, 0], false));
+        assert!(in_reach(eyes, [8, 0, 0], false), "8.0 esatti");
+        assert!(!in_reach(eyes, [9, 0, 0], false));
+        assert!(in_reach(eyes, [14, 0, 0], true), "14.0 esatti");
+        assert!(!in_reach(eyes, [15, 0, 0], true));
+        assert!(!in_reach([f32::NAN, 0.0, 0.0], [0, 0, 0], true));
+        assert!(!in_reach([f32::INFINITY, 0.0, 0.0], [0, 0, 0], true));
+        assert!(!in_reach(eyes, [i32::MAX, i32::MAX, i32::MAX], true), "senza overflow");
+        assert!(!in_reach(eyes, [8, 8, 0], false), "la distanza è in 3D");
     }
 }

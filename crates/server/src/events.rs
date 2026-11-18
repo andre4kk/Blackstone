@@ -10,7 +10,7 @@ pub(crate) struct BlockChange {
 
 /// Un'azione di un giocatore sul mondo, mostrata ai ganci prima di applicarla.
 #[derive(Clone, Debug, PartialEq, Eq)]
-#[allow(dead_code)] // le variabili Break, Place e Interact le costruiscono i gestori di rottura, piazzamento e interazione
+#[allow(dead_code)] // le variabili Place e Interact le costruiranno i gestori di piazzamento e interazione
 pub(crate) enum WorldAction {
     /// Il giocatore rompe il blocco in `pos`, che prima era `old`.
     Break { pid: u64, pos: [i32; 3], old: i32 },
