@@ -499,4 +499,93 @@ mod tests {
         rig.pump();
         assert_eq!(rig.server.players[&3].inventory.main(1).count, 3);
     }
+
+    /// Pacchetto di login con questo nome e, se c'è, questo XUID (le firme non si verificano).
+    fn login_packet(name: &str, xuid: Option<&str>) -> Packet {
+        use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64U, Engine};
+        let jwt = |payload: serde_json::Value| format!("{}.{}.x", B64U.encode(r#"{"alg":"ES384"}"#), B64U.encode(payload.to_string()));
+        let mut extra = serde_json::json!({"displayName": name});
+        if let Some(x) = xuid {
+            extra["XUID"] = x.into();
+        }
+        let chain = serde_json::json!({"chain": [jwt(serde_json::json!({"extraData": extra}))]});
+        let identity = serde_json::json!({"AuthenticationType": 0, "Certificate": chain.to_string(), "Token": ""}).to_string();
+        let client_data = jwt(serde_json::json!({}));
+        let login = bedrock_protocol::packets::Login { protocol: bedrock_protocol::PROTOCOL as i32, identity: &identity, client_data: &client_data };
+        Packet::new(bedrock_protocol::id::LOGIN, login.encode())
+    }
+
+    impl Rig {
+        /// Un client si connette e manda il login.
+        fn connect(&mut self, pid: u64, name: &str, xuid: Option<&str>) {
+            self.server.open(pid);
+            self.server.message(pid, &Session::default().encode(&[login_packet(name, xuid)]));
+        }
+
+        /// (a chi, id del pacchetto) di tutto ciò che il server ha mandato, e a chi ha tolto la connessione.
+        fn traffic(&mut self) -> (Vec<(u64, u32)>, Vec<u64>) {
+            let (mut packets, mut kicks) = (Vec::new(), Vec::new());
+            while let Ok(cmd) = self.sent.try_recv() {
+                match cmd {
+                    Command::Send(to, data) => packets.extend(Session::default().decode(&data).unwrap().into_iter().map(|p| (to, p.id))),
+                    Command::Kick(id) => kicks.push(id),
+                }
+            }
+            (packets, kicks)
+        }
+    }
+
+    #[test]
+    fn second_login_with_same_identity_kicks_the_first_and_keeps_its_data() {
+        let dir = TempDir::new("duplicate");
+        let mut rig = Rig::new(&dir.0);
+        rig.connect(1, "Alice", Some("2535"));
+        rig.server.start_game(1);
+        rig.pump();
+        let p = rig.server.players.get_mut(&1).unwrap();
+        p.pos = [7.5, 80.62, 9.5];
+        p.inventory.set_main(3, item("minecraft:stone", 33));
+        rig.traffic();
+
+        // la stessa persona rientra mentre la vecchia connessione è ancora aperta
+        rig.connect(2, "Alice", Some("2535"));
+        let (packets, kicks) = rig.traffic();
+        assert!(packets.contains(&(1, bedrock_protocol::id::DISCONNECT)), "la vecchia sessione riceve un Disconnect");
+        assert_eq!(kicks, vec![1], "e la sua connessione si chiude");
+        assert!(!rig.server.players.contains_key(&1), "tolta dalla chiusura normale");
+
+        // il nuovo ingresso legge ciò che la vecchia sessione ha appena salvato
+        rig.server.start_game(2);
+        rig.pump();
+        assert_eq!(rig.server.players[&2].inventory.main(3).count, 33);
+        let starts = rig.start_games();
+        assert!(near(starts.last().unwrap().0, [7.5, 80.62, 9.5]));
+
+        // il Close di rete della vecchia sessione, arrivato dopo, non salva di nuovo (né tocca la nuova)
+        rig.server.players.get_mut(&2).unwrap().inventory.set_main(3, item("minecraft:stone", 40));
+        rig.server.close(1);
+        assert!(rig.server.players.contains_key(&2));
+        rig.server.close(2);
+        rig.connect(3, "Alice", Some("2535"));
+        rig.server.start_game(3);
+        rig.pump();
+        assert_eq!(rig.server.players[&3].inventory.main(3).count, 40, "vale l'ultimo salvataggio, quello della sessione 2");
+    }
+
+    #[test]
+    fn different_identities_do_not_kick_each_other() {
+        let dir = TempDir::new("no-duplicate");
+        let mut rig = Rig::new(&dir.0);
+        rig.connect(1, "Alice", Some("2535"));
+        rig.connect(2, "Bob", Some("2536"));
+        rig.connect(3, "Alice", None); // senza XUID: identità `name:Alice`, diversa da quella con XUID
+        rig.connect(4, "Carol", None);
+        let (packets, kicks) = rig.traffic();
+        assert!(kicks.is_empty());
+        assert!(packets.iter().all(|&(_, id)| id != bedrock_protocol::id::DISCONNECT));
+        assert_eq!(rig.server.players.len(), 4);
+        // due senza XUID e con lo stesso nome sono la stessa identità
+        rig.connect(5, "Carol", None);
+        assert!(!rig.server.players.contains_key(&4) && rig.server.players.contains_key(&5));
+    }
 }

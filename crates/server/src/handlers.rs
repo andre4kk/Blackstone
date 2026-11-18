@@ -225,6 +225,7 @@ impl Server {
                 if info.xuid.is_none() {
                     log!("[#{pid}] XUID non trovato: chiavi del Token = {:?}", info.token_claim_keys);
                 }
+                self.kick_same_identity(pid, &info);
                 if let Some(p) = self.players.get_mut(&pid) {
                     p.info = Some(info);
                 }
@@ -241,6 +242,25 @@ impl Server {
                 log!("[#{pid}] login non leggibile: {e}");
                 self.disconnect(pid, "Login non valido");
             }
+        }
+    }
+
+    /// Come in Minecraft vince l'ultimo ad entrare: chi è già connesso con la stessa identità viene disconnesso prima, passando
+    /// dalla chiusura normale, così i suoi dati sono sul disco (e davanti nella coda del disco) prima che il nuovo li chieda.
+    /// Senza questo due sessioni leggerebbero lo stesso salvataggio e l'ultima a uscire cancellerebbe le modifiche dell'altra.
+    fn kick_same_identity(&mut self, pid: u64, info: &login::PlayerInfo) {
+        let identity = playerdata::identity(info);
+        let old: Vec<u64> = self
+            .players
+            .iter()
+            .filter(|(&other, p)| other != pid && p.info.as_ref().is_some_and(|i| playerdata::identity(i) == identity))
+            .map(|(&other, _)| other)
+            .collect();
+        for other in old {
+            log!("[#{other}] stessa identità di #{pid} ({identity}): disconnesso, vale il nuovo ingresso");
+            self.disconnect(other, "Sei entrato da un'altra posizione");
+            self.close(other); // salva i dati e toglie il giocatore: il Close di rete che arriva dopo non trova più nulla
+            self.sender.kick(other);
         }
     }
 
