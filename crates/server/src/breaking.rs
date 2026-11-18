@@ -77,8 +77,10 @@ pub(crate) fn drops_for(block_name: &str, held: &Item, roll: &mut impl FnMut() -
     let mut out = Vec::new();
     for d in chosen {
         let spread = d.max.saturating_sub(d.min);
-        let count = d.min + ((roll() * f32::from(spread + 1)) as u16).min(spread);
-        out.extend(Item::from_name(&d.item, count));
+        let count = d.min + ((roll() * (u32::from(spread) + 1) as f32) as u16).min(spread);
+        if count > 0 {
+            out.extend(Item::from_name(&d.item, count)); // un tiro di quantità 0 (arbusto secco: 0-2 bastoni) non lascia niente
+        }
     }
     out
 }

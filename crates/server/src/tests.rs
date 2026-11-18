@@ -1043,6 +1043,13 @@ mod breaking {
     }
 
     #[test]
+    fn zero_count_roll_drops_nothing() {
+        // arbusto secco: bastoni 0-2 (probabilità 1, quindi tiro esclusivo: il primo valore sceglie la voce, il secondo la quantità)
+        assert!(drop_names("minecraft:deadbush", "", &[0.0, 0.0]).is_empty());
+        assert_eq!(drop_names("minecraft:deadbush", "", &[0.0, 0.99]), [("minecraft:stick".to_string(), 2)]);
+    }
+
+    #[test]
     fn gravel_is_one_exclusive_roll() {
         assert_eq!(drop_names("minecraft:gravel", "", &[0.05]), [("minecraft:flint".to_string(), 1)]);
         assert_eq!(drop_names("minecraft:gravel", "", &[0.5]), [("minecraft:gravel".to_string(), 1)]);
