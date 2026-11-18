@@ -218,7 +218,16 @@ fn client(port: u16, mode: Mode) {
                         assert!(seen.iter().all(|&(x, z)| x.abs() <= RADIUS && z.abs() <= RADIUS), "solo chunk vicini allo spawn: {seen:?}");
                         // Sposta il giocatore di 5 chunk in X (lo spawn finto è in 8, 61, 8).
                         moved_to = Some((5, 0));
-                        let body: Vec<u8> = [0.0f32, 0.0, 88.0, 63.0, 8.0].iter().flat_map(|v| v.to_le_bytes()).collect();
+                        // PlayerAuthInput completo: rotazione, posizione, movimento, head yaw, nessun flag, modalità, rotazione di
+                        // interazione, tick, delta, opzionali assenti, vettori finali.
+                        let floats = |v: &[f32]| v.iter().flat_map(|f| f.to_le_bytes()).collect::<Vec<u8>>();
+                        let mut body = floats(&[0.0, 0.0, 88.0, 63.0, 8.0, 0.0, 0.0, 0.0]);
+                        body.extend([0, 0, 0, 0]);
+                        body.extend(floats(&[0.0; 2]));
+                        body.push(0);
+                        body.extend(floats(&[0.0; 3]));
+                        body.extend([0, 0, 0, 0, 0]);
+                        body.extend(floats(&[0.0; 7]));
                         Packet::new(id::PLAYER_AUTH_INPUT, body)
                     }
                     (6, _) if mode == Mode::Generated => {

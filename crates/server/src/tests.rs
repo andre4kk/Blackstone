@@ -149,14 +149,24 @@ fn flush_on_shutdown_writes_dirty_chunks() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+/// Corpo valido di `PlayerAuthInput` senza flag né opzionali, con la sola posizione (occhi) data.
+fn auth_input_body(x: f32, y: f32, z: f32) -> Vec<u8> {
+    let floats = |v: &[f32]| v.iter().flat_map(|f| f.to_le_bytes()).collect::<Vec<u8>>();
+    let mut b = floats(&[0.0, 0.0, x, y, z, 0.0, 0.0, 0.0]); // rotazione, posizione, movimento, head yaw
+    b.extend([0, 0, 0, 0]); // nessun flag, modalità di input e di gioco, modello di interazione
+    b.extend(floats(&[0.0, 0.0])); // rotazione di interazione
+    b.push(0); // tick
+    b.extend(floats(&[0.0; 3])); // delta
+    b.extend([0, 0, 0, 0, 0]); // transazione, richiesta, azioni di blocco, veicolo (rotazione e id) assenti
+    b.extend(floats(&[0.0; 7])); // vettore analogico, camera, vettore grezzo
+    b
+}
+
 #[test]
 fn player_auth_input_moves_the_player_and_ignores_bad_positions() {
     let mut h = Harness::new();
     h.join(1, "Alice");
-    let input = |x: f32, y: f32, z: f32| {
-        let body: Vec<u8> = [0.0f32, 0.0, x, y, z].iter().flat_map(|v| v.to_le_bytes()).collect();
-        Packet::new(id::PLAYER_AUTH_INPUT, body)
-    };
+    let input = |x: f32, y: f32, z: f32| Packet::new(id::PLAYER_AUTH_INPUT, auth_input_body(x, y, z));
     h.receive(1, &[input(40.5, 70.0, -3.0)]);
     assert_eq!((h.server.players[&1].pos, h.server.players[&1].last_chunk), ([40.5, 70.0, -3.0], (2, -1)));
     h.receive(1, &[input(f32::NAN, 70.0, 0.0), input(1.0e9, 70.0, 0.0)]);

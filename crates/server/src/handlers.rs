@@ -2,9 +2,11 @@
 use crate::{Player, Server};
 use bedrock_net::log;
 use bedrock_protocol::{
-    id, login,
+    id,
+    input::PlayerAuthInput,
+    login,
     packets::{
-        disconnect_reason, pack_response, play_status, text_type, Disconnect, Login, NetworkSettings, PacketViolationWarning, PlayStatus, PlayerAuthInput,
+        disconnect_reason, pack_response, play_status, text_type, Disconnect, Login, NetworkSettings, PacketViolationWarning, PlayStatus,
         RequestNetworkSettings, ResourcePackClientResponse, ResourcePackStack, ResourcePacksInfo, Text,
     },
     Packet, PROTOCOL, VERSION,
