@@ -52,9 +52,9 @@ varint32. Il client manda lo stesso pacchetto: `input::Animate` legge solo azion
 
 ## Numeri dei flag (`actor::flag`, chiave `FLAGS` = bitset i64)
 
-SNEAKING 1, SPRINTING 3, GLIDING 32, SWIMMING 56. Gli schemi Mojang non contengono l'enum `ActorFlags` (solo
+SNEAKING 1, SPRINTING 3, GLIDING 32, SWIMMING 57. Gli schemi Mojang non contengono l'enum `ActorFlags` (solo
 `ActorDataFlagComponent`, un bitset opaco), quindi non c'è un numero ufficiale da confrontare. Fonte: la numerazione già usata dal
 crate e verificata sul gioco (CAN_CLIMB 19, BREATHING 35, HAS_COLLISION 48, HAS_GRAVITY 49, dopo lo spostamento di uno introdotto
 da CAN_DASH 46 nel protocollo 560, changelog_560) e i nomi `EntityDataFlag*` di gophertunnel/Dragonfly
 (`entity_metadata.go` li usa per sneaking, sprinting, swimming, gliding). I quattro valori seguono la stessa tabella
-PocketMine `EntityMetadataFlags` (SNEAKING 1, SPRINTING 3, GLIDING 32, SWIMMING 56): NON verificati su una cattura del client.
+PocketMine `EntityMetadataFlags` (SNEAKING 1, SPRINTING 3, GLIDING 32, SWIMMING 56 nella tabella precedente al 560): NON verificati su una cattura del client. SWIMMING è 57 perché `changelog_560_11_10_22.md` lo elenca tra i flag spostati di uno da CAN_DASH(46); decisione del controller (le doc Mojang fanno fede).

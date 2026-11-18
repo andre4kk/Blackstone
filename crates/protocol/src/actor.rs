@@ -25,7 +25,8 @@ pub mod flag {
     pub const BREATHING: u32 = 35;
     pub const HAS_COLLISION: u32 = 48;
     pub const HAS_GRAVITY: u32 = 49;
-    pub const SWIMMING: u32 = 56;
+    /// Spostato di uno da CAN_DASH(46) (changelog_560: "Displaced SWIMMING"): 57.
+    pub const SWIMMING: u32 = 57;
 }
 
 /// Un valore sincronizzato; il numero è sia l'indice di variante sia il `DataItemType`.
