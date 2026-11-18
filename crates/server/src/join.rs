@@ -23,7 +23,7 @@ const EMPTY_NBT: [u8; 3] = [0x0a, 0, 0];
 /// NO_CHUNKS=1 non invia chunk;
 /// CHUNKS_EARLY=1 manda biomi e chunk subito dopo PlayerSpawn, senza aspettare SetLocalPlayerAsInitialized;
 /// SKIP=jigsaw,voxel,items,creative,publisher non invia i pacchetti elencati;
-/// SEND=actors invia anche i pacchetti spenti di default (vedi `send`).
+/// SEND=biomes,actors invia anche i pacchetti spenti di default (vedi `send`).
 fn flag(name: &str) -> bool {
     std::env::var(name).is_ok_and(|v| v == "1")
 }
@@ -172,7 +172,12 @@ impl Server {
         let name = self.name(pid);
         self.tell(pid, "§aBenvenuto sul server Rust! Scrivi /help per i comandi.");
         self.broadcast(Text::new(text_type::RAW, format!("§e{name} è entrato nel gioco")));
-        let mut packets = vec![biomes::packet().clone()];
+        let mut packets = Vec::new();
+        // La nostra BiomeDefinitionList fa chiudere il client (provato il 18/11/2026): spenta finché non è completa.
+        // Senza, il client usa le sue definizioni interne e gli ID dei biomi nei chunk funzionano lo stesso.
+        if send("biomes") {
+            packets.push(biomes::packet().clone());
+        }
         if send("actors") {
             packets.push(AvailableActorIdentifiers { identifier_list: nbt_empty_lists(&["idlist"]) }.packet());
         }

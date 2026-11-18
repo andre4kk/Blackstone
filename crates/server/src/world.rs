@@ -79,6 +79,14 @@ pub(crate) fn pack_words(bits: u8, index_at: impl Fn(usize) -> usize) -> Vec<u32
 /// Con una sola voce (0 bit) non si scrivono né parole né numero di voci: segue la voce unica
 /// (come nel vecchio mondo piatto, verificato col client).
 fn write_storage(w: &mut Writer, palette: &[i32], index_at: impl Fn(usize) -> usize) {
+    // Diagnostica (VERSMC_DEBUG=nozero): niente storage a 0 bit, la voce unica si duplica e si usa 1 bit.
+    let doubled: Vec<i32>;
+    let palette = if palette.len() == 1 && debug_flag("nozero") {
+        doubled = vec![palette[0], palette[0]];
+        &doubled[..]
+    } else {
+        palette
+    };
     let bits = bits_for_palette(palette.len());
     w.u8((bits << 1) | 1); // bit basso = ID di rete (non NBT)
     pack_words(bits, index_at).into_iter().for_each(|word| w.u32(word));
@@ -86,6 +94,16 @@ fn write_storage(w: &mut Writer, palette: &[i32], index_at: impl Fn(usize) -> us
         w.var_i32(palette.len() as i32);
     }
     palette.iter().for_each(|&id| w.var_i32(id));
+}
+
+/// Interruttori di diagnostica per capire cosa rifiuta il client: variabile `VERSMC_DEBUG` con nomi separati da virgola
+/// (`nozero`, `nowater`, `plains`, `nobe`). Senza la variabile non cambia nulla.
+pub(crate) fn debug_flag(name: &str) -> bool {
+    static FLAGS: std::sync::OnceLock<Vec<String>> = std::sync::OnceLock::new();
+    FLAGS
+        .get_or_init(|| std::env::var("VERSMC_DEBUG").map(|v| v.split(',').map(|s| s.trim().to_string()).collect()).unwrap_or_default())
+        .iter()
+        .any(|f| f == name)
 }
 
 /// Chunk in memoria: sezioni indicate dalla più bassa della dimensione (`None` = sezione di sola aria).
@@ -161,10 +179,11 @@ impl Chunk {
             w.u8(9); // versione del sotto-chunk
             match slot {
                 Some(s) => {
-                    w.u8(if s.water.is_some() { 2 } else { 1 }); // strati: blocchi ed eventualmente acqua
+                    let water_mask = s.water.as_ref().filter(|_| !debug_flag("nowater"));
+                    w.u8(if water_mask.is_some() { 2 } else { 1 }); // strati: blocchi ed eventualmente acqua
                     w.i8(s.index);
                     write_storage(&mut w, &s.palette, |n| s.blocks[n] as usize);
-                    if let Some(mask) = &s.water {
+                    if let Some(mask) = water_mask {
                         write_storage(&mut w, &[air, water], |n| (mask[n / 64] >> (n % 64) & 1) as usize);
                     }
                 }
@@ -178,6 +197,7 @@ impl Chunk {
         let mut below = PLAINS as u32;
         for slot in &self.sections {
             match slot {
+                Some(_) if debug_flag("plains") => write_storage(&mut w, &[PLAINS as i32], |_| 0),
                 Some(s) => {
                     // 4096 celle: ogni cella di bioma 4x4x4 vale per i suoi 64 blocchi, ordine (x*16 + z)*16 + y
                     let mut palette: Vec<u32> = Vec::new();
@@ -194,7 +214,9 @@ impl Chunk {
             }
         }
         w.u8(0); // blocchi di bordo
-        self.block_entities.iter().for_each(|be| w.bytes(&be.nbt));
+        if !debug_flag("nobe") {
+            self.block_entities.iter().for_each(|be| w.bytes(&be.nbt));
+        }
         w.0
     }
 }
