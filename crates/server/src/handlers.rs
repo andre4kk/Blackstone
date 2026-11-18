@@ -49,7 +49,13 @@ impl Server {
         let allowed = match packet.id {
             id::LOGIN => !logged_in,
             id::RESOURCE_PACK_CLIENT_RESPONSE | id::REQUEST_CHUNK_RADIUS | id::SET_LOCAL_PLAYER_AS_INITIALIZED => logged_in,
-            id::TEXT | id::COMMAND_REQUEST | id::ITEM_STACK_REQUEST | id::MOB_EQUIPMENT | id::PLAYER_ACTION | id::INVENTORY_TRANSACTION => spawned,
+            id::TEXT
+            | id::COMMAND_REQUEST
+            | id::SET_PLAYER_GAME_TYPE
+            | id::ITEM_STACK_REQUEST
+            | id::MOB_EQUIPMENT
+            | id::PLAYER_ACTION
+            | id::INVENTORY_TRANSACTION => spawned,
             _ => true,
         };
         if !allowed {
@@ -63,6 +69,7 @@ impl Server {
             id::SET_LOCAL_PLAYER_AS_INITIALIZED => self.initialized(pid),
             id::TEXT => self.chat(pid, &packet.body),
             id::COMMAND_REQUEST => self.command(pid, &packet.body),
+            id::SET_PLAYER_GAME_TYPE => self.client_game_type(pid, &packet.body),
             // Pacchetti di gioco che il client manda di continuo e che arriveranno con movimento, blocchi e inventario:
             // per ora si ignorano in silenzio, altrimenti il log si riempie.
             id::PLAYER_AUTH_INPUT => self.player_auth_input(pid, &packet.body),

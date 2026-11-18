@@ -1745,3 +1745,99 @@ mod interacting {
         assert_eq!(at(&h, BUTTON), up);
     }
 }
+
+// ---------- /gamemode ----------
+
+/// Modalità di gioco e valori delle abilità dell'ultimo `SetPlayerGameType`/`UpdateAbilities` ricevuti da `pid`.
+fn mode_and_abilities(h: &mut Harness, pid: u64) -> (Vec<u8>, u32) {
+    let packets = h.packets_to(pid);
+    let game_type = packets.iter().find(|p| p.id == SetPlayerGameType::ID).expect("SetPlayerGameType").body.clone();
+    let r = &mut Reader(&packets.iter().find(|p| p.id == UpdateAbilities::ID).expect("UpdateAbilities").body);
+    assert_eq!((r.i64().unwrap(), r.i8().unwrap(), r.u8().unwrap(), r.var_u32().unwrap(), r.u16().unwrap()), (pid as i64, 1, 0, 1, 1));
+    let _set = r.u32().unwrap();
+    (game_type, r.u32().unwrap())
+}
+
+#[test]
+fn gamemode_survival_updates_client() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    h.packets_to(1);
+    h.receive(1, &[command("/gamemode survival")]);
+    assert_eq!(h.server.players[&1].mode, GameMode::Survival);
+    let (game_type, values) = mode_and_abilities(&mut h, 1);
+    assert_eq!(game_type, [0], "sopravvivenza = 0");
+    assert_eq!(values & ((1 << 10) | (1 << 11)), 0, "niente volo né costruzione istantanea");
+}
+
+#[test]
+fn gamemode_accepts_names_numbers_and_short_forms() {
+    let cases = [
+        ("creative", GameMode::Creative),
+        ("c", GameMode::Creative),
+        ("1", GameMode::Creative),
+        ("survival", GameMode::Survival),
+        ("s", GameMode::Survival),
+        ("0", GameMode::Survival),
+        ("adventure", GameMode::Adventure),
+        ("a", GameMode::Adventure),
+        ("2", GameMode::Adventure),
+        ("spectator", GameMode::Spectator),
+        ("sp", GameMode::Spectator),
+        ("6", GameMode::Spectator),
+        ("CREATIVE", GameMode::Creative),
+    ];
+    for (arg, expected) in cases {
+        let mut h = Harness::new();
+        h.join(1, "Alice");
+        h.server.players.get_mut(&1).unwrap().mode = if expected == GameMode::Survival { GameMode::Creative } else { GameMode::Survival };
+        h.receive(1, &[command(&format!("/gamemode {arg}"))]);
+        assert_eq!(h.server.players[&1].mode, expected, "/gamemode {arg}");
+    }
+}
+
+#[test]
+fn gamemode_unknown_shows_usage() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    h.texts_to(1);
+    for line in ["/gamemode", "/gamemode pizza", "/gamemode 3"] {
+        h.receive(1, &[command(line)]);
+        let texts = h.texts_to(1);
+        assert!(texts.iter().any(|t| t.message.contains("Uso: /gamemode")), "{line}");
+        assert_eq!(h.server.players[&1].mode, GameMode::Creative, "{line}");
+    }
+}
+
+#[test]
+fn gamemode_is_listed_in_help() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    h.texts_to(1);
+    h.receive(1, &[command("/help")]);
+    assert!(h.texts_to(1).iter().any(|t| t.message.contains("/gamemode")));
+}
+
+#[test]
+fn client_set_player_game_type_gets_true_mode_back() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    h.packets_to(1);
+    let mut w = Writer::default();
+    w.var_i32(0); // il client vorrebbe passare a sopravvivenza dal menu
+    h.receive(1, &[Packet::new(id::SET_PLAYER_GAME_TYPE, w.0)]);
+    assert_eq!(h.server.players[&1].mode, GameMode::Creative, "il server non cambia modalità su richiesta del client");
+    let packets = h.packets_to(1);
+    let reply = packets.iter().find(|p| p.id == id::UPDATE_PLAYER_GAME_TYPE).expect("UpdatePlayerGameType");
+    let r = &mut Reader(&reply.body);
+    assert_eq!((r.var_i32().unwrap(), r.var_i64().unwrap()), (1, 1));
+    // pacchetto illeggibile: ignorato
+    h.receive(1, &[Packet::new(id::SET_PLAYER_GAME_TYPE, vec![])]);
+    assert!(h.packets_to(1).is_empty());
+}
+
+#[test]
+fn spectator_has_no_creative_inventory() {
+    assert!(GameMode::Creative.creative_inventory());
+    assert!(!GameMode::Spectator.creative_inventory());
+}

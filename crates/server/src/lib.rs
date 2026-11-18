@@ -56,7 +56,6 @@ pub fn config(port: u16) -> Config {
 
 /// Modalità di gioco; il valore è quello che il protocollo chiama `GameType`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-#[allow(dead_code)] // le altre modalità si scelgono col comando /gamemode
 pub(crate) enum GameMode {
     Survival = 0,
     #[default]
@@ -71,9 +70,30 @@ impl GameMode {
         [GameMode::Survival, GameMode::Creative, GameMode::Adventure, GameMode::Spectator].into_iter().find(|&m| m as i32 == v)
     }
 
-    /// Vero se il giocatore può prendere oggetti dal menu creativo e cestinarli.
+    /// Vero se il giocatore può prendere oggetti dal menu creativo e cestinarli (solo in creativa).
     pub(crate) fn creative_inventory(self) -> bool {
-        matches!(self, GameMode::Creative | GameMode::Spectator)
+        self == GameMode::Creative
+    }
+
+    /// Dall'argomento di `/gamemode`: nome intero, abbreviazione o numero.
+    pub(crate) fn parse(arg: &str) -> Option<GameMode> {
+        match arg.to_lowercase().as_str() {
+            "survival" | "s" | "0" => Some(GameMode::Survival),
+            "creative" | "c" | "1" => Some(GameMode::Creative),
+            "adventure" | "a" | "2" => Some(GameMode::Adventure),
+            "spectator" | "sp" | "6" => Some(GameMode::Spectator),
+            _ => None,
+        }
+    }
+
+    /// Nome mostrato al giocatore.
+    pub(crate) fn name(self) -> &'static str {
+        match self {
+            GameMode::Survival => "sopravvivenza",
+            GameMode::Creative => "creativa",
+            GameMode::Adventure => "avventura",
+            GameMode::Spectator => "spettatore",
+        }
     }
 }
 

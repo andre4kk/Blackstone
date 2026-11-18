@@ -1,15 +1,23 @@
 //! Chat e comandi.
-use crate::Server;
+use crate::{GameMode, Server};
 use bedrock_net::log;
 use bedrock_protocol::{
+    generated::UpdatePlayerGameType,
     id,
     packets::{text_type, CommandRequest, Text},
+    reader::Reader,
+    wire::ServerPacket,
     Packet,
 };
 
 /// Comandi disponibili: nome e descrizione (usati anche da /help).
-const COMMANDS: &[(&str, &str)] =
-    &[("help", "elenco dei comandi"), ("list", "giocatori online"), ("tps", "prestazioni del server"), ("say <testo>", "messaggio a tutti")];
+const COMMANDS: &[(&str, &str)] = &[
+    ("help", "elenco dei comandi"),
+    ("list", "giocatori online"),
+    ("tps", "prestazioni del server"),
+    ("say <testo>", "messaggio a tutti"),
+    ("gamemode <modalità>", "cambia la tua modalità di gioco"),
+];
 
 /// Lunghezza massima di un messaggio di chat (come in vanilla).
 pub(crate) const MAX_CHAT_LEN: usize = 512;
@@ -53,8 +61,26 @@ impl Server {
         self.broadcast(Text { kind: text_type::CHAT, source: name, message: message.into(), xuid, platform_id: String::new() });
     }
 
+    /// Cambia la modalità del giocatore e aggiorna il client (modalità e abilità); si salva con i suoi dati.
+    pub(crate) fn set_mode(&mut self, pid: u64, mode: GameMode) {
+        let Some(p) = self.players.get_mut(&pid) else { return };
+        p.mode = mode;
+        log!("[#{pid}] modalità di gioco: {mode:?}");
+        self.send_abilities(pid);
+        self.tell(pid, &format!("Modalità di gioco impostata a {}.", mode.name()));
+    }
+
+    /// Il client ha chiesto di cambiare modalità (dal menu di pausa): non si accetta, si rimanda quella vera.
+    pub(crate) fn client_game_type(&self, pid: u64, body: &[u8]) {
+        let mut r = Reader(body);
+        let Some(requested) = r.var_i32() else { return log!("[#{pid}] SetPlayerGameType illeggibile: {body:02x?}") };
+        let Some(p) = self.players.get(&pid) else { return };
+        log!("[#{pid}] il client chiede la modalità {requested}: resta {:?}", p.mode);
+        self.send(pid, &[UpdatePlayerGameType { player_game_type: p.mode as i32, target_player: pid as i64, tick: self.tick_count }.packet()]);
+    }
+
     /// Un comando (`/help`...): si esegue e si risponde a chi l'ha scritto.
-    pub(crate) fn command(&self, pid: u64, body: &[u8]) {
+    pub(crate) fn command(&mut self, pid: u64, body: &[u8]) {
         let Some(request) = CommandRequest::decode(body) else {
             return log!("[#{pid}] comando illeggibile: {body:02x?}");
         };
@@ -73,6 +99,10 @@ impl Server {
             "tps" => self.tell(pid, &format!("TPS: §a{:.1}§r (tick medio {:.2} ms)", self.tps(), self.mspt)),
             "say" if !args.trim().is_empty() => self.broadcast(Text::new(text_type::RAW, format!("§d[Server] {}", args.trim()))),
             "say" => self.tell(pid, "Uso: /say <testo>"),
+            "gamemode" | "gm" => match GameMode::parse(args.trim()) {
+                Some(mode) => self.set_mode(pid, mode),
+                None => self.tell(pid, "Uso: /gamemode <survival|creative|adventure|spectator> (o s, c, a, sp, oppure 0, 1, 2, 6)"),
+            },
             _ => self.tell(pid, &format!("§cComando sconosciuto: /{name}§r. Scrivi /help.")),
         }
     }
