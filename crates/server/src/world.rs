@@ -3,7 +3,7 @@
 //! Dalla 1.26 l'ID di rete di un blocco (`block_network_ids_are_hashes`) è l'hash FNV-1a a 32 bit dell'NBT
 //! little-endian `{name, states}`: si calcola, senza bisogno di una tabella dei blocchi.
 use bedrock_protocol::wire::Writer;
-use std::sync::OnceLock;
+use vgen::{BlockEntity, ChunkData, Dim, Section};
 
 /// Valore di uno stato di blocco. `Int` e `Str` serviranno ai blocchi con più stati.
 #[derive(Clone, Copy)]
@@ -42,63 +42,201 @@ pub fn block_hash(name: &str, states: &[(&str, State)]) -> i32 {
 /// ID numerico del bioma "pianura" (dai dati ufficiali di Mojang).
 pub const PLAINS: u16 = 1;
 
-/// Altezza minima dell'overworld e numero di sezioni (sotto-chunk) da -64 a 320.
-const SECTIONS: usize = 24;
 /// Livello del suolo del mondo piatto: bedrock a y=-64, terra a -63 e -62, erba a -61.
 pub const GROUND_Y: i32 = -60; // y del primo blocco d'aria sopra l'erba
 
-/// Chunk del mondo piatto, già serializzato (è lo stesso per tutti): sotto-chunk, biomi, bordi, blocchi con dati.
-/// `v9` scrive il sotto-chunk in versione 9, con l'indice della sezione, invece della 8 (due varianti accettate dal client).
-pub fn flat_chunk(v9: bool) -> &'static [u8] {
-    static V8: OnceLock<Vec<u8>> = OnceLock::new();
-    static V9: OnceLock<Vec<u8>> = OnceLock::new();
-    (if v9 { &V9 } else { &V8 }).get_or_init(|| build_flat_chunk(v9))
+/// Larghezze in bit per blocco ammesse da Bedrock.
+const BIT_WIDTHS: [u8; 8] = [1, 2, 3, 4, 5, 6, 8, 16];
+
+/// Bit per blocco per una palette di `len` voci: 0 se ce n'è una sola, altrimenti la più piccola larghezza ammessa che basta.
+fn bits_for_palette(len: usize) -> u8 {
+    if len <= 1 {
+        return 0;
+    }
+    BIT_WIDTHS.iter().copied().find(|&b| len <= 1usize << b).unwrap_or(16)
 }
 
-fn build_flat_chunk(v9: bool) -> Vec<u8> {
-    let palette = [
-        block_hash("minecraft:air", &[]),
-        block_hash("minecraft:bedrock", &[("infiniburn_bit", State::Byte(0))]),
-        block_hash("minecraft:dirt", &[]),
-        block_hash("minecraft:grass_block", &[]),
-    ];
-    // 2 bit per blocco, 16 blocchi per parola da 32 bit; indice del blocco = x*256 + z*16 + y.
-    let mut words = [0u32; 4096 / 16];
-    for column in 0..256 {
-        for (y, id) in [(0, 1), (1, 2), (2, 2), (3, 3)] {
-            let i = column * 16 + y;
-            words[i / 16] |= id << ((i % 16) * 2);
+/// Scrive uno storage con palette: intestazione, parole impacchettate (`32 / bits` voci per parola, senza spezzarle),
+/// numero di voci della palette e voci. Con una sola voce (0 bit) non si scrivono né parole né numero di voci: segue la voce
+/// unica (come nel vecchio mondo piatto, verificato col client).
+fn write_storage(w: &mut Writer, palette: &[i32], index_at: impl Fn(usize) -> usize) {
+    let bits = bits_for_palette(palette.len());
+    w.u8((bits << 1) | 1); // bit basso = ID di rete (non NBT)
+    if bits > 0 {
+        let per_word = 32 / bits as usize;
+        for word in 0..4096usize.div_ceil(per_word) {
+            let mut v = 0u32;
+            for k in 0..per_word.min(4096 - word * per_word) {
+                v |= (index_at(word * per_word + k) as u32) << (k * bits as usize);
+            }
+            w.u32(v);
         }
     }
-    let mut w = Writer::default();
-    w.u8(if v9 { 9 } else { 8 }); // versione del sotto-chunk
-    w.u8(1); // un solo livello di blocchi
-    if v9 {
-        w.i8(-4); // la v9 indica la sezione: la prima dell'overworld è a y=-64
+    if bits > 0 {
+        w.var_i32(palette.len() as i32);
     }
-    w.u8((2 << 1) | 1); // bit per blocco, bit basso = ID di rete (non NBT)
-    words.iter().for_each(|&word| w.u32(word));
-    w.var_i32(palette.len() as i32);
     palette.iter().for_each(|&id| w.var_i32(id));
-    for _ in 0..SECTIONS {
-        w.u8(1); // biomi: 0 bit per blocco, una sola voce
-        w.var_i32(PLAINS as i32);
+}
+
+/// Chunk in memoria: sezioni indicate dalla più bassa della dimensione (`None` = sezione di sola aria).
+#[derive(Clone, Debug)]
+#[allow(dead_code)] // x, z e dirty serviranno con streaming e salvataggio
+pub(crate) struct Chunk {
+    pub dim: Dim,
+    pub x: i32,
+    pub z: i32,
+    sections: Vec<Option<Section>>,
+    block_entities: Vec<BlockEntity>,
+    pub dirty: bool,
+}
+
+impl Chunk {
+    /// Indice della sezione più bassa della dimensione e numero di sezioni.
+    fn section_range(dim: Dim) -> (i32, usize) {
+        let (min, max) = dim.height_range();
+        (min.div_euclid(16), ((max - min) / 16) as usize)
     }
-    w.u8(0); // blocchi di bordo
-    w.0 // nessun blocco con dati (casse, cartelli...)
+
+    #[allow(dead_code)] // usato quando i chunk arriveranno dal generatore
+    pub fn from_gen(data: ChunkData) -> Chunk {
+        let (lowest, count) = Self::section_range(data.dim);
+        let mut sections: Vec<Option<Section>> = vec![None; count];
+        for s in data.sections {
+            let slot = s.index as i32 - lowest;
+            if (0..count as i32).contains(&slot) {
+                sections[slot as usize] = Some(s);
+            }
+        }
+        Chunk { dim: data.dim, x: data.x, z: data.z, sections, block_entities: data.block_entities, dirty: false }
+    }
+
+    /// Mondo piatto di ripiego: solo la sezione più bassa, con bedrock, due strati di terra e erba; biomi pianura.
+    pub fn flat(dim: Dim, x: i32, z: i32) -> Chunk {
+        let (lowest, count) = Self::section_range(dim);
+        let palette = vec![
+            block_hash("minecraft:air", &[]),
+            block_hash("minecraft:bedrock", &[("infiniburn_bit", State::Byte(0))]),
+            block_hash("minecraft:dirt", &[]),
+            block_hash("minecraft:grass_block", &[]),
+        ];
+        let mut blocks = Box::new([0u16; 4096]);
+        for (i, b) in blocks.iter_mut().enumerate() {
+            *b = match i % 16 {
+                0 => 1,
+                1 | 2 => 2,
+                3 => 3,
+                _ => 0,
+            };
+        }
+        let section = Section { index: lowest as i8, palette, blocks, biomes: Box::new([PLAINS as u32; 64]), water: None };
+        let mut sections = vec![None; count];
+        sections[0] = Some(section);
+        Chunk { dim, x, z, sections, block_entities: Vec::new(), dirty: false }
+    }
+
+    /// Numero di sotto-chunk da annunciare: dalla sezione più bassa fino all'ultima non vuota (0 se il chunk è vuoto).
+    pub fn sub_chunk_count(&self) -> u32 {
+        self.sections.iter().rposition(Option::is_some).map_or(0, |i| i as u32 + 1)
+    }
+
+    /// Payload di `LevelChunk`: sotto-chunk v9, biomi di tutte le sezioni della dimensione, bordi (0), NBT dei blocchi con dati.
+    ///
+    /// Le sezioni mancanti sotto l'ultima non vuota diventano sotto-chunk d'aria (1 strato, 0 bit, una voce). I biomi delle
+    /// sezioni mancanti (anche sopra l'ultima non vuota, fino alla cima della dimensione) sono una palette a voce unica con
+    /// il bioma dell'ultima cella (in alto, angolo x=0 z=0) della sezione presente più vicina sotto, oppure pianura se non ce n'è.
+    pub fn network_bytes(&self) -> Vec<u8> {
+        let (lowest, _) = Self::section_range(self.dim);
+        let air = block_hash("minecraft:air", &[]);
+        let water = block_hash("minecraft:water", &[("liquid_depth", State::Int(0))]);
+        let mut w = Writer::default();
+        for (i, slot) in self.sections.iter().take(self.sub_chunk_count() as usize).enumerate() {
+            w.u8(9); // versione del sotto-chunk
+            match slot {
+                Some(s) => {
+                    w.u8(if s.water.is_some() { 2 } else { 1 }); // strati: blocchi ed eventualmente acqua
+                    w.i8(s.index);
+                    write_storage(&mut w, &s.palette, |n| s.blocks[n] as usize);
+                    if let Some(mask) = &s.water {
+                        write_storage(&mut w, &[air, water], |n| (mask[n / 64] >> (n % 64) & 1) as usize);
+                    }
+                }
+                None => {
+                    w.u8(1);
+                    w.i8((lowest + i as i32) as i8);
+                    write_storage(&mut w, &[air], |_| 0);
+                }
+            }
+        }
+        let mut below = PLAINS as u32;
+        for slot in &self.sections {
+            match slot {
+                Some(s) => {
+                    // 4096 celle: ogni cella di bioma 4x4x4 vale per i suoi 64 blocchi, ordine (x*16 + z)*16 + y
+                    let mut palette: Vec<u32> = Vec::new();
+                    let idx: Vec<usize> =
+                        s.biomes.iter().map(|&b| palette.iter().position(|&p| p == b).unwrap_or_else(|| (palette.push(b), palette.len() - 1).1)).collect();
+                    let ids: Vec<i32> = palette.iter().map(|&b| b as i32).collect();
+                    write_storage(&mut w, &ids, |n| {
+                        let (x, z, y) = (n / 256, n / 16 % 16, n % 16);
+                        idx[(x / 4 * 4 + z / 4) * 4 + y / 4]
+                    });
+                    below = s.biomes[3];
+                }
+                None => write_storage(&mut w, &[below as i32], |_| 0),
+            }
+        }
+        w.u8(0); // blocchi di bordo
+        self.block_entities.iter().for_each(|be| w.bytes(&be.nbt));
+        w.0
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    /// Scrive il chunk v9 in un file (per confrontarlo con altre implementazioni): `DUMP=/percorso cargo test dump -- --ignored`.
-    #[test]
-    #[ignore]
-    fn dump_flat_chunk() {
-        if let Ok(path) = std::env::var("DUMP") {
-            std::fs::write(path, flat_chunk(true)).unwrap();
+    /// Riferimento: il vecchio mondo piatto scritto a mano (prima sezione, biomi, bordi), solo v9.
+    fn reference_flat_chunk() -> Vec<u8> {
+        let palette = [
+            block_hash("minecraft:air", &[]),
+            block_hash("minecraft:bedrock", &[("infiniburn_bit", State::Byte(0))]),
+            block_hash("minecraft:dirt", &[]),
+            block_hash("minecraft:grass_block", &[]),
+        ];
+        let mut words = [0u32; 4096 / 16];
+        for column in 0..256 {
+            for (y, id) in [(0, 1), (1, 2), (2, 2), (3, 3)] {
+                let i = column * 16 + y;
+                words[i / 16] |= id << ((i % 16) * 2);
+            }
         }
+        let mut w = Writer::default();
+        w.u8(9);
+        w.u8(1);
+        w.i8(-4);
+        w.u8((2 << 1) | 1);
+        words.iter().for_each(|&word| w.u32(word));
+        w.var_i32(palette.len() as i32);
+        palette.iter().for_each(|&id| w.var_i32(id));
+        for _ in 0..24 {
+            w.u8(1);
+            w.var_i32(PLAINS as i32);
+        }
+        w.u8(0);
+        w.0
+    }
+
+    fn section(index: i8, palette: Vec<i32>, blocks: Box<[u16; 4096]>) -> Section {
+        Section { index, palette, blocks, biomes: Box::new([PLAINS as u32; 64]), water: None }
+    }
+
+    fn chunk_with(sections: Vec<Section>) -> Chunk {
+        Chunk::from_gen(ChunkData { dim: Dim::Overworld, x: 0, z: 0, sections, block_entities: vec![] })
+    }
+
+    /// Intestazione dello strato blocchi di una sezione presente: byte dei bit per blocco (dopo versione, strati, indice).
+    fn bits_byte(c: &Chunk) -> u8 {
+        c.network_bytes()[3] >> 1
     }
 
     #[test]
@@ -114,48 +252,94 @@ mod tests {
     }
 
     #[test]
-    fn flat_chunk_layout() {
-        let c = flat_chunk(false);
-        assert_eq!(&c[..3], &[8, 1, 5], "versione 8, un livello, 2 bit per blocco");
-        // 3 intestazione + 1024 parole + 1 (numero di voci) + palette + 24 biomi da 2 byte + 1 byte di bordi
-        assert_eq!(c.len(), 3 + 1024 + 1 + palette_bytes() + 24 * 2 + 1);
-        assert_eq!(&c[c.len() - 3..], &[1, 2, 0], "ultimo bioma (pianura) e bordi");
+    fn flat_chunk_bytes_are_unchanged() {
+        let c = Chunk::flat(Dim::Overworld, 3, -2);
+        assert_eq!(c.sub_chunk_count(), 1);
+        assert_eq!(c.network_bytes(), reference_flat_chunk());
     }
 
     #[test]
-    fn flat_chunk_v9_adds_the_section_index() {
-        let (v8, v9) = (flat_chunk(false), flat_chunk(true));
-        assert_eq!(&v9[..4], &[9, 1, 0xfc, 5]);
-        assert_eq!(&v9[3..], &v8[2..], "a parte l'intestazione i due formati coincidono");
-    }
-
-    #[test]
-    fn flat_chunk_columns_are_bedrock_dirt_dirt_grass_air() {
-        let c = flat_chunk(false);
-        let words: Vec<u32> = c[3..3 + 1024].chunks(4).map(|w| u32::from_le_bytes(w.try_into().unwrap())).collect();
-        let at = |x: usize, z: usize, y: usize| {
-            let i = x * 256 + z * 16 + y;
-            (words[i / 16] >> ((i % 16) * 2)) & 3
-        };
-        for (x, z) in [(0, 0), (7, 3), (15, 15)] {
-            assert_eq!((0..6).map(|y| at(x, z, y)).collect::<Vec<_>>(), [1, 2, 2, 3, 0, 0]);
+    fn bits_per_block_follow_palette_size() {
+        for (len, bits) in [(1, 0), (2, 1), (3, 2), (4, 2), (5, 3), (9, 4), (17, 5), (33, 6), (65, 8), (256, 8), (257, 16), (300, 16)] {
+            assert_eq!(bits_for_palette(len), bits, "palette di {len}");
+        }
+        for (len, bits) in [(2usize, 1u8), (17, 5), (300, 16)] {
+            let mut blocks = Box::new([0u16; 4096]);
+            blocks.iter_mut().enumerate().for_each(|(i, b)| *b = (i % len) as u16);
+            let c = chunk_with(vec![section(-4, (0..len as i32).collect(), blocks)]);
+            assert_eq!(bits_byte(&c), bits);
         }
     }
 
-    /// Byte occupati dalla palette (gli ID sono hash a 32 bit: in ZigZag quasi sempre 5 byte).
-    fn palette_bytes() -> usize {
-        [
-            ("minecraft:air", vec![]),
-            ("minecraft:bedrock", vec![("infiniburn_bit", State::Byte(0))]),
-            ("minecraft:dirt", vec![]),
-            ("minecraft:grass_block", vec![]),
-        ]
-        .iter()
-        .map(|(name, states)| {
+    #[test]
+    fn packing_does_not_straddle_words() {
+        // 5 bit: 6 voci per parola, 683 parole
+        let mut blocks = Box::new([0u16; 4096]);
+        blocks.iter_mut().enumerate().for_each(|(i, b)| *b = (i % 17) as u16);
+        let c = chunk_with(vec![section(-4, (0..17).collect(), blocks)]);
+        let b = c.network_bytes();
+        let words = |n: usize| u32::from_le_bytes(b[4 + n * 4..8 + n * 4].try_into().unwrap());
+        assert_eq!(words(0), (0..6).fold(0u32, |a, k| a | (k << (k * 5))));
+        assert_eq!(words(0) >> 30, 0, "i 2 bit alti restano vuoti");
+        let palette_at = 4 + 683 * 4;
+        assert_eq!(b[palette_at], 34, "17 voci in ZigZag");
+    }
+
+    #[test]
+    fn uniform_section_uses_zero_bits() {
+        let c = chunk_with(vec![section(-4, vec![42], Box::new([0u16; 4096]))]);
+        let b = c.network_bytes();
+        assert_eq!(&b[..4], &[9, 1, 0xfc, 1], "0 bit, bit basso = ID di rete");
+        assert_eq!(b[4], 84, "subito la voce unica (42 in ZigZag), nessuna parola né conteggio");
+    }
+
+    #[test]
+    fn biomes_are_written_per_section() {
+        let air = block_hash("minecraft:air", &[]);
+        let mut s0 = section(-4, vec![air], Box::new([0u16; 4096]));
+        s0.biomes[3] = 7; // cella in alto di (0,0)
+        s0.biomes[0] = 5;
+        let s2 = section(-2, vec![air], Box::new([0u16; 4096])); // pianura
+        let c = chunk_with(vec![s0, s2]);
+        assert_eq!(c.sub_chunk_count(), 3, "fino alla sezione -2 inclusa");
+        let b = c.network_bytes();
+        // tre sotto-chunk: 4 byte di intestazione + la voce d'aria (hash in ZigZag)
+        let hash = {
             let mut w = Writer::default();
-            w.var_i32(block_hash(name, states));
+            w.var_i32(air);
             w.0.len()
-        })
-        .sum()
+        };
+        let sub = 4 + hash;
+        let bio = &b[3 * sub..];
+        assert_eq!(bio[0], (2 << 1) | 1, "sezione -4: tre biomi distinti, 2 bit");
+        let after0 = 1 + 4096usize.div_ceil(16) * 4 + 1 + 3; // intestazione + 256 parole + n voci + 3 voci da 1 byte
+        assert_eq!(&bio[after0 - 3..after0], &[10, 2, 14], "palette 5, 1, 7");
+        assert_eq!(&bio[after0..after0 + 4], &[1, 14, 1, 2], "-3 mancante: ripete l'ultima cella della -4 (7); -2: pianura");
+    }
+
+    #[test]
+    fn water_mask_adds_second_layer() {
+        let stone = block_hash("minecraft:stone", &[]);
+        let mut s = section(-4, vec![stone], Box::new([0u16; 4096]));
+        let mut mask = Box::new([0u64; 64]);
+        mask[0] = 1 << 5; // blocco 5
+        s.water = Some(mask);
+        let b = chunk_with(vec![s]).network_bytes();
+        assert_eq!(&b[..3], &[9, 2, 0xfc], "due strati");
+        // strato 0: intestazione a 0 bit + voce unica; strato 1 parte dopo
+        let l1 = 3 + 1 + {
+            let mut w = Writer::default();
+            w.var_i32(stone);
+            w.0.len()
+        };
+        assert_eq!(b[l1], (1 << 1) | 1, "1 bit");
+        let word0 = u32::from_le_bytes(b[l1 + 1..l1 + 5].try_into().unwrap());
+        assert_eq!(word0, 1 << 5, "bit impostato -> indice 1");
+        let p = l1 + 1 + 128 * 4;
+        assert_eq!(b[p], 4, "due voci in ZigZag");
+        let mut w = Writer::default();
+        w.var_i32(block_hash("minecraft:air", &[]));
+        w.var_i32(block_hash("minecraft:water", &[("liquid_depth", State::Int(0))]));
+        assert_eq!(&b[p + 1..p + 1 + w.0.len()], &w.0[..]);
     }
 }

@@ -1,5 +1,8 @@
 //! Ingresso nel mondo: StartGame, registro degli oggetti e streaming dei chunk.
-use crate::{world, Server};
+use crate::{
+    world::{self, Chunk},
+    Server,
+};
 use bedrock_net::log;
 use bedrock_protocol::{
     generated::{
@@ -13,6 +16,7 @@ use bedrock_protocol::{
     Packet, VERSION,
 };
 use std::sync::OnceLock;
+use vgen::Dim;
 
 /// Raggio massimo di chunk che il server accetta di inviare.
 const MAX_RADIUS: i32 = 6;
@@ -22,7 +26,7 @@ const CHUNKS_PER_MESSAGE: usize = 16;
 const EMPTY_NBT: [u8; 3] = [0x0a, 0, 0];
 
 /// Interruttori di diagnostica (variabili d'ambiente), per isolare un problema senza ricompilare:
-/// NO_CHUNKS=1 non invia chunk; SUBCHUNK_V8=1 sotto-chunk in versione 8 invece della 9;
+/// NO_CHUNKS=1 non invia chunk;
 /// CHUNKS_EARLY=1 manda biomi e chunk subito dopo PlayerSpawn, senza aspettare SetLocalPlayerAsInitialized;
 /// SKIP=jigsaw,voxel,items,creative,publisher non invia i pacchetti elencati;
 /// SEND=biomes,actors invia anche i pacchetti spenti di default (vedi `send`).
@@ -198,18 +202,14 @@ impl Server {
         if flag("NO_CHUNKS") {
             return log!("[#{pid}] NO_CHUNKS attivo: non invio chunk");
         }
-        let v9 = !flag("SUBCHUNK_V8"); // la v9 è quella dei server di riferimento
+        let flat_chunk = Chunk::flat(Dim::Overworld, 0, 0); // uguale per tutti i chunk
+        let (flat_count, flat) = (flat_chunk.sub_chunk_count(), flat_chunk.network_bytes());
         let chunks: Vec<Packet> = (-radius..=radius)
             .flat_map(|x| (-radius..=radius).map(move |z| (x, z)))
             .filter(|(x, z)| x * x + z * z <= radius * radius + radius) // area quasi circolare
             .map(|(x, z)| {
-                LevelChunk {
-                    chunk_position: ChunkPos { x, z },
-                    sub_chunks_count: 1,
-                    serialized_chunk_data: world::flat_chunk(v9).to_vec(),
-                    ..Default::default()
-                }
-                .packet()
+                LevelChunk { chunk_position: ChunkPos { x, z }, sub_chunks_count: flat_count, serialized_chunk_data: flat.clone(), ..Default::default() }
+                    .packet()
             })
             .collect();
         for group in chunks.chunks(CHUNKS_PER_MESSAGE) {
