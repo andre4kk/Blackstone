@@ -1,5 +1,6 @@
 //! Logica di gioco: riceve i pacchetti decodificati dal trasporto e risponde.
 mod chat;
+mod gen_client;
 mod handlers;
 mod join;
 #[cfg(test)]

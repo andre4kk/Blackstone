@@ -11,6 +11,7 @@ path = "src/main.rs"
 bedrock-protocol.workspace = true
 bedrock-net.workspace = true
 tokio.workspace = true
+vgen.workspace = true
 
 [dev-dependencies]
 str0m.workspace = true
