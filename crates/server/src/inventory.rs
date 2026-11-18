@@ -132,6 +132,13 @@ pub(crate) struct Item {
 }
 
 impl Item {
+    /// Oggetto con questo nome (`minecraft:cobblestone`) e quantità; porta lo stato del blocco che piazza, se è un blocco.
+    /// `None` se il nome non è nel registro degli oggetti.
+    pub fn from_name(name: &str, count: u16) -> Option<Item> {
+        let items = registry::items();
+        Some(Item { id: items.id(name)?, count, aux: 0, block: items.block_of(name), nbt: None })
+    }
+
     pub fn is_empty(&self) -> bool {
         self.id == 0 || self.count == 0
     }

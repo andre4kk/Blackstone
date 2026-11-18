@@ -843,7 +843,10 @@ mod breaking {
     use super::blocks::{air, change, harness_with_chunk, stone, updates, water};
     use super::*;
     use crate::{
+        breaking::drops_for,
+        entity::EntityKind,
         events::WorldAction,
+        inventory::Item,
         world::{block_hash, State},
     };
     use bedrock_protocol::{
@@ -1001,6 +1004,115 @@ mod breaking {
     fn assert_untouched(h: &Harness) {
         assert_eq!(h.server.block_at(Dim::Overworld, ROCK), Some((stone(), false)));
         assert!(!h.server.chunks[&(0, 0, 0)].dirty);
+    }
+
+    fn held(name: &str) -> Item {
+        Item::from_name(name, 1).unwrap()
+    }
+
+    fn drop_names(block: &str, tool: &str, rolls: &[f32]) -> Vec<(String, u16)> {
+        let mut rolls = rolls.iter().copied().cycle();
+        let held = if tool.is_empty() { Item::default() } else { held(tool) };
+        drops_for(block, &held, &mut || rolls.next().unwrap())
+            .into_iter()
+            .map(|i| (crate::registry::items().name(i.id).unwrap().to_string(), i.count))
+            .collect()
+    }
+
+    fn dropped_items(h: &Harness) -> Vec<(Item, [f32; 3], [f32; 3], u64)> {
+        h.server
+            .entities
+            .iter()
+            .filter_map(|e| match &e.kind {
+                EntityKind::Item { item, velocity, pickup_at, .. } => Some((item.clone(), e.pos, *velocity, *pickup_at)),
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn drops_depend_on_tool_and_tier() {
+        assert!(drop_names("minecraft:stone", "", &[0.5]).is_empty(), "la pietra a mano non lascia niente");
+        assert_eq!(drop_names("minecraft:stone", "minecraft:wooden_pickaxe", &[0.5]), [("minecraft:cobblestone".to_string(), 1)]);
+        assert!(drop_names("minecraft:stone", "minecraft:wooden_axe", &[0.5]).is_empty(), "serve il piccone");
+        assert!(drop_names("minecraft:iron_ore", "minecraft:wooden_pickaxe", &[0.5]).is_empty());
+        assert_eq!(drop_names("minecraft:iron_ore", "minecraft:stone_pickaxe", &[0.5]), [("minecraft:raw_iron".to_string(), 1)]);
+        assert!(drop_names("minecraft:diamond_ore", "minecraft:stone_pickaxe", &[0.5]).is_empty());
+        assert_eq!(drop_names("minecraft:diamond_ore", "minecraft:iron_pickaxe", &[0.5]).len(), 1);
+        assert_eq!(drop_names("minecraft:grass_block", "", &[0.5]), [("minecraft:dirt".to_string(), 1)], "senza strumento richiesto");
+    }
+
+    #[test]
+    fn gravel_is_one_exclusive_roll() {
+        assert_eq!(drop_names("minecraft:gravel", "", &[0.05]), [("minecraft:flint".to_string(), 1)]);
+        assert_eq!(drop_names("minecraft:gravel", "", &[0.5]), [("minecraft:gravel".to_string(), 1)]);
+    }
+
+    #[test]
+    fn independent_chances_and_counts() {
+        // l'erba alta: semi con probabilità 0,125 (tiro indipendente)
+        assert_eq!(drop_names("minecraft:short_grass", "", &[0.05, 0.0]).len(), 1);
+        assert!(drop_names("minecraft:short_grass", "", &[0.5]).is_empty());
+        // il vetro ha una voce senza oggetti: niente
+        assert!(drop_names("minecraft:glass", "", &[0.0]).is_empty());
+    }
+
+    #[test]
+    fn block_without_entry_drops_itself_only_if_it_is_an_item() {
+        assert_eq!(drop_names("minecraft:oak_planks", "", &[0.5]), [("minecraft:oak_planks".to_string(), 1)]);
+        assert!(drop_names("minecraft:redstone_wire", "", &[0.5]).is_empty());
+        let planks = drops_for("minecraft:oak_planks", &Item::default(), &mut || 0.5);
+        assert_eq!(planks[0].block, crate::registry::items().block_of("minecraft:oak_planks"), "porta lo stato del blocco");
+    }
+
+    #[test]
+    fn survival_break_with_pickaxe_spawns_cobblestone() {
+        let mut h = setup(GameMode::Survival);
+        h.server.players.get_mut(&1).unwrap().inventory.set_main(0, held("minecraft:wooden_pickaxe"));
+        h.receive(1, &[transaction(use_item::DESTROY, ROCK)]);
+        assert_broken(&h);
+        let items = dropped_items(&h);
+        assert_eq!(items.len(), 1);
+        let (item, pos, velocity, pickup_at) = &items[0];
+        assert_eq!((item.id, item.count), (crate::registry::items().id("minecraft:cobblestone").unwrap(), 1));
+        assert_eq!(*pos, [3.5, 10.5, 4.5], "al centro del blocco");
+        assert!(velocity[0].abs() <= 0.1 && velocity[2].abs() <= 0.1 && velocity[1] == 0.2, "{velocity:?}");
+        assert_eq!(*pickup_at, h.server.tick_count + 10);
+    }
+
+    #[test]
+    fn survival_break_by_hand_leaves_nothing_for_stone() {
+        let mut h = setup(GameMode::Survival);
+        h.receive(1, &[transaction(use_item::DESTROY, ROCK)]);
+        assert_broken(&h);
+        assert!(dropped_items(&h).is_empty());
+    }
+
+    #[test]
+    fn creative_break_spawns_nothing() {
+        let mut h = setup(GameMode::Creative);
+        h.server.players.get_mut(&1).unwrap().inventory.set_main(0, held("minecraft:wooden_pickaxe"));
+        h.receive(1, &[action(player_action::CREATIVE_DESTROY, ROCK)]);
+        assert_broken(&h);
+        assert!(dropped_items(&h).is_empty());
+    }
+
+    #[test]
+    fn refused_break_spawns_nothing() {
+        let mut h = setup(GameMode::Survival);
+        h.server.players.get_mut(&1).unwrap().inventory.set_main(0, held("minecraft:wooden_pickaxe"));
+        counting_hook(&mut h, false);
+        h.receive(1, &[transaction(use_item::DESTROY, ROCK)]);
+        assert_untouched(&h);
+        assert!(dropped_items(&h).is_empty());
+    }
+
+    #[test]
+    fn double_break_in_one_tick_spawns_one_item() {
+        let mut h = setup(GameMode::Survival);
+        h.server.players.get_mut(&1).unwrap().inventory.set_main(0, held("minecraft:wooden_pickaxe"));
+        h.receive(1, &[transaction(use_item::DESTROY, ROCK), action(player_action::START_BREAK, ROCK), action(player_action::STOP_BREAK, ROCK)]);
+        assert_eq!(dropped_items(&h).len(), 1);
     }
 
     /// Il blocco non è cambiato e lo stato vero è stato rimandato al solo autore, senza effetti di rottura.

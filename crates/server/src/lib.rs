@@ -236,9 +236,20 @@ struct Server {
     entities: entity::Entities,
     /// Giocatori finti (`/bot`), con ciò che serve a mostrarli e animarli.
     bots: Vec<bot::Bot>,
+    /// Stato del generatore casuale del gioco (drop dei blocchi...): xorshift64*, seminato da `getrandom`.
+    rng: u64,
 }
 
 impl Server {
+    /// Prossimo numero casuale in [0, 1).
+    pub(crate) fn roll(&mut self) -> f32 {
+        self.rng ^= self.rng >> 12;
+        self.rng ^= self.rng << 25;
+        self.rng ^= self.rng >> 27;
+        let x = self.rng.wrapping_mul(0x2545_F491_4F6C_DD1D);
+        (x >> 40) as f32 / (1u32 << 24) as f32 // 24 bit: esatti in un f32, mai 1.0
+    }
+
     /// Un server senza disco né generatore: mondo piatto e spawn piatto.
     fn new(sender: Sender) -> Self {
         Self {
@@ -268,6 +279,11 @@ impl Server {
             flat_warned: false,
             entities: entity::Entities::default(),
             bots: Vec::new(),
+            rng: {
+                let mut b = [0u8; 8];
+                getrandom::fill(&mut b).expect("generatore casuale non disponibile");
+                u64::from_le_bytes(b) | 1 // xorshift non parte da zero
+            },
         }
     }
 

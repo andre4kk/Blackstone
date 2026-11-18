@@ -8,7 +8,6 @@
 //!
 //! Drop: ogni voce ha una probabilita'. Se le probabilita' di tutte le voci di un blocco sommano 1 (ghiaia: selce 0,1 + ghiaia 0,9)
 //! sono alternative esclusive (un solo tiro); altrimenti sono tiri indipendenti.
-#![allow(dead_code)] // usate dai compiti seguenti (rottura, danni, mangiare)
 
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -50,6 +49,7 @@ pub(crate) struct BlockDrops {
     pub drops: Vec<Drop>,
 }
 
+#[allow(dead_code)] // lo usa un compito seguente (mangiare / danni)
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct Food {
     pub points: u8,
@@ -67,6 +67,7 @@ struct DropsFile {
     blocks: HashMap<String, BlockDrops>,
 }
 
+#[allow(dead_code)] // lo usa un compito seguente (mangiare / danni)
 #[derive(Deserialize)]
 struct FoodsFile {
     foods: HashMap<String, Food>,
@@ -85,12 +86,14 @@ pub(crate) fn block_drops(block_name: &str) -> Option<&'static BlockDrops> {
 }
 
 /// Cibo con questo nome, se lo e'.
+#[allow(dead_code)] // lo usa un compito seguente (mangiare / danni)
 pub(crate) fn food(item_name: &str) -> Option<&'static Food> {
     static T: OnceLock<HashMap<String, Food>> = OnceLock::new();
     T.get_or_init(|| serde_json::from_str::<FoodsFile>(include_str!("../data/foods.json")).expect("foods.json non valido").foods).get(item_name)
 }
 
 /// Danno di un colpo con questo oggetto in mano (1,0 a mani nude o con un oggetto che non e' uno strumento).
+#[allow(dead_code)] // lo usa un compito seguente (mangiare / danni)
 pub(crate) fn attack_damage(item_name: &str) -> f32 {
     tool(item_name).map_or(1.0, |t| t.attack_damage)
 }

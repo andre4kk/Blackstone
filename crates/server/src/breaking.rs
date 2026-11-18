@@ -1,7 +1,10 @@
 //! Rottura dei blocchi: il client dice cosa ha rotto, ma è il server a decidere (modalità, portata, ganci) e a rimandare
-//! lo stato vero se rifiuta. In questa tappa la rottura è istantanea e senza oggetti lasciati a terra.
+//! lo stato vero se rifiuta. La rottura è istantanea; in sopravvivenza il blocco lascia a terra gli oggetti dovuti (`drops_for`).
 use crate::{
     events::{BlockChange, WorldAction},
+    inventory::Item,
+    registry,
+    tables::{block_drops, tool},
     world::{block_hash, State},
     GameMode, Server,
 };
@@ -32,6 +35,52 @@ pub(crate) fn in_reach(eyes: [f32; 3], pos: [i32; 3], creative: bool) -> bool {
         })
         .sum();
     squared <= limit * limit // con un NaN il confronto è falso
+}
+
+/// Spinta casuale degli oggetti lasciati da un blocco (Dragonfly `BreakBlock`: x/z in ±0,1, y 0,2) e attesa prima di poterli raccogliere.
+const DROP_SPREAD: f32 = 0.1;
+const DROP_LIFT: f32 = 0.2;
+const DROP_PICKUP_DELAY: u64 = 10;
+
+/// Gli oggetti che il blocco `block_name` lascia se rotto con `held` in mano; `roll` dà numeri in [0, 1).
+/// Senza voce nella tabella il blocco lascia se stesso (1), ma solo se il suo nome è anche un oggetto (`redstone_wire` no).
+/// Con voce: serve lo strumento del tipo giusto e di livello sufficiente, altrimenti niente. Se le probabilità delle voci
+/// sommano 1 è un tiro solo (ghiaia: selce o ghiaia), altrimenti ogni voce tira per conto suo.
+pub(crate) fn drops_for(block_name: &str, held: &Item, roll: &mut impl FnMut() -> f32) -> Vec<Item> {
+    let Some(rules) = block_drops(block_name) else {
+        return Item::from_name(block_name, 1).into_iter().collect();
+    };
+    if let Some(kind) = rules.tool {
+        let tier = registry::items().name(held.id).and_then(tool).filter(|t| t.kind == kind).map(|t| t.tier);
+        if !tier.is_some_and(|t| t >= rules.min_tier) {
+            return Vec::new();
+        }
+    }
+    let exclusive = (rules.drops.iter().map(|d| d.chance).sum::<f32>() - 1.0).abs() < 1e-4;
+    let mut chosen = Vec::new();
+    if exclusive {
+        let mut r = roll();
+        for d in &rules.drops {
+            if r < d.chance {
+                chosen.push(d);
+                break;
+            }
+            r -= d.chance;
+        }
+    } else {
+        for d in &rules.drops {
+            if roll() < d.chance {
+                chosen.push(d);
+            }
+        }
+    }
+    let mut out = Vec::new();
+    for d in chosen {
+        let spread = d.max.saturating_sub(d.min);
+        let count = d.min + ((roll() * f32::from(spread + 1)) as u16).min(spread);
+        out.extend(Item::from_name(&d.item, count));
+    }
+    out
 }
 
 /// Hash dei blocchi che nessuno rompe a mano: i liquidi, e in sopravvivenza anche la roccia di fondo.
@@ -85,7 +134,7 @@ impl Server {
             return;
         }
         p.last_break = Some((tick, pos));
-        let (mode, eyes) = (p.mode, p.pos);
+        let (mode, eyes, held) = (p.mode, p.pos, p.inventory.held().clone());
         let dim = Dim::Overworld;
         let Some((old, water)) = self.block_at(dim, pos) else { return };
         if old == block_hash("minecraft:air", &[]) {
@@ -104,6 +153,15 @@ impl Server {
             data: old,
         }
         .packet();
+        if mode == GameMode::Survival {
+            if let Some(state) = registry::blocks().state(old) {
+                let drops = drops_for(&state.name, &held, &mut || self.roll());
+                for item in drops {
+                    let velocity = [(self.roll() * 2.0 - 1.0) * DROP_SPREAD, DROP_LIFT, (self.roll() * 2.0 - 1.0) * DROP_SPREAD];
+                    self.spawn_item(item, [pos[0] as f32 + 0.5, pos[1] as f32 + 0.5, pos[2] as f32 + 0.5], velocity, DROP_PICKUP_DELAY);
+                }
+            }
+        }
         let chunk = (pos[0].div_euclid(16), pos[2].div_euclid(16));
         for (&viewer, _) in self.players.iter().filter(|(_, p)| p.sent.contains(&chunk)) {
             self.send(viewer, std::slice::from_ref(&effect));
