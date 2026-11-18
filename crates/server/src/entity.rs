@@ -1,11 +1,21 @@
 //! Registro delle entità (giocatori visti dagli altri, oggetti a terra) e visibilità per chunk.
 //! L'ID unico di ogni entità coincide con quello di runtime (come lo `StartGame` dei giocatori, dove `entity_id = pid`).
-use crate::{inventory, join::ability_layers, playerdata, streaming::chunk_of, GameMode, Server};
+use crate::{
+    inventory::{self, window},
+    join::ability_layers,
+    playerdata,
+    streaming::chunk_of,
+    GameMode, Server,
+};
 use bedrock_protocol::{
-    actor::{flag, key, DataValue},
-    entity::{add_item_actor, add_player, move_actor_absolute, player_list_add, player_list_remove, remove_actor, AddPlayerData, PlayerListEntry},
+    actor::{flag, key, set_actor_data, DataValue},
+    entity::{
+        add_item_actor, add_player, mob_armor_equipment, move_actor_absolute, player_list_add, player_list_remove, remove_actor, AddPlayerData, PlayerListEntry,
+    },
+    generated::MobEquipment,
     item::ItemStack,
     skin::uuid_bytes,
+    wire::ServerPacket,
     Packet,
 };
 use std::collections::{HashMap, HashSet};
@@ -70,6 +80,11 @@ impl Entities {
     }
 }
 
+/// L'armatura indossata (elmo, corazza, gambali, stivali) come la vedono gli altri (senza ID di pila).
+pub(crate) fn armor_of(p: &crate::Player) -> [ItemStack; 4] {
+    std::array::from_fn(|i| p.inventory.armor(i).stack(0))
+}
+
 impl Server {
     /// Per ogni giocatore nel mondo confronta le entità che vede (`visible`) con quelle nei chunk che ha ricevuto (`sent`):
     /// le nuove si mostrano, quelle uscite (o sparite dal registro) si tolgono. Un giocatore non vede mai la propria entità.
@@ -123,9 +138,10 @@ impl Server {
     pub(crate) fn spawn_packets(&self, e: &Entity) -> Vec<Packet> {
         match &e.kind {
             EntityKind::Player { pid, name, uuid } => {
-                let mode = pid.and_then(|pid| self.players.get(&pid)).map_or(GameMode::default(), |p| p.mode);
-                let flags = [flag::HAS_GRAVITY, flag::HAS_COLLISION, flag::CAN_CLIMB, flag::BREATHING].iter().fold(0i64, |f, b| f | 1 << b);
-                vec![add_player(&AddPlayerData {
+                let player = pid.and_then(|pid| self.players.get(&pid));
+                let mode = player.map_or(GameMode::default(), |p| p.mode);
+                let held = player.map_or_else(ItemStack::air, |p| p.inventory.held().stack(0));
+                let mut packets = vec![add_player(&AddPlayerData {
                     uuid: *uuid,
                     name: name.clone(),
                     runtime_id: e.id,
@@ -133,18 +149,75 @@ impl Server {
                     pitch: e.pitch,
                     yaw: e.yaw,
                     head_yaw: e.head_yaw,
-                    held: ItemStack::air(),
+                    held,
                     game_type: mode as i32,
-                    data: vec![
-                        (key::FLAGS, DataValue::Int64(flags)),
-                        (key::BOUNDING_BOX_WIDTH, DataValue::Float(0.6)),
-                        (key::BOUNDING_BOX_HEIGHT, DataValue::Float(1.8)),
-                    ],
+                    data: self.entity_data(e.id),
                     layers: ability_layers(mode, false),
                     ..Default::default()
-                })]
+                })];
+                if let Some(armor) = player.map(armor_of).filter(|a| a.iter().any(|s| s.id != 0)) {
+                    packets.push(mob_armor_equipment(e.id, &armor));
+                }
+                packets
             }
             EntityKind::Item { item, velocity, .. } => vec![add_item_actor(e.id as i64, e.id, &item.stack(0), e.pos, *velocity, &[])],
+        }
+    }
+
+    /// I dati dell'entità (`SetActorData` e `AddPlayer`): per un giocatore i flag di base (gravità, collisioni, arrampicata, respiro)
+    /// più lo stato attuale (accovacciato, in corsa, a nuoto, in planata) e il riquadro 0.6 x 1.8. Vuoti per le entità che non sono giocatori.
+    pub(crate) fn entity_data(&self, id: u64) -> Vec<(u32, DataValue)> {
+        let state = match self.entities.get(id).map(|e| &e.kind) {
+            Some(EntityKind::Player { pid, .. }) => pid.and_then(|pid| self.players.get(&pid)),
+            None => self.players.get(&id), // il giocatore che sta entrando non ha ancora la sua entità
+            Some(EntityKind::Item { .. }) => return Vec::new(),
+        };
+        let mut flags = [flag::HAS_GRAVITY, flag::HAS_COLLISION, flag::CAN_CLIMB, flag::BREATHING].iter().fold(0i64, |f, b| f | 1 << b);
+        if let Some(p) = state {
+            for (on, bit) in [(p.sneaking, flag::SNEAKING), (p.sprinting, flag::SPRINTING), (p.swimming, flag::SWIMMING), (p.gliding, flag::GLIDING)] {
+                flags |= (on as i64) << bit;
+            }
+        }
+        vec![(key::FLAGS, DataValue::Int64(flags)), (key::BOUNDING_BOX_WIDTH, DataValue::Float(0.6)), (key::BOUNDING_BOX_HEIGHT, DataValue::Float(1.8))]
+    }
+
+    /// Manda `packets` a chi vede l'entità `id` (non a lei stessa).
+    pub(crate) fn broadcast_to_viewers(&self, id: u64, packets: &[Packet]) {
+        for (&pid, _) in self.players.iter().filter(|(_, p)| p.visible.contains(&id)) {
+            self.send(pid, packets);
+        }
+    }
+
+    /// Lo stato del giocatore è cambiato: lo vedono gli spettatori e lui stesso (come Dragonfly).
+    pub(crate) fn send_entity_state(&self, pid: u64) {
+        let packet = set_actor_data(pid, &self.entity_data(pid));
+        self.broadcast_to_viewers(pid, std::slice::from_ref(&packet));
+        self.send(pid, &[packet]);
+    }
+
+    /// Cambiata la mano o l'armatura di `pid` rispetto a prima (`held`, `armor` sono i valori di prima): lo si dice agli spettatori.
+    pub(crate) fn send_equipment_changes(&self, pid: u64, held: &ItemStack, armor: &[ItemStack; 4]) {
+        let Some(p) = self.players.get(&pid) else { return };
+        let mut out = Vec::new();
+        let now = p.inventory.held().stack(0);
+        if now != *held {
+            out.push(
+                MobEquipment {
+                    target_runtime_id: pid,
+                    item: now,
+                    slot: p.inventory.selected,
+                    selected_slot: p.inventory.selected,
+                    container_id: window::INVENTORY as u8,
+                }
+                .packet(),
+            );
+        }
+        let worn = armor_of(p);
+        if worn != *armor {
+            out.push(mob_armor_equipment(pid, &worn));
+        }
+        if !out.is_empty() {
+            self.broadcast_to_viewers(pid, &out);
         }
     }
 

@@ -308,6 +308,11 @@ fn slot_bytes(w: &mut Writer, container: u8, slot: u8, stack_id: i32) {
 
 /// Corpo di una richiesta: CraftCreative + Place dalla casella creata alla casella `dst` della barra.
 fn craft_and_place(w: &mut Writer, request_id: i32, net_id: u32, dst: u8) {
+    craft_and_place_in(w, request_id, net_id, 28, dst);
+}
+
+/// Come `craft_and_place`, ma verso la casella `dst` del contenitore `container` (28 = barra, 6 = armatura).
+fn craft_and_place_in(w: &mut Writer, request_id: i32, net_id: u32, container: u8, dst: u8) {
     w.var_i32(request_id);
     w.var_u32(2);
     w.var_u32(12); // variante CraftCreative
@@ -318,7 +323,7 @@ fn craft_and_place(w: &mut Writer, request_id: i32, net_id: u32, dst: u8) {
     w.u8(1);
     w.u8(64);
     slot_bytes(w, 60, 50, request_id);
-    slot_bytes(w, 28, dst, 0);
+    slot_bytes(w, container, dst, 0);
     w.var_u32(0); // niente stringhe da filtrare
     w.i32(-1);
 }
@@ -2467,5 +2472,122 @@ mod player_list {
         h.receive(1, &[pai_at(1.0)]);
         h.server.movement_tick();
         assert!(h.packets_by_player().get(&2).is_none_or(|v| count(v, id::MOVE_ACTOR_ABSOLUTE) == 0));
+    }
+
+    fn of_kind(packets: &[Packet], packet_id: u32) -> Vec<&Packet> {
+        packets.iter().filter(|p| p.id == packet_id).collect()
+    }
+
+    #[test]
+    fn swing_is_relayed_to_viewers() {
+        let mut h = three_players();
+        let mut w = Writer::default();
+        w.u8(1);
+        w.var_u64(1);
+        w.f32(0.0);
+        w.u8(0);
+        w.u8(0);
+        h.receive(1, &[Packet::new(id::ANIMATE, w.0)]);
+        let sent = h.packets_by_player();
+        let swings = of_kind(&sent[&2], id::ANIMATE);
+        assert_eq!(swings.len(), 1);
+        assert_eq!(swings[0].body, bedrock_protocol::entity::animate_swing(1).body);
+        assert!(sent.get(&1).is_none_or(|v| count(v, id::ANIMATE) == 0), "Alice non rivede il proprio colpo");
+        assert!(sent.get(&3).is_none_or(|v| count(v, id::ANIMATE) == 0), "Carol è fuori vista");
+    }
+
+    #[test]
+    fn start_sneaking_sends_actor_data_with_the_flag() {
+        use bedrock_protocol::actor::{flag, key, set_actor_data, DataValue};
+        let mut h = three_players();
+        h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_flag(27))]);
+        let sent = h.packets_by_player();
+        let flags = (1i64 << flag::HAS_GRAVITY) | 1 << flag::HAS_COLLISION | 1 << flag::CAN_CLIMB | 1 << flag::BREATHING | 1 << flag::SNEAKING;
+        let expected = set_actor_data(
+            1,
+            &[(key::FLAGS, DataValue::Int64(flags)), (key::BOUNDING_BOX_WIDTH, DataValue::Float(0.6)), (key::BOUNDING_BOX_HEIGHT, DataValue::Float(1.8))],
+        );
+        for pid in [1, 2] {
+            let data = of_kind(&sent[&pid], bedrock_protocol::actor::SET_ACTOR_DATA);
+            assert_eq!(data.len(), 1, "#{pid}");
+            assert_eq!(data[0].body, expected.body, "#{pid}");
+        }
+        assert!(sent.get(&3).is_none_or(|v| count(v, bedrock_protocol::actor::SET_ACTOR_DATA) == 0));
+        // Lo stesso stato ripetuto non rimanda nulla; lo stop lo toglie.
+        h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_flag(27))]);
+        assert!(h.packets_by_player().values().all(|v| count(v, bedrock_protocol::actor::SET_ACTOR_DATA) == 0));
+        h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_flag(28))]);
+        assert_eq!(count(&h.packets_by_player()[&2], bedrock_protocol::actor::SET_ACTOR_DATA), 1);
+        assert!(!h.server.players[&1].sneaking);
+    }
+
+    #[test]
+    fn sprint_swim_and_glide_states_are_tracked() {
+        use bedrock_protocol::actor::{flag, DataValue};
+        let mut h = three_players();
+        for (start, stop, bit) in [(25, 26, flag::SPRINTING), (29, 30, flag::SWIMMING), (32, 33, flag::GLIDING)] {
+            h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_flag(start))]);
+            let DataValue::Int64(on) = h.server.entity_data(1)[0].1 else { panic!("flag") };
+            assert_ne!(on & 1 << bit, 0, "bit {bit} acceso");
+            h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_flag(stop))]);
+            let DataValue::Int64(off) = h.server.entity_data(1)[0].1 else { panic!("flag") };
+            assert_eq!(off & 1 << bit, 0, "bit {bit} spento");
+        }
+        assert_eq!(count(&h.packets_by_player()[&2], bedrock_protocol::actor::SET_ACTOR_DATA), 6);
+    }
+
+    #[test]
+    fn changing_held_slot_shows_the_item_to_viewers() {
+        let mut h = three_players();
+        h.receive(1, &[stack_request_packet(|w| craft_and_place(w, -1, stone_net_id(), 2))]);
+        let sent = h.packets_by_player();
+        assert_eq!(sent.get(&2).map_or(0, |v| count(v, id::MOB_EQUIPMENT)), 0, "la casella in mano non è cambiata");
+        h.receive(1, &[mob_equipment(2, 2)]);
+        let sent = h.packets_by_player();
+        let equipment = of_kind(&sent[&2], id::MOB_EQUIPMENT);
+        assert_eq!(equipment.len(), 1);
+        let m = MobEquipment::decode(&equipment[0].body).unwrap();
+        assert_eq!((m.target_runtime_id, m.item.id, m.slot, m.selected_slot), (1, registry::items().id("minecraft:stone").unwrap(), 2, 2));
+        assert!(sent.get(&1).is_none_or(|v| count(v, id::MOB_EQUIPMENT) == 0));
+        assert!(sent.get(&3).is_none_or(|v| count(v, id::MOB_EQUIPMENT) == 0));
+    }
+
+    #[test]
+    fn stack_request_on_the_held_slot_updates_viewers() {
+        let mut h = three_players();
+        h.receive(1, &[stack_request_packet(|w| craft_and_place(w, -1, stone_net_id(), 0))]);
+        assert_eq!(count(&h.packets_by_player()[&2], id::MOB_EQUIPMENT), 1);
+    }
+
+    #[test]
+    fn armor_change_is_relayed() {
+        let mut h = three_players();
+        let helmet = registry::creative().1.iter().position(|c| c.name == "minecraft:iron_helmet").unwrap() as u32 + 1;
+        h.receive(1, &[stack_request_packet(|w| craft_and_place_in(w, -1, helmet, 6, 0))]);
+        let sent = h.packets_by_player();
+        let armor = of_kind(&sent[&2], id::MOB_ARMOR_EQUIPMENT);
+        assert_eq!(armor.len(), 1);
+        let expected = crate::entity::armor_of(&h.server.players[&1]);
+        assert_eq!(expected[0].id, registry::items().id("minecraft:iron_helmet").unwrap());
+        let packet = bedrock_protocol::entity::mob_armor_equipment(1, &expected);
+        assert_eq!(armor[0].body, packet.body);
+        assert!(sent.get(&3).is_none_or(|v| count(v, id::MOB_ARMOR_EQUIPMENT) == 0));
+    }
+
+    #[test]
+    fn a_new_viewer_sees_the_worn_armor_and_the_state() {
+        let mut h = Harness::new();
+        h.join(1, "Alice");
+        h.join(2, "Bob");
+        h.server.players.get_mut(&1).unwrap().sent.insert((0, 0));
+        let iron_helmet = registry::items().id("minecraft:iron_helmet").unwrap();
+        h.server.players.get_mut(&1).unwrap().inventory.set_armor(0, crate::inventory::Item { id: iron_helmet, count: 1, ..Default::default() });
+        h.server.players.get_mut(&1).unwrap().sprinting = true;
+        h.server.players.get_mut(&2).unwrap().sent.insert((0, 0));
+        h.packets_by_player();
+        h.server.visibility_tick();
+        let sent = h.packets_by_player();
+        assert_eq!(count(&sent[&2], id::ADD_PLAYER), 1);
+        assert_eq!(count(&sent[&2], id::MOB_ARMOR_EQUIPMENT), 1);
     }
 }

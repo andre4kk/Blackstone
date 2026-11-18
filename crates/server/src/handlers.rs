@@ -1,13 +1,15 @@
 //! Un handler per ogni pacchetto che il server sa gestire.
 use crate::{
+    entity::armor_of,
     inventory::{window, HOTBAR_SLOTS},
     playerdata, GameMode, Player, Server, HEX_LOGS,
 };
 use bedrock_net::log;
 use bedrock_protocol::{
+    entity::animate_swing,
     generated::{BlockPos, ContainerClose, ContainerOpen, MobEquipment},
     id,
-    input::{flag, interact_action, use_item, Interact, InventoryTransaction, ItemStackRequestPacket, PlayerAction, PlayerAuthInput, StackRequest},
+    input::{flag, interact_action, use_item, Animate, Interact, InventoryTransaction, ItemStackRequestPacket, PlayerAction, PlayerAuthInput, StackRequest},
     login,
     packets::{
         disconnect_reason, pack_response, play_status, text_type, Disconnect, Login, NetworkSettings, PacketViolationWarning, PlayStatus,
@@ -62,6 +64,7 @@ impl Server {
             | id::SET_PLAYER_GAME_TYPE
             | id::ITEM_STACK_REQUEST
             | id::MOB_EQUIPMENT
+            | id::ANIMATE
             | id::PLAYER_ACTION
             | id::INVENTORY_TRANSACTION => spawned,
             _ => true,
@@ -83,12 +86,13 @@ impl Server {
             id::PLAYER_AUTH_INPUT => self.player_auth_input(pid, &packet.body),
             id::ITEM_STACK_REQUEST => self.item_stack_request(pid, &packet.body),
             id::MOB_EQUIPMENT => self.mob_equipment(pid, &packet.body),
+            id::ANIMATE => self.animate(pid, &packet.body),
             id::INTERACT => self.interact_packet(pid, &packet.body),
             id::CONTAINER_CLOSE => self.container_close(pid, &packet.body),
             id::PLAYER_ACTION => self.player_action(pid, &packet.body),
             id::INVENTORY_TRANSACTION => self.inventory_transaction(pid, &packet.body),
             // 307 SetPlayerInventoryOptions (schede del menu), 358 ServerboundCursorItemDrag: solo interfaccia del client.
-            id::ANIMATE | id::EMOTE_LIST | 307 | 358 => {}
+            id::EMOTE_LIST | 307 | 358 => {}
             id::SERVERBOUND_LOADING_SCREEN | id::CLIENT_CACHE_STATUS => {} // il client dichiara se usa la cache dei chunk: per ora non serve
             id::PACKET_VIOLATION_WARNING => self.packet_violation(pid, &packet.body),
             other => {
@@ -116,6 +120,7 @@ impl Server {
     /// la prima volta e si usa comunque la posizione: il movimento non deve dipendere dal resto del pacchetto.
     fn player_auth_input(&mut self, pid: u64, body: &[u8]) {
         let Some(player) = self.players.get_mut(&pid).filter(|p| p.spawned) else { return };
+        let mut state_changed = false;
         let (position, request, input) = match PlayerAuthInput::decode(body) {
             Some(input) => {
                 let has_actions = [flag::PERFORM_ITEM_INTERACTION, flag::PERFORM_BLOCK_ACTIONS, flag::PERFORM_ITEM_STACK_REQUEST].iter().any(|&f| input.has(f));
@@ -127,7 +132,14 @@ impl Server {
                 if input.pitch.is_finite() && input.yaw.is_finite() {
                     (player.pitch, player.yaw) = (input.pitch, input.yaw);
                 }
-                player.sneaking = input.has(flag::SNEAKING);
+                // Stato visibile agli altri: l'accovacciamento è anche lo stato tenuto dal flag; corsa, nuoto e planata cambiano solo agli inizi e alle fini.
+                let before = (player.sneaking, player.sprinting, player.swimming, player.gliding);
+                let toggle = |current: bool, start: u32, stop: u32| if input.has(stop) { false } else { current || input.has(start) };
+                player.sneaking = if input.has(flag::STOP_SNEAKING) { false } else { input.has(flag::SNEAKING) || input.has(flag::START_SNEAKING) };
+                player.sprinting = toggle(player.sprinting, flag::START_SPRINTING, flag::STOP_SPRINTING);
+                player.swimming = toggle(player.swimming, flag::START_SWIMMING, flag::STOP_SWIMMING);
+                player.gliding = toggle(player.gliding, flag::START_GLIDING, flag::STOP_GLIDING);
+                state_changed = before != (player.sneaking, player.sprinting, player.swimming, player.gliding);
                 // Il volo va sempre confermato o rifiutato con UpdateAbilities (changelog 776): senza risposta il client resta sospeso.
                 let fly_request = if input.has(flag::START_FLYING) {
                     Some(true)
@@ -158,6 +170,9 @@ impl Server {
         if position.iter().all(|v| v.is_finite() && v.abs() <= 30_000_000.0) {
             self.on_move(pid, position);
             self.update_entity_motion(pid, input.as_ref());
+        }
+        if state_changed {
+            self.send_entity_state(pid);
         }
         if let Some(request) = request {
             self.stack_request(pid, &request);
@@ -215,12 +230,24 @@ impl Server {
     /// Una richiesta di pila: si applica all'inventario e si risponde (con le caselle cambiate, o con l'errore e lo stato vero).
     fn stack_request(&mut self, pid: u64, request: &StackRequest) {
         let Some(p) = self.players.get_mut(&pid) else { return };
+        let (held, armor) = (p.inventory.held().stack(0), armor_of(p));
         let result = p.inventory.handle(request, p.mode.creative_inventory());
         if let Some(error) = &result.error {
             log!("[#{pid}] richiesta di pila {} rifiutata: {error}", request.request_id);
         }
         let packets = p.inventory.response(request.request_id, &result);
         self.send(pid, &packets);
+        self.send_equipment_changes(pid, &held, &armor);
+    }
+
+    /// `Animate`: solo l'oscillazione del braccio (azione 1) si ripete agli spettatori; l'ID di runtime del pacchetto non si usa, vale quello del mittente.
+    fn animate(&mut self, pid: u64, body: &[u8]) {
+        let Some(a) = Animate::decode(body) else {
+            return log!("[#{pid}] Animate illeggibile ({} byte): ignorato", body.len());
+        };
+        if a.action == 1 {
+            self.broadcast_to_viewers(pid, &[animate_swing(pid)]);
+        }
     }
 
     /// Il giocatore cambia la casella della barra in mano. Vale solo per la finestra dell'inventario (0): quella della mano
@@ -265,7 +292,9 @@ impl Server {
         }
         let Some(p) = self.players.get_mut(&pid) else { return };
         if equipment.selected_slot < HOTBAR_SLOTS {
+            let (held, armor) = (p.inventory.held().stack(0), armor_of(p));
             p.inventory.selected = equipment.selected_slot;
+            self.send_equipment_changes(pid, &held, &armor);
         } else {
             log!("[#{pid}] MobEquipment con la casella {} fuori dalla barra: ignorato", equipment.selected_slot);
         }

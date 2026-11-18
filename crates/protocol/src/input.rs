@@ -13,8 +13,14 @@ const MAX_FLAG_ID: i32 = 127;
 pub mod flag {
     pub const JUMPING: u32 = 6;
     pub const SNEAKING: u32 = 8;
+    pub const START_SPRINTING: u32 = 25;
+    pub const STOP_SPRINTING: u32 = 26;
     pub const START_SNEAKING: u32 = 27;
     pub const STOP_SNEAKING: u32 = 28;
+    pub const START_SWIMMING: u32 = 29;
+    pub const STOP_SWIMMING: u32 = 30;
+    pub const START_GLIDING: u32 = 32;
+    pub const STOP_GLIDING: u32 = 33;
     /// Il client vuole iniziare/smettere di volare (doppio salto): il server risponde con `UpdateAbilities`.
     pub const START_FLYING: u32 = 42;
     pub const STOP_FLYING: u32 = 43;

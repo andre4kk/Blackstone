@@ -133,6 +133,10 @@ struct Player {
     pitch: f32,
     /// Vero se l'ultimo `PlayerAuthInput` completo aveva il flag di accovacciamento.
     sneaking: bool,
+    /// Corsa, nuoto e planata dichiarati dal client con i flag di inizio e fine di `PlayerAuthInput`: li vedono gli spettatori.
+    sprinting: bool,
+    swimming: bool,
+    gliding: bool,
     /// Ultimo blocco di cui si è tentata la rottura, col tick: la stessa rottura chiesta due volte nello stesso tick vale una.
     last_break: Option<(u64, [i32; 3])>,
     /// A che punto sono i dati salvati del giocatore (vedi [`DataState`]).

@@ -360,7 +360,8 @@ impl Server {
         }
         packets.push(spawn_attributes(pid).packet());
         if !skip("metadata") {
-            packets.push(bedrock_protocol::actor::player_data(pid)); // gravità, collisioni, arrampicata: senza, il giocatore non cade
+            packets.push(bedrock_protocol::actor::set_actor_data(pid, &self.entity_data(pid)));
+            // gravità, collisioni, arrampicata: senza, il giocatore non cade
         }
         self.send(pid, &packets);
         if flag("CHUNKS_EARLY") {
