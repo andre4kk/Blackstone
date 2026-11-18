@@ -10,11 +10,15 @@ use rayon::ThreadPool;
 use simdnbt::owned::NbtCompound;
 use steel_core::bootstrap::init_globals;
 use steel_core::chunk::chunk_holder::ChunkHolder;
+use steel_core::chunk::heightmap::HeightmapType;
 use steel_core::chunk::status::ChunkStatus;
 use steel_core::entity::damage::DamageHistory;
 use steel_core::level_data::{GameTimeSource, WorldGenerationSettings};
 use steel_core::world::{World, WorldConfig, WorldStorageConfig};
-use steel_core::worldgen::{ChunkGeneratorType, EndGenerator, NetherGenerator, OverworldGenerator};
+use steel_core::worldgen::{ChunkGenerator, ChunkGeneratorType, EndGenerator, NetherGenerator, OverworldGenerator};
+use steel_registry::blocks::block_state_ext::BlockStateExt;
+use steel_registry::blocks::properties::Direction;
+use steel_registry::blocks::shapes::is_offset_face_full;
 use steel_registry::dimension_type::DimensionTypeRef;
 use steel_registry::vanilla_dimension_types;
 use steel_utils::types::{Difficulty, GameType};
@@ -83,6 +87,8 @@ pub struct JavaChunk {
     pub min_y: i32,
     pub sections: Vec<JavaSection>,
     pub block_entities: Vec<JavaBlockEntity>,
+    /// Primo punto di spawn valido nel chunk secondo la ricerca vanilla (solo overworld).
+    pub spawn: Option<BlockPos>,
 }
 
 /// Generatore di chunk per un seme e una dimensione.
@@ -139,6 +145,17 @@ impl Generator {
             .block_on(chunk_map.generate_region(ChunkPos::new(min_x, min_z), ChunkPos::new(max_x, max_z)))
             .unwrap_or_else(|e| panic!("generazione della regione fallita: {e}"));
         holders.iter().map(|h| java_chunk(h, self.dim)).collect()
+    }
+
+    /// Origine della ricerca dello spawn scelta dal clima (vanilla `findSpawnPosition`); `(0, 0, 0)` fuori dall'overworld.
+    pub fn spawn_search_origin(&self) -> BlockPos {
+        self.generator.initial_spawn_search_origin()
+    }
+
+    /// Altezza di ripiego dello spawn se nessun chunk vicino ha un punto valido.
+    pub fn spawn_height(&self) -> i32 {
+        let dim_type = self.dim.dimension_type();
+        self.generator.spawn_height(dim_type.min_y, dim_type.height)
     }
 
     /// Crea un mondo solo in RAM che usa il generatore condiviso.
@@ -218,5 +235,40 @@ fn java_chunk(holder: &ChunkHolder, dim: Dim) -> JavaChunk {
     // Block entity: il bottino resta nell'NBT ma la traduzione lo ignora.
     let block_entities = chunk.get_block_entities().iter().map(|e| (e.get_block_pos(), e.get_type().key.clone(), e.save_custom_only())).collect();
     let pos = holder.get_pos();
-    JavaChunk { dim, x: pos.0.x, z: pos.0.y, min_y: holder.min_y(), sections: out, block_entities }
+    let spawn = if dim == Dim::Overworld { spawn_pos_in_chunk(holder, pos) } else { None };
+    JavaChunk { dim, x: pos.0.x, z: pos.0.y, min_y: holder.min_y(), sections: out, block_entities, spawn }
+}
+
+/// Come `World::spawn_pos_in_chunk` di Steel (privato): prima colonna, in ordine X poi Z, con un punto di spawn valido.
+fn spawn_pos_in_chunk(holder: &ChunkHolder, pos: ChunkPos) -> Option<BlockPos> {
+    let full = holder.try_full_chunk()?;
+    let min_y = full.min_y();
+    // Le heightmap danno il primo y libero; vanilla usa quello sotto.
+    let height = |kind, x: usize, z: usize| full.get_height(kind, x, z) - 1;
+    for lx in 0..16usize {
+        for lz in 0..16usize {
+            let (x, z) = ((pos.0.x << 4) + lx as i32, (pos.0.y << 4) + lz as i32);
+            // L'overworld non ha soffitto: la cima è la heightmap MotionBlocking.
+            let top_y = height(HeightmapType::MotionBlocking, lx, lz);
+            if top_y < min_y {
+                continue;
+            }
+            let surface = height(HeightmapType::WorldSurface, lx, lz);
+            let ocean_floor = height(HeightmapType::OceanFloor, lx, lz);
+            if surface <= top_y && surface > ocean_floor {
+                continue;
+            }
+            for y in (min_y..=top_y + 1).rev() {
+                let block = BlockPos::new(x, y, z);
+                let state = full.get_block_state(block);
+                if state.has_fluid() {
+                    break;
+                }
+                if is_offset_face_full(state.get_collision_shape_at(block), Direction::Up) {
+                    return Some(BlockPos::new(x, y + 1, z));
+                }
+            }
+        }
+    }
+    None
 }

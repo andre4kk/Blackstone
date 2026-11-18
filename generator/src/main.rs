@@ -1,10 +1,12 @@
 //! versmc-gen: generatore di mondi Java Edition per VersMCBE, basato su SteelMC.
 //!
-//! Per ora contiene solo la prova:
-//! `versmc-gen probe --seed 13579 --x 0 --z 0 [--size N] [--dim overworld|nether|end] [--repeat K]`
+//! Comandi:
+//! - `versmc-gen serve --port <p> --seed <s>`: servizio `vgen` su 127.0.0.1 per il server Bedrock;
+//! - `versmc-gen probe --seed 13579 --x 0 --z 0 [--size N] [--dim overworld|nether|end] [--repeat K]`: prova e misure.
 
 mod bedrock_hash;
 mod nbt;
+mod serve;
 mod steel;
 mod translate;
 
@@ -17,19 +19,21 @@ use translate::{Translator, to_bedrock};
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    match args.first().map(String::as_str) {
-        Some("probe") => match run_with_big_stack(move || probe(&args[1..])) {
-            Ok(()) => ExitCode::SUCCESS,
-            Err(e) => {
-                eprintln!("errore: {e}");
-                ExitCode::FAILURE
-            }
-        },
+    let result = match args.first().map(String::as_str) {
+        Some("probe") => run_with_big_stack(move || probe(&args[1..])),
+        Some("serve") => run_with_big_stack(move || serve::serve(&args[1..])),
         _ => {
             eprintln!(
-                "uso: versmc-gen probe --seed <u64> --x <i32> --z <i32> \
-                 [--size <N>] [--dim overworld|nether|end] [--repeat <K>]"
+                "uso: versmc-gen serve --port <u16> --seed <u64>\n     \
+                 versmc-gen probe --seed <u64> --x <i32> --z <i32> [--size <N>] [--dim overworld|nether|end] [--repeat <K>]"
             );
+            return ExitCode::FAILURE;
+        }
+    };
+    match result {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("errore: {e}");
             ExitCode::FAILURE
         }
     }

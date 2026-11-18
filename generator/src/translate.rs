@@ -555,6 +555,7 @@ mod tests {
             min_y: -64,
             sections: (0..24).map(|_| JavaSection { states: Box::new([0; 4096]), biomes: Box::new([0; 64]) }).collect(),
             block_entities: Vec::new(),
+            spawn: None,
         }
     }
 

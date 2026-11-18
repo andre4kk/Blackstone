@@ -43,7 +43,7 @@ flate2 = "1.1.10"
 [profile.release]
 lto = true
 codegen-units = 1
-panic = "abort"
+# Niente `panic = "abort"` (Steel lo usa): `serve` trasforma il panico di una richiesta in un errore senza chiudere il processo.
 
 [profile.dev]
 debug = 0
