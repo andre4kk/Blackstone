@@ -3,6 +3,7 @@
 use miniz_oxide::{deflate::compress_to_vec, inflate::decompress_to_vec_with_limit};
 use std::borrow::Cow;
 
+pub mod actor;
 pub mod generated;
 pub mod input;
 pub mod item;

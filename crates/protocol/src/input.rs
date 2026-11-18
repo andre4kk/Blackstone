@@ -39,7 +39,7 @@ pub mod player_action {
 }
 
 /// `ActionType` delle azioni di una richiesta di pila (u8 sul filo).
-mod stack_type {
+pub mod stack_type {
     pub const TAKE: u8 = 0;
     pub const PLACE: u8 = 1;
     pub const SWAP: u8 = 2;
@@ -48,6 +48,8 @@ mod stack_type {
     pub const CONSUME: u8 = 5;
     pub const CREATE: u8 = 6;
     pub const CRAFT_CREATIVE: u8 = 14;
+    /// Risultati del crafting (deprecato ma il client lo manda ancora dopo `CraftCreative`): solo informativo.
+    pub const CRAFT_RESULTS: u8 = 20;
 }
 
 fn vec2(r: &mut Reader) -> Option<[f32; 2]> {
@@ -252,9 +254,40 @@ impl StackAction {
                 r.u8()?;
                 Self::Other(ty)
             }
+            stack_type::CRAFT_RESULTS => {
+                list(r, skip_request_item)?;
+                r.u8()?; // numero di crafting
+                Self::Other(ty)
+            }
             _ => return Some(None),
         }))
     }
+}
+
+/// Salta un `ItemStackRequestNetworkItemInstanceDescriptor`: descrittore (indice di variante + tipo + campi), quantità,
+/// runtime id del blocco, dati utente.
+fn skip_request_item(r: &mut Reader) -> Option<()> {
+    let variant = r.var_u32()?;
+    r.u8()?; // tipo del descrittore, ridondante con la variante
+    match variant {
+        0 => {}
+        1 => {
+            r.string()?;
+            r.var_i32()?; // aux
+        }
+        2 => {
+            r.string()?;
+            r.i16()?; // versione molang
+        }
+        3 => {
+            r.string()?;
+        }
+        _ => return None,
+    }
+    r.u16()?;
+    r.var_u32()?;
+    r.bytes()?;
+    Some(())
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -438,6 +471,27 @@ impl ContainerClose {
 mod tests {
     use super::*;
     use crate::wire::Writer;
+
+    /// Presa dal menu creativo catturata nel gioco (1.26.6x): CraftCreative, CraftResults, Take.
+    #[test]
+    fn creative_take_with_craft_results_decodes() {
+        let body: [u8; 78] = [
+            0x01, 0x05, 0x03, 0x0c, 0x0e, 0x04, 0x01, 0x12, 0x14, 0x01, 0x01, 0x01, 0x17, 0x6d, 0x69, 0x6e, 0x65, 0x63, 0x72, 0x61, 0x66, 0x74, 0x3a, 0x6a,
+            0x75, 0x6e, 0x67, 0x6c, 0x65, 0x5f, 0x70, 0x6c, 0x61, 0x6e, 0x6b, 0x73, 0x00, 0x01, 0x00, 0x97, 0xa5, 0x81, 0x93, 0x04, 0x0a, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x40, 0x3c, 0x00, 0x32, 0xfd, 0xff, 0xff, 0xff, 0x3b, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0xff, 0xff, 0xff, 0xff,
+        ];
+        let p = ItemStackRequestPacket::decode(&body).unwrap();
+        assert_eq!(p.requests.len(), 1, "la richiesta non va scartata");
+        let q = &p.requests[0];
+        assert_eq!(q.request_id, -3);
+        assert_eq!(q.actions[0], StackAction::CraftCreative { net_id: 4, crafts: 1 });
+        assert_eq!(q.actions[1], StackAction::Other(stack_type::CRAFT_RESULTS));
+        assert!(matches!(
+            q.actions[2],
+            StackAction::Take { count: 64, src: SlotRef { container: 0x3c, slot: 0x32, stack_id: -3, .. }, dst: SlotRef { container: 0x3b, slot: 0, .. } }
+        ));
+    }
 
     /// I 53 byte reali di P§4.4 (un Place su un blocco, con l'aria in mano).
     const REAL_CAPTURE: [u8; 53] = [

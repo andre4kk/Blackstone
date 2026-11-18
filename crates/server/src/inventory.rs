@@ -13,7 +13,7 @@ use bedrock_protocol::{
         },
         FullContainerName, InventorySlot, ItemStackResponse, ItemStackResponseContainerInfo, ItemStackResponseInfo, ItemStackResponseSlotInfo, PlayerHotbar,
     },
-    input::{SlotRef, StackAction, StackRequest},
+    input::{stack_type, SlotRef, StackAction, StackRequest},
     item::ItemStack,
     wire::ServerPacket,
     Packet,
@@ -375,6 +375,8 @@ impl Inventory {
                         .ok_or_else(|| format!("voce creativa {net_id} inesistente"))?;
                     self.put(run, CREATED_OUTPUT_CONTAINER, CREATED_SLOT, Loc::Created, item);
                 }
+                // I risultati del crafting sono solo informativi: li calcola il server (come Dragonfly, che li ignora).
+                StackAction::Other(stack_type::CRAFT_RESULTS) => {}
                 StackAction::Other(kind) => return Err(format!("azione {kind} non supportata")),
             }
         }

@@ -344,6 +344,9 @@ impl Server {
             packets.push(creative_packet().clone());
         }
         packets.push(spawn_attributes(pid).packet());
+        if !skip("metadata") {
+            packets.push(bedrock_protocol::actor::player_data(pid)); // gravità, collisioni, arrampicata: senza, il giocatore non cade
+        }
         self.send(pid, &packets);
         if flag("CHUNKS_EARLY") {
             self.initialized(pid); // diagnostica: il vecchio ordine, senza aspettare il client

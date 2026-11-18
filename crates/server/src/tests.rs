@@ -390,6 +390,26 @@ fn item_stack_requests_before_spawning_are_ignored() {
     assert_eq!(h.server.players[&1].inventory.stack_at(28, 0), Some(ItemStack::air()));
 }
 
+/// Presa reale dal menu creativo (client 1.26.6x): CraftCreative della voce 4, CraftResults, Take di 64 sul cursore.
+#[test]
+fn real_creative_take_puts_the_item_on_the_cursor() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    h.packets_to(1);
+    let body: [u8; 78] = [
+        0x01, 0x05, 0x03, 0x0c, 0x0e, 0x04, 0x01, 0x12, 0x14, 0x01, 0x01, 0x01, 0x17, 0x6d, 0x69, 0x6e, 0x65, 0x63, 0x72, 0x61, 0x66, 0x74, 0x3a, 0x6a, 0x75,
+        0x6e, 0x67, 0x6c, 0x65, 0x5f, 0x70, 0x6c, 0x61, 0x6e, 0x6b, 0x73, 0x00, 0x01, 0x00, 0x97, 0xa5, 0x81, 0x93, 0x04, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x40, 0x3c, 0x00, 0x32, 0xfd, 0xff, 0xff, 0xff, 0x3b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff,
+        0xff, 0xff, 0xff,
+    ];
+    h.receive(1, &[Packet::new(id::ITEM_STACK_REQUEST, body.to_vec())]);
+    let cursor = h.server.players[&1].inventory.stack_at(59, 0).unwrap();
+    assert_eq!(cursor.count, 64, "l'oggetto preso dal menu creativo è sul cursore");
+    let responses: Vec<Packet> = h.packets_to(1).into_iter().filter(|p| p.id == id::ITEM_STACK_RESPONSE).collect();
+    assert_eq!(responses.len(), 1);
+    assert_eq!(responses[0].body[..3], [1, 0, 5], "una risposta, OK, alla richiesta -3");
+}
+
 /// `PlayerAuthInput` con il flag 36 e una richiesta di pila (CraftCreative + Place), posizione (x, 70, 0).
 fn pai_with_request(x: f32) -> Vec<u8> {
     let mut w = Writer::default();
@@ -469,6 +489,15 @@ fn the_player_gets_speed_health_and_hunger_on_spawn() {
     }
     let movement = attributes.iter().find(|a| a.name == "minecraft:movement").unwrap();
     assert_eq!((movement.current_value, movement.default_value), (0.1, 0.1), "velocità di camminata vanilla");
+}
+
+#[test]
+fn the_player_gets_its_actor_data_with_gravity_on_spawn() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    let data: Vec<Packet> = h.packets_to(1).into_iter().filter(|p| p.id == bedrock_protocol::actor::SET_ACTOR_DATA).collect();
+    assert_eq!(data.len(), 1, "senza i dati dell'entità il client non applica la gravità al giocatore");
+    assert_eq!(data[0].body, bedrock_protocol::actor::player_data(1).body);
 }
 
 /// `Interact` del client: azione e runtime id del bersaglio (la posizione opzionale manca).

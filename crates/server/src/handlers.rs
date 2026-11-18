@@ -86,7 +86,8 @@ impl Server {
             id::CONTAINER_CLOSE => self.container_close(pid, &packet.body),
             id::PLAYER_ACTION => self.player_action(pid, &packet.body),
             id::INVENTORY_TRANSACTION => self.inventory_transaction(pid, &packet.body),
-            id::ANIMATE | id::EMOTE_LIST => {}
+            // 307 SetPlayerInventoryOptions (schede del menu), 358 ServerboundCursorItemDrag: solo interfaccia del client.
+            id::ANIMATE | id::EMOTE_LIST | 307 | 358 => {}
             id::SERVERBOUND_LOADING_SCREEN | id::CLIENT_CACHE_STATUS => {} // il client dichiara se usa la cache dei chunk: per ora non serve
             id::PACKET_VIOLATION_WARNING => self.packet_violation(pid, &packet.body),
             other => {

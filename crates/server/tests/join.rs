@@ -204,7 +204,16 @@ fn client(port: u16, mode: Mode) {
                         assert!(packets[3].body.len() > 10_000, "il registro oggetti è grande: ha attraversato la frammentazione");
                         Packet::new(id::REQUEST_CHUNK_RADIUS, RequestChunkRadius { chunk_radius: RADIUS, max_radius: 8 }.encode())
                     }
-                    (4, ids) if ids == [ChunkRadiusUpdated::ID, id::PLAY_STATUS, CreativeContent::ID, UpdateAttributes::ID] => {
+                    (4, ids)
+                        if ids
+                            == [
+                                ChunkRadiusUpdated::ID,
+                                id::PLAY_STATUS,
+                                CreativeContent::ID,
+                                UpdateAttributes::ID,
+                                bedrock_protocol::actor::SET_ACTOR_DATA,
+                            ] =>
+                    {
                         assert_eq!(packets[0].body, [(RADIUS * 2) as u8], "raggio concesso (ZigZag)");
                         assert_eq!(packets[1].body, [0, 0, 0, 3], "PlayerSpawn");
                         assert!(packets[2].body.len() > 50_000, "il menu creativo è pieno: ha attraversato la frammentazione");
