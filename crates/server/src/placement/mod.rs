@@ -4,6 +4,7 @@
 //! passano da `special`, e `neighbors` aggiorna i blocchi accanto a ogni modifica (appoggi, connessioni, angoli).
 use crate::{
     breaking::in_reach,
+    entity::armor_of,
     events::{BlockChange, WorldAction},
     inventory::{Item, HOTBAR_SLOTS},
     registry::{self, blocks},
@@ -351,8 +352,8 @@ impl Server {
     /// leva...) e il giocatore non è accovacciato con qualcosa in mano, lo si attiva (vedi `interact`) e non si piazza nulla,
     /// qualunque cosa il client creda di avere in mano. Altrimenti, se in mano ha un blocco e tutti i controlli passano
     /// (modalità, oggetto uguale a quello del client, portata, spazio libero, ganci) il blocco si piazza: chi vede il chunk
-    /// riceve l'aggiornamento e il suono. In questa tappa piazzare non consuma nulla neanche in sopravvivenza (spec): poiché il
-    /// client ha previsto il consumo, gli si rimanda la casella in mano col conteggio vero. All'autore si rimandano anche la
+    /// riceve l'aggiornamento e il suono. In sopravvivenza il piazzamento accettato toglie un oggetto dalla casella in mano (in creativa nessuno) e al
+    /// client si rimanda la casella col conteggio vero. All'autore si rimandano anche la
     /// cella cliccata e quella prevista, che possono differire dall'esito (mezze lastre che si uniscono, torce spostate).
     /// Se si rifiuta, all'autore si rimanda lo stato vero delle celle toccate e dei loro vicini. Una mano senza blocchi non fa nulla.
     pub(crate) fn place_item(&mut self, pid: u64, u: &UseItem) {
@@ -421,7 +422,15 @@ impl Server {
         // faccia) la cella prevista va corretta; la cella cliccata si rimanda per lo stesso motivo.
         self.resend_blocks(pid, dim, &[u.pos, side(u.pos, u.face)]);
         if !creative {
-            // il client ha previsto che l'oggetto si consumi: qui non succede, e glielo si dice
+            // Dragonfly `UseItemOnBlock`: `SubtractItem(1)` se non creativo (anche per porte, letti e blocchi doppi: un solo oggetto per piazzamento).
+            // Il client ha previsto il consumo, ma l'ID di pila nuovo e il conteggio vero glieli dice il server; l'ultimo oggetto svuota la casella.
+            if let Some(p) = self.players.get_mut(&pid) {
+                let (before, armor) = (held.stack(0), armor_of(p));
+                let slot = p.inventory.selected as usize;
+                let left = held.count.saturating_sub(1);
+                p.inventory.set_main(slot, if left > 0 { Item { count: left, ..held } } else { Item::default() });
+                self.send_equipment_changes(pid, &before, &armor);
+            }
             self.resync_held(pid);
         }
     }

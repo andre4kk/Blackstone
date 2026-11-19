@@ -1693,24 +1693,35 @@ mod placing {
     }
 
     #[test]
-    fn survival_place_does_not_consume_and_resyncs_the_slot() {
-        // la spec di questa tappa: la sopravvivenza piazza senza consumare; il client però ha previsto il consumo
+    fn survival_place_consumes_one_and_resyncs_the_slot() {
+        // Dragonfly `UseItemOnBlock`: `SubtractItem` solo se non creativo; il client ha previsto il consumo, ma il conteggio vero lo dice il server
         let mut h = setup(GameMode::Survival);
+        let before = h.server.players[&1].inventory.held_slot_packet().body;
         h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
         assert_placed(&h);
-        assert_eq!(h.server.players[&1].inventory.held().count, 64, "nessun consumo");
+        assert_eq!(h.server.players[&1].inventory.held().count, 63, "un solo oggetto consumato");
+        assert_ne!(h.server.players[&1].inventory.held_slot_packet().body, before, "nuovo ID di pila e conteggio");
         let out = packets(&mut h.sent);
         let slots: Vec<_> = out.iter().filter(|(_, p)| p.id == InventorySlot::ID).collect();
         assert_eq!(slots.len(), 1, "il client sa com'è davvero la casella");
         assert_eq!(slots[0].0, 1);
-        assert_eq!(slots[0].1.body, h.server.players[&1].inventory.held_slot_packet().body, "con il conteggio vero (64)");
-        // ripetuto fino a svuotare la scorta che non c'è: la mano resta piena
+        assert_eq!(slots[0].1.body, h.server.players[&1].inventory.held_slot_packet().body, "con il conteggio vero (63)");
+        // ripetuto fino a finire la pila: all'ultimo la casella si svuota e dopo non si piazza più
         for _ in 0..70 {
             h.server.set_blocks(Dim::Overworld, &[change(TOP, air(), false)]);
-            h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
+            let stack = held(&h);
+            h.receive(1, &[place_packet(ROCK, 1, &stack)]);
         }
+        assert!(h.server.players[&1].inventory.held().is_empty(), "pila finita: casella vuota");
+        assert_eq!(h.server.block_at(Dim::Overworld, TOP), Some((air(), false)), "senza oggetti non si piazza");
+    }
+
+    #[test]
+    fn survival_refused_place_does_not_consume() {
+        let mut h = setup(GameMode::Survival);
+        h.server.set_blocks(Dim::Overworld, &[change(TOP, stone(), false)]); // posto occupato
+        h.receive(1, &[place_packet(ROCK, 1, &held(&h))]);
         assert_eq!(h.server.players[&1].inventory.held().count, 64);
-        assert_eq!(h.server.block_at(Dim::Overworld, TOP), Some((stone(), false)));
     }
 
     #[test]
