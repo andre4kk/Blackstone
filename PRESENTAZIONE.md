@@ -30,17 +30,13 @@ Il lavoro è diviso in tappe.
 |---|---|---|
 | **Mondo** | Overworld infinito generato con le regole Java, chunk inviati attorno al giocatore, scaricati quando sono lontani, salvati su disco. Se il generatore manca c'è un mondo piatto di ripiego. | Con il gioco vero: il giocatore entra e vede il mondo. Più test automatici con un generatore finto. |
 | **1 – Creativo** | Menu creativo completo, barra e inventario, rottura e posa di blocchi con orientamento (scale, lastre, porte, letti, torce...), aggiornamento dei blocchi vicini, porte/botole/leve/bottoni, `/gamemode`, salvataggio. | Con il gioco vero, con alcune correzioni fatte dopo le prove. Alcuni dettagli (icone dei gruppi, codifica di certe richieste dell'inventario) erano in lista di controllo. |
-| **2 – Entità e giocatori** | I giocatori si vedono tra loro (movimento, testa, braccio, skin, oggetto in mano), oggetti a terra che si lanciano e si raccolgono, `/bot` per un giocatore finto utile a provare con un solo account. | Test automatici e lista di prova nel gioco; il cambio di skin e il lancio con Q sono stati corretti dopo. |
+| **2 – Entità e giocatori** | I giocatori si vedono tra loro (movimento, testa, braccio, skin, oggetto in mano), oggetti a terra che si lanciano e si raccolgono, `/bot` per un giocatore finto utile a provare con un solo account. | Test automatici e lista di prova nel gioco; il cambio di skin e il lancio con Q sono stati corretti e provati nel gioco. |
 | **3 – Sopravvivenza base** | Blocchi che lasciano oggetti (dati da Dragonfly), vita, danno da caduta e dal vuoto, fame, mangiare, morte e rinascita, `/kill`, combattimento corpo a corpo contro giocatori e bot, `keep_inventory` e `pvp` configurabili. | Test automatici. Nel gioco **mangiare funziona**. |
 
 ### Cosa è verificato nel gioco e cosa solo con i test
 
-- **Verificato con il gioco vero:** ingresso nel mondo, mondo generato visibile, menu creativo e posa/rottura in creativo, mangiare in sopravvivenza.
-- **Solo test automatici (da confermare nel gioco):** gran parte della tappa 3 (danni, fame, morte, combattimento) e dei bot.
-- **Problemi trovati nelle prove di oggi:**
-  - le **crepe di rottura** del blocco non si vedono in sopravvivenza (in correzione);
-  - i blocchi piazzati in sopravvivenza **non vengono consumati** dalla pila (in correzione);
-  - il tasto **Q dalla barra con l'inventario chiuso** ancora non butta l'oggetto.
+- **Verificato con il gioco vero:** ingresso nel mondo, mondo generato visibile, menu creativo e posa/rottura in creativo, `/bot`, mangiare in sopravvivenza, crepe di rottura, consumo dei blocchi piazzati, lancio con Q e Ctrl+Q dalla barra (20/11/2026).
+- **Solo test automatici (da confermare nel gioco):** caduta e vuoto, `/kill` e rinascita, morte con inventario pieno, fame, combattimento, uscire e rientrare ferito.
 - La lista di prova passo per passo è in `docs/superpowers/notes/2026-11-20-verifica-tappa3.md`.
 
 ## 4. Cosa manca
@@ -103,7 +99,7 @@ Se si distribuisce il binario del generatore valgono le condizioni dell'AGPL.
 
 ## 7. Prossimi passi possibili
 
-1. Chiudere i problemi aperti della sopravvivenza: crepe di rottura, consumo dei blocchi piazzati, Q con inventario chiuso.
+1. Finire le prove nel gioco della sopravvivenza (lista in `docs/superpowers/notes/2026-11-20-verifica-tappa3.md`).
 2. Finire di provare nel gioco la lista della tappa 3 (danni, fame, morte, combattimento).
 3. Crafting e usura degli strumenti, poi armature ed effetti.
 4. Primi mob, con comportamento semplice.
