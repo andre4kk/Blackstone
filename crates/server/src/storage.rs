@@ -884,6 +884,27 @@ mod tests {
     }
 
     #[test]
+    fn furnace_content_and_times_survive_save_and_reopen() {
+        use crate::{furnace::FurnaceData, inventory::Item};
+        let dir = TempDir::new("furnace");
+        let mut chunk = sample_chunk(Dim::Overworld, 1, 2);
+        let mut data = FurnaceData::empty();
+        data.items[0] = Item::from_name("minecraft:raw_iron", 7).unwrap();
+        data.items[1] = Item::from_name("minecraft:coal", 3).unwrap();
+        data.items[2] = Item::from_name("minecraft:iron_ingot", 2).unwrap();
+        (data.burn_time, data.burn_duration, data.cook_time, data.xp) = (1234, 1600, 57, 4);
+        chunk.put_block_entity(data.entity([16, 5, 32]));
+        let mut w = open(&dir);
+        w.save(&chunk).unwrap();
+        w.flush().unwrap();
+        drop(w);
+        let mut w = open(&dir);
+        let loaded = w.load(Dim::Overworld, 1, 2).expect("chunk salvato");
+        let be = loaded.block_entities.iter().find(|b| [b.x, b.y, b.z] == [16, 5, 32]).expect("la fornace c'è ancora");
+        assert_eq!(FurnaceData::parse(&be.nbt), data, "oggetti e tempi tornano uguali");
+    }
+
+    #[test]
     fn chunk_survives_save_and_reopen() {
         let dir = TempDir::new("survive");
         let original = sample_chunk(Dim::Overworld, 5, -7);

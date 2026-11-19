@@ -388,7 +388,11 @@ impl Server {
         let (held, armor) = (p.inventory.held().stack(0), armor_of(p));
         let result = p.inventory.handle(request, p.mode.creative_inventory());
         if p.inventory.touches_chest(request) {
-            self.sync_chest(pid);
+            if p.inventory.chest().is_some_and(|c| c.kind == crate::inventory::WindowKind::Furnace) {
+                self.sync_furnace(pid);
+            } else {
+                self.sync_chest(pid);
+            }
         }
         if let Some(error) = &result.error {
             log!("[#{pid}] richiesta di pila {} rifiutata: {error}", request.request_id);
@@ -499,6 +503,11 @@ impl Server {
         let closes_table = table_window == Some(c.container_id);
         let closes_chest = p.inventory.chest().is_some_and(|w| w.window == c.container_id);
         let chest_open = p.inventory.chest().is_some();
+        let chest_type = if p.inventory.chest().is_some_and(|w| w.kind == crate::inventory::WindowKind::Furnace) {
+            crate::inventory::CONTAINER_TYPE_FURNACE
+        } else {
+            CONTAINER_TYPE_CONTAINER
+        };
         if closes_table || closes_chest || c.container_id == 0xff || (c.container_id == window::INVENTORY as u8 && table_window.is_none() && !chest_open) {
             self.return_ui_items(pid);
         }
@@ -512,7 +521,7 @@ impl Server {
         let container_type = if closes_table {
             CONTAINER_TYPE_WORKBENCH
         } else if closes_chest {
-            CONTAINER_TYPE_CONTAINER
+            chest_type
         } else if c.container_id == window::INVENTORY as u8 {
             0
         } else {

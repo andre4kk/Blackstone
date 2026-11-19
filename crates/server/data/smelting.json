@@ -1,0 +1,1447 @@
+{
+ "_license": "Generato da tools/extract_smelting.py dalle regole SmeltInfo/FuelInfo di Dragonfly (df-mc/dragonfly, commit 0f9a3a57, 1.26.60). MIT License, Copyright (c) 2019 Dragonfly Tech.",
+ "smelting": [
+  {
+   "input": "minecraft:acacia_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:acacia_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:ancient_debris",
+   "output": "minecraft:netherite_scrap",
+   "xp": 2
+  },
+  {
+   "input": "minecraft:beef",
+   "output": "minecraft:cooked_beef",
+   "xp": 0.35
+  },
+  {
+   "input": "minecraft:birch_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:birch_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:black_terracotta",
+   "output": "minecraft:black_glazed_terracotta",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:blue_terracotta",
+   "output": "minecraft:blue_glazed_terracotta",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:brown_terracotta",
+   "output": "minecraft:brown_glazed_terracotta",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:chainmail_boots",
+   "output": "minecraft:iron_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:chainmail_chestplate",
+   "output": "minecraft:iron_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:chainmail_helmet",
+   "output": "minecraft:iron_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:chainmail_leggings",
+   "output": "minecraft:iron_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:cherry_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:cherry_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:chicken",
+   "output": "minecraft:cooked_chicken",
+   "xp": 0.35
+  },
+  {
+   "input": "minecraft:clay",
+   "output": "minecraft:hardened_clay",
+   "xp": 0.35
+  },
+  {
+   "input": "minecraft:clay_ball",
+   "output": "minecraft:brick",
+   "xp": 0.3
+  },
+  {
+   "input": "minecraft:coal_ore",
+   "output": "minecraft:coal",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:cobbled_deepslate",
+   "output": "minecraft:deepslate",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:cobblestone",
+   "output": "minecraft:stone",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:cod",
+   "output": "minecraft:cooked_cod",
+   "xp": 0.35
+  },
+  {
+   "input": "minecraft:copper_axe",
+   "output": "minecraft:copper_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:copper_boots",
+   "output": "minecraft:copper_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:copper_chestplate",
+   "output": "minecraft:copper_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:copper_helmet",
+   "output": "minecraft:copper_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:copper_hoe",
+   "output": "minecraft:copper_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:copper_leggings",
+   "output": "minecraft:copper_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:copper_ore",
+   "output": "minecraft:copper_ingot",
+   "xp": 0.7
+  },
+  {
+   "input": "minecraft:copper_pickaxe",
+   "output": "minecraft:copper_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:copper_shovel",
+   "output": "minecraft:copper_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:copper_sword",
+   "output": "minecraft:copper_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:cyan_terracotta",
+   "output": "minecraft:cyan_glazed_terracotta",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:dark_oak_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:dark_oak_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:deepslate_bricks",
+   "output": "minecraft:cracked_deepslate_bricks",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:deepslate_coal_ore",
+   "output": "minecraft:coal",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:deepslate_copper_ore",
+   "output": "minecraft:copper_ingot",
+   "xp": 0.7
+  },
+  {
+   "input": "minecraft:deepslate_diamond_ore",
+   "output": "minecraft:diamond",
+   "xp": 1
+  },
+  {
+   "input": "minecraft:deepslate_emerald_ore",
+   "output": "minecraft:emerald",
+   "xp": 1
+  },
+  {
+   "input": "minecraft:deepslate_gold_ore",
+   "output": "minecraft:gold_ingot",
+   "xp": 1
+  },
+  {
+   "input": "minecraft:deepslate_iron_ore",
+   "output": "minecraft:iron_ingot",
+   "xp": 0.7
+  },
+  {
+   "input": "minecraft:deepslate_lapis_ore",
+   "output": "minecraft:lapis_lazuli",
+   "xp": 0.2
+  },
+  {
+   "input": "minecraft:deepslate_redstone_ore",
+   "output": "minecraft:redstone",
+   "xp": 0.7
+  },
+  {
+   "input": "minecraft:deepslate_tiles",
+   "output": "minecraft:cracked_deepslate_tiles",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:diamond_ore",
+   "output": "minecraft:diamond",
+   "xp": 1
+  },
+  {
+   "input": "minecraft:emerald_ore",
+   "output": "minecraft:emerald",
+   "xp": 1
+  },
+  {
+   "input": "minecraft:gold_ore",
+   "output": "minecraft:gold_ingot",
+   "xp": 1
+  },
+  {
+   "input": "minecraft:golden_axe",
+   "output": "minecraft:gold_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:golden_boots",
+   "output": "minecraft:gold_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:golden_chestplate",
+   "output": "minecraft:gold_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:golden_helmet",
+   "output": "minecraft:gold_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:golden_hoe",
+   "output": "minecraft:gold_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:golden_leggings",
+   "output": "minecraft:gold_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:golden_pickaxe",
+   "output": "minecraft:gold_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:golden_shovel",
+   "output": "minecraft:gold_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:golden_sword",
+   "output": "minecraft:gold_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:gray_terracotta",
+   "output": "minecraft:gray_glazed_terracotta",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:green_terracotta",
+   "output": "minecraft:green_glazed_terracotta",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:iron_axe",
+   "output": "minecraft:iron_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:iron_boots",
+   "output": "minecraft:iron_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:iron_chestplate",
+   "output": "minecraft:iron_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:iron_helmet",
+   "output": "minecraft:iron_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:iron_hoe",
+   "output": "minecraft:iron_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:iron_leggings",
+   "output": "minecraft:iron_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:iron_ore",
+   "output": "minecraft:iron_ingot",
+   "xp": 0.7
+  },
+  {
+   "input": "minecraft:iron_pickaxe",
+   "output": "minecraft:iron_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:iron_shovel",
+   "output": "minecraft:iron_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:iron_sword",
+   "output": "minecraft:iron_nugget",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:jungle_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:jungle_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:kelp",
+   "output": "minecraft:dried_kelp",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:lapis_ore",
+   "output": "minecraft:lapis_lazuli",
+   "xp": 0.2
+  },
+  {
+   "input": "minecraft:light_blue_terracotta",
+   "output": "minecraft:light_blue_glazed_terracotta",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:light_gray_terracotta",
+   "output": "minecraft:silver_glazed_terracotta",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:lime_terracotta",
+   "output": "minecraft:lime_glazed_terracotta",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:magenta_terracotta",
+   "output": "minecraft:magenta_glazed_terracotta",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:mangrove_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:mangrove_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:mutton",
+   "output": "minecraft:cooked_mutton",
+   "xp": 0.35
+  },
+  {
+   "input": "minecraft:nether_brick",
+   "output": "minecraft:cracked_nether_bricks",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:nether_gold_ore",
+   "output": "minecraft:gold_ingot",
+   "xp": 1
+  },
+  {
+   "input": "minecraft:netherrack",
+   "output": "minecraft:netherbrick",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:oak_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:oak_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:orange_terracotta",
+   "output": "minecraft:orange_glazed_terracotta",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:pale_oak_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:pale_oak_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:pink_terracotta",
+   "output": "minecraft:pink_glazed_terracotta",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:polished_blackstone_bricks",
+   "output": "minecraft:cracked_polished_blackstone_bricks",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:porkchop",
+   "output": "minecraft:cooked_porkchop",
+   "xp": 0.35
+  },
+  {
+   "input": "minecraft:potato",
+   "output": "minecraft:baked_potato",
+   "xp": 0.35
+  },
+  {
+   "input": "minecraft:purple_terracotta",
+   "output": "minecraft:purple_glazed_terracotta",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:quartz_block",
+   "output": "minecraft:smooth_quartz",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:quartz_ore",
+   "output": "minecraft:quartz",
+   "xp": 0.2
+  },
+  {
+   "input": "minecraft:rabbit",
+   "output": "minecraft:cooked_rabbit",
+   "xp": 0.35
+  },
+  {
+   "input": "minecraft:raw_copper",
+   "output": "minecraft:copper_ingot",
+   "xp": 0.7
+  },
+  {
+   "input": "minecraft:raw_gold",
+   "output": "minecraft:gold_ingot",
+   "xp": 1
+  },
+  {
+   "input": "minecraft:raw_iron",
+   "output": "minecraft:iron_ingot",
+   "xp": 0.7
+  },
+  {
+   "input": "minecraft:red_sandstone",
+   "output": "minecraft:smooth_red_sandstone",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:red_terracotta",
+   "output": "minecraft:red_glazed_terracotta",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:redstone_ore",
+   "output": "minecraft:redstone",
+   "xp": 0.7
+  },
+  {
+   "input": "minecraft:salmon",
+   "output": "minecraft:cooked_salmon",
+   "xp": 0.35
+  },
+  {
+   "input": "minecraft:sand",
+   "output": "minecraft:glass",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:sandstone",
+   "output": "minecraft:smooth_sandstone",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:sea_pickle",
+   "output": "minecraft:lime_dye",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:spruce_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:spruce_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stone",
+   "output": "minecraft:smooth_stone",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:stone_bricks",
+   "output": "minecraft:cracked_stone_bricks",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:stripped_acacia_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stripped_acacia_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stripped_birch_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stripped_birch_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stripped_cherry_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stripped_cherry_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stripped_dark_oak_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stripped_dark_oak_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stripped_jungle_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stripped_jungle_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stripped_mangrove_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stripped_mangrove_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stripped_oak_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stripped_oak_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stripped_pale_oak_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stripped_pale_oak_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stripped_spruce_log",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:stripped_spruce_wood",
+   "output": "minecraft:charcoal",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:wet_sponge",
+   "output": "minecraft:sponge",
+   "xp": 0.15
+  },
+  {
+   "input": "minecraft:white_terracotta",
+   "output": "minecraft:white_glazed_terracotta",
+   "xp": 0.1
+  },
+  {
+   "input": "minecraft:yellow_terracotta",
+   "output": "minecraft:yellow_glazed_terracotta",
+   "xp": 0.1
+  }
+ ],
+ "fuel": [
+  {
+   "item": "minecraft:acacia_door",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:acacia_fence",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:acacia_fence_gate",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:acacia_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:acacia_planks",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:acacia_sapling",
+   "ticks": 100,
+   "residue": null
+  },
+  {
+   "item": "minecraft:acacia_sign",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:acacia_slab",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:acacia_stairs",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:acacia_trapdoor",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:acacia_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:bamboo",
+   "ticks": 50,
+   "residue": null
+  },
+  {
+   "item": "minecraft:bamboo_block",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:bamboo_door",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:bamboo_fence",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:bamboo_fence_gate",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:bamboo_mosaic",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:bamboo_mosaic_slab",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:bamboo_mosaic_stairs",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:bamboo_planks",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:bamboo_sign",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:bamboo_slab",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:bamboo_stairs",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:bamboo_trapdoor",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:banner",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:barrel",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:birch_door",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:birch_fence",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:birch_fence_gate",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:birch_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:birch_planks",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:birch_sapling",
+   "ticks": 100,
+   "residue": null
+  },
+  {
+   "item": "minecraft:birch_sign",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:birch_slab",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:birch_stairs",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:birch_trapdoor",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:birch_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:blaze_rod",
+   "ticks": 2400,
+   "residue": null
+  },
+  {
+   "item": "minecraft:bookshelf",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:bow",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:bowl",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:charcoal",
+   "ticks": 1600,
+   "residue": null
+  },
+  {
+   "item": "minecraft:cherry_door",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:cherry_fence",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:cherry_fence_gate",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:cherry_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:cherry_planks",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:cherry_sapling",
+   "ticks": 100,
+   "residue": null
+  },
+  {
+   "item": "minecraft:cherry_sign",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:cherry_slab",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:cherry_stairs",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:cherry_trapdoor",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:cherry_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:chest",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:coal",
+   "ticks": 1600,
+   "residue": null
+  },
+  {
+   "item": "minecraft:coal_block",
+   "ticks": 16000,
+   "residue": null
+  },
+  {
+   "item": "minecraft:composter",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:crafting_table",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:crossbow",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:dark_oak_door",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:dark_oak_fence",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:dark_oak_fence_gate",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:dark_oak_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:dark_oak_planks",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:dark_oak_sapling",
+   "ticks": 100,
+   "residue": null
+  },
+  {
+   "item": "minecraft:dark_oak_sign",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:dark_oak_slab",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:dark_oak_stairs",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:dark_oak_trapdoor",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:dark_oak_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:dried_kelp",
+   "ticks": 4000,
+   "residue": null
+  },
+  {
+   "item": "minecraft:fence_gate",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:fletching_table",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:jukebox",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:jungle_door",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:jungle_fence",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:jungle_fence_gate",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:jungle_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:jungle_planks",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:jungle_sapling",
+   "ticks": 100,
+   "residue": null
+  },
+  {
+   "item": "minecraft:jungle_sign",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:jungle_slab",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:jungle_stairs",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:jungle_trapdoor",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:jungle_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:ladder",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:lava_bucket",
+   "ticks": 20000,
+   "residue": "minecraft:bucket"
+  },
+  {
+   "item": "minecraft:lectern",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:loom",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:mangrove_door",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:mangrove_fence",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:mangrove_fence_gate",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:mangrove_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:mangrove_planks",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:mangrove_sign",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:mangrove_slab",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:mangrove_stairs",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:mangrove_trapdoor",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:mangrove_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:noteblock",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:oak_fence",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:oak_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:oak_planks",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:oak_sapling",
+   "ticks": 100,
+   "residue": null
+  },
+  {
+   "item": "minecraft:oak_sign",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:oak_slab",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:oak_stairs",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:oak_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:pale_oak_door",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:pale_oak_fence",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:pale_oak_fence_gate",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:pale_oak_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:pale_oak_planks",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:pale_oak_sapling",
+   "ticks": 100,
+   "residue": null
+  },
+  {
+   "item": "minecraft:pale_oak_sign",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:pale_oak_slab",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:pale_oak_stairs",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:pale_oak_trapdoor",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:pale_oak_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:spruce_door",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:spruce_fence",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:spruce_fence_gate",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:spruce_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:spruce_planks",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:spruce_sapling",
+   "ticks": 100,
+   "residue": null
+  },
+  {
+   "item": "minecraft:spruce_sign",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:spruce_slab",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:spruce_stairs",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:spruce_trapdoor",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:spruce_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stick",
+   "ticks": 100,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_acacia_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_acacia_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_bamboo_block",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_birch_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_birch_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_cherry_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_cherry_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_dark_oak_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_dark_oak_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_jungle_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_jungle_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_mangrove_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_mangrove_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_oak_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_oak_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_pale_oak_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_pale_oak_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_spruce_log",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:stripped_spruce_wood",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:trapdoor",
+   "ticks": 300,
+   "residue": null
+  },
+  {
+   "item": "minecraft:wooden_axe",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:wooden_door",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:wooden_hoe",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:wooden_pickaxe",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:wooden_shovel",
+   "ticks": 200,
+   "residue": null
+  },
+  {
+   "item": "minecraft:wooden_sword",
+   "ticks": 200,
+   "residue": null
+  }
+ ]
+}

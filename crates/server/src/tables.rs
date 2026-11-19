@@ -116,6 +116,8 @@ pub(crate) const FALLBACK_HARDNESS: f64 = 1.0;
 /// Durezza e strumento efficace del blocco con questo nome (senza stati). `None` = non in tabella: si usa `FALLBACK_HARDNESS` e nessuno strumento.
 pub(crate) fn block_hardness(block_name: &str) -> Option<&'static BlockHardness> {
     static T: OnceLock<HashMap<String, BlockHardness>> = OnceLock::new();
+    // la fornace accesa ha la durezza di quella spenta (la tabella le elenca insieme sotto il nome base)
+    let block_name = if block_name == "minecraft:lit_furnace" { "minecraft:furnace" } else { block_name };
     T.get_or_init(|| serde_json::from_str::<HardnessFile>(include_str!("../data/block_hardness.json")).expect("block_hardness.json non valido").blocks)
         .get(block_name)
 }

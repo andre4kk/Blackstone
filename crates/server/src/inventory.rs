@@ -11,8 +11,9 @@ use crate::{
 use bedrock_protocol::{
     generated::{
         enums::container_enum_name::{
-            ARMOR_CONTAINER, COMBINED_HOTBAR_AND_INVENTORY_CONTAINER, CRAFTING_INPUT_CONTAINER, CREATED_OUTPUT_CONTAINER, CURSOR_CONTAINER, HOTBAR_CONTAINER,
-            INVENTORY_CONTAINER, LEVEL_ENTITY_CONTAINER, OFFHAND_CONTAINER,
+            ARMOR_CONTAINER, COMBINED_HOTBAR_AND_INVENTORY_CONTAINER, CRAFTING_INPUT_CONTAINER, CREATED_OUTPUT_CONTAINER, CURSOR_CONTAINER,
+            FURNACE_FUEL_CONTAINER, FURNACE_INGREDIENT_CONTAINER, FURNACE_RESULT_CONTAINER, HOTBAR_CONTAINER, INVENTORY_CONTAINER, LEVEL_ENTITY_CONTAINER,
+            OFFHAND_CONTAINER,
         },
         FullContainerName, InventoryContent, InventorySlot, ItemStackResponse, ItemStackResponseContainerInfo, ItemStackResponseInfo,
         ItemStackResponseSlotInfo, PlayerHotbar,
@@ -162,7 +163,7 @@ impl Item {
     }
 
     /// Due pile si fondono solo se, oltre al genere, hanno lo stesso NBT (due libri incantati diversi non si impilano).
-    fn stacks_with(&self, other: &Item) -> bool {
+    pub(crate) fn stacks_with(&self, other: &Item) -> bool {
         self.same_kind(other) && self.nbt == other.nbt
     }
 
@@ -182,7 +183,7 @@ impl Item {
         registry::items().name(self.id).map_or(MAX_STACK, max_stack_of)
     }
 
-    fn with_count(&self, count: u16) -> Item {
+    pub(crate) fn with_count(&self, count: u16) -> Item {
         Item { count, ..self.clone() }
     }
 
@@ -223,9 +224,16 @@ enum Loc {
     Created,
     /// Casella della griglia di crafting (0..4 senza banco, 0..9 col banco).
     Grid(u8),
-    /// Casella del forziere aperto (0..27, 0..54 se doppio).
+    /// Casella del contenitore a blocco aperto: forziere (0..27, 0..54 se doppio) o fornace (0 ingresso, 1 combustibile, 2 risultato).
     Chest(u8),
 }
+
+/// Caselle della fornace nella finestra (ordine di Dragonfly: ingresso, combustibile, risultato).
+pub(crate) const FURNACE_INGREDIENT: u8 = 0;
+pub(crate) const FURNACE_FUEL: u8 = 1;
+pub(crate) const FURNACE_RESULT: u8 = 2;
+/// Tipo di contenitore della fornace in `ContainerOpen` (`ContainerTypeFurnace` di gophertunnel).
+pub(crate) const CONTAINER_TYPE_FURNACE: u8 = 2;
 
 /// Quali finestre ha aperte il giocatore: serve a dare un senso ai numeri di casella e di finestra che scrive il client.
 #[derive(Clone, Copy, Debug, Default)]
@@ -235,6 +243,8 @@ struct Ctx {
     /// Caselle del forziere aperto (0 se nessuno) e ID della sua finestra.
     chest: usize,
     chest_window: u8,
+    /// Il contenitore aperto è una fornace: le sue tre caselle hanno tre contenitori diversi.
+    furnace: bool,
 }
 
 impl Loc {
@@ -242,7 +252,11 @@ impl Loc {
     fn resolve(container: u8, slot: u8, ctx: Ctx) -> Option<Loc> {
         let table = ctx.table;
         match container {
-            LEVEL_ENTITY_CONTAINER if (slot as usize) < ctx.chest => Some(Loc::Chest(slot)),
+            LEVEL_ENTITY_CONTAINER if !ctx.furnace && (slot as usize) < ctx.chest => Some(Loc::Chest(slot)),
+            // Dragonfly usa il numero di casella come indice nella finestra; qui conta il contenitore (l'indice può essere 0 o quello vero).
+            FURNACE_INGREDIENT_CONTAINER if ctx.furnace => Some(Loc::Chest(FURNACE_INGREDIENT)),
+            FURNACE_FUEL_CONTAINER if ctx.furnace => Some(Loc::Chest(FURNACE_FUEL)),
+            FURNACE_RESULT_CONTAINER if ctx.furnace => Some(Loc::Chest(FURNACE_RESULT)),
             CRAFTING_INPUT_CONTAINER => {
                 let (offset, size) = if table { (GRID_LARGE_OFFSET, GRID_LARGE) } else { (GRID_SMALL_OFFSET, GRID_SMALL) };
                 slot.checked_sub(offset).filter(|i| *i < size).map(Loc::Grid)
@@ -261,6 +275,15 @@ impl Loc {
     fn window(self, ctx: Ctx) -> (u32, u32, u8) {
         let table = ctx.table;
         match self {
+            Loc::Chest(i) if ctx.furnace => (
+                ctx.chest_window as u32,
+                i as u32,
+                match i {
+                    FURNACE_INGREDIENT => FURNACE_INGREDIENT_CONTAINER,
+                    FURNACE_FUEL => FURNACE_FUEL_CONTAINER,
+                    _ => FURNACE_RESULT_CONTAINER,
+                },
+            ),
             Loc::Chest(i) => (ctx.chest_window as u32, i as u32, LEVEL_ENTITY_CONTAINER),
             Loc::Grid(i) => (window::UI, i as u32 + if table { GRID_LARGE_OFFSET } else { GRID_SMALL_OFFSET } as u32, CRAFTING_INPUT_CONTAINER),
             Loc::Main(i) => (window::INVENTORY, i as u32, INVENTORY_CONTAINER),
@@ -343,14 +366,22 @@ pub(crate) struct Inventory {
     /// ID della finestra aperta del banco (1..=99, come Dragonfly `nextWindowID`) e ultimo assegnato.
     table_window: u8,
     last_window: u8,
-    /// Forziere aperto: finestra e posizioni dei blocchi che ne contengono le caselle (una, o due se è doppio: prima metà della
-    /// finestra nel primo blocco, seconda metà nel secondo). Le caselle stanno in `contents.chest`.
+    /// Contenitore a blocco aperto (forziere o fornace): finestra e posizioni dei blocchi che ne contengono le caselle (una, o due se è un
+    /// forziere doppio: prima metà della finestra nel primo blocco, seconda metà nel secondo). Le caselle stanno in `contents.chest`.
     chest: Option<ChestWindow>,
 }
 
-/// La finestra di un forziere aperto.
+/// Che genere di contenitore a blocco è aperto.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum WindowKind {
+    Chest,
+    Furnace,
+}
+
+/// La finestra di un contenitore a blocco aperto (forziere o fornace).
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct ChestWindow {
+    pub kind: WindowKind,
     pub window: u8,
     /// Blocchi che la compongono, nell'ordine delle caselle (27 ciascuno).
     pub parts: Vec<[i32; 3]>,
@@ -488,7 +519,12 @@ impl Inventory {
     }
 
     fn ctx(&self) -> Ctx {
-        Ctx { table: self.table.is_some(), chest: self.contents.chest.len(), chest_window: self.chest.as_ref().map_or(0, |c| c.window) }
+        Ctx {
+            table: self.table.is_some(),
+            chest: self.contents.chest.len(),
+            chest_window: self.chest.as_ref().map_or(0, |c| c.window),
+            furnace: self.chest.as_ref().is_some_and(|c| c.kind == WindowKind::Furnace),
+        }
     }
 
     /// Il forziere aperto, se c'è.
@@ -499,12 +535,21 @@ impl Inventory {
     /// Apre un forziere composto dai blocchi `parts` con le caselle `items` (27 per blocco) e dà l'ID della finestra. Ogni casella piena
     /// prende un ID di pila nuovo. Ciò che era aperto va chiuso prima.
     pub fn open_chest(&mut self, parts: Vec<[i32; 3]>, items: Vec<Item>) -> u8 {
+        self.open_container(WindowKind::Chest, parts, items)
+    }
+
+    /// Apre la fornace in `pos` con le sue tre caselle (ingresso, combustibile, risultato).
+    pub fn open_furnace(&mut self, pos: [i32; 3], items: Vec<Item>) -> u8 {
+        self.open_container(WindowKind::Furnace, vec![pos], items)
+    }
+
+    fn open_container(&mut self, kind: WindowKind, parts: Vec<[i32; 3]>, items: Vec<Item>) -> u8 {
         let window = self.next_window();
         self.contents.chest = vec![Slot::default(); items.len()];
         for (i, item) in items.into_iter().enumerate() {
             self.fill(Loc::Chest(i as u8), item);
         }
-        self.chest = Some(ChestWindow { window, parts });
+        self.chest = Some(ChestWindow { kind, window, parts });
         window
     }
 
@@ -529,25 +574,30 @@ impl Inventory {
         Some(self.slot_packet(Loc::Chest(i as u8)))
     }
 
-    /// `InventoryContent` del forziere aperto (tutte le caselle).
+    /// `InventoryContent` del contenitore aperto (tutte le caselle). Per la fornace il nome è quello dell'ingresso (Dragonfly non ne mette).
     pub fn chest_content_packet(&self) -> Option<Packet> {
         let window = self.chest.as_ref()?.window;
+        let name = if self.ctx().furnace { FURNACE_INGREDIENT_CONTAINER } else { LEVEL_ENTITY_CONTAINER };
         let slots = (0..self.contents.chest.len() as u8).map(|i| self.stack_of(Loc::Chest(i))).collect();
         Some(
             InventoryContent {
                 container_id: window as u32,
                 slots,
-                full_container_name: FullContainerName { container_name: LEVEL_ENTITY_CONTAINER, dynamic_id: None },
+                full_container_name: FullContainerName { container_name: name, dynamic_id: None },
                 storage_item: ItemStack::air(),
             }
             .packet(),
         )
     }
 
-    /// Vero se la richiesta tocca caselle del forziere aperto.
+    /// Vero se la richiesta tocca caselle del contenitore a blocco aperto.
     pub fn touches_chest(&self, req: &StackRequest) -> bool {
-        self.chest.is_some()
-            && referenced(req).iter().any(|&(container, slot)| container == LEVEL_ENTITY_CONTAINER && (slot as usize) < self.contents.chest.len())
+        self.chest.is_some() && referenced(req).iter().any(|&(container, slot)| matches!(Loc::resolve(container, slot, self.ctx()), Some(Loc::Chest(_))))
+    }
+
+    /// Vero se `loc` è la casella del risultato della fornace aperta: ci si può solo prendere.
+    fn is_furnace_result(&self, loc: Loc) -> bool {
+        loc == Loc::Chest(FURNACE_RESULT) && self.ctx().furnace
     }
 
     /// Chiude il banco e svuota la griglia di crafting e il cursore (Dragonfly `MoveItemsToInventory`: `ui.Clear()`): restituisce
@@ -820,6 +870,9 @@ impl Inventory {
         if to == Loc::Created {
             return Err("nella casella creata non si può mettere nulla".into());
         }
+        if self.is_furnace_result(to) {
+            return Err("nel risultato della fornace non si può mettere nulla".into());
+        }
         let (a, b) = (self.contents.get(from).item.clone(), self.contents.get(to).item.clone());
         if a.is_empty() || a.count < count {
             return Err(format!("si chiedono {count} oggetti ma la casella ne ha {}", if a.is_empty() { 0 } else { a.count }));
@@ -835,7 +888,7 @@ impl Inventory {
 
     fn swap(&mut self, run: &mut Run, src: &SlotRef, dst: &SlotRef) -> Result<(), String> {
         let (from, to) = (self.verified(src)?, self.verified(dst)?);
-        if from == to || from == Loc::Created || to == Loc::Created {
+        if from == to || from == Loc::Created || to == Loc::Created || self.is_furnace_result(from) || self.is_furnace_result(to) {
             return Err("scambio non valido".into());
         }
         let (a, b) = (self.contents.get(from).clone(), self.contents.get(to).clone());

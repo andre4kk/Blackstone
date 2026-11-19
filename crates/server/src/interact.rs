@@ -183,6 +183,11 @@ impl Server {
             }
             return true;
         }
+        if matches!(short(state), "furnace" | "lit_furnace") {
+            // Fornace (Dragonfly `Furnace.Activate`): apre la finestra con ingresso, combustibile e risultato.
+            self.use_furnace(pid, u.pos, mode, eyes);
+            return true;
+        }
         if short(state) == "chest" {
             // Forziere (Dragonfly `Chest.Activate`): apre la finestra con le sue 27 (o 54) caselle.
             self.use_chest(pid, u.pos, mode, eyes);

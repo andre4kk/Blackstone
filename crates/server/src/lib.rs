@@ -8,6 +8,7 @@ pub mod config;
 mod disk;
 mod entity;
 mod events;
+mod furnace;
 mod gen_client;
 mod handlers;
 mod interact;
@@ -19,6 +20,7 @@ mod placement;
 mod playerdata;
 mod recipes;
 mod registry;
+mod smelting;
 mod storage;
 mod streaming;
 mod survival;
@@ -446,6 +448,7 @@ impl Server {
         self.movement_tick();
         self.void_tick();
         self.hunger_tick();
+        self.furnaces_tick();
         self.eating_tick();
         self.tick_count += 1;
         self.run_scheduled();
@@ -498,16 +501,26 @@ impl Server {
         // Celle il cui blocco ha cambiato nome (chi aveva aperto una finestra lì la perde) e block entity di forziere perduti (il contenuto cade a terra).
         let mut gone: Vec<[i32; 3]> = Vec::new();
         let mut lost_chests: Vec<([i32; 3], Vec<u8>)> = Vec::new();
+        let mut lost_furnaces: Vec<([i32; 3], Vec<u8>)> = Vec::new();
         for c in changes.iter().filter(|c| (min..max).contains(&c.pos[1])) {
             let (cx, cz) = (c.pos[0].div_euclid(16), c.pos[2].div_euclid(16));
             let Some(chunk) = self.chunks.get_mut(&(dim as u8, cx, cz)) else { continue };
             let (lx, lz) = (c.pos[0].rem_euclid(16) as usize, c.pos[2].rem_euclid(16) as usize);
             let old = chunk.block(lx, c.pos[1], lz);
             chunk.set_block(lx, c.pos[1], lz, c.hash, c.water);
-            if old != c.hash && registry::blocks().state(old).map(|s| &s.name) != registry::blocks().state(c.hash).map(|s| &s.name) {
+            // la fornace che si accende o si spegne cambia nome ma resta la stessa: il suo block entity e le finestre aperte restano
+            if old != c.hash
+                && registry::blocks().state(old).map(|s| &s.name) != registry::blocks().state(c.hash).map(|s| &s.name)
+                && !crate::furnace::is_lit_swap(old, c.hash)
+            {
                 if crate::chest::is_chest(old) {
                     if let Some(be) = chunk.block_entities.iter().find(|b| [b.x, b.y, b.z] == c.pos) {
                         lost_chests.push((c.pos, be.nbt.clone()));
+                    }
+                }
+                if crate::furnace::is_furnace(old) {
+                    if let Some(be) = chunk.block_entities.iter().find(|b| [b.x, b.y, b.z] == c.pos) {
+                        lost_furnaces.push((c.pos, be.nbt.clone()));
                     }
                 }
                 chunk.remove_block_entity(c.pos);
@@ -535,6 +548,9 @@ impl Server {
         }
         for (pos, nbt) in lost_chests {
             self.chest_removed(pos, &nbt);
+        }
+        for (pos, nbt) in lost_furnaces {
+            self.furnace_removed(pos, &nbt);
         }
         applied.into_iter().map(|(_, c)| c).collect()
     }

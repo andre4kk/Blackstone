@@ -5556,3 +5556,271 @@ mod chests {
         assert!(packets(&mut h.sent).iter().any(|(to, p)| *to == 2 && p.id == id::BLOCK_EVENT), "Bob vede il forziere chiudersi");
     }
 }
+
+mod furnaces {
+    use super::blocks::{air, change};
+    use super::placing::{packets, place_packet, setup, EYES, TOP};
+    use super::*;
+    use crate::{
+        furnace::FurnaceData,
+        inventory::{Item, CONTAINER_TYPE_FURNACE},
+        registry::{blocks, StateValue},
+    };
+    use bedrock_protocol::{
+        container_set_data::ContainerSetData,
+        generated::enums::container_enum_name::{FURNACE_FUEL_CONTAINER, FURNACE_INGREDIENT_CONTAINER, FURNACE_RESULT_CONTAINER, HOTBAR_CONTAINER},
+    };
+    use vgen::Dim;
+
+    fn item(name: &str, count: u16) -> Item {
+        Item::from_name(name, count).unwrap()
+    }
+
+    fn put_furnace(h: &mut Harness, pos: [i32; 3], lit: bool) {
+        let name = if lit { "minecraft:lit_furnace" } else { "minecraft:furnace" };
+        let base = blocks().state(blocks().default_hash(name).unwrap()).unwrap().clone();
+        let hash = base.with("minecraft:cardinal_direction", StateValue::Str("north".into())).hash();
+        h.server.set_blocks(Dim::Overworld, &[change(pos, hash, false)]);
+        h.server.furnace_placed(pos);
+    }
+
+    fn set(h: &mut Harness, pos: [i32; 3], f: impl FnOnce(&mut FurnaceData)) {
+        let mut data = h.server.furnace_data(pos);
+        f(&mut data);
+        h.server.save_furnace(pos, &data, false);
+    }
+
+    fn click(h: &mut Harness, pid: u64, pos: [i32; 3]) -> Vec<(u64, Packet)> {
+        h.receive(pid, &[place_packet(pos, 1, &ItemStack::air())]);
+        packets(&mut h.sent)
+    }
+
+    fn block_name(h: &Harness, pos: [i32; 3]) -> String {
+        blocks().state(h.server.block_at(Dim::Overworld, pos).unwrap().0).unwrap().name.clone()
+    }
+
+    fn run(h: &mut Harness, ticks: u32) {
+        for _ in 0..ticks {
+            h.server.furnaces_tick();
+        }
+    }
+
+    fn place_items(request_id: i32, count: u8, src: (u8, u8, i32), dst: (u8, u8, i32)) -> Packet {
+        stack_request_packet(|w| {
+            w.var_i32(request_id);
+            w.var_u32(1);
+            w.var_u32(1);
+            w.u8(1);
+            w.u8(count);
+            slot_bytes(w, src.0, src.1, src.2);
+            slot_bytes(w, dst.0, dst.1, dst.2);
+            w.var_u32(0);
+            w.i32(-1);
+        })
+    }
+
+    fn net_id(h: &Harness, pid: u64, container: u8, slot: u8) -> i32 {
+        h.server.players[&pid].inventory.stack_at(container, slot).unwrap().net_id.unwrap_or(0)
+    }
+
+    fn to_all(out: &[(u64, Packet)], packet_id: u32) -> Vec<&Packet> {
+        out.iter().filter(|(_, p)| p.id == packet_id).map(|(_, p)| p).collect()
+    }
+
+    #[test]
+    fn placing_a_furnace_creates_its_block_entity_and_click_opens_it() {
+        let mut h = setup(GameMode::Survival);
+        put_furnace(&mut h, TOP, false);
+        let be = h.server.chunks[&(0, 0, 0)].block_entities.iter().find(|b| [b.x, b.y, b.z] == TOP).expect("block entity");
+        assert_eq!(FurnaceData::parse(&be.nbt), FurnaceData::empty());
+        set(&mut h, TOP, |d| {
+            d.items[0] = item("minecraft:raw_iron", 5);
+            (d.burn_time, d.burn_duration, d.cook_time) = (100, 1600, 20);
+        });
+        drop(packets(&mut h.sent));
+        let out = click(&mut h, 1, TOP);
+        let window = h.server.players[&1].inventory.chest().unwrap().window;
+        let open: Vec<_> = out.iter().filter(|(t, p)| *t == 1 && p.id == ContainerOpen::ID).collect();
+        assert_eq!(open.len(), 1);
+        assert_eq!(open[0].1.body[..2], [window, CONTAINER_TYPE_FURNACE]);
+        assert!(out.iter().any(|(t, p)| *t == 1 && p.id == id::INVENTORY_CONTENT), "caselle");
+        assert_eq!(to_all(&out, ContainerSetData::ID).len(), 3, "barre iniziali");
+        assert_eq!(h.server.players[&1].inventory.chest_items()[0].count, 5);
+    }
+
+    #[test]
+    fn iron_smelts_in_200_ticks() {
+        let mut h = setup(GameMode::Survival);
+        put_furnace(&mut h, TOP, false);
+        set(&mut h, TOP, |d| {
+            d.items[0] = item("minecraft:raw_iron", 2);
+            d.items[1] = item("minecraft:coal", 1);
+        });
+        run(&mut h, 1);
+        assert_eq!(block_name(&h, TOP), "minecraft:lit_furnace", "si accende subito");
+        assert_eq!(h.server.furnace_data(TOP).items[1].count, 0, "l'ultimo carbone è stato messo nel fuoco");
+        run(&mut h, 198);
+        let d = h.server.furnace_data(TOP);
+        assert!(d.items[2].is_empty() && d.cook_time == 199, "dopo 199 tick non è ancora cotto");
+        run(&mut h, 1);
+        let d = h.server.furnace_data(TOP);
+        assert_eq!((d.items[2].id, d.items[2].count), (item("minecraft:iron_ingot", 1).id, 1), "lingotto dopo 200 tick");
+        assert_eq!(d.items[0].count, 1);
+        assert_eq!(d.cook_time, 0);
+        assert_eq!(block_name(&h, TOP), "minecraft:lit_furnace");
+        assert!(h.server.chunks[&(0, 0, 0)].block_entities.iter().any(|b| [b.x, b.y, b.z] == TOP), "accendersi non cancella il block entity");
+    }
+
+    #[test]
+    fn fuel_runs_out_and_the_furnace_goes_dark() {
+        let mut h = setup(GameMode::Survival);
+        put_furnace(&mut h, TOP, false);
+        set(&mut h, TOP, |d| {
+            d.items[0] = item("minecraft:raw_iron", 9);
+            d.items[1] = item("minecraft:coal", 1);
+        });
+        run(&mut h, 1600);
+        let d = h.server.furnace_data(TOP);
+        assert_eq!((d.items[2].count, d.items[0].count), (8, 1), "un carbone (80 s) cuoce otto oggetti");
+        run(&mut h, 1);
+        let d = h.server.furnace_data(TOP);
+        assert_eq!((d.burn_time, d.burn_duration), (0, 0));
+        assert_eq!(block_name(&h, TOP), "minecraft:furnace", "si spegne");
+        run(&mut h, 50);
+        assert_eq!(h.server.furnace_data(TOP).items[2].count, 8, "senza combustibile non cuoce più");
+    }
+
+    #[test]
+    fn a_full_result_stops_smelting() {
+        let mut h = setup(GameMode::Survival);
+        put_furnace(&mut h, TOP, false);
+        set(&mut h, TOP, |d| {
+            d.items[0] = item("minecraft:raw_iron", 3);
+            d.items[1] = item("minecraft:coal", 2);
+            d.items[2] = item("minecraft:iron_ingot", 64);
+        });
+        run(&mut h, 300);
+        let d = h.server.furnace_data(TOP);
+        assert_eq!((d.items[0].count, d.items[1].count, d.items[2].count), (3, 2, 64), "nulla è cambiato e il carbone non si spreca");
+        assert_eq!(block_name(&h, TOP), "minecraft:furnace");
+        // un risultato diverso non si mescola
+        set(&mut h, TOP, |d| d.items[2] = item("minecraft:gold_ingot", 1));
+        run(&mut h, 300);
+        assert_eq!(h.server.furnace_data(TOP).items[0].count, 3);
+    }
+
+    #[test]
+    fn lava_bucket_leaves_an_empty_bucket() {
+        let mut d = FurnaceData::empty();
+        d.items[0] = item("minecraft:cobblestone", 1);
+        d.items[1] = item("minecraft:lava_bucket", 1);
+        d.tick(false, || 0.0);
+        assert_eq!((d.items[1].id, d.items[1].count, d.burn_duration), (item("minecraft:bucket", 1).id, 1, 20000));
+    }
+
+    #[test]
+    fn window_requests_fill_the_slots_and_the_result_is_take_only() {
+        let mut h = setup(GameMode::Survival);
+        put_furnace(&mut h, TOP, false);
+        h.server.players.get_mut(&1).unwrap().inventory.set_main(1, item("minecraft:raw_iron", 4));
+        h.server.players.get_mut(&1).unwrap().inventory.set_main(2, item("minecraft:coal", 4));
+        set(&mut h, TOP, |d| d.items[2] = item("minecraft:iron_ingot", 5));
+        click(&mut h, 1, TOP);
+        drop(packets(&mut h.sent));
+        // ingresso e combustibile dalle caselle 1 e 2 della barra
+        let (raw, coal) = (net_id(&h, 1, HOTBAR_CONTAINER, 1), net_id(&h, 1, HOTBAR_CONTAINER, 2));
+        h.receive(1, &[place_items(-1, 4, (HOTBAR_CONTAINER, 1, raw), (FURNACE_INGREDIENT_CONTAINER, 0, 0))]);
+        h.receive(1, &[place_items(-2, 2, (HOTBAR_CONTAINER, 2, coal), (FURNACE_FUEL_CONTAINER, 1, 0))]);
+        let out = packets(&mut h.sent);
+        assert!(to_all(&out, id::ITEM_STACK_RESPONSE).iter().all(|p| p.body[..2] == [1, 0]), "{:?}", to_all(&out, id::ITEM_STACK_RESPONSE));
+        let d = h.server.furnace_data(TOP);
+        assert_eq!((d.items[0].count, d.items[1].count), (4, 2));
+        // nel risultato non si mette nulla
+        let coal = net_id(&h, 1, HOTBAR_CONTAINER, 2);
+        h.receive(1, &[place_items(-3, 1, (HOTBAR_CONTAINER, 2, coal), (FURNACE_RESULT_CONTAINER, 2, 0))]);
+        assert_eq!(to_all(&packets(&mut h.sent), id::ITEM_STACK_RESPONSE)[0].body[..2], [1, 1]);
+        assert_eq!(h.server.furnace_data(TOP).items[2].count, 5);
+        // dal risultato si prende
+        let result = net_id(&h, 1, FURNACE_RESULT_CONTAINER, 2);
+        h.receive(1, &[place_items(-5, 5, (FURNACE_RESULT_CONTAINER, 2, result), (HOTBAR_CONTAINER, 3, 0))]);
+        assert_eq!(to_all(&packets(&mut h.sent), id::ITEM_STACK_RESPONSE)[0].body[..2], [1, 0]);
+        assert!(h.server.furnace_data(TOP).items[2].is_empty());
+        assert_eq!(h.server.players[&1].inventory.main(3).count, 5);
+        // la cottura riparte dal contenuto scritto dalle richieste
+        run(&mut h, 200);
+        assert_eq!(h.server.furnace_data(TOP).items[2].count, 1);
+    }
+
+    #[test]
+    fn viewers_get_progress_and_slot_updates_and_closing_uses_the_furnace_type() {
+        let mut h = setup(GameMode::Survival);
+        h.server.players.get_mut(&2).unwrap().pos = EYES;
+        put_furnace(&mut h, TOP, false);
+        set(&mut h, TOP, |d| {
+            d.items[0] = item("minecraft:raw_iron", 1);
+            d.items[1] = item("minecraft:coal", 1);
+        });
+        click(&mut h, 1, TOP);
+        click(&mut h, 2, TOP);
+        let (wa, wb) = (h.server.players[&1].inventory.chest().unwrap().window, h.server.players[&2].inventory.chest().unwrap().window);
+        drop(packets(&mut h.sent));
+        run(&mut h, 1);
+        let out = packets(&mut h.sent);
+        for (pid, w) in [(1, wa), (2, wb)] {
+            let data: Vec<_> = out.iter().filter(|(t, p)| *t == pid && p.id == ContainerSetData::ID).collect();
+            assert_eq!(data.len(), 3, "cottura, fiamma e durata cambiano al primo tick");
+            assert!(data.iter().all(|(_, p)| p.body[0] == w));
+            assert!(out.iter().any(|(t, p)| *t == pid && p.id == id::INVENTORY_SLOT), "il carbone è sparito dalla casella");
+        }
+        h.receive(1, &[ContainerClose { container_id: wa, container_type: 0, server_initiated_close: false }.packet()]);
+        let out = packets(&mut h.sent);
+        assert_eq!(to_all(&out, ContainerClose::ID)[0].body, [wa, CONTAINER_TYPE_FURNACE, 0]);
+        assert!(h.server.players[&1].inventory.chest().is_none());
+        assert!(h.server.players[&2].inventory.chest().is_some());
+    }
+
+    #[test]
+    fn breaking_a_furnace_drops_its_content_and_closes_viewers() {
+        let mut h = setup(GameMode::Survival);
+        h.server.players.get_mut(&2).unwrap().pos = EYES;
+        put_furnace(&mut h, TOP, true);
+        set(&mut h, TOP, |d| {
+            d.items[0] = item("minecraft:raw_iron", 5);
+            d.items[2] = item("minecraft:iron_ingot", 2);
+        });
+        click(&mut h, 2, TOP);
+        let window = h.server.players[&2].inventory.chest().unwrap().window;
+        drop(packets(&mut h.sent));
+        h.server.break_block(1, TOP);
+        let out = packets(&mut h.sent);
+        assert_eq!(h.server.block_at(Dim::Overworld, TOP).map(|b| b.0), Some(air()));
+        let mut dropped: Vec<u16> = h
+            .server
+            .entities
+            .iter()
+            .filter_map(|e| match &e.kind {
+                crate::entity::EntityKind::Item { item, .. } => Some(item.count),
+                _ => None,
+            })
+            .collect();
+        dropped.sort();
+        assert_eq!(dropped, [1, 2, 5], "la fornace (accesa o no) e il suo contenuto cadono a terra");
+        assert_eq!(to_all(&out, ContainerClose::ID)[0].body, [window, CONTAINER_TYPE_FURNACE, 1]);
+        assert!(h.server.players[&2].inventory.chest().is_none());
+        assert!(h.server.chunks[&(0, 0, 0)].block_entities.iter().all(|b| [b.x, b.y, b.z] != TOP));
+    }
+
+    #[test]
+    fn unloaded_chunks_do_not_smelt() {
+        let mut h = setup(GameMode::Survival);
+        put_furnace(&mut h, TOP, false);
+        set(&mut h, TOP, |d| {
+            d.items[0] = item("minecraft:raw_iron", 1);
+            d.items[1] = item("minecraft:coal", 1);
+        });
+        let chunk = h.server.chunks.remove(&(0, 0, 0)).unwrap();
+        run(&mut h, 250);
+        h.server.chunks.insert((0, 0, 0), chunk);
+        assert_eq!(h.server.furnace_data(TOP).items[0].count, 1, "fermo finché il chunk non è in memoria");
+    }
+}

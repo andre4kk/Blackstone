@@ -7,7 +7,7 @@
 //! le copie degli altri giocatori che lo hanno aperto. Le caselle si nominano con il contenitore `LevelEntity`, come Dragonfly.
 use crate::{
     breaking::in_reach,
-    inventory::Item,
+    inventory::{Item, WindowKind, CONTAINER_TYPE_FURNACE},
     nbt::{write_root, Enc, Reader, Tag},
     placement::{neighbors, rules::Dir},
     playerdata::{int, stack_from_tag, stack_to_tag},
@@ -174,7 +174,11 @@ impl Server {
 
     /// Chi ha aperto un forziere che include `pos`.
     fn chest_viewers(&self, pos: [i32; 3]) -> Vec<u64> {
-        self.players.iter().filter(|(_, p)| p.inventory.chest().is_some_and(|c| c.parts.contains(&pos))).map(|(&pid, _)| pid).collect()
+        self.players
+            .iter()
+            .filter(|(_, p)| p.inventory.chest().is_some_and(|c| c.kind == WindowKind::Chest && c.parts.contains(&pos)))
+            .map(|(&pid, _)| pid)
+            .collect()
     }
 
     /// L'animazione di apertura o chiusura (e il suono) su ogni blocco del forziere, per chi vede il chunk (Dragonfly `Chest.open/close`).
@@ -216,13 +220,17 @@ impl Server {
         self.send(pid, &packets);
     }
 
-    /// Toglie a `pid` la finestra del forziere (senza avvisare il client) e, se era l'ultimo a guardarlo, ne chiude l'animazione.
-    pub(crate) fn close_chest_view(&mut self, pid: u64) -> Option<u8> {
+    /// Toglie a `pid` la finestra del forziere o della fornace (senza avvisare il client) e, se è un forziere e era l'ultimo a guardarlo, ne
+    /// chiude l'animazione. Restituisce la finestra e il tipo di contenitore per `ContainerClose`.
+    pub(crate) fn close_chest_view(&mut self, pid: u64) -> Option<(u8, u8)> {
         let window = self.players.get_mut(&pid)?.inventory.close_chest()?;
+        if window.kind == WindowKind::Furnace {
+            return Some((window.window, CONTAINER_TYPE_FURNACE));
+        }
         if window.parts.iter().all(|&part| self.chest_viewers(part).is_empty()) {
             self.chest_animation(&window.parts, false);
         }
-        Some(window.window)
+        Some((window.window, CONTAINER_TYPE_CONTAINER))
     }
 
     /// Chiude per iniziativa del server ciò che `pid` ha aperto (banco o forziere): griglia e cursore tornano nell'inventario e il client
@@ -241,8 +249,8 @@ impl Server {
                 ContainerClose { container_id: window, container_type: crate::inventory::CONTAINER_TYPE_WORKBENCH, server_initiated_close: true }.packet(),
             );
         }
-        if let Some(window) = chest {
-            packets.push(ContainerClose { container_id: window, container_type: CONTAINER_TYPE_CONTAINER, server_initiated_close: true }.packet());
+        if let Some((window, container_type)) = chest {
+            packets.push(ContainerClose { container_id: window, container_type, server_initiated_close: true }.packet());
         }
         if !packets.is_empty() {
             self.send(pid, &packets);
