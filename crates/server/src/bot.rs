@@ -153,7 +153,6 @@ impl Server {
     /// Il bot `id` subisce `amount` di danno. Restituisce `true` se il colpo è andato a segno (`false` se il bot non esiste, la quantità non è
     /// positiva o è dentro l'invulnerabilità: come per i giocatori, 10 tick dopo un colpo conta solo la parte che supera l'ultimo danno).
     /// Chi lo vede riceve l'animazione del colpo; a vita 0 il bot sparisce (corpo e voce nella `PlayerList`) come con `/bot rimuovi`, senza oggetti a terra.
-    #[allow(dead_code)] // lo userà il combattimento (Task 8)
     pub(crate) fn hurt_bot(&mut self, id: u64, amount: f32) -> bool {
         let tick = self.tick_count;
         let Some(bot) = self.bots.iter_mut().find(|b| b.id == id) else { return false };

@@ -177,6 +177,8 @@ struct Player {
     eating_since: Option<u64>,
     /// Quanti usi e rilasci di oggetti (`InventoryTransaction` ClickAir e ReleaseItem) sono già stati loggati in esadecimale (al massimo `HEX_LOGS`).
     use_logs: u8,
+    /// Quanti colpi (`InventoryTransaction` UseItemOnEntity) sono già stati loggati in esadecimale (al massimo `HEX_LOGS`).
+    attack_logs: u8,
 }
 
 impl Default for Player {
@@ -224,6 +226,7 @@ impl Default for Player {
             fall_start_y: None,
             eating_since: None,
             use_logs: 0,
+            attack_logs: 0,
         }
     }
 }
@@ -310,6 +313,8 @@ struct Server {
     bots: Vec<bot::Bot>,
     /// Se vero, chi muore tiene l'inventario (`keep_inventory` di `server.toml`).
     keep_inventory: bool,
+    /// Se falso, i giocatori non si fanno danno tra loro (`pvp` di `server.toml`).
+    pvp: bool,
     /// Stato del generatore casuale del gioco (drop dei blocchi...): xorshift64*, seminato da `getrandom`.
     rng: u64,
 }
@@ -354,6 +359,7 @@ impl Server {
             entities: entity::Entities::default(),
             bots: Vec::new(),
             keep_inventory: false,
+            pvp: true,
             rng: {
                 let mut b = [0u8; 8];
                 getrandom::fill(&mut b).expect("generatore casuale non disponibile");
@@ -567,12 +573,12 @@ async fn run_world(mut cfg: Config, server_cfg: &config::ServerConfig, world_dir
         log!("[mondo] il seme di server.toml ({seed}) è diverso da quello del mondo esistente: vale quello del mondo ({})", world.seed());
     }
     let generator = GenConfig { launch, seed: world.seed(), restart_delay: Duration::from_secs(2), request_timeout: gen_client::REQUEST_TIMEOUT };
-    serve(cfg, Some(world), Some(generator), server_cfg.view_distance.clamp(1, 32), server_cfg.keep_inventory).await
+    serve(cfg, Some(world), Some(generator), server_cfg.view_distance.clamp(1, 32), server_cfg.keep_inventory, server_cfg.pvp).await
 }
 
 /// Avvia il trasporto e fa girare il gioco con il mondo piatto, senza salvare nulla.
 pub async fn run(cfg: Config) -> io::Result<()> {
-    serve(cfg, None, None, join::MAX_RADIUS, false).await
+    serve(cfg, None, None, join::MAX_RADIUS, false, true).await
 }
 
 /// Prossimo evento del generatore; senza generatore non arriva mai.
@@ -584,13 +590,14 @@ async fn next_gen_event(rx: &mut Option<UnboundedReceiver<GenEvent>>) -> Option<
 }
 
 /// Il gioco: gli eventi di rete arrivano quando capitano, il tick ogni 50 ms. Ctrl+C chiude in ordine salvando il mondo.
-async fn serve(cfg: Config, world: Option<storage::World>, generator: Option<GenConfig>, max_radius: i32, keep_inventory: bool) -> io::Result<()> {
+async fn serve(cfg: Config, world: Option<storage::World>, generator: Option<GenConfig>, max_radius: i32, keep_inventory: bool, pvp: bool) -> io::Result<()> {
     // Gli stati dei blocchi e il menu creativo si costruiscono ora, non al pacchetto del primo giocatore.
     join::warm_up();
     let mut net = bedrock_net::start(cfg).await?;
     let mut server = Server::new(net.sender.clone());
     server.max_radius = max_radius;
     server.keep_inventory = keep_inventory;
+    server.pvp = pvp;
     let (disk_tx, mut disk_rx) = unbounded_channel::<DiskEvent>();
     if generator.is_some() {
         server.spawn = world.as_ref().and_then(|w| w.spawn()); // se manca lo calcola il generatore

@@ -12,8 +12,8 @@ use bedrock_protocol::{
     generated::{BlockPos, ContainerClose, ContainerOpen, MobEquipment},
     id,
     input::{
-        flag, interact_action, player_action, respawn_state, use_item, Animate, Interact, InventoryTransaction, ItemStackRequestPacket, LegacySlots,
-        PlayerAction, PlayerAuthInput, Respawn, StackRequest,
+        flag, interact_action, player_action, respawn_state, use_entity, use_item, Animate, Interact, InventoryTransaction, ItemStackRequestPacket,
+        LegacySlots, PlayerAction, PlayerAuthInput, Respawn, StackRequest,
     },
     login,
     packets::{
@@ -228,7 +228,7 @@ impl Server {
 
     /// Pacchetto `InventoryTransaction`: l'uso di un oggetto con azione Destroy rompe un blocco, con azione Place attiva il blocco
     /// cliccato (porta, leva...) o ne piazza uno, con azione Use (ClickAir) comincia o finisce di mangiare; il rilascio (tipo ReleaseItem)
-    /// interrompe o finisce il pasto. Gli altri tipi di transazione non servono ancora.
+    /// interrompe o finisce il pasto; l'uso su un'entità (tipo UseItemOnEntity) con azione Attack è un colpo. Gli altri tipi di transazione non servono ancora.
     fn inventory_transaction(&mut self, pid: u64, body: &[u8]) {
         if self.players.get(&pid).is_some_and(|p| p.dead) {
             return;
@@ -242,6 +242,13 @@ impl Server {
             p.use_logs += 1;
             let what = if click_air { "uso nell'aria" } else { "rilascio" };
             log!("[#{pid}] InventoryTransaction di {what} ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
+        }
+        if let Some(u) = &transaction.use_entity {
+            if let Some(p) = self.players.get_mut(&pid).filter(|p| p.attack_logs < HEX_LOGS && u.action == use_entity::ATTACK) {
+                p.attack_logs += 1;
+                log!("[#{pid}] InventoryTransaction di attacco ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
+            }
+            self.use_item_on_entity(pid, u);
         }
         match &transaction.use_item {
             Some(u) if u.action == use_item::DESTROY => self.break_block(pid, u.pos),

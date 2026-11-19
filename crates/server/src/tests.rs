@@ -4394,4 +4394,195 @@ mod survival {
         }
         assert_eq!(h.server.players[&1].use_logs, crate::HEX_LOGS);
     }
+
+    // ---------- combattimento ----------
+
+    mod combat {
+        use super::*;
+        use bedrock_protocol::entity::set_actor_motion;
+        use bedrock_protocol::input::use_entity;
+
+        /// `InventoryTransaction` UseItemOnEntity come `UseItemOnEntityTransactionData.Marshal` di gophertunnel: `target`, azione, casella 0, mano
+        /// principale, `held` secondo il client, posizione del giocatore e punto cliccato.
+        fn strike_packet(target: u64, action: i32, held: &Item) -> Packet {
+            let mut w = Writer::default();
+            w.var_i32(0); // id legacy
+            w.u8(0); // niente slot legacy
+            w.var_u32(3); // tipo UseItemOnEntity
+            w.var_u32(0); // niente azioni
+            w.var_u64(target);
+            w.var_i32(action);
+            w.var_i32(0); // casella
+            w.u8(0); // mano
+            held.stack(1).encode(&mut w);
+            (0..6).for_each(|_| w.f32(0.5));
+            Packet::new(id::INVENTORY_TRANSACTION, w.0)
+        }
+
+        /// Mette `pid` (occhi) in `at`, anche nel registro delle entità.
+        fn place(h: &mut Harness, pid: u64, at: [f32; 3]) {
+            h.server.players.get_mut(&pid).unwrap().pos = at;
+            h.server.entities.get_mut(pid).unwrap().pos = at;
+        }
+
+        /// Bob (2) tiene `name` nella casella 0; Alice (1, in `victim_mode`) è a `distance` blocchi da lui lungo x. Bob vede Alice (come in `setup`).
+        fn duel(victim_mode: GameMode, name: &str, distance: f32) -> (Harness, Item) {
+            let mut h = setup(victim_mode);
+            let sword = Item::from_name(name, 1).unwrap_or_default();
+            let bob = h.server.players.get_mut(&2).unwrap();
+            bob.inventory.set_main(0, sword.clone());
+            bob.inventory.selected = 0;
+            bob.mode = GameMode::Survival;
+            place(&mut h, 2, [0.5, 71.62, 0.5]);
+            place(&mut h, 1, [0.5 + distance, 71.62, 0.5]);
+            h.packets_by_player();
+            (h, sword)
+        }
+
+        fn bob_exhaustion(h: &Harness) -> f32 {
+            h.server.players[&2].exhaustion
+        }
+
+        #[test]
+        fn diamond_sword_hit_hurts_knocks_back_and_tires_the_attacker() {
+            let (mut h, sword) = duel(GameMode::Survival, "minecraft:diamond_sword", 2.0);
+            h.receive(2, &[strike_packet(1, use_entity::ATTACK, &sword)]);
+            assert_eq!(health(&h), 13.0, "la spada di diamante toglie 7");
+            let sent = h.packets_by_player();
+            assert!(sent[&1].contains(&set_actor_motion(1, [0.45, 0.3608, 0.0])), "spinta lontano da Bob");
+            assert!(sent[&1].contains(&hurt_event()) && sent[&2].contains(&hurt_event()), "animazione del colpo a lui e agli spettatori");
+            assert!(sent.get(&3).is_none_or(|v| !v.contains(&hurt_event())));
+            assert!((bob_exhaustion(&h) - 0.1).abs() < 1e-6, "chi colpisce spende 0,1");
+            assert!((h.server.players[&1].exhaustion - 0.1).abs() < 1e-6, "e chi subisce 0,1 (armatura)");
+        }
+
+        #[test]
+        fn bare_hand_deals_one() {
+            let (mut h, _) = duel(GameMode::Survival, "minecraft:air", 1.0);
+            h.receive(2, &[strike_packet(1, use_entity::ATTACK, &Item::default())]);
+            assert_eq!(health(&h), 19.0);
+        }
+
+        #[test]
+        fn knockback_points_away_from_the_attacker() {
+            let (mut h, sword) = duel(GameMode::Survival, "minecraft:wooden_sword", 2.0);
+            place(&mut h, 1, [0.5, 71.62, -1.5]);
+            h.receive(2, &[strike_packet(1, use_entity::ATTACK, &sword)]);
+            assert!(h.packets_by_player()[&1].contains(&set_actor_motion(1, [0.0, 0.3608, -0.45])));
+        }
+
+        #[test]
+        fn out_of_reach_does_nothing() {
+            let (mut h, sword) = duel(GameMode::Survival, "minecraft:diamond_sword", 9.5);
+            h.receive(2, &[strike_packet(1, use_entity::ATTACK, &sword)]);
+            assert_eq!(health(&h), 20.0);
+            assert_eq!(bob_exhaustion(&h), 0.0);
+            assert!(h.packets_by_player().get(&1).is_none_or(|v| !v.contains(&hurt_event())));
+            // a 7,5 blocchi (dentro gli 8 di Dragonfly) colpisce
+            place(&mut h, 1, [8.0, 71.62, 0.5]);
+            h.receive(2, &[strike_packet(1, use_entity::ATTACK, &sword)]);
+            assert_eq!(health(&h), 13.0);
+        }
+
+        #[test]
+        fn creative_attacker_reaches_farther() {
+            let (mut h, sword) = duel(GameMode::Survival, "minecraft:diamond_sword", 12.0);
+            h.receive(2, &[strike_packet(1, use_entity::ATTACK, &sword)]);
+            assert_eq!(health(&h), 20.0, "12 blocchi sono troppi in sopravvivenza");
+            h.server.players.get_mut(&2).unwrap().mode = GameMode::Creative;
+            h.receive(2, &[strike_packet(1, use_entity::ATTACK, &sword)]);
+            assert_eq!(health(&h), 13.0, "in creativa se ne raggiungono 14");
+        }
+
+        #[test]
+        fn pvp_off_protects_players() {
+            let (mut h, sword) = duel(GameMode::Survival, "minecraft:diamond_sword", 2.0);
+            h.server.pvp = false;
+            h.receive(2, &[strike_packet(1, use_entity::ATTACK, &sword)]);
+            assert_eq!(health(&h), 20.0);
+            assert_eq!(bob_exhaustion(&h), 0.0);
+            assert!(h.packets_by_player().get(&1).is_none_or(|v| v.is_empty()));
+        }
+
+        #[test]
+        fn dead_or_spectator_attackers_do_nothing() {
+            let (mut h, sword) = duel(GameMode::Survival, "minecraft:diamond_sword", 2.0);
+            h.server.players.get_mut(&2).unwrap().dead = true;
+            h.receive(2, &[strike_packet(1, use_entity::ATTACK, &sword)]);
+            assert_eq!(health(&h), 20.0);
+            let bob = h.server.players.get_mut(&2).unwrap();
+            (bob.dead, bob.mode) = (false, GameMode::Spectator);
+            h.receive(2, &[strike_packet(1, use_entity::ATTACK, &sword)]);
+            assert_eq!(health(&h), 20.0);
+        }
+
+        #[test]
+        fn creative_and_dead_targets_take_nothing() {
+            let (mut h, sword) = duel(GameMode::Creative, "minecraft:diamond_sword", 2.0);
+            h.receive(2, &[strike_packet(1, use_entity::ATTACK, &sword)]);
+            assert_eq!(health(&h), 20.0);
+            assert_eq!(bob_exhaustion(&h), 0.0, "un colpo che non va a segno non stanca");
+            assert!(h.packets_by_player().get(&1).is_none_or(|v| !v.iter().any(|p| p.id == id::SET_ACTOR_MOTION)), "né spinta");
+            let alice = h.server.players.get_mut(&1).unwrap();
+            (alice.mode, alice.dead) = (GameMode::Survival, true);
+            h.receive(2, &[strike_packet(1, use_entity::ATTACK, &sword)]);
+            assert_eq!(bob_exhaustion(&h), 0.0);
+        }
+
+        #[test]
+        fn interact_yourself_and_wrong_held_item_do_nothing() {
+            let (mut h, sword) = duel(GameMode::Survival, "minecraft:diamond_sword", 2.0);
+            h.receive(2, &[strike_packet(1, use_entity::INTERACT, &sword)]);
+            h.receive(2, &[strike_packet(2, use_entity::ATTACK, &sword)]);
+            h.receive(2, &[strike_packet(1, use_entity::ATTACK, &Item::from_name("minecraft:stick", 1).unwrap())]);
+            assert_eq!(health(&h), 20.0);
+            assert!(!h.packets_by_player()[&2].is_empty(), "la casella sbagliata viene rimandata al client");
+        }
+
+        #[test]
+        fn hooks_can_cancel_the_attack() {
+            let (mut h, sword) = duel(GameMode::Survival, "minecraft:diamond_sword", 2.0);
+            h.server.hooks.push(Box::new(|a| !matches!(a, WorldAction::Attack { pid: 2, target: 1 })));
+            h.receive(2, &[strike_packet(1, use_entity::ATTACK, &sword)]);
+            assert_eq!(health(&h), 20.0);
+        }
+
+        #[test]
+        fn killing_blow_announces_the_killer() {
+            let (mut h, sword) = duel(GameMode::Survival, "minecraft:diamond_sword", 2.0);
+            h.server.players.get_mut(&1).unwrap().health = 5.0;
+            h.texts_to(3);
+            h.receive(2, &[strike_packet(1, use_entity::ATTACK, &sword)]);
+            assert!(h.server.players[&1].dead);
+            assert!(h.texts_to(3).iter().any(|t| t.message == "Alice è stato ucciso da Bob"));
+        }
+
+        #[test]
+        fn bot_dies_after_three_diamond_sword_hits_even_with_pvp_off() {
+            let (mut h, sword) = duel(GameMode::Survival, "minecraft:diamond_sword", 2.0);
+            h.server.pvp = false;
+            let bot = h.server.spawn_bot(1, "Robo");
+            h.server.entities.get_mut(bot).unwrap().pos = [1.5, 71.62, 0.5];
+            h.packets_by_player();
+            for n in 1..=3 {
+                h.receive(2, &[strike_packet(bot, use_entity::ATTACK, &sword)]);
+                if n < 3 {
+                    assert!((h.server.bots[0].health - (20.0 - 7.0 * n as f32)).abs() < 1e-6, "colpo {n}");
+                }
+                h.server.tick_count += 10;
+            }
+            assert!(h.server.bots.is_empty(), "morto e tolto");
+            assert!(h.server.entities.get(bot).is_none());
+            assert!((bob_exhaustion(&h) - 0.3).abs() < 1e-5);
+        }
+
+        #[test]
+        fn attack_packets_are_logged_at_most_hex_logs_times() {
+            let (mut h, sword) = duel(GameMode::Survival, "minecraft:diamond_sword", 2.0);
+            for _ in 0..5 {
+                h.receive(2, &[strike_packet(1, use_entity::ATTACK, &sword)]);
+            }
+            assert_eq!(h.server.players[&2].attack_logs, crate::HEX_LOGS);
+        }
+    }
 }

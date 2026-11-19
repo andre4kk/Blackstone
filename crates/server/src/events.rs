@@ -29,6 +29,8 @@ pub(crate) enum WorldAction {
     Death { pid: u64 },
     /// Il giocatore sta per finire di mangiare `item` (come `HandleItemConsume` di Dragonfly: si può annullare, e allora non si consuma nulla).
     Eat { pid: u64, item: Item },
+    /// Il giocatore sta per colpire l'entità `target` (come `HandleAttackEntity` di Dragonfly: si può annullare).
+    Attack { pid: u64, target: u64 },
 }
 
 /// Un gancio vede l'azione e risponde `true` per lasciarla passare, `false` per annullarla.

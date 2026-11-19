@@ -90,7 +90,6 @@ pub(crate) fn food(item_name: &str) -> Option<&'static Food> {
 }
 
 /// Danno di un colpo con questo oggetto in mano (1,0 a mani nude o con un oggetto che non e' uno strumento).
-#[allow(dead_code)] // lo usa un compito seguente (mangiare / danni)
 pub(crate) fn attack_damage(item_name: &str) -> f32 {
     tool(item_name).map_or(1.0, |t| t.attack_damage)
 }

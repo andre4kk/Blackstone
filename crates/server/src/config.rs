@@ -23,6 +23,8 @@ pub struct ServerConfig {
     pub port: u16,
     /// Se vero, chi muore tiene l'inventario (niente oggetti a terra).
     pub keep_inventory: bool,
+    /// Se falso, i giocatori non si fanno danno tra loro (i bot si colpiscono sempre).
+    pub pvp: bool,
 }
 
 impl Default for ServerConfig {
@@ -34,6 +36,7 @@ impl Default for ServerConfig {
             view_distance: 6,
             port: 19132,
             keep_inventory: false,
+            pvp: true,
         }
     }
 }
@@ -103,6 +106,7 @@ mod tests {
         assert_eq!(cfg, ServerConfig::default());
         assert_eq!((cfg.world.as_str(), cfg.seed, cfg.view_distance, cfg.port), ("Mondo", None, 6, 19132));
         assert!(!cfg.keep_inventory);
+        assert!(cfg.pvp);
         assert!(cfg.generator.to_string_lossy().starts_with("generator/target/release/versmc-gen"));
         assert_eq!(fs::read_to_string(&path).unwrap(), EXAMPLE, "scritto l'esempio");
         assert_eq!(ServerConfig::load(&path), cfg, "l'esempio riletto dà gli stessi valori");
@@ -129,6 +133,19 @@ mod tests {
         )
         .unwrap();
         assert!(ServerConfig::load(&path).keep_inventory);
+    }
+
+    #[test]
+    fn config_reads_pvp() {
+        let dir = TempDir::new("config-pvp");
+        let path = dir.0.join("server.toml");
+        fs::write(
+            &path,
+            "pvp = false
+",
+        )
+        .unwrap();
+        assert!(!ServerConfig::load(&path).pvp);
     }
 
     #[test]

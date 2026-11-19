@@ -12,7 +12,7 @@ use bedrock_protocol::{
     actor::set_actor_data,
     entity::{actor_event, actor_event_type, move_player_teleport, remove_actor, respawn, set_actor_motion},
     generated::UpdateAttributes,
-    input::{respawn_state, ReleaseItem, UseItem},
+    input::{respawn_state, use_entity, ReleaseItem, UseItem, UseItemOnEntity},
     item::ItemStack,
     packets::{text_type, Text},
     wire::ServerPacket,
@@ -84,8 +84,7 @@ pub(crate) enum DamageCause {
     Void,
     /// Fame a zero.
     Starvation,
-    /// Colpito dall'entità `attacker` (la userà il combattimento, Task 8; per ora i test).
-    #[allow(dead_code)]
+    /// Colpito dall'entità `attacker` (un altro giocatore).
     Attack { attacker: u64 },
     /// Comando `/kill`.
     Kill,
@@ -492,6 +491,62 @@ impl Server {
         }
     }
 
+    /// Il client ha mandato un `InventoryTransaction` UseItemOnEntity. Solo l'azione Attack fa qualcosa (l'Interact non ha ancora effetti).
+    /// Sul modello di Dragonfly (`handleUseItemOnEntityTransaction`, `AttackEntity`, `knockBack`): la mano secondaria rimanda l'inventario;
+    /// la casella dichiarata dal client diventa quella in mano (se l'oggetto non è quello del server si rimanda la casella e finisce lì);
+    /// il bersaglio deve esistere, non essere chi colpisce e stare entro 8 blocchi (14 in creativa) dagli occhi di chi colpisce, misurati
+    /// fino ai suoi piedi; chi colpisce deve essere vivo e non spettatore. Tra giocatori serve `pvp`; i bot si colpiscono sempre. I ganci vedono
+    /// `WorldAction::Attack` e possono annullare. Il danno è quello dell'oggetto in mano (`tables::attack_damage`, 1 a mano vuota): niente
+    /// forza, debolezza, nitidezza né colpo critico (non ci sono effetti né incantesimi). Il giocatore subisce `hurt` (il bersaglio in creativa o
+    /// spettatore non lo subisce), il bot `hurt_bot`; se il colpo va a segno chi colpisce spende 0,1 di esaurimento (Dragonfly: `Exhaust(0.1)`)
+    /// e un giocatore riceve la spinta (`SetActorMotion` a lui solo: gli altri lo vedono spostarsi dai suoi movimenti). Il bot non viene
+    /// spinto: gira su un percorso a tempo che sovrascrive ogni posizione al tick dopo. Niente usura dell'oggetto (non c'è la durabilità).
+    pub(crate) fn use_item_on_entity(&mut self, pid: u64, u: &UseItemOnEntity) {
+        if u.action != use_entity::ATTACK && u.action != use_entity::INTERACT {
+            return;
+        }
+        if u.hand != 0 {
+            return self.send_inventory(pid);
+        }
+        let Some(p) = self.players.get(&pid).filter(|p| p.spawned && !p.dead && p.mode != GameMode::Spectator) else { return };
+        let (eyes, creative) = (p.pos, p.mode == GameMode::Creative);
+        if !self.adopt_held_slot(pid, u.hotbar_slot, &u.held) || u.action != use_entity::ATTACK || u.target == pid {
+            return;
+        }
+        let Some(target) = self.entities.get(u.target) else { return };
+        let victim = match &target.kind {
+            EntityKind::Player { pid: Some(other), .. } => Some(*other),
+            EntityKind::Player { pid: None, .. } => None,
+            EntityKind::Item { .. } => return,
+        };
+        let feet = [target.pos[0], target.pos[1] - EYE_HEIGHT, target.pos[2]];
+        let distance = ((eyes[0] - feet[0]).powi(2) + (eyes[1] - feet[1]).powi(2) + (eyes[2] - feet[2]).powi(2)).sqrt();
+        if distance.is_nan() || distance > if creative { REACH_CREATIVE } else { REACH } || (victim.is_some() && !self.pvp) {
+            return;
+        }
+        if victim.is_some_and(|v| !self.players.get(&v).is_some_and(|v| v.spawned)) || !self.allow(&WorldAction::Attack { pid, target: u.target }) {
+            return;
+        }
+        let Some(p) = self.players.get(&pid) else { return };
+        let damage = registry::items().name(p.inventory.held().id).map_or(1.0, tables::attack_damage);
+        let hit = match victim {
+            Some(v) => self.hurt(v, damage, DamageCause::Attack { attacker: pid }),
+            None => self.hurt_bot(u.target, damage),
+        };
+        if !hit {
+            return;
+        }
+        self.exhaust(pid, 0.1);
+        if let Some(v) = victim {
+            let Some(vp) = self.players.get(&v) else { return };
+            // Dragonfly `knockBack`: lontano da chi colpisce in orizzontale, forza fissa, e un po' in alto
+            let (dx, dz) = (vp.pos[0] - eyes[0], vp.pos[2] - eyes[2]);
+            let len = dx.hypot(dz);
+            let (x, z) = if len > 0.0 { (dx / len * KNOCKBACK_FORCE, dz / len * KNOCKBACK_FORCE) } else { (0.0, 0.0) };
+            self.send(v, &[set_actor_motion(v, [x, KNOCKBACK_HEIGHT, z])]);
+        }
+    }
+
     /// Manda a `pid` vita, fame, saturazione ed esaurimento attuali (`UpdateAttributes`, stessi nomi e massimi dello spawn).
     pub(crate) fn send_vitals(&self, pid: u64) {
         let Some(p) = self.players.get(&pid) else { return };
@@ -587,6 +642,13 @@ impl Server {
         );
     }
 }
+
+/// Distanza massima da cui si colpisce (Dragonfly `canReach`: 8 blocchi, 14 in creativa), dagli occhi di chi colpisce ai piedi del bersaglio.
+const REACH: f32 = 8.0;
+const REACH_CREATIVE: f32 = 14.0;
+/// Spinta del colpo senza incantesimi (Dragonfly `AttackEntity`: forza orizzontale 0,45, altezza 0,3608).
+const KNOCKBACK_FORCE: f32 = 0.45;
+const KNOCKBACK_HEIGHT: f32 = 0.3608;
 
 /// Dopo la morte il giocatore riparte dal punto di partenza del mondo con vita, fame e saturazione di partenza. Vale alla rinascita e a chi
 /// esce da morto (rientra vivo: il suo inventario è già a terra, o intero con `keep_inventory`). Chi non è morto non cambia.

@@ -176,13 +176,53 @@ impl ReleaseItem {
     }
 }
 
-/// Pacchetto 30. Solo i tipi `ItemUse` (2) e `ReleaseItem` (4) portano dati che ci servono.
+/// `UseItemOnEntityActionType` di gophertunnel: interagire o attaccare.
+pub mod use_entity {
+    pub const INTERACT: i32 = 0;
+    pub const ATTACK: i32 = 1;
+}
+
+/// Uso di un oggetto su un'entità (tipo 3 di `InventoryTransaction`, `UseItemOnEntityTransactionData` di gophertunnel v1.63.0): il colpo a un
+/// giocatore, un bot o un mob.
+#[derive(Clone, Debug, PartialEq)]
+pub struct UseItemOnEntity {
+    /// ID di runtime dell'entità colpita.
+    pub target: u64,
+    /// Uno di [`use_entity`].
+    pub action: i32,
+    pub hotbar_slot: i32,
+    /// 0 = mano principale, 1 = secondaria.
+    pub hand: u8,
+    /// Oggetto in mano secondo il client.
+    pub held: ItemStack,
+    /// Posizione del giocatore (occhi) al momento del clic.
+    pub player_pos: [f32; 3],
+    /// Punto cliccato, relativo all'origine dell'entità.
+    pub click_pos: [f32; 3],
+}
+
+impl UseItemOnEntity {
+    fn read(r: &mut Reader) -> Option<Self> {
+        Some(Self {
+            target: r.var_u64()?,
+            action: r.var_i32()?,
+            hotbar_slot: r.var_i32()?,
+            hand: r.u8()?,
+            held: ItemStack::decode(r)?,
+            player_pos: r.vec3()?,
+            click_pos: r.vec3()?,
+        })
+    }
+}
+
+/// Pacchetto 30. Solo i tipi `ItemUse` (2), `UseItemOnEntity` (3) e `ReleaseItem` (4) portano dati che ci servono.
 #[derive(Clone, Debug, PartialEq)]
 pub struct InventoryTransaction {
     pub legacy_request_id: i32,
     pub legacy_slots: LegacySlots,
     pub kind: u32,
     pub use_item: Option<UseItem>,
+    pub use_entity: Option<UseItemOnEntity>,
     pub release: Option<ReleaseItem>,
 }
 
@@ -194,8 +234,9 @@ impl InventoryTransaction {
         let kind = r.var_u32()?;
         skip_inventory_actions(r)?;
         let use_item = if kind == 2 { Some(UseItem::read(r)?) } else { None };
+        let use_entity = if kind == 3 { Some(UseItemOnEntity::read(r)?) } else { None };
         let release = if kind == 4 { Some(ReleaseItem::read(r)?) } else { None };
-        Some(Self { legacy_request_id, legacy_slots, kind, use_item, release })
+        Some(Self { legacy_request_id, legacy_slots, kind, use_item, use_entity, release })
     }
 }
 
@@ -754,6 +795,32 @@ mod tests {
         assert_eq!(t.legacy_request_id, -2);
         assert_eq!(t.legacy_slots, vec![(12, vec![3, 4])]);
         assert_eq!(t.use_item.expect("uso").pos, [-155, 72, -2]);
+    }
+
+    #[test]
+    fn use_item_on_entity_follows_gophertunnel_layout() {
+        // layout di `UseItemOnEntityTransactionData.Marshal` (gophertunnel v1.63.0)
+        let mut w = Writer::default();
+        w.var_i32(0); // richiesta legacy
+        w.u8(0); // niente slot legacy
+        w.var_u32(3); // tipo UseItemOnEntity
+        w.var_u32(0); // nessuna azione
+        w.var_u64(7); // entità
+        w.var_i32(1); // attacco
+        w.var_i32(4); // casella
+        w.u8(0); // mano
+        ItemStack::air().encode(&mut w);
+        for v in [1.0f32, 2.0, 3.0, 0.5, 0.5, 0.5] {
+            w.f32(v);
+        }
+        let t = InventoryTransaction::decode(&w.0).expect("leggibile");
+        let u = t.use_entity.expect("uso sull'entità");
+        assert_eq!((u.target, u.action, u.hotbar_slot, u.hand), (7, use_entity::ATTACK, 4, 0));
+        assert_eq!((u.player_pos, u.click_pos), ([1.0, 2.0, 3.0], [0.5, 0.5, 0.5]));
+        assert!(t.use_item.is_none() && t.release.is_none());
+        for n in 0..w.0.len() {
+            assert!(InventoryTransaction::decode(&w.0[..n]).is_none(), "tagliato a {n}");
+        }
     }
 
     #[test]
