@@ -62,6 +62,10 @@ pub mod stack_type {
     pub const DESTROY: u8 = 4;
     pub const CONSUME: u8 = 5;
     pub const CREATE: u8 = 6;
+    /// Ricetta scelta (gophertunnel `StackRequestActionCraftRecipe`): il server consuma gli ingredienti e crea il risultato.
+    pub const CRAFT_RECIPE: u8 = 12;
+    /// Ricetta fatta dal libro delle ricette con Maiusc (`StackRequestActionCraftRecipeAuto`): gli ingredienti si prendono anche dall'inventario.
+    pub const CRAFT_RECIPE_AUTO: u8 = 13;
     pub const CRAFT_CREATIVE: u8 = 14;
     /// Risultati del crafting (deprecato ma il client lo manda ancora dopo `CraftCreative`): solo informativo.
     pub const CRAFT_RESULTS: u8 = 20;
@@ -379,7 +383,21 @@ pub enum StackAction {
         net_id: u32,
         crafts: u8,
     },
-    /// Azione letta ma che il server non gestisce (`Consume`, `Create`): porta il suo `ActionType`.
+    /// `CraftRecipe`: ID di rete della ricetta (da `CraftingData`) e quante volte.
+    CraftRecipe {
+        recipe_id: u32,
+        crafts: u8,
+    },
+    /// `CraftRecipeAuto`: come `CraftRecipe`; gli ingredienti dichiarati dal client si leggono e si scartano (il server li ricava dalla ricetta).
+    CraftRecipeAuto {
+        recipe_id: u32,
+        crafts: u8,
+    },
+    /// `Create`: prende il risultato `results_slot` tra quelli preparati da una ricetta con più risultati.
+    Create {
+        results_slot: u8,
+    },
+    /// Azione letta ma che il server non gestisce (`Consume`): porta il suo `ActionType`.
     Other(u8),
 }
 
@@ -400,9 +418,12 @@ impl StackAction {
                 SlotRef::read(r)?;
                 Self::Other(ty)
             }
-            stack_type::CREATE => {
-                r.u8()?;
-                Self::Other(ty)
+            stack_type::CREATE => Self::Create { results_slot: r.u8()? },
+            stack_type::CRAFT_RECIPE => Self::CraftRecipe { recipe_id: r.var_u32()?, crafts: r.u8()? },
+            stack_type::CRAFT_RECIPE_AUTO => {
+                let (recipe_id, crafts) = (r.var_u32()?, r.u8()?);
+                list(r, skip_descriptor_count)?;
+                Self::CraftRecipeAuto { recipe_id, crafts }
             }
             stack_type::CRAFT_RESULTS => {
                 list(r, skip_request_item)?;
@@ -412,6 +433,29 @@ impl StackAction {
             _ => return Some(None),
         }))
     }
+}
+
+/// Salta un `ItemDescriptorCount` (`StackRequestItemDescriptorCount` di gophertunnel): indice di variante, tipo, campi del descrittore e quantità u16.
+fn skip_descriptor_count(r: &mut Reader) -> Option<()> {
+    let variant = r.var_u32()?;
+    r.u8()?;
+    match variant {
+        0 => {}
+        1 => {
+            r.string()?;
+            r.var_i32()?; // aux
+        }
+        2 => {
+            r.string()?;
+            r.i16()?;
+        }
+        3 => {
+            r.string()?;
+        }
+        _ => return None,
+    }
+    r.u16()?;
+    Some(())
 }
 
 /// Salta un `ItemStackRequestNetworkItemInstanceDescriptor`: descrittore (indice di variante + tipo + campi), quantità,
@@ -664,6 +708,57 @@ mod tests {
             q.actions[2],
             StackAction::Take { count: 64, src: SlotRef { container: 0x3c, slot: 0x32, stack_id: -3, .. }, dst: SlotRef { container: 0x3b, slot: 0, .. } }
         ));
+    }
+
+    /// `CraftRecipe`, `CraftRecipeAuto` (con ingredienti), `Consume` e `Create` come li scrive gophertunnel (l'indice di variante si ignora: conta il tipo).
+    #[test]
+    fn crafting_actions_decode_like_gophertunnel() {
+        let mut w = Writer::default();
+        w.var_i32(-5);
+        w.var_u32(5);
+        w.var_u32(10);
+        w.u8(stack_type::CRAFT_RECIPE);
+        w.var_u32(1530);
+        w.u8(2);
+        w.var_u32(11);
+        w.u8(stack_type::CRAFT_RECIPE_AUTO);
+        w.var_u32(2397);
+        w.u8(3);
+        w.var_u32(2); // due ingredienti: uno per nome, uno per tag
+        w.var_u32(1);
+        w.u8(1);
+        w.string("minecraft:oak_planks");
+        w.var_i32(0);
+        w.u16(2);
+        w.var_u32(3);
+        w.u8(3);
+        w.string("minecraft:planks");
+        w.u16(1);
+        w.var_u32(5);
+        w.u8(stack_type::CONSUME);
+        w.u8(1);
+        slot(&mut w, 13, 28, 7);
+        w.var_u32(6);
+        w.u8(stack_type::CREATE);
+        w.u8(1);
+        w.var_u32(1);
+        w.u8(stack_type::PLACE);
+        w.u8(4);
+        slot(&mut w, 60, 50, -5);
+        slot(&mut w, 28, 0, 0);
+        w.var_u32(0);
+        w.i32(-1);
+        let mut body = Writer::default();
+        body.var_u32(1);
+        body.0.extend_from_slice(&w.0);
+        let p = ItemStackRequestPacket::decode(&body.0).unwrap();
+        let q = &p.requests[0];
+        assert_eq!(q.request_id, -5);
+        assert_eq!(q.actions[0], StackAction::CraftRecipe { recipe_id: 1530, crafts: 2 });
+        assert_eq!(q.actions[1], StackAction::CraftRecipeAuto { recipe_id: 2397, crafts: 3 });
+        assert_eq!(q.actions[2], StackAction::Other(stack_type::CONSUME));
+        assert_eq!(q.actions[3], StackAction::Create { results_slot: 1 });
+        assert!(matches!(q.actions[4], StackAction::Place { count: 4, .. }));
     }
 
     /// I 53 byte reali di P§4.4 (un Place su un blocco, con l'aria in mano).
@@ -1022,7 +1117,7 @@ mod tests {
         assert!(matches!(a[1], StackAction::Swap { .. }));
         assert!(matches!(&a[2], StackAction::Drop { count: 5, randomly: true, .. }));
         assert!(matches!(&a[3], StackAction::Destroy { count: 64, .. }));
-        assert_eq!((&a[4], &a[5]), (&StackAction::Other(5), &StackAction::Other(6)));
+        assert_eq!((&a[4], &a[5]), (&StackAction::Other(5), &StackAction::Create { results_slot: 0 }));
     }
 
     #[test]

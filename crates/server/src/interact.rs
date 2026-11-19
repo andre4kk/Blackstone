@@ -9,13 +9,14 @@
 use crate::{
     breaking::in_reach,
     events::{BlockChange, WorldAction},
+    inventory::CONTAINER_TYPE_WORKBENCH,
     placement::{rules::Dir, BlockView, PlaceCtx, WorldView},
     registry::{blocks, BlockState, StateValue},
     GameMode, Server,
 };
 use bedrock_net::log;
 use bedrock_protocol::{
-    generated::{LevelSoundEvent, Vec3},
+    generated::{BlockPos, ContainerOpen, LevelSoundEvent, Vec3},
     input::UseItem,
     wire::ServerPacket,
 };
@@ -173,6 +174,15 @@ impl Server {
         let dim = Dim::Overworld;
         let view = WorldView { server: self, dim };
         let Some(state) = view.block(u.pos).and_then(|hash| blocks().state(hash)) else { return false };
+        if short(state) == "crafting_table" {
+            // Banco da lavoro (Dragonfly `CraftingTable.Activate`): apre la finestra 3x3. Fuori portata o da spettatore il clic è consumato e basta.
+            if mode != GameMode::Spectator && in_reach(eyes, u.pos, mode == GameMode::Creative) {
+                self.open_crafting_table(pid, u.pos);
+            } else {
+                log!("[#{pid}] apertura del banco {:?} rifiutata: modalità o portata", u.pos);
+            }
+            return true;
+        }
         let Some(changes) = activate(state, u.pos, ctx, &view) else { return false };
         let creative = mode == GameMode::Creative;
         let others: Vec<[i32; 3]> = changes.iter().map(|c| c.pos).filter(|&p| p != u.pos).collect();
@@ -202,6 +212,45 @@ impl Server {
             }
         }
         true
+    }
+
+    /// Apre il banco da lavoro in `pos` a `pid`: `ContainerOpen` di tipo banco con una finestra nuova (1..=99). Se è già aperto lì non rimanda
+    /// nulla (un secondo `ContainerOpen` farebbe crashare il client); se era aperto un altro banco, prima ne restituisce la griglia.
+    pub(crate) fn open_crafting_table(&mut self, pid: u64, pos: [i32; 3]) {
+        let Some(p) = self.players.get(&pid) else { return };
+        if p.inventory.table() == Some(pos) {
+            return;
+        }
+        self.return_ui_items(pid);
+        let Some(p) = self.players.get_mut(&pid) else { return };
+        let window = p.inventory.open_table(pos);
+        log!("[#{pid}] apre il banco da lavoro {pos:?} (finestra {window})");
+        let position = BlockPos { x: pos[0], y: pos[1], z: pos[2] };
+        self.send(pid, &[ContainerOpen { container_id: window, container_type: CONTAINER_TYPE_WORKBENCH, position, target_actor_id: -1 }.packet()]);
+    }
+
+    /// Chiude il banco e restituisce all'inventario gli oggetti rimasti nella griglia e sul cursore (Dragonfly `MoveItemsToInventory`);
+    /// quelli che non ci stanno cadono a terra. Il client riceve le caselle cambiate.
+    pub(crate) fn return_ui_items(&mut self, pid: u64) {
+        let Some(p) = self.players.get_mut(&pid) else { return };
+        let mut changed = Vec::new();
+        let mut leftover = Vec::new();
+        for item in p.inventory.release_ui() {
+            let (rest, slots) = p.inventory.add(item);
+            changed.extend(slots);
+            if !rest.is_empty() {
+                leftover.push(rest);
+            }
+        }
+        changed.sort_unstable();
+        changed.dedup();
+        let packets: Vec<_> = changed.iter().filter_map(|&(c, s)| p.inventory.slot_packet_at(c, s)).collect();
+        if !packets.is_empty() {
+            self.send(pid, &packets);
+        }
+        for item in leftover {
+            self.drop_item(pid, item);
+        }
     }
 
     /// Un pulsante premuto che non ha un appuntamento per risalire (per esempio salvato premuto: la memoria dei tick non sopravvive

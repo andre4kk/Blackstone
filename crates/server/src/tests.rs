@@ -4951,3 +4951,165 @@ mod survival {
         }
     }
 }
+
+// ---------- banco da lavoro e crafting ----------
+
+mod crafting {
+    use super::blocks::change;
+    use super::placing::{packets, place_packet, setup, TOP};
+    use super::*;
+    use crate::{
+        inventory::{Item, CONTAINER_TYPE_WORKBENCH},
+        recipes::{recipes, Ingredient},
+        registry::blocks,
+    };
+    use bedrock_protocol::generated::{enums::container_enum_name::CURSOR_CONTAINER, InventorySlot};
+    use vgen::Dim;
+
+    fn put_table(h: &mut Harness) {
+        let table = blocks().default_hash("minecraft:crafting_table").unwrap();
+        h.server.set_blocks(Dim::Overworld, &[change(TOP, table, false)]);
+        drop(packets(&mut h.sent));
+    }
+
+    fn click_table(h: &mut Harness) -> Vec<Packet> {
+        h.receive(1, &[place_packet(TOP, 1, &ItemStack::air())]);
+        packets(&mut h.sent).into_iter().filter(|(to, _)| *to == 1).map(|(_, p)| p).collect()
+    }
+
+    fn item(name: &str, count: u16) -> Item {
+        Item::from_name(name, count).unwrap()
+    }
+
+    fn recipe_for(output: &str) -> u32 {
+        recipes().all().iter().find(|r| r.output[0].name == output && r.input.iter().any(|i| matches!(i, Ingredient::Tag { .. }))).unwrap().id
+    }
+
+    /// Richiesta con `CraftRecipe` e il risultato preso sul cursore.
+    fn craft_to_cursor(recipe: u32, crafts: u8, count: u8) -> Packet {
+        stack_request_packet(|w| {
+            w.var_i32(-1);
+            w.var_u32(2);
+            w.var_u32(10);
+            w.u8(12); // CraftRecipe
+            w.var_u32(recipe);
+            w.u8(crafts);
+            w.var_u32(0);
+            w.u8(0); // Take
+            w.u8(count);
+            slot_bytes(w, 60, 50, -1);
+            slot_bytes(w, CURSOR_CONTAINER, 0, 0);
+            w.var_u32(0);
+            w.i32(-1);
+        })
+    }
+
+    #[test]
+    fn right_click_on_a_crafting_table_opens_the_workbench_once() {
+        let mut h = setup(GameMode::Survival);
+        put_table(&mut h);
+        let out = click_table(&mut h);
+        let opens: Vec<&Packet> = out.iter().filter(|p| p.id == ContainerOpen::ID).collect();
+        assert_eq!(opens.len(), 1);
+        let body = &opens[0].body;
+        assert!((1..=99).contains(&body[0]) && body[1] == CONTAINER_TYPE_WORKBENCH, "{body:02x?}");
+        let r = &mut Reader(&body[2..]);
+        assert_eq!(r.block_pos().unwrap(), TOP);
+        assert_eq!(h.server.players[&1].inventory.table(), Some(TOP));
+        // un secondo clic sullo stesso banco non rimanda ContainerOpen (farebbe crashare il client)
+        assert!(click_table(&mut h).iter().all(|p| p.id != ContainerOpen::ID));
+        // e il clic non ha piazzato nulla
+        assert_eq!(h.server.block_at(Dim::Overworld, [3, 12, 4]).map(|b| b.0), Some(super::blocks::air()));
+    }
+
+    #[test]
+    fn spectators_and_far_players_do_not_open_the_table() {
+        let mut h = setup(GameMode::Spectator);
+        put_table(&mut h);
+        assert!(click_table(&mut h).iter().all(|p| p.id != ContainerOpen::ID));
+        let mut h = setup(GameMode::Survival);
+        put_table(&mut h);
+        h.server.players.get_mut(&1).unwrap().pos = [60.0, 11.6, 4.5];
+        assert!(click_table(&mut h).iter().all(|p| p.id != ContainerOpen::ID));
+        assert_eq!(h.server.players[&1].inventory.table(), None);
+    }
+
+    #[test]
+    fn wooden_pickaxe_at_the_table_end_to_end() {
+        let mut h = setup(GameMode::Survival);
+        put_table(&mut h);
+        let window = click_table(&mut h).iter().find(|p| p.id == ContainerOpen::ID).unwrap().body[0];
+        let inv = &mut h.server.players.get_mut(&1).unwrap().inventory;
+        for i in 0..3 {
+            inv.set_grid(i, item("minecraft:oak_planks", 1));
+        }
+        inv.set_grid(4, item("minecraft:stick", 1));
+        inv.set_grid(7, item("minecraft:stick", 1));
+        h.receive(1, &[craft_to_cursor(recipe_for("minecraft:wooden_pickaxe"), 1, 1)]);
+        let out = packets(&mut h.sent);
+        let response = out.iter().find(|(_, p)| p.id == id::ITEM_STACK_RESPONSE).map(|(_, p)| &p.body).unwrap();
+        assert_eq!(response[..2], [1, 0], "risposta con esito riuscito");
+        assert!(h.server.players[&1].inventory.stack_at(13, 32).is_some_and(|s| s.count == 0), "griglia consumata");
+        // chiusura del banco: il piccone sul cursore torna nell'inventario
+        h.receive(1, &[ContainerClose { container_id: window, container_type: 1, server_initiated_close: false }.packet()]);
+        let out = packets(&mut h.sent);
+        let close = out.iter().find(|(_, p)| p.id == ContainerClose::ID).unwrap();
+        assert_eq!(close.1.body, [window, CONTAINER_TYPE_WORKBENCH, 0]);
+        let inv = &h.server.players[&1].inventory;
+        assert!((0..36).any(|i| inv.main(i).id == item("minecraft:wooden_pickaxe", 1).id), "il piccone è nell'inventario");
+        assert_eq!(inv.table(), None);
+    }
+
+    #[test]
+    fn missing_ingredients_are_refused_with_an_error_response() {
+        let mut h = setup(GameMode::Survival);
+        put_table(&mut h);
+        click_table(&mut h);
+        h.server.players.get_mut(&1).unwrap().inventory.set_grid(0, item("minecraft:oak_planks", 1));
+        h.receive(1, &[craft_to_cursor(recipe_for("minecraft:wooden_pickaxe"), 1, 1)]);
+        let out = packets(&mut h.sent);
+        let response = out.iter().find(|(_, p)| p.id == id::ITEM_STACK_RESPONSE).map(|(_, p)| &p.body).unwrap();
+        assert_eq!(response[..2], [1, 1], "esito di errore");
+    }
+
+    #[test]
+    fn closing_the_table_returns_the_grid_or_drops_what_does_not_fit() {
+        let mut h = setup(GameMode::Survival);
+        put_table(&mut h);
+        let window = click_table(&mut h).iter().find(|p| p.id == ContainerOpen::ID).unwrap().body[0];
+        let inv = &mut h.server.players.get_mut(&1).unwrap().inventory;
+        inv.set_grid(0, item("minecraft:oak_planks", 5));
+        inv.set_grid(8, item("minecraft:dirt", 3));
+        for i in 1..36 {
+            inv.set_main(i, item("minecraft:cobblestone", 64)); // resta libera solo la casella 0 (con le pietre del setup in mano)
+        }
+        inv.set_main(0, Item::default());
+        drop(packets(&mut h.sent));
+        h.receive(1, &[ContainerClose { container_id: window, container_type: 1, server_initiated_close: false }.packet()]);
+        let out = packets(&mut h.sent);
+        let slots = out.iter().filter(|(to, p)| *to == 1 && p.id == InventorySlot::ID).count();
+        assert_eq!(slots, 1, "una sola casella cambiata: le assi entrano nella casella libera");
+        let inv = &h.server.players[&1].inventory;
+        assert_eq!((inv.main(0).id, inv.main(0).count), (item("minecraft:oak_planks", 1).id, 5));
+        let dropped = h.server.entities.iter().filter(|e| matches!(&e.kind, crate::entity::EntityKind::Item { item, .. } if item.count == 3)).count();
+        assert_eq!(dropped, 1, "la terra non ci sta: cade a terra");
+    }
+
+    #[test]
+    fn closing_the_inventory_returns_the_two_by_two_grid() {
+        let mut h = setup(GameMode::Survival);
+        h.server.players.get_mut(&1).unwrap().inventory.set_grid(1, item("minecraft:oak_log", 2));
+        h.receive(1, &[ContainerClose { container_id: 0, container_type: 0xff, server_initiated_close: false }.packet()]);
+        let inv = &h.server.players[&1].inventory;
+        assert!((0..36).any(|i| inv.main(i).id == item("minecraft:oak_log", 1).id && inv.main(i).count == 2));
+    }
+
+    #[test]
+    fn only_the_first_craft_requests_are_logged_in_hex() {
+        let mut h = setup(GameMode::Survival);
+        for _ in 0..crate::HEX_LOGS + 3 {
+            h.receive(1, &[craft_to_cursor(recipe_for("minecraft:wooden_pickaxe"), 1, 1)]);
+        }
+        assert_eq!(h.server.players[&1].craft_logs, crate::HEX_LOGS);
+    }
+}

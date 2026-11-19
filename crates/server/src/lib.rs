@@ -129,6 +129,8 @@ struct Player {
     /// Quante richieste di pila e quanti `PlayerAuthInput` con azioni su oggetti o blocchi sono già stati loggati in esadecimale
     /// (al massimo `HEX_LOGS`): servono a verificare nel gioco le codifiche non sicure.
     stack_logs: u8,
+    /// Quante richieste di pila con azioni di crafting sono già state loggate in esadecimale (al massimo `HEX_LOGS`).
+    craft_logs: u8,
     action_logs: u8,
     /// Quanti `PlayerSkin` sono già stati loggati in esadecimale (al massimo `HEX_LOGS`).
     skin_logs: u8,
@@ -211,6 +213,7 @@ impl Default for Player {
             mode: GameMode::default(),
             inventory: inventory::Inventory::default(),
             stack_logs: 0,
+            craft_logs: 0,
             action_logs: 0,
             skin_logs: 0,
             breaking: None,

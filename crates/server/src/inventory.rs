@@ -4,12 +4,15 @@
 //! server, il client lo ripete in ogni richiesta e una richiesta sbagliata annulla tutte le modifiche che aveva già fatto.
 //! Gli ID negativi nelle richieste sono previsioni del client: puntano a una richiesta precedente e si risolvono con
 //! gli ID che il server le ha assegnato (finché il client non conferma la casella con un ID non negativo).
-use crate::registry::{self, CreativeItem};
+use crate::{
+    recipes::{recipes, Ingredient, Recipe},
+    registry::{self, CreativeItem},
+};
 use bedrock_protocol::{
     generated::{
         enums::container_enum_name::{
-            ARMOR_CONTAINER, COMBINED_HOTBAR_AND_INVENTORY_CONTAINER, CREATED_OUTPUT_CONTAINER, CURSOR_CONTAINER, HOTBAR_CONTAINER, INVENTORY_CONTAINER,
-            OFFHAND_CONTAINER,
+            ARMOR_CONTAINER, COMBINED_HOTBAR_AND_INVENTORY_CONTAINER, CRAFTING_INPUT_CONTAINER, CREATED_OUTPUT_CONTAINER, CURSOR_CONTAINER, HOTBAR_CONTAINER,
+            INVENTORY_CONTAINER, OFFHAND_CONTAINER,
         },
         FullContainerName, InventorySlot, ItemStackResponse, ItemStackResponseContainerInfo, ItemStackResponseInfo, ItemStackResponseSlotInfo, PlayerHotbar,
     },
@@ -31,6 +34,15 @@ pub(crate) const HOTBAR_SLOTS: u8 = 9;
 pub(crate) const ARMOR_SLOTS: usize = 4;
 /// Casella di `CreatedOutput` dove sta l'oggetto appena preso dal menu creativo (P§5.3).
 const CREATED_SLOT: u8 = 50;
+/// Caselle della griglia di crafting: 4 (2x2 dell'inventario) o 9 (3x3 del banco da lavoro).
+const GRID_SMALL: u8 = 4;
+const GRID_LARGE: u8 = 9;
+/// Numero della prima casella della griglia come lo scrive il client nel contenitore `CraftingInput`: 28 per la 2x2, 32 per la 3x3
+/// (Dragonfly `craftingGridSmallOffset`/`craftingGridLargeOffset`).
+const GRID_SMALL_OFFSET: u8 = 28;
+const GRID_LARGE_OFFSET: u8 = 32;
+/// Tipo di contenitore del banco da lavoro in `ContainerOpen` (`ContainerTypeWorkbench` di gophertunnel).
+pub(crate) const CONTAINER_TYPE_WORKBENCH: u8 = 1;
 /// Massimo di una pila di un oggetto qualunque (il tetto): il massimo vero dipende dall'oggetto, vedi `max_stack_of`.
 pub(crate) const MAX_STACK: u16 = 64;
 
@@ -208,12 +220,18 @@ enum Loc {
     Armor(u8),
     Cursor,
     Created,
+    /// Casella della griglia di crafting (0..4 senza banco, 0..9 col banco).
+    Grid(u8),
 }
 
 impl Loc {
     /// Contenitore e casella dati dal client. Barra e inventario sono due viste dello stesso inventario.
-    fn resolve(container: u8, slot: u8) -> Option<Loc> {
+    fn resolve(container: u8, slot: u8, table: bool) -> Option<Loc> {
         match container {
+            CRAFTING_INPUT_CONTAINER => {
+                let (offset, size) = if table { (GRID_LARGE_OFFSET, GRID_LARGE) } else { (GRID_SMALL_OFFSET, GRID_SMALL) };
+                slot.checked_sub(offset).filter(|i| *i < size).map(Loc::Grid)
+            }
             HOTBAR_CONTAINER if slot < HOTBAR_SLOTS => Some(Loc::Main(slot)),
             INVENTORY_CONTAINER | COMBINED_HOTBAR_AND_INVENTORY_CONTAINER if (slot as usize) < MAIN_SLOTS => Some(Loc::Main(slot)),
             OFFHAND_CONTAINER => Some(Loc::Offhand), // il client numera la mano secondaria a modo suo: c'è una sola casella
@@ -225,8 +243,9 @@ impl Loc {
     }
 
     /// Finestra, casella e nome del contenitore per `InventorySlot`.
-    fn window(self) -> (u32, u32, u8) {
+    fn window(self, table: bool) -> (u32, u32, u8) {
         match self {
+            Loc::Grid(i) => (window::UI, i as u32 + if table { GRID_LARGE_OFFSET } else { GRID_SMALL_OFFSET } as u32, CRAFTING_INPUT_CONTAINER),
             Loc::Main(i) => (window::INVENTORY, i as u32, INVENTORY_CONTAINER),
             Loc::Offhand => (window::OFFHAND, 0, OFFHAND_CONTAINER),
             Loc::Armor(i) => (window::ARMOR, i as u32, ARMOR_CONTAINER),
@@ -244,6 +263,7 @@ struct Contents {
     armor: [Slot; ARMOR_SLOTS],
     cursor: Slot,
     created: Slot,
+    grid: [Slot; GRID_LARGE as usize],
 }
 
 impl Contents {
@@ -254,6 +274,7 @@ impl Contents {
             Loc::Armor(i) => &self.armor[i as usize],
             Loc::Cursor => &self.cursor,
             Loc::Created => &self.created,
+            Loc::Grid(i) => &self.grid[i as usize],
         }
     }
 
@@ -264,6 +285,7 @@ impl Contents {
             Loc::Armor(i) => &mut self.armor[i as usize],
             Loc::Cursor => &mut self.cursor,
             Loc::Created => &mut self.created,
+            Loc::Grid(i) => &mut self.grid[i as usize],
         }
     }
 }
@@ -295,6 +317,11 @@ pub(crate) struct Inventory {
     pub selected: u8,
     next_id: i32,
     pending: HashMap<i32, Pending>,
+    /// Banco da lavoro aperto (posizione del blocco): la griglia è 3x3 e i suoi numeri di casella partono da 32.
+    table: Option<[i32; 3]>,
+    /// ID della finestra aperta del banco (1..=99, come Dragonfly `nextWindowID`) e ultimo assegnato.
+    table_window: u8,
+    last_window: u8,
 }
 
 impl Default for Inventory {
@@ -306,10 +333,14 @@ impl Default for Inventory {
                 armor: std::array::from_fn(|_| Slot::default()),
                 cursor: Slot::default(),
                 created: Slot::default(),
+                grid: std::array::from_fn(|_| Slot::default()),
             },
             selected: 0,
             next_id: 1,
             pending: HashMap::new(),
+            table: None,
+            table_window: 0,
+            last_window: 0,
         }
     }
 }
@@ -320,6 +351,8 @@ struct Run {
     changed: Vec<(u8, u8)>,
     dropped: Vec<(Item, (u8, u8))>,
     now: Instant,
+    /// Risultati di una ricetta in attesa di `Create` (più di uno quando il totale supera una pila).
+    results: Vec<Item>,
 }
 
 impl Inventory {
@@ -336,11 +369,11 @@ impl Inventory {
 
     /// Il pacchetto `InventorySlot` per una casella nominata dal client (`None` se non esiste).
     pub fn slot_packet_at(&self, container: u8, slot: u8) -> Option<Packet> {
-        Loc::resolve(container, slot).map(|loc| self.slot_packet(loc))
+        Loc::resolve(container, slot, self.table.is_some()).map(|loc| self.slot_packet(loc))
     }
 
     fn slot_packet(&self, loc: Loc) -> Packet {
-        let (window, index, name) = loc.window();
+        let (window, index, name) = loc.window(self.table.is_some());
         InventorySlot {
             container_id: window as u8,
             slot: index,
@@ -378,10 +411,44 @@ impl Inventory {
 
     /// Svuota inventario, mano secondaria, armatura e oggetto sul cursore (non quello creato dal menu creativo) e restituisce ciò che c'era.
     pub fn take_all(&mut self) -> Vec<Item> {
-        let locs = (0..MAIN_SLOTS as u8).map(Loc::Main).chain([Loc::Offhand]).chain((0..ARMOR_SLOTS as u8).map(Loc::Armor)).chain([Loc::Cursor]);
-        let items = locs.map(|loc| std::mem::take(self.contents.get_mut(loc))).map(|slot| slot.item).filter(|item| !item.is_empty()).collect();
+        let locs = (0..MAIN_SLOTS as u8).map(Loc::Main).chain([Loc::Offhand]).chain((0..ARMOR_SLOTS as u8).map(Loc::Armor));
+        let items: Vec<Item> = locs.map(|loc| std::mem::take(self.contents.get_mut(loc))).map(|slot| slot.item).filter(|item| !item.is_empty()).collect();
         self.contents.created = Slot::default();
-        items
+        items.into_iter().chain(self.release_ui()).collect()
+    }
+
+    /// Mette un oggetto in una casella della griglia di crafting (solo per i test).
+    #[cfg(test)]
+    pub fn set_grid(&mut self, i: usize, item: Item) {
+        if i < GRID_LARGE as usize {
+            self.fill(Loc::Grid(i as u8), item);
+        }
+    }
+
+    /// Il banco da lavoro aperto, se c'è.
+    pub fn table(&self) -> Option<[i32; 3]> {
+        self.table
+    }
+
+    /// L'ID della finestra del banco aperto.
+    pub fn table_window(&self) -> Option<u8> {
+        self.table.map(|_| self.table_window)
+    }
+
+    /// Apre il banco in `pos` e dà l'ID della finestra (1..=99). Gli oggetti della griglia di prima vanno restituiti prima con `release_ui`.
+    pub fn open_table(&mut self, pos: [i32; 3]) -> u8 {
+        self.last_window = if self.last_window >= 99 { 1 } else { self.last_window + 1 };
+        self.table = Some(pos);
+        self.table_window = self.last_window;
+        self.last_window
+    }
+
+    /// Chiude il banco e svuota la griglia di crafting e il cursore (Dragonfly `MoveItemsToInventory`: `ui.Clear()`): restituisce
+    /// gli oggetti, che chi chiama rimette nell'inventario o butta a terra.
+    pub fn release_ui(&mut self) -> Vec<Item> {
+        self.table = None;
+        let locs = (0..GRID_LARGE).map(Loc::Grid).chain([Loc::Cursor]);
+        locs.map(|loc| std::mem::take(self.contents.get_mut(loc))).map(|slot| slot.item).filter(|item| !item.is_empty()).collect()
     }
 
     pub fn set_main(&mut self, i: usize, item: Item) {
@@ -407,7 +474,7 @@ impl Inventory {
 
     /// La casella com'è per il client; `None` se contenitore e casella non esistono.
     pub fn stack_at(&self, container: u8, slot: u8) -> Option<ItemStack> {
-        Loc::resolve(container, slot).map(|loc| self.stack_of(loc))
+        Loc::resolve(container, slot, self.table.is_some()).map(|loc| self.stack_of(loc))
     }
 
     /// Le 36 caselle principali per `InventoryContent`.
@@ -432,7 +499,7 @@ impl Inventory {
     /// Esegue una richiesta del client. Se una azione non è valida, tutte le modifiche della richiesta si annullano.
     pub fn handle(&mut self, req: &StackRequest, creative: bool) -> StackResult {
         let backup = self.contents.clone();
-        let mut run = Run { request_id: req.request_id, changed: Vec::new(), dropped: Vec::new(), now: Instant::now() };
+        let mut run = Run { request_id: req.request_id, changed: Vec::new(), dropped: Vec::new(), now: Instant::now(), results: Vec::new() };
         match self.run(req, creative, &mut run) {
             Ok(()) => {
                 // La casella creata è di passaggio: quello che il client non ha preso (il server non sa quanto sta in una pila) si butta.
@@ -445,7 +512,7 @@ impl Inventory {
                 self.pending.remove(&req.request_id);
                 let mut changed = Vec::new();
                 for (container, slot) in referenced(req) {
-                    if Loc::resolve(container, slot).is_some() && !changed.contains(&(container, slot)) {
+                    if Loc::resolve(container, slot, self.table.is_some()).is_some() && !changed.contains(&(container, slot)) {
                         changed.push((container, slot));
                     }
                 }
@@ -481,6 +548,11 @@ impl Inventory {
                         .ok_or_else(|| format!("voce creativa {net_id} inesistente"))?;
                     self.put(run, CREATED_OUTPUT_CONTAINER, CREATED_SLOT, Loc::Created, item);
                 }
+                StackAction::CraftRecipe { recipe_id, crafts } => self.craft(run, *recipe_id, *crafts, false)?,
+                StackAction::CraftRecipeAuto { recipe_id, crafts } => self.craft(run, *recipe_id, *crafts, true)?,
+                StackAction::Create { results_slot } => self.create(run, *results_slot)?,
+                // Il consumo lo ha già fatto la ricetta (Dragonfly ignora `Consume`).
+                StackAction::Other(stack_type::CONSUME) => {}
                 // I risultati del crafting sono solo informativi: li calcola il server (come Dragonfly, che li ignora).
                 StackAction::Other(stack_type::CRAFT_RESULTS) => {}
                 StackAction::Other(kind) => return Err(format!("azione {kind} non supportata")),
@@ -491,7 +563,7 @@ impl Inventory {
 
     /// Dà la casella indicata dal client e controlla che l'ID di pila che il client ci vede sia quello del server.
     fn verified(&mut self, r: &SlotRef) -> Result<Loc, String> {
-        let loc = Loc::resolve(r.container, r.slot).ok_or_else(|| format!("casella {}/{} inesistente", r.container, r.slot))?;
+        let loc = Loc::resolve(r.container, r.slot, self.table.is_some()).ok_or_else(|| format!("casella {}/{} inesistente", r.container, r.slot))?;
         if loc == Loc::Created {
             return Ok(loc); // il contenuto lo ha deciso il server in questa stessa richiesta: niente da confrontare
         }
@@ -536,6 +608,96 @@ impl Inventory {
         let id = self.contents.get(loc).stack_id;
         let pending = self.pending.entry(run.request_id).or_insert_with(|| Pending { at: run.now, ids: HashMap::new() });
         pending.ids.insert(loc, id);
+    }
+
+    /// Contenitore e numero di casella della griglia come li nomina il client.
+    fn grid_name(&self, i: u8) -> (u8, u8) {
+        (CRAFTING_INPUT_CONTAINER, i + if self.table.is_some() { GRID_LARGE_OFFSET } else { GRID_SMALL_OFFSET })
+    }
+
+    /// `CraftRecipe` e `CraftRecipeAuto` (Dragonfly `handleCraft`/`handleAutoCraft`): controlla che gli ingredienti ci siano, li consuma
+    /// (`crafts` volte) e prepara il risultato. Con `auto` si prende anche dall'inventario (il libro delle ricette con Maiusc); altrimenti
+    /// ogni ingrediente deve stare in una casella diversa della griglia. Le caselle vuote della ricetta (forma) si ignorano: Dragonfly
+    /// non controlla la posizione, solo che ci siano gli ingredienti.
+    fn craft(&mut self, run: &mut Run, recipe_id: u32, crafts: u8, auto: bool) -> Result<(), String> {
+        let recipe = recipes().by_network_id(recipe_id).ok_or_else(|| format!("ricetta {recipe_id} sconosciuta"))?;
+        if recipe.block != "crafting_table" {
+            return Err(format!("la ricetta {recipe_id} non è di banco da lavoro"));
+        }
+        if crafts < 1 {
+            return Err("si fa almeno una volta".into());
+        }
+        if self.table.is_none() && recipe.needs_table() {
+            return Err(format!("la ricetta {recipe_id} non entra nella griglia 2x2"));
+        }
+        let times = crafts as u32;
+        let size = if self.table.is_some() { GRID_LARGE } else { GRID_SMALL };
+        if auto {
+            // Ingredienti uguali si sommano; si consuma prima dalla griglia, poi dall'inventario.
+            let mut flat: Vec<(&Ingredient, u32)> = Vec::new();
+            for ing in recipe.input.iter().filter(|i| **i != Ingredient::Empty) {
+                match flat.iter_mut().find(|(f, _)| same_ingredient(f, ing)) {
+                    Some((_, n)) => *n += ing.count(),
+                    None => flat.push((ing, ing.count())),
+                }
+            }
+            for (ing, count) in flat {
+                let mut remaining = count * times;
+                let locs = (0..size).map(Loc::Grid).chain((0..MAIN_SLOTS as u8).map(Loc::Main));
+                for loc in locs {
+                    if remaining == 0 {
+                        break;
+                    }
+                    let item = self.contents.get(loc).item.clone();
+                    if item.is_empty() || !item_matches(ing, &item) {
+                        continue;
+                    }
+                    let take = remaining.min(item.count as u32);
+                    remaining -= take;
+                    let (container, slot) = match loc {
+                        Loc::Grid(i) => self.grid_name(i),
+                        Loc::Main(i) => (COMBINED_HOTBAR_AND_INVENTORY_CONTAINER, i),
+                        _ => unreachable!(),
+                    };
+                    self.put(run, container, slot, loc, item.with_count(item.count - take as u16));
+                }
+                if remaining != 0 {
+                    return Err(format!("ricetta {recipe_id}: mancano {remaining} di {ing:?}"));
+                }
+            }
+        } else {
+            let mut used = [false; GRID_LARGE as usize];
+            for ing in recipe.input.iter().filter(|i| **i != Ingredient::Empty) {
+                let need = ing.count() * times;
+                let found = (0..size).find(|&i| {
+                    let item = &self.contents.grid[i as usize].item;
+                    !used[i as usize] && !item.is_empty() && item.count as u32 >= need && item_matches(ing, item)
+                });
+                let Some(i) = found else { return Err(format!("ricetta {recipe_id}: ingrediente {ing:?} assente nella griglia")) };
+                used[i as usize] = true;
+                let item = self.contents.grid[i as usize].item.clone();
+                let (container, slot) = self.grid_name(i);
+                self.put(run, container, slot, Loc::Grid(i), item.with_count(item.count - need as u16));
+            }
+        }
+        let results = recipe_results(recipe, times);
+        let single = results.len() <= 1;
+        run.results.extend(results);
+        if single {
+            self.create(run, 0)?; // un solo risultato: si crea subito, come `defaultCreation` di Dragonfly
+        }
+        Ok(())
+    }
+
+    /// `Create`: il risultato `slot` tra quelli preparati passa nella casella creata (una volta sola).
+    fn create(&mut self, run: &mut Run, slot: u8) -> Result<(), String> {
+        let item = run.results.get_mut(slot as usize).ok_or_else(|| format!("risultato {slot} inesistente"))?;
+        let item = std::mem::take(item);
+        if item.is_empty() {
+            return Err(format!("risultato {slot} già creato"));
+        }
+        self.put(run, CREATED_OUTPUT_CONTAINER, CREATED_SLOT, Loc::Created, item);
+        Ok(())
     }
 
     /// Take e Place: spostano `count` oggetti da una casella all'altra.
@@ -670,7 +832,7 @@ impl Inventory {
     /// Rimette in una casella un oggetto buttato che un gancio ha annullato. Se nel frattempo la casella contiene altro, l'oggetto va
     /// nella prima casella libera dell'inventario; se è pieno, si perde (non può accadere: l'oggetto era appena uscito da lì).
     pub fn restore(&mut self, container: u8, slot: u8, item: Item) {
-        let Some(loc) = Loc::resolve(container, slot) else { return };
+        let Some(loc) = Loc::resolve(container, slot, self.table.is_some()) else { return };
         let current = self.contents.get(loc).item.clone();
         if current.is_empty() {
             return self.fill(loc, item);
@@ -692,8 +854,8 @@ impl Inventory {
                 vec![ItemStackResponse { responses: vec![ItemStackResponseInfo { result: RESULT_ERROR, client_request_id: request_id, containers: None }] }
                     .packet()];
             for &(container, slot) in &result.changed {
-                if let Some(loc) = Loc::resolve(container, slot) {
-                    let (window, index, name) = loc.window();
+                if let Some(loc) = Loc::resolve(container, slot, self.table.is_some()) {
+                    let (window, index, name) = loc.window(self.table.is_some());
                     packets.push(
                         InventorySlot {
                             container_id: window as u8,
@@ -731,6 +893,35 @@ impl Inventory {
     }
 }
 
+/// Vero se l'oggetto soddisfa l'ingrediente (nome e variante, o tag): la quantità non si guarda.
+fn item_matches(ingredient: &Ingredient, item: &Item) -> bool {
+    registry::items().name(item.id).is_some_and(|name| recipes().matches(ingredient, name, item.aux as i32))
+}
+
+/// Due ingredienti dello stesso genere (stesso oggetto e variante, o stesso tag), quantità a parte.
+fn same_ingredient(a: &Ingredient, b: &Ingredient) -> bool {
+    match (a, b) {
+        (Ingredient::Item { name: n1, meta: m1, .. }, Ingredient::Item { name: n2, meta: m2, .. }) => n1 == n2 && m1 == m2,
+        (Ingredient::Tag { tag: t1, .. }, Ingredient::Tag { tag: t2, .. }) => t1 == t2,
+        _ => false,
+    }
+}
+
+/// I risultati di `times` esecuzioni della ricetta, divisi in pile del massimo dell'oggetto (Dragonfly `repeatStacks`).
+fn recipe_results(recipe: &Recipe, times: u32) -> Vec<Item> {
+    let mut out = Vec::new();
+    for o in &recipe.output {
+        let item = Item { id: o.item_id, count: 1, aux: o.meta, block: o.block.or_else(|| registry::items().block_of(&o.name)), nbt: None };
+        let (max, mut total) = (item.max_stack() as u32, o.count as u32 * times);
+        while total > 0 {
+            let n = total.min(max);
+            total -= n;
+            out.push(item.with_count(n as u16));
+        }
+    }
+    out
+}
+
 /// Tutte le caselle nominate dalle azioni di una richiesta (più la casella creata se si crea qualcosa).
 fn referenced(req: &StackRequest) -> Vec<(u8, u8)> {
     let mut out = Vec::new();
@@ -740,7 +931,9 @@ fn referenced(req: &StackRequest) -> Vec<(u8, u8)> {
                 out.extend([(src.container, src.slot), (dst.container, dst.slot)])
             }
             StackAction::Drop { src, .. } | StackAction::Destroy { src, .. } => out.push((src.container, src.slot)),
-            StackAction::CraftCreative { .. } => out.push((CREATED_OUTPUT_CONTAINER, CREATED_SLOT)),
+            StackAction::CraftCreative { .. } | StackAction::CraftRecipe { .. } | StackAction::CraftRecipeAuto { .. } | StackAction::Create { .. } => {
+                out.push((CREATED_OUTPUT_CONTAINER, CREATED_SLOT))
+            }
             StackAction::Other(_) => {}
         }
     }
@@ -970,7 +1163,7 @@ mod tests {
         assert_eq!(inv.contents.armor[3].item.count, 3);
         let bad = StackAction::Take { count: 1, src: at(ARMOR_CONTAINER, 3, inv.contents.armor[3].stack_id), dst: at(ARMOR_CONTAINER, 4, 0) };
         assert!(!inv.handle(&request(-7, vec![bad]), false).ok, "l'armatura ha 4 caselle");
-        assert!(!inv.handle(&request(-9, vec![StackAction::Other(5)]), false).ok);
+        assert!(!inv.handle(&request(-9, vec![StackAction::Other(7)]), false).ok);
     }
 
     #[test]
@@ -1082,6 +1275,191 @@ mod tests {
             full.set_main(i, named("minecraft:diamond_sword", 1));
         }
         assert!(!full.accepts(&named("minecraft:diamond_sword", 1)));
+    }
+
+    // ---------- crafting ----------
+
+    /// ID di rete della ricetta che dà `output` e il cui primo ingrediente è `first` (nome di oggetto o tag).
+    fn recipe_id(output: &str, first: &str) -> u32 {
+        recipes()
+            .all()
+            .iter()
+            .find(|r| {
+                r.output[0].name == output
+                    && matches!(r.input.iter().find(|i| **i != Ingredient::Empty), Some(Ingredient::Item { name, .. } | Ingredient::Tag { tag: name, .. }) if name == first)
+            })
+            .unwrap_or_else(|| panic!("ricetta {output} da {first}"))
+            .id
+    }
+
+    /// Mette `count` oggetti `name` nella casella `i` della griglia.
+    fn grid(inv: &mut Inventory, i: u8, name: &str, count: u16) {
+        let stack_id = inv.new_id();
+        inv.contents.grid[i as usize] = Slot { item: named(name, count), stack_id };
+    }
+
+    fn craft_recipe(recipe_id: u32, crafts: u8) -> StackAction {
+        StackAction::CraftRecipe { recipe_id, crafts }
+    }
+
+    #[test]
+    fn two_by_two_grid_slots_are_numbered_from_28_and_three_by_three_from_32() {
+        let mut inv = Inventory::default();
+        assert_eq!(Loc::resolve(CRAFTING_INPUT_CONTAINER, 28, false), Some(Loc::Grid(0)));
+        assert_eq!(Loc::resolve(CRAFTING_INPUT_CONTAINER, 31, false), Some(Loc::Grid(3)));
+        assert_eq!(Loc::resolve(CRAFTING_INPUT_CONTAINER, 32, false), None);
+        assert_eq!(Loc::resolve(CRAFTING_INPUT_CONTAINER, 40, true), Some(Loc::Grid(8)));
+        assert_eq!(Loc::resolve(CRAFTING_INPUT_CONTAINER, 28, true), None);
+        inv.open_table([1, 2, 3]);
+        assert_eq!(inv.slot_packet_at(CRAFTING_INPUT_CONTAINER, 40).map(|p| p.id), Some(id::INVENTORY_SLOT));
+    }
+
+    #[test]
+    fn log_becomes_planks_in_the_inventory_grid() {
+        let mut inv = Inventory::default();
+        grid(&mut inv, 0, "minecraft:oak_log", 3);
+        let planks = recipe_id("minecraft:oak_planks", "minecraft:oak_log");
+        let req = request(-1, vec![craft_recipe(planks, 1), StackAction::Take { count: 4, src: created(-1), dst: cursor(0) }]);
+        let result = inv.handle(&req, false);
+        assert!(result.ok, "{:?}", result.error);
+        assert_eq!((inv.contents.cursor.item.id, inv.contents.cursor.item.count), (named("minecraft:oak_planks", 1).id, 4));
+        assert_eq!(inv.contents.grid[0].item.count, 2, "un tronco consumato");
+        assert!(inv.contents.created.item.is_empty());
+        assert!(result.changed.contains(&(CRAFTING_INPUT_CONTAINER, 28)), "{:?}", result.changed);
+        // la risposta nomina la casella della griglia con la quantità che resta
+        let body = &inv.response(-1, &result)[0].body;
+        assert!(body.windows(2).any(|w| w == [CRAFTING_INPUT_CONTAINER, 0]), "{body:02x?}");
+    }
+
+    #[test]
+    fn table_recipes_need_the_table_and_crafting_table_fits_in_two_by_two() {
+        let mut inv = Inventory::default();
+        for i in 0..4 {
+            grid(&mut inv, i, "minecraft:oak_planks", 2);
+        }
+        let table = recipe_id("minecraft:crafting_table", "minecraft:oak_planks");
+        let req = request(-1, vec![craft_recipe(table, 1), StackAction::Take { count: 1, src: created(-1), dst: cursor(0) }]);
+        assert!(inv.handle(&req, false).ok);
+        assert_eq!(inv.contents.cursor.item.id, named("minecraft:crafting_table", 1).id);
+        assert!(inv.contents.grid[..4].iter().all(|s| s.item.count == 1));
+        // il piccone di legno è 3x3: senza banco si rifiuta, con il banco riesce
+        let mut inv = Inventory::default();
+        let pickaxe = recipe_id("minecraft:wooden_pickaxe", "minecraft:planks");
+        for i in 0..3 {
+            grid(&mut inv, i, "minecraft:oak_planks", 1);
+        }
+        grid(&mut inv, 4, "minecraft:stick", 1);
+        grid(&mut inv, 7, "minecraft:stick", 1);
+        let take = StackAction::Take { count: 1, src: created(-1), dst: cursor(0) };
+        let result = inv.handle(&request(-1, vec![craft_recipe(pickaxe, 1), take.clone()]), false);
+        assert!(!result.ok && result.error.unwrap().contains("2x2"));
+        inv.open_table([0, 64, 0]);
+        let result = inv.handle(&request(-3, vec![craft_recipe(pickaxe, 1), take]), false);
+        assert!(result.ok, "{:?}", result.error);
+        assert_eq!(inv.contents.cursor.item.id, named("minecraft:wooden_pickaxe", 1).id);
+        assert!(inv.contents.grid.iter().all(|s| s.item.is_empty()), "ingredienti consumati con esattezza");
+    }
+
+    #[test]
+    fn recipe_with_missing_ingredients_is_refused_and_changes_nothing() {
+        let mut inv = Inventory::default();
+        grid(&mut inv, 0, "minecraft:oak_planks", 1);
+        let before = inv.contents.clone();
+        let sticks = recipe_id("minecraft:stick", "minecraft:planks");
+        let req = request(-1, vec![craft_recipe(sticks, 1), StackAction::Take { count: 4, src: created(-1), dst: cursor(0) }]);
+        let result = inv.handle(&req, false);
+        assert!(!result.ok && result.error.unwrap().contains("assente"));
+        assert_eq!(inv.contents.grid, before.grid);
+        assert!(inv.contents.cursor.item.is_empty());
+        // una ricetta sconosciuta e crafts = 0 si rifiutano
+        assert!(!inv.handle(&request(-3, vec![craft_recipe(999_999, 1)]), false).ok);
+        grid(&mut inv, 1, "minecraft:oak_planks", 1);
+        assert!(!inv.handle(&request(-5, vec![craft_recipe(sticks, 0)]), false).ok);
+        // due assi in una sola casella non bastano (servono due caselle)
+        let mut inv = Inventory::default();
+        grid(&mut inv, 0, "minecraft:oak_planks", 2);
+        assert!(!inv.handle(&request(-7, vec![craft_recipe(sticks, 1)]), false).ok);
+    }
+
+    #[test]
+    fn crafting_n_times_consumes_n_times_the_ingredients() {
+        let mut inv = Inventory::default();
+        grid(&mut inv, 0, "minecraft:oak_planks", 5);
+        grid(&mut inv, 1, "minecraft:oak_planks", 5);
+        let sticks = recipe_id("minecraft:stick", "minecraft:planks");
+        let req = request(-1, vec![craft_recipe(sticks, 3), StackAction::Take { count: 12, src: created(-1), dst: cursor(0) }]);
+        assert!(inv.handle(&req, false).ok);
+        assert_eq!(inv.contents.cursor.item.count, 12, "4 bastoncini x 3");
+        assert_eq!((inv.contents.grid[0].item.count, inv.contents.grid[1].item.count), (2, 2));
+        // più ripetizioni di quante gli ingredienti permettano si rifiuta
+        assert!(!inv.handle(&request(-3, vec![craft_recipe(sticks, 3)]), false).ok);
+        assert_eq!(inv.contents.grid[0].item.count, 2);
+    }
+
+    #[test]
+    fn auto_craft_takes_from_the_grid_then_the_inventory() {
+        let mut inv = Inventory::default();
+        give(&mut inv, 0, "minecraft:oak_planks", 5);
+        give(&mut inv, 9, "minecraft:oak_planks", 5);
+        grid(&mut inv, 0, "minecraft:oak_planks", 1);
+        let sticks = recipe_id("minecraft:stick", "minecraft:planks");
+        let auto = StackAction::CraftRecipeAuto { recipe_id: sticks, crafts: 5 };
+        let result = inv.handle(&request(-1, vec![auto, StackAction::Take { count: 20, src: created(-1), dst: cursor(0) }]), false);
+        assert!(result.ok, "{:?}", result.error);
+        assert_eq!(inv.contents.cursor.item.count, 20, "5 volte 4 bastoncini");
+        // servono 10 assi: una dalla griglia, poi 5 dalla casella 0 e 4 dalla 9
+        assert!(inv.contents.grid[0].item.is_empty() && inv.contents.main[0].item.is_empty());
+        assert_eq!(inv.contents.main[9].item.count, 1);
+        assert!(result.changed.contains(&(COMBINED_HOTBAR_AND_INVENTORY_CONTAINER, 9)));
+        // non bastano più assi: rifiutata, e l'inventario resta com'era
+        let auto = StackAction::CraftRecipeAuto { recipe_id: sticks, crafts: 2 };
+        assert!(!inv.handle(&request(-3, vec![auto]), false).ok);
+        assert_eq!(inv.contents.main[9].item.count, 1);
+    }
+
+    #[test]
+    fn a_big_batch_is_split_into_stacks_created_one_by_one() {
+        let mut inv = Inventory::default();
+        give(&mut inv, 0, "minecraft:oak_planks", 64);
+        give(&mut inv, 1, "minecraft:oak_planks", 64);
+        let sticks = recipe_id("minecraft:stick", "minecraft:planks");
+        // 17 volte 4 = 68 bastoncini: una pila da 64 e una da 4; la seconda si crea solo con `Create`
+        let auto = |crafts| StackAction::CraftRecipeAuto { recipe_id: sticks, crafts };
+        let first = request(-1, vec![auto(17), StackAction::Create { results_slot: 0 }, StackAction::Take { count: 64, src: created(-1), dst: cursor(0) }]);
+        let result = inv.handle(&first, false);
+        assert!(result.ok, "{:?}", result.error);
+        assert_eq!(inv.contents.cursor.item.count, 64);
+        // lo stesso risultato non si crea due volte
+        let twice = request(-3, vec![auto(17), StackAction::Create { results_slot: 0 }, StackAction::Create { results_slot: 0 }]);
+        assert!(!inv.handle(&twice, false).ok);
+        let second = request(-5, vec![auto(17), StackAction::Create { results_slot: 1 }, StackAction::Place { count: 4, src: created(-1), dst: hotbar(8, 0) }]);
+        assert!(inv.handle(&second, false).ok);
+        assert_eq!(inv.contents.main[8].item.count, 4);
+    }
+
+    #[test]
+    fn closing_the_table_gives_back_grid_and_cursor() {
+        let mut inv = Inventory::default();
+        inv.open_table([0, 64, 0]);
+        grid(&mut inv, 5, "minecraft:stone", 7);
+        inv.contents.cursor = Slot { item: named("minecraft:dirt", 2), stack_id: 5 };
+        let items = inv.release_ui();
+        assert_eq!(items.iter().map(|i| i.count).collect::<Vec<_>>(), [7, 2]);
+        assert!(inv.table().is_none() && inv.contents.grid.iter().all(|s| s.item.is_empty()) && inv.contents.cursor.item.is_empty());
+    }
+
+    #[test]
+    fn grid_items_go_through_place_with_stack_ids() {
+        let mut inv = Inventory::default();
+        let window = inv.open_table([0, 64, 0]);
+        assert_eq!(inv.table_window(), Some(window));
+        let id = give(&mut inv, 0, "minecraft:oak_planks", 8);
+        let req = request(-1, vec![StackAction::Place { count: 3, src: hotbar(0, id), dst: at(CRAFTING_INPUT_CONTAINER, 34, 0) }]);
+        assert!(inv.handle(&req, false).ok);
+        assert_eq!(inv.contents.grid[2].item.count, 3);
+        // la casella 2x2 non esiste col banco aperto
+        let bad = request(-3, vec![StackAction::Place { count: 1, src: hotbar(0, -1), dst: at(CRAFTING_INPUT_CONTAINER, 28, 0) }]);
+        assert!(!inv.handle(&bad, false).ok);
     }
 
     #[test]

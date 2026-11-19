@@ -2,7 +2,7 @@
 use crate::{
     entity::{armor_of, EntityKind},
     events::WorldAction,
-    inventory::{window, HOTBAR_SLOTS},
+    inventory::{window, CONTAINER_TYPE_WORKBENCH, HOTBAR_SLOTS},
     playerdata::{self, EYE_HEIGHT},
     survival, GameMode, Player, Server, HEX_LOGS,
 };
@@ -13,7 +13,7 @@ use bedrock_protocol::{
     id,
     input::{
         action_source, flag, interact_action, player_action, respawn_state, use_entity, use_item, Animate, Interact, InventoryAction, InventoryTransaction,
-        ItemStackRequestPacket, LegacySlots, PlayerAction, PlayerAuthInput, Respawn, StackRequest,
+        ItemStackRequestPacket, LegacySlots, PlayerAction, PlayerAuthInput, Respawn, StackAction, StackRequest,
     },
     login,
     packets::{
@@ -41,6 +41,7 @@ impl Server {
         log!("[#{pid}] disconnesso");
         let name = self.name(pid);
         self.waiting_start.retain(|&w| w != pid);
+        self.return_ui_items(pid); // la griglia di crafting aperta non si perde
         if let Some(mut p) = self.players.remove(&pid) {
             survival::settle_dead(&mut p, self.spawn);
             playerdata::persist(self.disk.as_ref(), &mut p);
@@ -355,6 +356,15 @@ impl Server {
         let Some(packet) = ItemStackRequestPacket::decode(body) else {
             return log!("[#{pid}] ItemStackRequest illeggibile ({} byte): ignorato", body.len());
         };
+        // Le richieste di crafting si loggano a parte (le prime `HEX_LOGS`): la loro codifica non è ancora confermata nel gioco.
+        let crafts = packet
+            .requests
+            .iter()
+            .any(|r| r.actions.iter().any(|a| matches!(a, StackAction::CraftRecipe { .. } | StackAction::CraftRecipeAuto { .. } | StackAction::Create { .. })));
+        if let Some(p) = self.players.get_mut(&pid).filter(|p| crafts && p.craft_logs < HEX_LOGS) {
+            p.craft_logs += 1;
+            log!("[#{pid}] ItemStackRequest di crafting ({} byte): {:02x?} -> {:?}", body.len(), &body[..body.len().min(400)], packet.requests);
+        }
         for request in &packet.requests {
             self.stack_request(pid, request);
         }
@@ -469,10 +479,22 @@ impl Server {
         };
         let Some(p) = self.players.get_mut(&pid) else { return };
         p.inventory_open = false;
+        // Griglia e cursore tornano all'inventario: alla chiusura del banco, e a quella dell'inventario se il banco non è aperto (griglia 2x2).
+        let table_window = p.inventory.table_window();
+        let closes_table = table_window == Some(c.container_id);
+        if closes_table || c.container_id == 0xff || (c.container_id == window::INVENTORY as u8 && table_window.is_none()) {
+            self.return_ui_items(pid);
+        }
         if c.container_id == 0xff {
             return;
         }
-        let container_type = if c.container_id == window::INVENTORY as u8 { 0 } else { c.container_type };
+        let container_type = if closes_table {
+            CONTAINER_TYPE_WORKBENCH
+        } else if c.container_id == window::INVENTORY as u8 {
+            0
+        } else {
+            c.container_type
+        };
         self.send(pid, &[ContainerClose { container_id: c.container_id, container_type, server_initiated_close: false }.packet()]);
     }
 

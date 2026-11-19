@@ -8,7 +8,6 @@
 //!
 //! Corrispondenza di un oggetto con un ingrediente (`Ingredient::matches`): per nome e variante, dove la variante 32767
 //! accetta qualunque valore ausiliario; un tag accetta gli oggetti elencati in `Recipes::tag_contains`.
-#![allow(dead_code)] // i consumatori (azioni di crafting) arrivano nel compito seguente
 use crate::registry::{self, state_value, BlockState};
 use bedrock_protocol::crafting::{CraftingData, Descriptor, Ingredient as WireIngredient, RecipeOutput, ShapedRecipe, ShapelessRecipe};
 use bedrock_protocol::{wire::ServerPacket, Packet};
