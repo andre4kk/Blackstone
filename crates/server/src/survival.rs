@@ -97,7 +97,7 @@ impl Server {
     /// flag c'è e non sta salendo (il flag vale anche per la testa contro un soffitto, ma lì si sale). Si azzera anche in acqua,
     /// in volo, in planata e fuori da sopravvivenza/avventura.
     pub(crate) fn fall_tick(&mut self, pid: u64, feet_y: f32, on_ground: bool) {
-        let in_water = self.feet_in_water(pid, feet_y);
+        let in_water = self.feet_resets_fall(pid, feet_y);
         let Some(p) = self.players.get_mut(&pid) else { return };
         let before = p.pos[1] - EYE_HEIGHT;
         let falls = matches!(p.mode, GameMode::Survival | GameMode::Adventure) && !p.dead && !p.flying && !p.gliding && !in_water;
@@ -118,13 +118,15 @@ impl Server {
         }
     }
 
-    /// Vero se la cella dei piedi di `pid` (a `feet_y`) contiene acqua: nello strato dei liquidi o come blocco d'acqua.
-    fn feet_in_water(&self, pid: u64, feet_y: f32) -> bool {
+    /// Vero se la cella dei piedi di `pid` (a `feet_y`) azzera la caduta. Come Dragonfly (`fallDistanceEntity` di acqua, lava, scala, rampicante,
+    /// ragnatela): acqua (strato dei liquidi o blocco), lava, scala, vite e ragnatela. Il client si arrampica già da solo.
+    fn feet_resets_fall(&self, pid: u64, feet_y: f32) -> bool {
+        const BLOCKS: [&str; 7] =
+            ["minecraft:water", "minecraft:flowing_water", "minecraft:lava", "minecraft:flowing_lava", "minecraft:ladder", "minecraft:vine", "minecraft:web"];
         let Some(p) = self.players.get(&pid) else { return false };
         let cell = [p.pos[0].floor() as i32, feet_y.floor() as i32, p.pos[2].floor() as i32];
-        self.block_at(Dim::Overworld, cell).is_some_and(|(hash, layer)| {
-            layer || crate::registry::blocks().state(hash).is_some_and(|s| s.name == "minecraft:water" || s.name == "minecraft:flowing_water")
-        })
+        self.block_at(Dim::Overworld, cell)
+            .is_some_and(|(hash, layer)| layer || crate::registry::blocks().state(hash).is_some_and(|s| BLOCKS.contains(&s.name.as_str())))
     }
 
     /// Chi ha i piedi sotto il fondo del mondo (come Dragonfly: `y < range[0]`, -64 nel mondo) subisce 4 di danno, anche in creativa

@@ -3474,6 +3474,23 @@ mod survival {
     }
 
     #[test]
+    fn climbing_down_a_ladder_deals_nothing() {
+        let mut h = setup(GameMode::Survival);
+        let mut chunk = Chunk::flat(Dim::Overworld, 0, 0);
+        let ladder = crate::world::block_hash("minecraft:ladder", &[("facing_direction", crate::world::State::Int(2))]);
+        for y in 70..=80 {
+            chunk.set_block(0, y, 0, ladder, false);
+        }
+        h.server.chunks.insert((0, 0, 0), chunk);
+        feet_at(&mut h, 80.0, false);
+        for y in (70..80).rev() {
+            feet_at(&mut h, y as f32 + 0.5, false);
+        }
+        feet_at(&mut h, 69.0, true); // scende dalla scala sul pavimento
+        assert_eq!(health(&h), 20.0);
+    }
+
+    #[test]
     fn jumping_up_resets_the_fall() {
         let mut h = setup(GameMode::Survival);
         feet_at(&mut h, 80.0, true);
