@@ -3,9 +3,10 @@ use crate::{
     chest::CONTAINER_TYPE_CONTAINER,
     entity::{armor_of, EntityKind},
     events::WorldAction,
+    inventory::Item,
     inventory::{window, CONTAINER_TYPE_WORKBENCH, HOTBAR_SLOTS},
     playerdata::{self, EYE_HEIGHT},
-    survival, GameMode, Player, Server, HEX_LOGS,
+    registry, survival, GameMode, Player, Server, HEX_LOGS,
 };
 use bedrock_net::log;
 use bedrock_protocol::{
@@ -13,8 +14,8 @@ use bedrock_protocol::{
     generated::{BlockPos, ContainerClose, ContainerOpen, MobEquipment},
     id,
     input::{
-        action_source, flag, interact_action, player_action, respawn_state, use_entity, use_item, Animate, Interact, InventoryAction, InventoryTransaction,
-        ItemStackRequestPacket, LegacySlots, PlayerAction, PlayerAuthInput, Respawn, StackAction, StackRequest,
+        action_source, flag, interact_action, player_action, respawn_state, use_entity, use_item, Animate, BlockPickRequest, Interact, InventoryAction,
+        InventoryTransaction, ItemStackRequestPacket, LegacySlots, PlayerAction, PlayerAuthInput, Respawn, StackAction, StackRequest,
     },
     login,
     packets::{
@@ -80,6 +81,7 @@ impl Server {
             | id::ANIMATE
             | id::PLAYER_SKIN
             | id::PLAYER_ACTION
+            | id::BLOCK_PICK_REQUEST
             | id::RESPAWN
             | id::INVENTORY_TRANSACTION => spawned,
             _ => true,
@@ -112,10 +114,18 @@ impl Server {
             id::EMOTE_LIST | 307 | 358 => {}
             id::SERVERBOUND_LOADING_SCREEN | id::CLIENT_CACHE_STATUS => {} // il client dichiara se usa la cache dei chunk: per ora non serve
             id::PACKET_VIOLATION_WARNING => self.packet_violation(pid, &packet.body),
+            // LevelSoundEvent: il client annuncia i suoni che ha fatto (colpi, rottura...) ogni ~200 ms. Dragonfly non ha un gestore
+            // per questo pacchetto (i suoni li genera da sé e li manda a chi guarda): qui è uguale, il server i suoi li manda da solo
+            // (`play_sound`) e rilanciare questi li raddoppierebbe. Si ignora in silenzio.
+            id::LEVEL_SOUND_EVENT => {}
+            id::BLOCK_PICK_REQUEST => self.block_pick(pid, &packet.body),
             other => {
-                let body = &packet.body;
-                let hex = if body.len() <= 80 { format!(": {body:02x?}") } else { String::new() };
-                log!("[#{pid}] pacchetto {other} non gestito ({} byte){hex}", body.len());
+                // Ogni ID sconosciuto si registra una volta per giocatore: il client ne manda alcuni di continuo.
+                if self.players.get_mut(&pid).is_some_and(|p| p.unknown_logged.insert(other)) {
+                    let body = &packet.body;
+                    let hex = if body.len() <= 80 { format!(": {body:02x?}") } else { String::new() };
+                    log!("[#{pid}] pacchetto {other} non gestito ({} byte, i prossimi non si registrano){hex}", body.len());
+                }
             }
         }
     }
@@ -532,6 +542,35 @@ impl Server {
             }
         } else {
             log!("[#{pid}] MobEquipment con la casella {} fuori dalla barra: ignorato", equipment.selected_slot);
+        }
+    }
+
+    /// Tasto centrale su un blocco (Dragonfly `PickBlock`): serve il giocatore nel mondo, vivo, non spettatore, con il blocco a portata;
+    /// l'oggetto è quello che il blocco piazza. Se già ce l'ha, lo seleziona (o lo scambia con la casella in mano); se no, solo in
+    /// creativo lo prende (`Inventory::pick`).
+    fn block_pick(&mut self, pid: u64, body: &[u8]) {
+        let Some(request) = BlockPickRequest::decode(body) else {
+            return log!("[#{pid}] BlockPickRequest illeggibile ({} byte): ignorato", body.len());
+        };
+        let Some(p) = self.players.get(&pid).filter(|p| p.spawned && !p.dead && p.mode != GameMode::Spectator) else { return };
+        let creative = p.mode == GameMode::Creative;
+        if !crate::breaking::in_reach(p.pos, request.pos, creative) {
+            return;
+        }
+        let Some((hash, _)) = self.block_at(vgen::Dim::Overworld, request.pos) else { return };
+        let Some(item) = registry::blocks().state(hash).and_then(|s| Item::from_name(&s.name, 1)).filter(|i| !i.is_empty()) else { return };
+        let Some(p) = self.players.get_mut(&pid) else { return };
+        let (held, armor) = (p.inventory.held().stack(0), armor_of(p));
+        let before = p.inventory.selected;
+        let Some(changed) = p.inventory.pick(&item, creative) else { return };
+        let mut out: Vec<Packet> = changed.iter().map(|&i| p.inventory.main_slot_packet(i)).collect();
+        if p.inventory.selected != before {
+            out.push(p.inventory.hotbar_packet());
+        }
+        self.send(pid, &out);
+        self.send_equipment_changes(pid, &held, &armor);
+        if self.players.get(&pid).is_some_and(|p| p.inventory.selected != before) {
+            self.stop_eating(pid); // cambiare casella interrompe il pasto, come con `MobEquipment`
         }
     }
 

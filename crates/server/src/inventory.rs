@@ -401,6 +401,11 @@ impl Inventory {
         self.slot_packet(Loc::Main(self.selected))
     }
 
+    /// Il pacchetto `InventorySlot` della casella `i` dell'inventario principale.
+    pub fn main_slot_packet(&self, i: u8) -> Packet {
+        self.slot_packet(Loc::Main(i))
+    }
+
     /// Il pacchetto `InventorySlot` per una casella nominata dal client (`None` se non esiste).
     pub fn slot_packet_at(&self, container: u8, slot: u8) -> Option<Packet> {
         Loc::resolve(container, slot, self.ctx()).map(|loc| self.slot_packet(loc))
@@ -929,6 +934,43 @@ impl Inventory {
             }
         }
         (if left == 0 { Item::default() } else { item.with_count(left) }, changed)
+    }
+
+    /// Scelta del blocco col tasto centrale (Dragonfly `PickBlock`): se l'inventario ha già l'oggetto, una casella della barra si
+    /// seleziona e una dell'inventario si scambia con quella in mano; altrimenti solo in creativo l'oggetto (quantità 1) va nella prima
+    /// casella libera (barra: si seleziona) o, a inventario pieno, al posto di quello in mano. Restituisce le caselle cambiate
+    /// (indici dell'inventario principale); `None` se non cambia niente (il cambio di casella selezionata si legge da `selected`).
+    pub fn pick(&mut self, item: &Item, creative: bool) -> Option<Vec<u8>> {
+        let found = self.contents.main.iter().position(|s| !s.item.is_empty() && s.item.same_kind(item));
+        let held = self.selected as usize;
+        if let Some(slot) = found {
+            if slot < HOTBAR_SLOTS as usize {
+                self.selected = slot as u8;
+                return Some(Vec::new());
+            }
+            self.contents.main.swap(slot, held);
+            return Some(vec![slot as u8, held as u8]);
+        }
+        if !creative {
+            return None;
+        }
+        let picked = item.with_count(1);
+        match self.contents.main.iter().position(|s| s.item.is_empty()) {
+            Some(empty) if empty < HOTBAR_SLOTS as usize => {
+                self.selected = empty as u8;
+                self.fill(Loc::Main(empty as u8), picked);
+                Some(vec![empty as u8])
+            }
+            Some(empty) => {
+                self.contents.main.swap(empty, held);
+                self.fill(Loc::Main(held as u8), picked);
+                Some(vec![empty as u8, held as u8])
+            }
+            None => {
+                self.fill(Loc::Main(held as u8), picked);
+                Some(vec![held as u8])
+            }
+        }
     }
 
     /// Rimette in una casella un oggetto buttato che un gancio ha annullato. Se nel frattempo la casella contiene altro, l'oggetto va

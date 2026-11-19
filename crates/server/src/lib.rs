@@ -133,6 +133,8 @@ struct Player {
     /// Quante richieste di pila con azioni di crafting sono già state loggate in esadecimale (al massimo `HEX_LOGS`).
     craft_logs: u8,
     action_logs: u8,
+    /// ID dei pacchetti sconosciuti già registrati nel log: ognuno si scrive una volta sola per giocatore.
+    unknown_logged: std::collections::HashSet<u32>,
     /// Quanti `PlayerSkin` sono già stati loggati in esadecimale (al massimo `HEX_LOGS`).
     skin_logs: u8,
     /// Blocco che il giocatore ha cominciato a rompere (Start/Continue) e non ha ancora rotto né abbandonato.
@@ -216,6 +218,7 @@ impl Default for Player {
             stack_logs: 0,
             craft_logs: 0,
             action_logs: 0,
+            unknown_logged: Default::default(),
             skin_logs: 0,
             breaking: None,
             crack: None,

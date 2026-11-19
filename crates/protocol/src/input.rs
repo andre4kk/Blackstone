@@ -300,6 +300,22 @@ impl PlayerAction {
     }
 }
 
+/// `BlockPickRequest` (34) dal client, tasto centrale: posizione del blocco, se copiare l'NBT e la casella della barra in mano
+/// (`BlockPickRequest.Marshal` di gophertunnel v1.63.0).
+#[derive(Clone, Debug, PartialEq)]
+pub struct BlockPickRequest {
+    pub pos: [i32; 3],
+    pub add_block_nbt: bool,
+    pub hotbar_slot: u8,
+}
+
+impl BlockPickRequest {
+    pub fn decode(body: &[u8]) -> Option<Self> {
+        let r = &mut Reader(body);
+        Some(Self { pos: r.block_pos()?, add_block_nbt: r.bool()?, hotbar_slot: r.u8()? })
+    }
+}
+
 /// Stati di `Respawn` (`packet/respawn.go` di gophertunnel v1.63.0, `iota` da 0).
 pub mod respawn_state {
     pub const SEARCHING_FOR_SPAWN: u8 = 0;
@@ -1193,6 +1209,18 @@ mod tests {
         for n in 0..w.0.len() {
             assert!(PlayerAction::decode(&w.0[..n]).is_none(), "tagliato a {n}");
         }
+    }
+
+    #[test]
+    fn block_pick_request_decodes_position_flag_and_slot() {
+        let mut w = Writer::default();
+        w.var_i32(-155);
+        w.var_i32(72);
+        w.var_i32(-2);
+        w.u8(1);
+        w.u8(4);
+        assert_eq!(BlockPickRequest::decode(&w.0), Some(BlockPickRequest { pos: [-155, 72, -2], add_block_nbt: true, hotbar_slot: 4 }));
+        assert!(BlockPickRequest::decode(&w.0[..w.0.len() - 1]).is_none());
     }
 
     #[test]

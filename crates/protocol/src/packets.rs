@@ -13,6 +13,7 @@ pub mod id {
     pub const REQUEST_CHUNK_RADIUS: u32 = 69;
     pub const MOB_EQUIPMENT: u32 = 31;
     pub const INTERACT: u32 = 33;
+    pub const BLOCK_PICK_REQUEST: u32 = 34;
     pub const CONTAINER_CLOSE: u32 = 47;
     pub const PLAYER_ACTION: u32 = 36;
     pub const MOVE_PLAYER: u32 = 19;

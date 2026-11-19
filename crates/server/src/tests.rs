@@ -898,6 +898,74 @@ mod breaking {
         h
     }
 
+    /// `BlockPickRequest` (34) sul blocco `pos`.
+    fn pick_packet(pos: [i32; 3]) -> Packet {
+        let mut w = Writer::default();
+        w.var_i32(pos[0]);
+        w.var_i32(pos[1]);
+        w.var_i32(pos[2]);
+        w.u8(0);
+        w.u8(0);
+        Packet::new(id::BLOCK_PICK_REQUEST, w.0)
+    }
+
+    #[test]
+    fn creative_pick_block_puts_the_item_in_the_first_free_hotbar_slot_and_selects_it() {
+        let mut h = setup(GameMode::Creative);
+        h.receive(1, &[pick_packet(ROCK)]);
+        let inv = &h.server.players[&1].inventory;
+        let stone = Item::from_name("minecraft:stone", 1).unwrap();
+        assert_eq!((inv.selected, inv.held().id, inv.held().count), (0, stone.id, 1));
+        let out = h.packets_to(1);
+        assert!(out.iter().any(|p| p.id == id::INVENTORY_SLOT));
+        assert!(out.iter().all(|p| p.id != id::PLAYER_HOTBAR), "la casella 0 era già in mano");
+        // di nuovo: ce l'ha già, non ne prende un'altra
+        h.receive(1, &[pick_packet(ROCK)]);
+        assert!((1..36).all(|i| h.server.players[&1].inventory.main(i).is_empty()));
+    }
+
+    #[test]
+    fn pick_block_selects_the_hotbar_slot_that_already_has_it_even_in_survival() {
+        let mut h = setup(GameMode::Survival);
+        let p = h.server.players.get_mut(&1).unwrap();
+        p.inventory.set_main(5, Item::from_name("minecraft:stone", 7).unwrap());
+        h.receive(1, &[pick_packet(ROCK)]);
+        assert_eq!(h.server.players[&1].inventory.selected, 5);
+        assert!(h.packets_to(1).iter().any(|p| p.id == id::PLAYER_HOTBAR));
+        assert_eq!(h.server.players[&1].inventory.held().count, 7);
+    }
+
+    #[test]
+    fn survival_pick_block_without_the_item_does_nothing() {
+        let mut h = setup(GameMode::Survival);
+        h.receive(1, &[pick_packet(ROCK)]);
+        assert!((0..36).all(|i| h.server.players[&1].inventory.main(i).is_empty()));
+        assert!(h.packets_to(1).is_empty());
+    }
+
+    #[test]
+    fn pick_block_out_of_reach_or_in_spectator_does_nothing() {
+        let mut h = setup(GameMode::Creative);
+        h.server.players.get_mut(&1).unwrap().pos = [200.5, 11.6, 4.5];
+        h.receive(1, &[pick_packet(ROCK)]);
+        assert!((0..36).all(|i| h.server.players[&1].inventory.main(i).is_empty()));
+        let mut h = setup(GameMode::Spectator);
+        h.receive(1, &[pick_packet(ROCK)]);
+        assert!((0..36).all(|i| h.server.players[&1].inventory.main(i).is_empty()));
+    }
+
+    #[test]
+    fn sound_events_are_ignored_and_unknown_packets_logged_once() {
+        let mut h = setup(GameMode::Survival);
+        let sound = [3u8, b'h', b'i', b't', 0, 0, 0x28, 0x41, 0, 0, 0xcf, 0x42, 0, 0, 0x12, 0xc2, 0xa4, 0xb4, 0xec, 0xcd, 0x0a, 0, 0, 0];
+        for _ in 0..3 {
+            h.receive(1, &[Packet::new(id::LEVEL_SOUND_EVENT, sound.to_vec()), Packet::new(1000, vec![1])]);
+        }
+        assert!(h.packets_to(1).is_empty(), "il suono del client non si rilancia");
+        let p = &h.server.players[&1];
+        assert!(!p.unknown_logged.contains(&id::LEVEL_SOUND_EVENT) && p.unknown_logged.contains(&1000) && p.unknown_logged.len() == 1);
+    }
+
     /// Passa al tick successivo senza far girare il resto del gioco: un blocco già tentato si può riprovare.
     fn next_tick(h: &mut Harness) {
         h.server.tick_count += 1;
