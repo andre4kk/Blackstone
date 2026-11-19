@@ -7,7 +7,8 @@
 //! con `min_tier` N si raccoglie con uno strumento del tipo giusto di livello >= N (ferro = 3, quindi il minerale di diamante vuole 3).
 //!
 //! Drop: ogni voce ha una probabilita'. Se le probabilita' di tutte le voci di un blocco sommano 1 (ghiaia: selce 0,1 + ghiaia 0,9)
-//! sono alternative esclusive (un solo tiro); altrimenti sono tiri indipendenti.
+//! sono alternative esclusive (un solo tiro); altrimenti sono tiri indipendenti. Una voce con `when` conta solo se lo stato del blocco
+//! rotto (crescita, altezza) e' nell'intervallo: si scartano le altre prima di decidere.
 
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -38,6 +39,17 @@ pub(crate) struct Drop {
     pub min: u16,
     pub max: u16,
     pub chance: f32,
+    /// Se c'è, la voce vale solo quando lo stato del blocco rotto ha questo valore (colture: la crescita; neve a strati: l'altezza).
+    #[serde(default)]
+    pub when: Option<StateRange>,
+}
+
+/// Condizione su uno stato intero o byte del blocco: `state` tra `min` e `max` inclusi.
+#[derive(Debug, Clone, Deserialize)]
+pub(crate) struct StateRange {
+    pub state: String,
+    pub min: i32,
+    pub max: i32,
 }
 
 #[derive(Debug, Clone, Deserialize)]

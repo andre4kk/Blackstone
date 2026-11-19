@@ -601,6 +601,13 @@ impl ContainerClose {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn enum_values_match_gophertunnel() {
+        assert_eq!(flag::START_JUMPING, 31);
+        assert_eq!(player_action::RESPAWN, 7);
+        assert_eq!((respawn_state::READY_TO_SPAWN, respawn_state::CLIENT_READY_TO_SPAWN), (1, 2));
+    }
     use crate::wire::Writer;
 
     #[test]

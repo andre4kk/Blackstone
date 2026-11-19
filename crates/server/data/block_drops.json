@@ -25,6 +25,30 @@
     }
    ]
   },
+  "minecraft:acacia_standing_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:acacia_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:acacia_wall_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:acacia_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
   "minecraft:amethyst_block": {
    "tool": "pickaxe",
    "min_tier": 1,
@@ -33,6 +57,18 @@
      "item": "minecraft:amethyst_block",
      "min": 1,
      "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:amethyst_cluster": {
+   "tool": "pickaxe",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:amethyst_shard",
+     "min": 4,
+     "max": 4,
      "chance": 1.0
     }
    ]
@@ -181,6 +217,30 @@
     }
    ]
   },
+  "minecraft:bamboo_standing_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:bamboo_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:bamboo_wall_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:bamboo_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
   "minecraft:basalt": {
    "tool": "pickaxe",
    "min_tier": 1,
@@ -190,6 +250,67 @@
      "min": 1,
      "max": 1,
      "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:beetroot": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:beetroot_seeds",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0,
+     "when": {
+      "state": "growth",
+      "min": 0,
+      "max": 6
+     }
+    },
+    {
+     "item": "minecraft:beetroot",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
+    },
+    {
+     "item": "minecraft:beetroot_seeds",
+     "min": 1,
+     "max": 1,
+     "chance": 0.5333333333333333,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
+    },
+    {
+     "item": "minecraft:beetroot_seeds",
+     "min": 1,
+     "max": 1,
+     "chance": 0.5333333333333333,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
+    },
+    {
+     "item": "minecraft:beetroot_seeds",
+     "min": 1,
+     "max": 1,
+     "chance": 0.5333333333333333,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
     }
    ]
   },
@@ -211,6 +332,42 @@
    "drops": [
     {
      "item": "minecraft:birch_leaves",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:birch_standing_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:birch_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:birch_wall_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:birch_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:black_candle_cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:black_candle",
      "min": 1,
      "max": 1,
      "chance": 1.0
@@ -371,6 +528,18 @@
     }
    ]
   },
+  "minecraft:blue_candle_cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:blue_candle",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
   "minecraft:blue_concrete": {
    "tool": "pickaxe",
    "min_tier": 1,
@@ -511,6 +680,11 @@
     }
    ]
   },
+  "minecraft:brain_coral_wall_fan": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
   "minecraft:brick_block": {
    "tool": "pickaxe",
    "min_tier": 1,
@@ -565,6 +739,18 @@
    "drops": [
     {
      "item": "minecraft:brick_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:brown_candle_cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:brown_candle",
      "min": 1,
      "max": 1,
      "chance": 1.0
@@ -682,6 +868,16 @@
     }
    ]
   },
+  "minecraft:bubble_coral_wall_fan": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:budding_amethyst": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
   "minecraft:cake": {
    "tool": null,
    "min_tier": 0,
@@ -696,6 +892,79 @@
      "min": 1,
      "max": 1,
      "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:candle_cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:candle",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:carrots": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:carrot",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0,
+     "when": {
+      "state": "growth",
+      "min": 0,
+      "max": 6
+     }
+    },
+    {
+     "item": "minecraft:carrot",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
+    },
+    {
+     "item": "minecraft:carrot",
+     "min": 1,
+     "max": 1,
+     "chance": 0.5333333333333333,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
+    },
+    {
+     "item": "minecraft:carrot",
+     "min": 1,
+     "max": 1,
+     "chance": 0.5333333333333333,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
+    },
+    {
+     "item": "minecraft:carrot",
+     "min": 1,
+     "max": 1,
+     "chance": 0.5333333333333333,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
     }
    ]
   },
@@ -717,6 +986,30 @@
    "drops": [
     {
      "item": "minecraft:cherry_leaves",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cherry_standing_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:cherry_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cherry_wall_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:cherry_sign",
      "min": 1,
      "max": 1,
      "chance": 1.0
@@ -1131,6 +1424,34 @@
     }
    ]
   },
+  "minecraft:cocoa": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:cocoa_beans",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0,
+     "when": {
+      "state": "age",
+      "min": 0,
+      "max": 1
+     }
+    },
+    {
+     "item": "minecraft:cocoa_beans",
+     "min": 2,
+     "max": 3,
+     "chance": 1.0,
+     "when": {
+      "state": "age",
+      "min": 2,
+      "max": 2
+     }
+    }
+   ]
+  },
   "minecraft:copper_bars": {
    "tool": "pickaxe",
    "min_tier": 1,
@@ -1311,6 +1632,30 @@
     }
    ]
   },
+  "minecraft:crimson_standing_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:crimson_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:crimson_wall_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:crimson_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
   "minecraft:crying_obsidian": {
    "tool": "pickaxe",
    "min_tier": 4,
@@ -1425,6 +1770,18 @@
    "drops": [
     {
      "item": "minecraft:cut_sandstone_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:cyan_candle_cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:cyan_candle",
      "min": 1,
      "max": 1,
      "chance": 1.0
@@ -1609,6 +1966,42 @@
     }
    ]
   },
+  "minecraft:darkoak_standing_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:dark_oak_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:darkoak_wall_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:dark_oak_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:daylight_detector_inverted": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:daylight_detector",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
   "minecraft:dead_brain_coral": {
    "tool": null,
    "min_tier": 0,
@@ -1625,6 +2018,11 @@
      "chance": 1.0
     }
    ]
+  },
+  "minecraft:dead_brain_coral_wall_fan": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
   },
   "minecraft:dead_bubble_coral": {
    "tool": null,
@@ -1643,6 +2041,11 @@
     }
    ]
   },
+  "minecraft:dead_bubble_coral_wall_fan": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
   "minecraft:dead_fire_coral": {
    "tool": null,
    "min_tier": 0,
@@ -1659,6 +2062,11 @@
      "chance": 1.0
     }
    ]
+  },
+  "minecraft:dead_fire_coral_wall_fan": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
   },
   "minecraft:dead_horn_coral": {
    "tool": null,
@@ -1677,6 +2085,11 @@
     }
    ]
   },
+  "minecraft:dead_horn_coral_wall_fan": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
   "minecraft:dead_tube_coral": {
    "tool": null,
    "min_tier": 0,
@@ -1693,6 +2106,11 @@
      "chance": 1.0
     }
    ]
+  },
+  "minecraft:dead_tube_coral_wall_fan": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
   },
   "minecraft:deadbush": {
    "tool": null,
@@ -2359,6 +2777,11 @@
     }
    ]
   },
+  "minecraft:fire_coral_wall_fan": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
   "minecraft:gilded_blackstone": {
    "tool": "pickaxe",
    "min_tier": 1,
@@ -2525,6 +2948,18 @@
     }
    ]
   },
+  "minecraft:gray_candle_cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:gray_candle",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
   "minecraft:gray_concrete": {
    "tool": "pickaxe",
    "min_tier": 1,
@@ -2615,6 +3050,18 @@
      "item": "minecraft:gray_wool_slab",
      "min": 2,
      "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:green_candle_cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:green_candle",
+     "min": 1,
+     "max": 1,
      "chance": 1.0
     }
    ]
@@ -2766,6 +3213,11 @@
     }
    ]
   },
+  "minecraft:horn_coral_wall_fan": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
   "minecraft:ice": {
    "tool": null,
    "min_tier": 0,
@@ -2878,6 +3330,30 @@
     }
    ]
   },
+  "minecraft:jungle_standing_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:jungle_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:jungle_wall_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:jungle_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
   "minecraft:lantern": {
    "tool": "pickaxe",
    "min_tier": 1,
@@ -2910,6 +3386,23 @@
      "item": "minecraft:lapis_lazuli",
      "min": 4,
      "max": 9,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:large_amethyst_bud": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:light_blue_candle_cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:light_blue_candle",
+     "min": 1,
+     "max": 1,
      "chance": 1.0
     }
    ]
@@ -3008,6 +3501,18 @@
     }
    ]
   },
+  "minecraft:light_gray_candle_cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:light_gray_candle",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
   "minecraft:light_gray_concrete": {
    "tool": "pickaxe",
    "min_tier": 1,
@@ -3086,6 +3591,18 @@
      "item": "minecraft:light_gray_wool_slab",
      "min": 2,
      "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:lime_candle_cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:lime_candle",
+     "min": 1,
+     "max": 1,
      "chance": 1.0
     }
    ]
@@ -3220,6 +3737,18 @@
     }
    ]
   },
+  "minecraft:lit_redstone_lamp": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:redstone_lamp",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
   "minecraft:lit_redstone_ore": {
    "tool": "pickaxe",
    "min_tier": 3,
@@ -3238,6 +3767,18 @@
    "drops": [
     {
      "item": "minecraft:smoker",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:magenta_candle_cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:magenta_candle",
      "min": 1,
      "max": 1,
      "chance": 1.0
@@ -3374,6 +3915,35 @@
     }
    ]
   },
+  "minecraft:mangrove_standing_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:mangrove_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:mangrove_wall_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:mangrove_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:medium_amethyst_bud": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
   "minecraft:melon_block": {
    "tool": null,
    "min_tier": 0,
@@ -3385,6 +3955,23 @@
      "chance": 1.0
     }
    ]
+  },
+  "minecraft:melon_stem": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:melon_seeds",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:mob_spawner": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
   },
   "minecraft:mossy_cobblestone": {
    "tool": "pickaxe",
@@ -3638,6 +4225,34 @@
     }
    ]
   },
+  "minecraft:nether_wart": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:nether_wart",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0,
+     "when": {
+      "state": "age",
+      "min": 0,
+      "max": 2
+     }
+    },
+    {
+     "item": "minecraft:nether_wart",
+     "min": 2,
+     "max": 4,
+     "chance": 1.0,
+     "when": {
+      "state": "age",
+      "min": 3,
+      "max": 3
+     }
+    }
+   ]
+  },
   "minecraft:netherite_block": {
    "tool": "pickaxe",
    "min_tier": 4,
@@ -3728,6 +4343,18 @@
    "drops": [
     {
      "item": "minecraft:obsidian",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:orange_candle_cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:orange_candle",
      "min": 1,
      "max": 1,
      "chance": 1.0
@@ -4013,6 +4640,30 @@
     }
    ]
   },
+  "minecraft:pale_oak_standing_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:pale_oak_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:pale_oak_wall_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:pale_oak_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
   "minecraft:petrified_oak_double_slab": {
    "tool": "pickaxe",
    "min_tier": 1,
@@ -4031,6 +4682,18 @@
    "drops": [
     {
      "item": "minecraft:petrified_oak_slab",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:pink_candle_cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:pink_candle",
      "min": 1,
      "max": 1,
      "chance": 1.0
@@ -4671,6 +5334,126 @@
     }
    ]
   },
+  "minecraft:poplar_standing_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:poplar_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:poplar_wall_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:poplar_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:potatoes": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:potato",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0,
+     "when": {
+      "state": "growth",
+      "min": 0,
+      "max": 6
+     }
+    },
+    {
+     "item": "minecraft:potato",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
+    },
+    {
+     "item": "minecraft:potato",
+     "min": 1,
+     "max": 1,
+     "chance": 0.5333333333333333,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
+    },
+    {
+     "item": "minecraft:potato",
+     "min": 1,
+     "max": 1,
+     "chance": 0.5333333333333333,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
+    },
+    {
+     "item": "minecraft:potato",
+     "min": 1,
+     "max": 1,
+     "chance": 0.5333333333333333,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
+    },
+    {
+     "item": "minecraft:poisonous_potato",
+     "min": 1,
+     "max": 1,
+     "chance": 0.02,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
+    }
+   ]
+  },
+  "minecraft:powered_comparator": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:comparator",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:powered_repeater": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:repeater",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
   "minecraft:prismarine": {
    "tool": "pickaxe",
    "min_tier": 1,
@@ -4773,6 +5556,30 @@
    "drops": [
     {
      "item": "minecraft:prismarine_wall",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:pumpkin_stem": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:pumpkin_seeds",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:purple_candle_cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:purple_candle",
      "min": 1,
      "max": 1,
      "chance": 1.0
@@ -5053,6 +5860,18 @@
     }
    ]
   },
+  "minecraft:red_candle_cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:red_candle",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
   "minecraft:red_concrete": {
    "tool": "pickaxe",
    "min_tier": 1,
@@ -5303,6 +6122,30 @@
     }
    ]
   },
+  "minecraft:redstone_wire": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:redstone",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:reeds": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:sugar_cane",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
   "minecraft:resin_brick_double_slab": {
    "tool": "pickaxe",
    "min_tier": 1,
@@ -5458,6 +6301,11 @@
      "chance": 1.0
     }
    ]
+  },
+  "minecraft:small_amethyst_bud": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
   },
   "minecraft:smooth_basalt": {
    "tool": "pickaxe",
@@ -5663,6 +6511,100 @@
     }
    ]
   },
+  "minecraft:snow_layer": {
+   "tool": "shovel",
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:snowball",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0,
+     "when": {
+      "state": "height",
+      "min": 0,
+      "max": 0
+     }
+    },
+    {
+     "item": "minecraft:snowball",
+     "min": 2,
+     "max": 2,
+     "chance": 1.0,
+     "when": {
+      "state": "height",
+      "min": 1,
+      "max": 1
+     }
+    },
+    {
+     "item": "minecraft:snowball",
+     "min": 3,
+     "max": 3,
+     "chance": 1.0,
+     "when": {
+      "state": "height",
+      "min": 2,
+      "max": 2
+     }
+    },
+    {
+     "item": "minecraft:snowball",
+     "min": 4,
+     "max": 4,
+     "chance": 1.0,
+     "when": {
+      "state": "height",
+      "min": 3,
+      "max": 3
+     }
+    },
+    {
+     "item": "minecraft:snowball",
+     "min": 5,
+     "max": 5,
+     "chance": 1.0,
+     "when": {
+      "state": "height",
+      "min": 4,
+      "max": 4
+     }
+    },
+    {
+     "item": "minecraft:snowball",
+     "min": 6,
+     "max": 6,
+     "chance": 1.0,
+     "when": {
+      "state": "height",
+      "min": 5,
+      "max": 5
+     }
+    },
+    {
+     "item": "minecraft:snowball",
+     "min": 7,
+     "max": 7,
+     "chance": 1.0,
+     "when": {
+      "state": "height",
+      "min": 6,
+      "max": 6
+     }
+    },
+    {
+     "item": "minecraft:snowball",
+     "min": 8,
+     "max": 8,
+     "chance": 1.0,
+     "when": {
+      "state": "height",
+      "min": 7,
+      "max": 7
+     }
+    }
+   ]
+  },
   "minecraft:soul_lantern": {
    "tool": "pickaxe",
    "min_tier": 1,
@@ -5693,6 +6635,54 @@
    "drops": [
     {
      "item": "minecraft:spruce_leaves",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:spruce_standing_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:spruce_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:spruce_wall_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:spruce_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:standing_banner": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:banner",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:standing_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:oak_sign",
      "min": 1,
      "max": 1,
      "chance": 1.0
@@ -5915,6 +6905,34 @@
     }
    ]
   },
+  "minecraft:sweet_berry_bush": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:sweet_berries",
+     "min": 2,
+     "max": 3,
+     "chance": 1.0,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
+    },
+    {
+     "item": "minecraft:sweet_berries",
+     "min": 1,
+     "max": 2,
+     "chance": 1.0,
+     "when": {
+      "state": "growth",
+      "min": 4,
+      "max": 6
+     }
+    }
+   ]
+  },
   "minecraft:tall_grass": {
    "tool": null,
    "min_tier": 0,
@@ -5924,6 +6942,23 @@
      "min": 1,
      "max": 1,
      "chance": 0.125
+    }
+   ]
+  },
+  "minecraft:trial_spawner": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
+  },
+  "minecraft:trip_wire": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:string",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
     }
    ]
   },
@@ -5943,6 +6978,11 @@
      "chance": 1.0
     }
    ]
+  },
+  "minecraft:tube_coral_wall_fan": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": []
   },
   "minecraft:tuff": {
    "tool": "pickaxe",
@@ -6076,12 +7116,60 @@
     }
    ]
   },
+  "minecraft:unpowered_comparator": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:comparator",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:unpowered_repeater": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:repeater",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
   "minecraft:vine": {
    "tool": "shears",
    "min_tier": 0,
    "drops": [
     {
      "item": "minecraft:vine",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:wall_banner": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:banner",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:wall_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:oak_sign",
      "min": 1,
      "max": 1,
      "chance": 1.0
@@ -6096,6 +7184,30 @@
      "item": "minecraft:warped_slab",
      "min": 2,
      "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:warped_standing_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:warped_sign",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:warped_wall_sign": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:warped_sign",
+     "min": 1,
+     "max": 1,
      "chance": 1.0
     }
    ]
@@ -6832,6 +7944,79 @@
     }
    ]
   },
+  "minecraft:wheat": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:wheat_seeds",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0,
+     "when": {
+      "state": "growth",
+      "min": 0,
+      "max": 6
+     }
+    },
+    {
+     "item": "minecraft:wheat",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
+    },
+    {
+     "item": "minecraft:wheat_seeds",
+     "min": 1,
+     "max": 1,
+     "chance": 0.5333333333333333,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
+    },
+    {
+     "item": "minecraft:wheat_seeds",
+     "min": 1,
+     "max": 1,
+     "chance": 0.5333333333333333,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
+    },
+    {
+     "item": "minecraft:wheat_seeds",
+     "min": 1,
+     "max": 1,
+     "chance": 0.5333333333333333,
+     "when": {
+      "state": "growth",
+      "min": 7,
+      "max": 7
+     }
+    }
+   ]
+  },
+  "minecraft:white_candle_cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:white_candle",
+     "min": 1,
+     "max": 1,
+     "chance": 1.0
+    }
+   ]
+  },
   "minecraft:white_concrete": {
    "tool": "pickaxe",
    "min_tier": 1,
@@ -6922,6 +8107,18 @@
      "item": "minecraft:white_wool_slab",
      "min": 2,
      "max": 2,
+     "chance": 1.0
+    }
+   ]
+  },
+  "minecraft:yellow_candle_cake": {
+   "tool": null,
+   "min_tier": 0,
+   "drops": [
+    {
+     "item": "minecraft:yellow_candle",
+     "min": 1,
+     "max": 1,
      "chance": 1.0
     }
    ]

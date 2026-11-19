@@ -100,6 +100,12 @@ mod tests {
     use super::*;
 
     #[test]
+    fn using_item_flag_is_bit_four() {
+        // gophertunnel ActorFlagUsingItem (protocollo 2225): un valore diverso farebbe mostrare al client un altro stato
+        assert_eq!(flag::USING_ITEM, 4);
+    }
+
+    #[test]
     fn flags_entry_is_tagged_variant_then_zigzag_value() {
         let p = set_actor_data(1, &[(key::FLAGS, DataValue::Int64(1 << 49))]);
         assert_eq!(p.id, 39);

@@ -111,7 +111,7 @@ La sequenza segue quella dei server di riferimento (gophertunnel / Dragonfly).
   salvate nei dati del giocatore. Creativo e spettatore non prendono danno (il vuoto colpisce anche in creativo). Lista di prova
   nel gioco: `docs/superpowers/notes/2026-11-20-verifica-tappa3.md`.
   Manca: crafting, armature che riducono il danno, usura degli strumenti, incantesimi, effetti, mob (e lava, fuoco, annegamento).
-- Ancora NON gestiti: crafting, armature, usura, mob. Limiti noti della tappa 1: `docs/superpowers/notes/2026-11-19-verifica-tappa1.md`.
+- Limiti noti della tappa 1: `docs/superpowers/notes/2026-11-19-verifica-tappa1.md`.
 
 Gli ID di rete dei blocchi sono hash FNV-1a dello stato (`crates/server/src/world.rs`): non serve nessuna tabella dei blocchi.
 

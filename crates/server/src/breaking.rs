@@ -3,8 +3,8 @@
 use crate::{
     events::{BlockChange, WorldAction},
     inventory::Item,
-    registry,
-    tables::{block_drops, tool},
+    registry::{self, BlockState, StateValue},
+    tables::{block_drops, tool, Drop},
     world::{block_hash, State},
     GameMode, Server,
 };
@@ -42,13 +42,15 @@ const DROP_SPREAD: f32 = 0.1;
 const DROP_LIFT: f32 = 0.2;
 const DROP_PICKUP_DELAY: u64 = 10;
 
-/// Gli oggetti che il blocco `block_name` lascia se rotto con `held` in mano; `roll` dà numeri in [0, 1).
-/// Senza voce nella tabella il blocco lascia se stesso (1), ma solo se il suo nome è anche un oggetto (`redstone_wire` no).
-/// Con voce: serve lo strumento del tipo giusto e di livello sufficiente, altrimenti niente. Se le probabilità delle voci
-/// sommano 1 è un tiro solo (ghiaia: selce o ghiaia), altrimenti ogni voce tira per conto suo.
-pub(crate) fn drops_for(block_name: &str, held: &Item, roll: &mut impl FnMut() -> f32) -> Vec<Item> {
-    let Some(rules) = block_drops(block_name) else {
-        return Item::from_name(block_name, 1).into_iter().collect();
+/// Gli oggetti che il blocco `block` lascia se rotto con `held` in mano; `roll` dà numeri in [0, 1).
+/// Senza voce nella tabella il blocco lascia se stesso (1), ma solo se il suo nome è anche un oggetto: quelli che in vanilla lasciano
+/// altro (cartelli, ripetitori, canna da zucchero, colture) hanno una voce in `tools/extract_survival.py`, gli altri non lasciano niente.
+/// Con voce: serve lo strumento del tipo giusto e di livello sufficiente, altrimenti niente. Le voci con `when` valgono solo se lo stato
+/// del blocco (crescita, altezza) è nell'intervallo. Se le probabilità delle voci valide sommano 1 è un tiro solo (ghiaia: selce o
+/// ghiaia), altrimenti ogni voce tira per conto suo.
+pub(crate) fn drops_for(block: &BlockState, held: &Item, roll: &mut impl FnMut() -> f32) -> Vec<Item> {
+    let Some(rules) = block_drops(&block.name) else {
+        return Item::from_name(&block.name, 1).into_iter().collect();
     };
     if let Some(kind) = rules.tool {
         let tier = registry::items().name(held.id).and_then(tool).filter(|t| t.kind == kind).map(|t| t.tier);
@@ -56,11 +58,19 @@ pub(crate) fn drops_for(block_name: &str, held: &Item, roll: &mut impl FnMut() -
             return Vec::new();
         }
     }
-    let exclusive = (rules.drops.iter().map(|d| d.chance).sum::<f32>() - 1.0).abs() < 1e-4;
+    let state_of = |key: &str| match block.get(key) {
+        Some(StateValue::Int(v)) => Some(*v),
+        Some(StateValue::Byte(v)) => Some(i32::from(*v)),
+        _ => None,
+    };
+    // una voce con condizione su uno stato che il blocco non ha non vale mai (meglio niente di qualcosa di sbagliato)
+    let valid: Vec<&Drop> =
+        rules.drops.iter().filter(|d| d.when.as_ref().is_none_or(|w| state_of(&w.state).is_some_and(|v| (w.min..=w.max).contains(&v)))).collect();
+    let exclusive = (valid.iter().map(|d| d.chance).sum::<f32>() - 1.0).abs() < 1e-4;
     let mut chosen = Vec::new();
     if exclusive {
         let mut r = roll();
-        for d in &rules.drops {
+        for d in &valid {
             if r < d.chance {
                 chosen.push(d);
                 break;
@@ -68,7 +78,7 @@ pub(crate) fn drops_for(block_name: &str, held: &Item, roll: &mut impl FnMut() -
             r -= d.chance;
         }
     } else {
-        for d in &rules.drops {
+        for d in &valid {
             if roll() < d.chance {
                 chosen.push(d);
             }
@@ -157,7 +167,7 @@ impl Server {
         .packet();
         if mode == GameMode::Survival {
             if let Some(state) = registry::blocks().state(old) {
-                let drops = drops_for(&state.name, &held, &mut || self.roll());
+                let drops = drops_for(state, &held, &mut || self.roll());
                 for item in drops {
                     let velocity = [(self.roll() * 2.0 - 1.0) * DROP_SPREAD, DROP_LIFT, (self.roll() * 2.0 - 1.0) * DROP_SPREAD];
                     self.spawn_item(item, [pos[0] as f32 + 0.5, pos[1] as f32 + 0.5, pos[2] as f32 + 0.5], velocity, DROP_PICKUP_DELAY);

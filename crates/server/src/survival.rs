@@ -96,9 +96,9 @@ impl DamageCause {
         matches!(self, DamageCause::Void | DamageCause::Kill)
     }
 
-    /// Dragonfly `Hurt`: solo i danni ridotti dall'armatura (`ReducedByArmour`) costano 0,1 di esaurimento. Fame, vuoto e `/kill` no.
+    /// Dragonfly `Hurt`: solo i danni ridotti dall'armatura (`ReducedByArmour`) costano 0,1 di esaurimento. Caduta (`FallDamageSource` non lo è), fame, vuoto e `/kill` no.
     fn reduced_by_armour(&self) -> bool {
-        matches!(self, DamageCause::Fall | DamageCause::Attack { .. })
+        matches!(self, DamageCause::Attack { .. })
     }
 }
 
@@ -574,7 +574,10 @@ impl Server {
         let state_changed = before != (false, false, false, false);
         let (mode, feet) = (p.mode, [p.pos[0], p.pos[1] - EYE_HEIGHT, p.pos[2]]);
         log!("[#{pid}] morto: {cause:?}");
-        self.allow(&WorldAction::Death { pid }); // solo osservazione: la morte non si annulla
+        // solo osservazione: la morte non si annulla e la vedono tutti i ganci (`allow` si fermerebbe al primo che risponde no)
+        for hook in &mut self.hooks {
+            hook(&WorldAction::Death { pid });
+        }
         self.stop_eating(pid);
         if state_changed {
             self.send_entity_state(pid); // come Dragonfly `StopSneaking`/`StopSprinting`: `updateState`
@@ -625,6 +628,10 @@ impl Server {
         let (eyes, pitch, yaw) = (p.pos, p.pitch, p.yaw);
         log!("[#{pid}] rinasce in [{:.1}, {:.1}, {:.1}]", eyes[0], eyes[1], eyes[2]);
         self.on_move(pid, eyes);
+        // finché il client non è arrivato qui, il suo movimento (partito da prima del teletrasporto) non vale
+        if let Some(p) = self.players.get_mut(&pid) {
+            p.teleport_to = Some(eyes);
+        }
         // il vecchio corpo sparisce a chi lo vedeva; il `visibility_tick` mostra quello nuovo
         let watchers: Vec<u64> = self.players.iter().filter(|(&other, p)| other != pid && p.visible.contains(&pid)).map(|(&other, _)| other).collect();
         for other in watchers {
@@ -636,10 +643,7 @@ impl Server {
         self.send_vitals(pid);
         self.send_only_abilities(pid);
         self.send(pid, &[set_actor_data(pid, &self.entity_data(pid))]);
-        self.send(
-            pid,
-            &[set_actor_motion(pid, [0.0; 3]), move_player_teleport(pid, eyes, pitch, yaw, self.tick_count), respawn(eyes, respawn_state::READY_TO_SPAWN, pid)],
-        );
+        self.send(pid, &[set_actor_motion(pid, [0.0; 3]), move_player_teleport(pid, eyes, pitch, yaw, 0), respawn(eyes, respawn_state::READY_TO_SPAWN, pid)]);
     }
 }
 
@@ -659,6 +663,7 @@ pub(crate) fn settle_dead(p: &mut Player, spawn: Option<(i32, i32, i32)>) {
     p.dead = false;
     (p.health, p.food, p.saturation, p.exhaustion) = (MAX_HEALTH, MAX_FOOD, START_SATURATION, 0.0);
     (p.invulnerable_until, p.last_damage, p.fall_start_y, p.food_tick) = (0, 0.0, None, 1);
+    p.teleport_to = None;
     if let Some((x, y, z)) = spawn {
         p.pos = [x as f32 + 0.5, y as f32 + EYE_HEIGHT, z as f32 + 0.5];
     }

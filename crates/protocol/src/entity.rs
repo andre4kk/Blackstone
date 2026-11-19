@@ -276,6 +276,12 @@ pub fn mob_armor_equipment(runtime_id: u64, armor: &[ItemStack; 4]) -> Packet {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn eating_actor_event_is_fifty_seven() {
+        // gophertunnel ActorEventFeed = iota + 57
+        assert_eq!(actor_event_type::EATING_ITEM, 57);
+    }
     use crate::actor::{flag, key};
 
     fn f32s(v: &[f32]) -> Vec<u8> {

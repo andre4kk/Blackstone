@@ -1011,9 +1011,19 @@ mod breaking {
     }
 
     fn drop_names(block: &str, tool: &str, rolls: &[f32]) -> Vec<(String, u16)> {
+        drop_names_with(block, &[], tool, rolls)
+    }
+
+    /// Come `drop_names`, ma per un blocco con questi stati interi (crescita, altezza...); gli altri stati restano quelli di default.
+    fn drop_names_with(block: &str, states: &[(&str, i32)], tool: &str, rolls: &[f32]) -> Vec<(String, u16)> {
         let mut rolls = rolls.iter().copied().cycle();
         let held = if tool.is_empty() { Item::default() } else { held(tool) };
-        drops_for(block, &held, &mut || rolls.next().unwrap())
+        let mut state = crate::registry::blocks().state(crate::registry::blocks().default_hash(block).unwrap()).unwrap().clone();
+        for (key, value) in states {
+            state = state.with(key, crate::registry::StateValue::Int(*value));
+        }
+        assert!(crate::registry::blocks().is_valid(&state), "{state:?}");
+        drops_for(&state, &held, &mut || rolls.next().unwrap())
             .into_iter()
             .map(|i| (crate::registry::items().name(i.id).unwrap().to_string(), i.count))
             .collect()
@@ -1064,11 +1074,112 @@ mod breaking {
         assert!(drop_names("minecraft:glass", "", &[0.0]).is_empty());
     }
 
+    fn names(list: &[(&str, u16)]) -> Vec<(String, u16)> {
+        list.iter().map(|(n, c)| (n.to_string(), *c)).collect()
+    }
+
+    #[test]
+    fn blocks_whose_item_has_another_name_drop_that_item() {
+        // cartelli (Dragonfly `Sign.BreakInfo`: oneOf), stendardi, ripetitori, comparatori, canna da zucchero, lampada accesa, candela sulla torta
+        for (block, item) in [
+            ("minecraft:standing_sign", "oak_sign"),
+            ("minecraft:wall_sign", "oak_sign"),
+            ("minecraft:spruce_standing_sign", "spruce_sign"),
+            ("minecraft:darkoak_wall_sign", "dark_oak_sign"),
+            ("minecraft:cherry_wall_sign", "cherry_sign"),
+            ("minecraft:standing_banner", "banner"),
+            ("minecraft:wall_banner", "banner"),
+            ("minecraft:powered_repeater", "repeater"),
+            ("minecraft:unpowered_repeater", "repeater"),
+            ("minecraft:powered_comparator", "comparator"),
+            ("minecraft:unpowered_comparator", "comparator"),
+            ("minecraft:reeds", "sugar_cane"),
+            ("minecraft:lit_redstone_lamp", "redstone_lamp"),
+            ("minecraft:red_candle_cake", "red_candle"),
+            ("minecraft:candle_cake", "candle"),
+            ("minecraft:melon_stem", "melon_seeds"),
+            ("minecraft:pumpkin_stem", "pumpkin_seeds"),
+            ("minecraft:redstone_wire", "redstone"),
+        ] {
+            assert_eq!(drop_names(block, "", &[0.5]), names(&[(&format!("minecraft:{item}"), 1)]), "{block}");
+        }
+    }
+
+    #[test]
+    fn spawners_and_budding_amethyst_drop_nothing() {
+        for block in
+            ["minecraft:mob_spawner", "minecraft:trial_spawner", "minecraft:budding_amethyst", "minecraft:small_amethyst_bud", "minecraft:large_amethyst_bud"]
+        {
+            assert!(drop_names(block, "minecraft:diamond_pickaxe", &[0.0]).is_empty(), "{block}");
+        }
+        assert_eq!(drop_names("minecraft:amethyst_cluster", "minecraft:iron_pickaxe", &[0.5]), names(&[("minecraft:amethyst_shard", 4)]));
+        assert!(drop_names("minecraft:amethyst_cluster", "", &[0.5]).is_empty());
+    }
+
+    #[test]
+    fn wheat_drops_depend_on_growth() {
+        // Dragonfly `cropSeedDrops`: sotto 7 un seme; a 7 il grano più 0-3 semi (tre tentativi da 8/15)
+        let growth = |g: i32, rolls: &[f32]| drop_names_with("minecraft:wheat", &[("growth", g)], "", rolls);
+        assert_eq!(growth(0, &[0.5]), names(&[("minecraft:wheat_seeds", 1)]));
+        assert_eq!(growth(6, &[0.5]), names(&[("minecraft:wheat_seeds", 1)]), "mai grano da una pianta non matura");
+        assert_eq!(growth(7, &[0.9]), names(&[("minecraft:wheat", 1)]), "nessun seme: tiri sopra 8/15");
+        assert_eq!(
+            growth(7, &[0.1]),
+            names(&[("minecraft:wheat", 1), ("minecraft:wheat_seeds", 1), ("minecraft:wheat_seeds", 1), ("minecraft:wheat_seeds", 1)])
+        );
+    }
+
+    #[test]
+    fn beetroot_carrots_potatoes_follow_growth() {
+        assert_eq!(drop_names_with("minecraft:beetroot", &[("growth", 3)], "", &[0.5]), names(&[("minecraft:beetroot_seeds", 1)]));
+        assert_eq!(drop_names_with("minecraft:beetroot", &[("growth", 7)], "", &[0.9]), names(&[("minecraft:beetroot", 1)]));
+        assert_eq!(drop_names_with("minecraft:carrots", &[("growth", 2)], "", &[0.1]), names(&[("minecraft:carrot", 1)]));
+        assert_eq!(drop_names_with("minecraft:carrots", &[("growth", 7)], "", &[0.9]), names(&[("minecraft:carrot", 1)]), "1 + binomiale(3): il minimo è 1");
+        assert_eq!(drop_names_with("minecraft:carrots", &[("growth", 7)], "", &[0.1]).iter().map(|(_, c)| u32::from(*c)).sum::<u32>(), 4);
+        assert_eq!(
+            drop_names_with("minecraft:potatoes", &[("growth", 1)], "", &[0.0]),
+            names(&[("minecraft:potato", 1)]),
+            "la patata velenosa solo a maturità"
+        );
+        let mature = drop_names_with("minecraft:potatoes", &[("growth", 7)], "", &[0.01]);
+        assert_eq!(mature.last(), Some(&("minecraft:poisonous_potato".to_string(), 1)), "2% di patata velenosa");
+    }
+
+    #[test]
+    fn cocoa_nether_wart_berries_and_snow_layer_follow_their_state() {
+        assert_eq!(drop_names_with("minecraft:cocoa", &[("age", 1)], "", &[0.5]), names(&[("minecraft:cocoa_beans", 1)]));
+        assert_eq!(drop_names_with("minecraft:cocoa", &[("age", 2)], "", &[0.99, 0.99]), names(&[("minecraft:cocoa_beans", 3)]));
+        assert_eq!(drop_names_with("minecraft:nether_wart", &[("age", 2)], "", &[0.5]), names(&[("minecraft:nether_wart", 1)]));
+        assert_eq!(drop_names_with("minecraft:nether_wart", &[("age", 3)], "", &[0.0]), names(&[("minecraft:nether_wart", 2)]));
+        assert!(drop_names_with("minecraft:sweet_berry_bush", &[("growth", 1)], "", &[0.5]).is_empty());
+        assert_eq!(drop_names_with("minecraft:sweet_berry_bush", &[("growth", 7)], "", &[0.99, 0.99]), names(&[("minecraft:sweet_berries", 3)]));
+        // neve a strati: serve la pala, una palla di neve per strato
+        assert!(drop_names_with("minecraft:snow_layer", &[("height", 3)], "", &[0.5]).is_empty());
+        assert!(drop_names_with("minecraft:snow_layer", &[("height", 3)], "minecraft:wooden_pickaxe", &[0.5]).is_empty());
+        for height in 0..8 {
+            assert_eq!(
+                drop_names_with("minecraft:snow_layer", &[("height", height)], "minecraft:wooden_shovel", &[0.5]),
+                names(&[("minecraft:snowball", height as u16 + 1)])
+            );
+        }
+    }
+
+    #[test]
+    fn breaking_young_wheat_in_survival_drops_seeds_not_wheat() {
+        let mut h = setup(GameMode::Survival);
+        let wheat = block_hash("minecraft:wheat", &[("growth", State::Int(2))]);
+        h.server.set_blocks(Dim::Overworld, &[change(ROCK, wheat, false)]);
+        h.server.break_block(1, ROCK);
+        let items = dropped_items(&h);
+        assert_eq!(items.len(), 1);
+        assert_eq!(crate::registry::items().name(items[0].0.id), Some("minecraft:wheat_seeds"));
+    }
+
     #[test]
     fn block_without_entry_drops_itself_only_if_it_is_an_item() {
         assert_eq!(drop_names("minecraft:oak_planks", "", &[0.5]), [("minecraft:oak_planks".to_string(), 1)]);
-        assert!(drop_names("minecraft:redstone_wire", "", &[0.5]).is_empty());
-        let planks = drops_for("minecraft:oak_planks", &Item::default(), &mut || 0.5);
+        assert!(drop_names("minecraft:fire", "", &[0.5]).is_empty());
+        let planks = drops_for(crate::registry::blocks().state(block_hash("minecraft:oak_planks", &[])).unwrap(), &Item::default(), &mut || 0.5);
         assert_eq!(planks[0].block, crate::registry::items().block_of("minecraft:oak_planks"), "porta lo stato del blocco");
     }
 
@@ -3774,8 +3885,17 @@ mod survival {
             }
             true
         }));
+        let later = Arc::new(Mutex::new(0));
+        let count = later.clone();
+        h.server.hooks.push(Box::new(move |a| {
+            if matches!(a, WorldAction::Death { .. }) {
+                *count.lock().unwrap() += 1;
+            }
+            true
+        }));
         h.server.hurt(1, 100.0, DamageCause::Kill);
         assert_eq!(seen.lock().unwrap().as_slice(), [WorldAction::Death { pid: 1 }]);
+        assert_eq!(*later.lock().unwrap(), 1, "anche il gancio dopo quello che rifiuta vede la morte");
         assert!(h.server.players[&1].dead, "la morte non si annulla");
     }
 
@@ -3804,6 +3924,42 @@ mod survival {
         assert!(!h.server.players[&2].visible.contains(&1));
         // di nuovo vulnerabile
         assert!(h.server.hurt(1, 2.0, DamageCause::Fall));
+    }
+
+    #[test]
+    fn stale_input_after_respawn_is_ignored_until_the_client_reaches_the_teleport() {
+        let mut h = setup(GameMode::Survival);
+        let p = h.server.players.get_mut(&1).unwrap();
+        p.pos = [0.5, -66.38, 0.5];
+        h.server.hurt(1, 100.0, DamageCause::Kill);
+        h.receive(1, &[respawn_packet(bedrock_protocol::input::respawn_state::CLIENT_READY_TO_SPAWN, 1)]);
+        let spawn = h.server.players[&1].pos;
+        assert_eq!(h.server.players[&1].teleport_to, Some(spawn));
+        h.packets_by_player();
+        // un PlayerAuthInput spedito prima di ricevere il teletrasporto: ancora al punto della morte, con l'urto verticale
+        h.receive(1, &[pai_flags([0.5, -66.38, 0.5], &[VERTICAL_COLLISION])]);
+        let p = &h.server.players[&1];
+        assert_eq!(p.pos, spawn, "la posizione vecchia non si accetta");
+        assert_eq!((p.health, p.fall_start_y), (20.0, None), "e non fa danno da caduta");
+        // vicino al punto di arrivo: il client ha ricevuto il teletrasporto, il movimento torna valido
+        let near = [spawn[0] + 0.4, spawn[1], spawn[2]];
+        h.receive(1, &[pai_flags(near, &[])]);
+        let p = &h.server.players[&1];
+        assert_eq!((p.pos, p.teleport_to), (near, None));
+        h.receive(1, &[pai_flags([near[0] + 1.0, near[1], near[2]], &[])]);
+        assert_eq!(h.server.players[&1].pos[0], near[0] + 1.0, "ora si muove normalmente");
+    }
+
+    #[test]
+    fn respawn_teleport_carries_tick_zero_like_dragonfly() {
+        let mut h = setup(GameMode::Survival);
+        h.server.hurt(1, 100.0, DamageCause::Kill);
+        h.server.tick_count = 777;
+        h.packets_by_player();
+        h.receive(1, &[respawn_packet(bedrock_protocol::input::respawn_state::CLIENT_READY_TO_SPAWN, 1)]);
+        let eyes = h.server.players[&1].pos;
+        let teleport = bedrock_protocol::entity::move_player_teleport(1, eyes, 0.0, 0.0, 0);
+        assert!(h.packets_by_player()[&1].contains(&teleport));
     }
 
     #[test]
@@ -4071,14 +4227,14 @@ mod survival {
     fn damage_costs_a_tenth_only_when_armour_would_reduce_it() {
         let mut h = setup(GameMode::Survival);
         h.server.hurt(1, 1.0, DamageCause::Fall);
-        assert!((hunger(&h).2 - 0.1).abs() < 1e-6);
+        assert_eq!(hunger(&h).2, 0.0, "Dragonfly: la caduta non è ridotta dall'armatura, quindi non stanca");
         h.server.tick_count += 10;
         h.server.hurt(1, 1.0, DamageCause::Attack { attacker: 2 });
-        assert!((hunger(&h).2 - 0.2).abs() < 1e-6);
+        assert!((hunger(&h).2 - 0.1).abs() < 1e-6);
         h.server.tick_count += 10;
         h.server.hurt(1, 1.0, DamageCause::Starvation);
         h.server.hurt(1, 1.0, DamageCause::Void);
-        assert!((hunger(&h).2 - 0.2).abs() < 1e-6, "fame e vuoto no");
+        assert!((hunger(&h).2 - 0.1).abs() < 1e-6, "fame e vuoto no");
     }
 
     #[test]

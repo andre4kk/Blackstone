@@ -180,11 +180,22 @@ impl Server {
         };
         // Limite del mondo di Minecraft: 30 milioni di blocchi per lato.
         // Esaurimento da salto (Dragonfly `Jump`: 0,2 in corsa, 0,05 altrimenti) e da movimento (`Move`: 0,01 a nuoto, 0,1 in corsa per blocco).
-        if input.as_ref().is_some_and(|i| i.has(flag::START_JUMPING)) {
+        // Teletrasporto in attesa (Dragonfly `teleportPos`): il movimento partito da prima non si accetta, e non fa né caduta né esaurimento.
+        // Appena il client riporta un punto a meno di un blocco dall'arrivo il movimento torna valido, con la caduta azzerata.
+        let mut stale = false;
+        if let Some(target) = player.teleport_to {
+            let squared: f32 = (0..3).map(|i| (position[i] - target[i]).powi(2)).sum();
+            if squared <= 1.0 {
+                (player.teleport_to, player.fall_start_y) = (None, None);
+            } else {
+                stale = true; // con un NaN il confronto è falso: resta in attesa
+            }
+        }
+        if !stale && input.as_ref().is_some_and(|i| i.has(flag::START_JUMPING)) {
             let sprinting = self.players.get(&pid).is_some_and(|p| p.sprinting);
             self.exhaust(pid, if sprinting { 0.2 } else { 0.05 });
         }
-        if position.iter().all(|v| v.is_finite() && v.abs() <= 30_000_000.0) {
+        if !stale && position.iter().all(|v| v.is_finite() && v.abs() <= 30_000_000.0) {
             self.exhaust_by_movement(pid, position);
             // la caduta si valuta prima di `on_move`: serve ancora la posizione del tick precedente
             let on_ground = input.as_ref().is_some_and(|i| i.has(flag::VERTICAL_COLLISION));

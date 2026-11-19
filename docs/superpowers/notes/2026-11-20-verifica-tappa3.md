@@ -60,6 +60,7 @@ Scrivi `/gamemode s`. Se ti servono attrezzi, prendili in creativo e poi torna i
 10. **Foglie**: senza cesoie non lasciano niente; con le cesoie lasciano la foglia.
 11. **Niente doppioni**: rompendo un blocco esce un solo oggetto, mai due.
 12. **Creativo**: con `/gamemode c` rompi un blocco: non lascia niente.
+13. **Cartello, ripetitore, canna da zucchero**: piazzali e rompili in sopravvivenza: tornano l'oggetto (cartello del legno giusto, ripetitore, canna). Il grano appena piantato lascia un seme, non il grano; quello maturo grano e qualche seme; carote e patate lasciano carote e patate.
 
 ## B. Danno da caduta
 
@@ -105,6 +106,7 @@ Per salire in alto: in creativo vola, poi `/gamemode s` e lasciati cadere (il co
 8. **Nel log**: `[#1] morto: Kill` (o `Fall`, `Void`, `Starvation`) e poi `[#1] rinasce in [x, y, z]`.
 9. Se non riesci a rinascere, mandami le righe `Respawn (N byte): [...]` (al massimo 3).
 10. Da morto non puoi muoverti, rompere né raccogliere.
+11. **Caduta e rinascita**: muori cadendo da 30 blocchi e rinasci: non devi prendere altro danno né morire una seconda volta appena rinato (il server ignora i movimenti vecchi finché sei al punto di rinascita).
 
 ## F. Uscire e rientrare ferito
 
@@ -192,4 +194,4 @@ Altre decisioni prese lavorando (dal registro):
 ## Cosa NON c'è ancora (per non cercarlo)
 
 Crafting, armature che riducono il danno, usura degli strumenti, incantesimi, esperienza, effetti (veleno, rigenerazione), mob, lava,
-fuoco, annegamento, soffocamento, letto e punto di rinascita personale, colture, difficoltà diverse da normale.
+fuoco, annegamento, soffocamento, letto e punto di rinascita personale, crescita delle colture (si rompono, non si piantano né crescono), difficoltà diverse da normale.

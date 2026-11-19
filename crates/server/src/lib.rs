@@ -173,6 +173,9 @@ struct Player {
     respawn_logs: u8,
     /// Altezza dei piedi da cui è iniziata la caduta in corso (il punto più alto prima della discesa); `None` se non sta cadendo.
     fall_start_y: Option<f32>,
+    /// Il punto (occhi) a cui il server ha teletrasportato il client e che il client non ha ancora raggiunto: i `PlayerAuthInput` lontani da lì
+    /// partono da prima del teletrasporto e si ignorano (Dragonfly `teleportPos`). `None` se non c'è un teletrasporto in attesa.
+    teleport_to: Option<[f32; 3]>,
     /// Il tick in cui ha cominciato a mangiare il cibo in mano (Dragonfly `usingItem`/`usingSince`); `None` se non mangia.
     eating_since: Option<u64>,
     /// Quanti usi e rilasci di oggetti (`InventoryTransaction` ClickAir e ReleaseItem) sono già stati loggati in esadecimale (al massimo `HEX_LOGS`).
@@ -224,6 +227,7 @@ impl Default for Player {
             death_tick: 0,
             respawn_logs: 0,
             fall_start_y: None,
+            teleport_to: None,
             eating_since: None,
             use_logs: 0,
             attack_logs: 0,

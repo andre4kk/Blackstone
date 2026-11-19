@@ -192,6 +192,86 @@ EXCEPTIONS = {
     "minecraft:gilded_blackstone": ("pickaxe", 1, [("minecraft:gold_nugget", 2, 5, 0.1), ("minecraft:gilded_blackstone", 1, 1, 0.9)]),
 }
 
+# Distribuzione binomiale di Dragonfly `fortuneBinomial(3)`: tre tentativi indipendenti, ciascuno riuscito con probabilita' 8/15
+# (`rand.IntN(15) < 8`). Si rappresenta con tre voci da 1 pezzo a probabilita' 8/15 (tiri indipendenti).
+BINOMIAL_3 = 8 / 15
+
+
+def at(key, lo, hi=None):
+    """Condizione sullo stato del blocco: la voce vale solo se `key` e' tra `lo` e `hi` (inclusi)."""
+    return (key, lo, lo if hi is None else hi)
+
+
+def crop(seed, produce):
+    """`cropSeedDrops` di Dragonfly (grano, barbabietola): sotto crescita 7 un seme, altrimenti il raccolto piu' 0-3 semi."""
+    young = [(seed, 1, 1, 1.0, at("growth", 0, 6))]
+    mature = [(produce, 1, 1, 1.0, at("growth", 7))] + [(seed, 1, 1, BINOMIAL_3, at("growth", 7))] * 3
+    return (None, 0, young + mature)
+
+
+def root(item, poison=False):
+    """Carota e patata di Dragonfly: sotto crescita 7 uno, poi `1 + fortuneBinomial(3)` (1-4); la patata ha il 2% di patata velenosa."""
+    drops = [(item, 1, 1, 1.0, at("growth", 0, 6)), (item, 1, 1, 1.0, at("growth", 7))] + [(item, 1, 1, BINOMIAL_3, at("growth", 7))] * 3
+    if poison:
+        drops.append(("minecraft:poisonous_potato", 1, 1, 0.02, at("growth", 7)))
+    return (None, 0, drops)
+
+
+def state_exceptions(blocks):
+    """Voci scritte a mano per blocchi il cui oggetto ha un altro nome o i cui drop dipendono dallo stato (crescita, altezza).
+    Fonte: Dragonfly server/block (BreakInfo di ciascun tipo) dove c'e'; dove Dragonfly non ha il blocco (neve a strati, bacche, arnesi di
+    redstone) vale il vanilla. Quel che non si sa modellare giusto non e' qui: lascia niente (vedi la lista stampata da `main`)."""
+    out = {}
+    nothing = (None, 0, [])
+
+    def oneof(item):
+        return (None, 0, [(item, 1, 1, 1.0)])
+
+    # nomi dei blocchi che non sono quelli dell'oggetto
+    for n in sorted(blocks):
+        m = re.fullmatch(r"minecraft:(\w+)_(standing|wall)_sign", n)
+        if m:  # Sign.BreakInfo: oneOf(Sign{Wood}); `darkoak` e' il nome Bedrock della quercia scura
+            out[n] = oneof(f"minecraft:{'dark_oak' if m.group(1) == 'darkoak' else m.group(1)}_sign")
+        m = re.fullmatch(r"minecraft:(\w+)_candle_cake", n)
+        if m:  # vanilla: la torta con la candela lascia la candela (la torta no)
+            out[n] = oneof(f"minecraft:{m.group(1)}_candle")
+        if re.fullmatch(r"minecraft:(dead_)?\w+_coral_wall_fan", n):
+            out[n] = nothing  # come i ventagli di Dragonfly (`silkTouchOnlyDrop`: niente senza tocco di seta)
+    out["minecraft:standing_sign"] = out["minecraft:wall_sign"] = oneof("minecraft:oak_sign")
+    out["minecraft:candle_cake"] = oneof("minecraft:candle")
+    out["minecraft:standing_banner"] = out["minecraft:wall_banner"] = oneof("minecraft:banner")  # Banner.BreakInfo: oneOf(b); il colore non si conserva
+    out["minecraft:unpowered_repeater"] = out["minecraft:powered_repeater"] = oneof("minecraft:repeater")
+    out["minecraft:unpowered_comparator"] = out["minecraft:powered_comparator"] = oneof("minecraft:comparator")
+    out["minecraft:reeds"] = oneof("minecraft:sugar_cane")  # SugarCane.BreakInfo: oneOf(c)
+    out["minecraft:lit_redstone_lamp"] = oneof("minecraft:redstone_lamp")
+    out["minecraft:daylight_detector_inverted"] = oneof("minecraft:daylight_detector")
+    out["minecraft:redstone_wire"] = oneof("minecraft:redstone")
+    out["minecraft:trip_wire"] = oneof("minecraft:string")
+    out["minecraft:melon_stem"] = oneof("minecraft:melon_seeds")  # MelonSeeds.BreakInfo: oneOf(m)
+    out["minecraft:pumpkin_stem"] = oneof("minecraft:pumpkin_seeds")  # PumpkinSeeds.BreakInfo: oneOf(p)
+    # colture: Dragonfly dipende dalla crescita (0-7)
+    out["minecraft:wheat"] = crop("minecraft:wheat_seeds", "minecraft:wheat")
+    out["minecraft:beetroot"] = crop("minecraft:beetroot_seeds", "minecraft:beetroot")
+    out["minecraft:carrots"] = root("minecraft:carrot")
+    out["minecraft:potatoes"] = root("minecraft:potato", poison=True)
+    # CocoaBean.BreakInfo: eta' 2 -> 2-3 semi (`rand.IntN(2)+2`), altrimenti 1
+    out["minecraft:cocoa"] = (None, 0, [("minecraft:cocoa_beans", 1, 1, 1.0, at("age", 0, 1)), ("minecraft:cocoa_beans", 2, 3, 1.0, at("age", 2))])
+    # NetherWart.BreakInfo: eta' < 3 -> 1, altrimenti 2-4 (`fortuneDiscreteCount(2, 4, ...)`)
+    out["minecraft:nether_wart"] = (None, 0, [("minecraft:nether_wart", 1, 1, 1.0, at("age", 0, 2)), ("minecraft:nether_wart", 2, 4, 1.0, at("age", 3))])
+    # Bacche dolci: Dragonfly non ha il blocco. Vanilla: da maturo 2-3, a meta' crescita 1-2, prima niente (le fasi 0-7 di Bedrock
+    # si sono mappate sull'eta' 0-3 di Java: 7 = pieno, 4-6 = meta'; la corrispondenza esatta non e' verificata).
+    out["minecraft:sweet_berry_bush"] = (None, 0, [("minecraft:sweet_berries", 2, 3, 1.0, at("growth", 7)), ("minecraft:sweet_berries", 1, 2, 1.0, at("growth", 4, 6))])
+    # Neve a strati: Dragonfly non ha il blocco. Vanilla: serve una pala, lascia tante palle di neve quanti sono gli strati (height 0 = 1 strato).
+    out["minecraft:snow_layer"] = ("shovel", 0, [("minecraft:snowball", h + 1, h + 1, 1.0, at("height", h)) for h in range(8)])
+    # Ammasso d'ametista: con il piccone 4 schegge (vanilla); senza il vanilla ne darebbe 2, qui niente. Gemme in crescita e generatori: niente.
+    out["minecraft:amethyst_cluster"] = ("pickaxe", 0, [("minecraft:amethyst_shard", 4, 4, 1.0)])
+    for n in ["minecraft:budding_amethyst", "minecraft:small_amethyst_bud", "minecraft:medium_amethyst_bud", "minecraft:large_amethyst_bud", "minecraft:mob_spawner", "minecraft:trial_spawner"]:
+        out[n] = nothing
+    for n in out:
+        assert n in blocks, n
+    return out
+
+
 # Tipi che il parser non sa leggere: non hanno voce (il blocco lascia se stesso). Motivo per ciascuno.
 UNSUPPORTED = {
     "Carrot": "drop dipende dalla crescita (stato) e da fortuna; il nome Bedrock e' 'carrots'",
@@ -457,7 +537,11 @@ def copper_family(blocks):
 
 
 def main(dragonfly, data):
-    blocks = {b["name"] for b in json.load(open(os.path.join(data, "blocks.json"), encoding="utf8"))["blocks"]}
+    blocks_doc = {
+        b["name"]: {st["key"]: st["values"] for st in b["states"] if st["type"] in ("int", "byte")}
+        for b in json.load(open(os.path.join(data, "blocks.json"), encoding="utf8"))["blocks"]
+    }
+    blocks = set(blocks_doc)
     items = {l.split("\t")[0] for l in open(os.path.join(data, "items.txt"), encoding="utf8").read().splitlines() if l}
     tiers = load_tiers(dragonfly)
     item_names = load_item_names(dragonfly)
@@ -499,18 +583,32 @@ def main(dragonfly, data):
         if re.fullmatch(r"minecraft:(\w+_)?leaves(_\w+)?", n) and "leaf_litter" not in n:
             result[n] = ("shears", 0, "SELF")
     for n, (tool, tier, drops) in EXCEPTIONS.items():
-        result[n] = (tool, tier, [(i, a, b, c) for (i, a, b, c) in drops])
+        result[n] = (tool, tier, [tuple(d) for d in drops])
+    for n, (tool, tier, drops) in state_exceptions(blocks_doc).items():
+        result[n] = (tool, tier, drops)
     # normalizza SELF
     out = {}
     for n, (tool, tier, drops) in sorted(result.items()):
         if drops == "SELF":
             drops = [(n, 1, 1, 1.0)]
-        for (i, a, b, c) in drops:
+        entries = []
+        for i, a, b, c, *when in drops:
             assert i in items, (n, i)
-        out[n] = {"tool": tool, "min_tier": tier, "drops": [{"item": i, "min": a, "max": b, "chance": c} for (i, a, b, c) in drops]}
+            entry = {"item": i, "min": a, "max": b, "chance": c}
+            if when:
+                key, lo, hi = when[0]
+                values = blocks_doc[n][key]
+                assert min(values) <= lo <= hi <= max(values), (n, key, lo, hi)
+                entry["when"] = {"state": key, "min": lo, "max": hi}
+            entries.append(entry)
+        out[n] = {"tool": tool, "min_tier": tier, "drops": entries}
     # le voci dei tipi Go senza nome valido si segnalano ma non si tengono
     for n in out:
         assert n in blocks, n
+    # Blocchi senza voce il cui nome non e' un oggetto: in gioco non lasciano niente. Si stampano perche' siano rivisti (non e' un errore:
+    # acqua, fuoco, portali, blocchi di debug/educazione non lasciano niente nemmeno in vanilla).
+    silent = sorted(n for n in blocks if n not in out and n not in items and not n.startswith(("minecraft:element_", "minecraft:hard_")))
+    print(f"blocchi senza voce che non lasciano niente ({len(silent)}):", ", ".join(silent))
     doc = {"_license": LICENSE, "blocks": out}
     with open(os.path.join(data, "block_drops.json"), "w", encoding="utf8", newline="\n") as f:
         json.dump(doc, f, indent=1, ensure_ascii=False)
