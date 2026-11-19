@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- RENAME: change the brand in <title> and in the element with id="brand"; the other brand spots follow via JS. -->
+<title>Blackstone — a Minecraft Bedrock server in Rust</title>
+<meta name="description" content="Blackstone is an open-source Minecraft Bedrock Edition server written in Rust, with the same world generation as Minecraft Java Edition. Contributions welcome.">
+<meta name="color-scheme" content="dark">
+<style>
+:root{color-scheme:dark;
+  --bg:#17191d;--bg2:#1e2127;--card:#23262d;--ink:#e8eaee;--mute:#a4abb7;--line:#363a43;
+  --accent:#4fd1a1;--accent-ink:#0b1a14;--tile:#2a2d34;--tile2:#31353d;
+  --done:#4fd1a1;--prog:#f0b84a;--plan:#9db0ff;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+code,pre{font-family:ui-monospace,SFMono-Regular,Consolas,Menlo,monospace}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+header.top{display:flex;justify-content:space-between;align-items:center;padding:16px 0;gap:12px;flex-wrap:wrap}
+.logo{font-weight:800;letter-spacing:.02em;display:flex;align-items:center;gap:10px}
+.logo i{width:18px;height:18px;background:var(--accent);display:inline-block;box-shadow:6px 6px 0 var(--tile2)}
+nav a{margin-left:16px;text-decoration:none;color:var(--mute);font-size:.95rem}
+nav a:hover{color:var(--ink)}
+.hero{position:relative;padding:72px 0 64px;background:var(--bg2);border-bottom:1px solid var(--line);overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;opacity:.55;
+  background-image:linear-gradient(45deg,var(--tile) 25%,transparent 25%,transparent 75%,var(--tile) 75%),
+  linear-gradient(45deg,var(--tile) 25%,transparent 25%,transparent 75%,var(--tile) 75%);
+  background-size:48px 48px;background-position:0 0,24px 24px;
+  -webkit-mask-image:linear-gradient(to bottom,#000,transparent 85%);mask-image:linear-gradient(to bottom,#000,transparent 85%)}
+.hero .wrap{position:relative}
+h1{font-size:clamp(2.4rem,7vw,4.2rem);line-height:1.05;margin:.2em 0 .3em;letter-spacing:-.02em}
+.tag{font-size:clamp(1.05rem,2.5vw,1.35rem);color:var(--mute);max-width:640px;margin:0 0 28px}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-block;padding:12px 22px;font-weight:700;text-decoration:none;border:2px solid var(--accent);border-radius:4px;box-shadow:4px 4px 0 var(--tile2)}
+.btn.p{background:var(--accent);color:var(--accent-ink)}
+.btn.s{color:var(--accent)}
+.btn:hover{transform:translate(-1px,-1px)}
+.btn:focus-visible,a:focus-visible{outline:3px solid var(--prog);outline-offset:2px}
+section{padding:56px 0}
+h2{font-size:1.8rem;margin:0 0 8px;letter-spacing:-.01em}
+h2::before{content:"";display:inline-block;width:14px;height:14px;background:var(--accent);margin-right:10px;box-shadow:5px 5px 0 var(--tile2)}
+.lead{color:var(--mute);max-width:720px;margin:0 0 24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:18px}
+.card h3{margin:0 0 6px;font-size:1.05rem;display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.card p{margin:0;color:var(--mute);font-size:.95rem}
+.badge{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border:1px solid currentColor;border-radius:99px;white-space:nowrap}
+.done{color:var(--done)}.prog{color:var(--prog)}.plan{color:var(--plan)}
+.note{font-size:.9rem;color:var(--mute);margin-top:16px}
+.diagram{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:20px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap}
+.node{border:2px solid var(--line);background:var(--bg2);padding:12px 16px;text-align:center;border-radius:4px;min-width:130px;box-shadow:4px 4px 0 var(--tile2)}
+.node b{display:block}.node small{color:var(--mute)}
+.node.gen{border-color:var(--prog)}.node.srv{border-color:var(--accent)}
+.link{padding:0 10px;color:var(--mute);font-size:.8rem;text-align:center;min-width:90px}
+.link::after{content:"";display:block;height:2px;background:var(--mute);margin-top:4px}
+@media(max-width:760px){.diagram{flex-direction:column}.link{padding:8px 0}.link::after{width:2px;height:22px;margin:4px auto 0}}
+pre{background:#0f1114;color:#e8eaee;padding:16px;border-radius:6px;overflow:auto;border:1px solid var(--line);font-size:.9rem}
+pre .c{color:#9aa2b0}
+ol.road{list-style:none;padding:0;margin:0;border-left:3px solid var(--line)}
+ol.road li{padding:6px 0 14px 20px;position:relative}
+ol.road li::before{content:"";position:absolute;left:-9px;top:12px;width:15px;height:15px;background:var(--bg);border:3px solid var(--mute)}
+ol.road li.d::before{background:var(--done);border-color:var(--done)}
+ol.road li.p::before{border-color:var(--prog)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px}
+ul.tight,ol.tight{padding-left:20px;margin:6px 0}
+table{border-collapse:collapse;width:100%;font-size:.95rem;background:var(--card)}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tw{overflow-x:auto}
+footer{border-top:1px solid var(--line);padding:32px 0;color:var(--mute);font-size:.9rem;background:var(--bg2)}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn:hover{transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo"><i aria-hidden="true"></i><span id="brand">Blackstone</span></div>
+    <nav aria-label="Main"><a href="#features">Features</a><a href="#architecture">Architecture</a><a href="#start">Quick start</a><a href="#roadmap">Roadmap</a><a href="#contribute">Contribute</a></nav>
+  </header>
+</div>
+
+<div class="hero">
+  <div class="wrap">
+    <p class="badge plan" style="display:inline-block">Early-stage · open source · MIT</p>
+    <h1 data-brand>Blackstone</h1>
+    <p class="tag">A fast Minecraft Bedrock Edition server written in Rust, with the same world generation as Minecraft Java Edition.</p>
+    <div class="btns">
+      <a class="btn p" href="https://github.com/andre4kk/VersMCBE">View on GitHub</a>
+      <a class="btn s" href="#start">Get started</a>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+<section id="features">
+  <h2>What works today</h2>
+  <p class="lead">Honest status: this is a young project. Some parts are verified in the real game client, others only by automated tests.</p>
+  <div class="grid">
+    <div class="card"><h3>World generation <span class="badge done">Done</span></h3><p>Infinite Overworld using the same rules as Java 26.3 (mountains, caves, biomes), saved in Bedrock's LevelDB format. Flat fallback world if the generator is missing.</p></div>
+    <div class="card"><h3>Networking <span class="badge done">Done</span></h3><p>NetherNet (WebRTC) transport used by Bedrock 26.60+, with HTTP signaling. Join from the Friends/LAN tab.</p></div>
+    <div class="card"><h3>Creative mode <span class="badge done">Done</span></h3><p>Full creative menu, server-validated block breaking and placing with orientation rules, doors, trapdoors, levers, buttons, saving.</p></div>
+    <div class="card"><h3>Players &amp; entities <span class="badge done">Done</span></h3><p>Players see each other (movement, skin, held item), dropped items, and a <code>/bot</code> command for testing with one account.</p></div>
+    <div class="card"><h3>Basic survival <span class="badge done">Done</span></h3><p>Block drops (data from Dragonfly), health, fall damage, hunger, eating, death and respawn, melee combat. Part of it is verified by tests only so far.</p></div>
+    <div class="card"><h3>Crafting &amp; chests <span class="badge done">Done</span></h3><p>Crafting grid and table, chests with block entities, double chests, multiple players.</p></div>
+    <div class="card"><h3>Furnace <span class="badge prog">In progress</span></h3><p>Smelting is being worked on.</p></div>
+    <div class="card"><h3>Armor, durability, effects <span class="badge plan">Planned</span></h3><p>Armor that reduces damage, tool wear, enchantments, potion effects, lava, fire, drowning.</p></div>
+    <div class="card"><h3>Mobs <span class="badge plan">Planned</span></h3><p>Animals and monsters, starting with simple behavior.</p></div>
+    <div class="card"><h3>Plugin API <span class="badge plan">Planned</span></h3><p>Cancellable events for break, place and interact are part of the design.</p></div>
+    <div class="card"><h3>Nether &amp; End <span class="badge plan">Planned</span></h3><p>Only the Overworld exists today.</p></div>
+    <div class="card"><h3>Xbox auth &amp; permissions <span class="badge plan">Planned</span></h3><p>Login signatures are not verified yet: do not expose a server publicly.</p></div>
+  </div>
+</section>
+
+<section id="architecture">
+  <h2>Architecture</h2>
+  <p class="lead">Small crates with clear boundaries. The server never links the generator: it starts it as a separate program and talks to it over local TCP, keeping the server MIT and on stable Rust. The game tick never waits for the generator.</p>
+  <div class="diagram" role="img" aria-label="Diagram: Minecraft client connects through NetherNet to the Rust server, which talks over TCP to the separate world generator">
+    <div class="node"><b>Minecraft client</b><small>Bedrock 1.26.6x</small></div>
+    <div class="link">NetherNet<br>(WebRTC)</div>
+    <div class="node srv"><b>Rust server</b><small>MIT · stable Rust</small></div>
+    <div class="link">TCP (local)<br>vgen protocol</div>
+    <div class="node gen"><b>World generator</b><small>Minecraft Java world generation</small></div>
+  </div>
+  <div class="tw" style="margin-top:20px"><table>
+    <tr><th>Path</th><th>Role</th></tr>
+    <tr><td><code>crates/protocol</code></td><td>Packets, batching, compression, login parsing. No I/O.</td></tr>
+    <tr><td><code>crates/net</code></td><td>Transport: signaling, identity, WebRTC.</td></tr>
+    <tr><td><code>crates/server</code></td><td>Game logic and the executable; one handler per packet.</td></tr>
+    <tr><td><code>crates/vgen</code></td><td>Local TCP protocol between server and generator (MIT).</td></tr>
+    <tr><td><code>generator/</code></td><td><code>versmc-gen</code>: generates chunks and maps them to Bedrock blocks and biomes. Separate workspace.</td></tr>
+  </table></div>
+</section>
+
+<section id="start">
+  <h2>Quick start</h2>
+  <p class="lead">Build the generator once (needs Internet the first time, it takes a few minutes), then run the server.</p>
+<pre><span class="c"># get the code</span>
+git clone https://github.com/andre4kk/VersMCBE
+cd VersMCBE
+
+<span class="c"># generator (nightly Rust is picked automatically by rustup)</span>
+cd generator
+cargo build --release
+cd ..
+
+<span class="c"># server: creates server.toml if missing, listens on TCP+UDP 19132</span>
+cargo run</pre>
+  <p class="note">In the game, join from the Friends/LAN tab. You start in creative; <code>/gamemode s</code> switches to survival. Do not share <code>identity.key</code>.</p>
+</section>
+
+<section id="roadmap">
+  <h2>Roadmap</h2>
+  <ol class="road">
+    <li class="d"><b>World</b> — infinite Java-style Overworld, saved to disk.</li>
+    <li class="d"><b>Creative</b> — menu, building, interactions.</li>
+    <li class="d"><b>Entities &amp; players</b> — visible players, dropped items, bots.</li>
+    <li class="d"><b>Basic survival</b> — health, hunger, drops, combat.</li>
+    <li class="d"><b>Crafting &amp; chests</b></li>
+    <li class="p"><b>Furnace</b> — in progress.</li>
+    <li><b>Tool durability, armor, effects</b></li>
+    <li><b>First mobs</b> — simple behavior.</li>
+    <li><b>Xbox authentication &amp; permissions</b> — required before any public server.</li>
+    <li><b>Plugin API</b></li>
+    <li><b>Nether, End, Java world import</b></li>
+  </ol>
+</section>
+
+<section id="contribute">
+  <h2>How to contribute</h2>
+  <p class="lead">Pull requests are welcome. Good places to start:</p>
+  <div class="cols">
+    <div>
+      <h3>Ideas for first contributions</h3>
+      <ul class="tight">
+        <li>Armor that reduces damage</li>
+        <li>Tool durability</li>
+        <li>Status effects (poison, potions...)</li>
+        <li>Simple mobs and animals</li>
+        <li>Permission system (today anyone can use <code>/bot</code>)</li>
+        <li>Plugin API (cancellable break/place/interact events)</li>
+        <li>Nether / End groundwork</li>
+        <li>Chest loot and block-entity contents</li>
+        <li>Verifying survival behavior in the real client</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Process</h3>
+      <ol class="tight">
+        <li>Fork the repository and create a branch.</li>
+        <li>Make your change, with tests.</li>
+        <li><code>cargo test --workspace</code></li>
+        <li><code>cargo clippy --workspace --all-targets</code> and <code>cargo fmt --all</code></li>
+        <li>Open a pull request describing what you changed and how you tested it.</li>
+      </ol>
+      <p class="note">The generator has its own tests: <code>cd generator &amp;&amp; cargo test</code>. <code>crates/protocol/src/generated.rs</code> is generated: do not edit by hand.</p>
+    </div>
+  </div>
+  <p class="note"><b>Italiano:</b> i maintainer parlano italiano; puoi scrivere issue e PR anche in italiano.</p>
+</section>
+
+<section id="credits">
+  <h2>Credits &amp; licenses</h2>
+  <div class="tw"><table>
+    <tr><th>Component</th><th>Use</th><th>License</th></tr>
+    <tr><td>Server and <code>crates/*</code></td><td>This project</td><td>MIT</td></tr>
+    <tr><td>World generator</td><td>Separate process, Minecraft Java world generation</td><td>AGPL-3.0-or-later</td></tr>
+    <tr><td>Dragonfly</td><td>Behavior reference; drop, tool and food tables</td><td>MIT</td></tr>
+    <tr><td>gophertunnel</td><td>Packet byte reference (consulted only)</td><td>MIT</td></tr>
+    <tr><td>PocketMine-MP</td><td>Inspiration only, no code copied</td><td>LGPL-3.0</td></tr>
+    <tr><td>GeyserMC mappings</td><td>Java to Bedrock block/biome translation</td><td>MIT</td></tr>
+    <tr><td>pmmp/BedrockData</td><td>Biome data</td><td>CC0</td></tr>
+  </table></div>
+  <p class="note">Mojang data and schemas are subject to the Minecraft EULA. This is an unofficial project, not affiliated with Mojang or Microsoft. Distributing the generator binary brings AGPL obligations.</p>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span data-brand>Blackstone</span> — open-source Bedrock server in Rust. Server code MIT. The repository is currently named VersMCBE.
+    · <a href="https://github.com/andre4kk/VersMCBE">GitHub</a>
+  </div>
+</footer>
+<script>
+// Rename once: edit the text of #brand; the other brand spots follow.
+var b=document.getElementById('brand').textContent;
+document.querySelectorAll('[data-brand]').forEach(function(e){e.textContent=b});
+</script>
+</body>
+</html>
