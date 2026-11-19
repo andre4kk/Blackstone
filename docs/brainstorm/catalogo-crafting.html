@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VersMCBE – catalogo tappa 4: crafting e contenitori</title>
+<style>
+  :root { --bg:#fbfaf7; --fg:#1f2328; --muted:#5b636d; --line:#e3ded4; --card:#fff; --accent:#2f6f4e; --warn:#a2541b; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#16181b; --fg:#e8e6e1; --muted:#a3a9b0; --line:#2c3036; --card:#1e2125; --accent:#7cc39d; --warn:#e3a06a; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:20px 16px 60px; }
+  h1 { font-size:1.45rem; margin:.2em 0 .3em; }
+  h2 { font-size:1.15rem; margin:1.8em 0 .5em; border-bottom:1px solid var(--line); padding-bottom:.25em; }
+  h3 { font-size:1rem; margin:1.2em 0 .3em; }
+  .muted { color:var(--muted); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin:10px 0; }
+  .opt { border-left:3px solid var(--line); padding:4px 0 4px 10px; margin:8px 0; }
+  .opt.rec { border-left-color:var(--accent); }
+  .tag { display:inline-block; font-size:.78rem; padding:1px 7px; border-radius:99px; border:1px solid var(--accent); color:var(--accent); margin-left:4px; }
+  .trap { border-left:3px solid var(--warn); padding:6px 0 6px 10px; margin:8px 0; }
+  .trap b { color:var(--warn); }
+  table { border-collapse:collapse; width:100%; font-size:.93rem; }
+  td, th { border-bottom:1px solid var(--line); text-align:left; padding:6px 4px; vertical-align:top; }
+  code { font-size:.88em; }
+</style>
+</head>
+<body>
+<main>
+<h1>Tappa 4: crafting e contenitori</h1>
+<p class="muted">VersMCBE · 20 novembre 2026 · da leggere prima delle domande (una alla volta, A/B/C).</p>
+
+<h2>Dove siamo</h2>
+<div class="card">
+<p>In sopravvivenza si rompe, si raccoglie, si mangia, si muore e si rinasce. Ma <b>non si può costruire niente</b>: il libro delle ricette è vuoto (il server non manda ricette), il tavolo 2x2 e il banco da lavoro non funzionano, forzieri e fornaci si piazzano ma non si aprono.</p>
+<p>Il server sa già salvare i "blocchi con dati" (block entity) nel mondo, e Dragonfly (MIT) ha <b>tutte le ricette vanilla in un file</b> pronto da riusare.</p>
+</div>
+
+<h2>Cosa comprende la tappa</h2>
+<table>
+<tr><th>Pezzo</th><th>Cosa vedi nel gioco</th></tr>
+<tr><td>Ricette</td><td>Il libro delle ricette si riempie; le ricette giuste si sbloccano.</td></tr>
+<tr><td>Tavolo 2x2</td><td>Dall'inventario: assi, bastoni, banco da lavoro, torce…</td></tr>
+<tr><td>Banco da lavoro</td><td>Si apre la griglia 3x3: strumenti, armi, forziere, fornace…</td></tr>
+<tr><td>Forziere</td><td>Si apre, si mettono dentro oggetti, restano salvati; rotto lascia cadere il contenuto.</td></tr>
+<tr><td>Fornace</td><td>Combustibile + minerale/cibo → lingotti e cibo cotto, con la barra di avanzamento.</td></tr>
+</table>
+
+<h2>Le scelte</h2>
+
+<h3>1 · Quanto mettere nella tappa</h3>
+<div class="opt rec"><b>A</b> Crafting (2x2 + banco) + forziere + fornace <span class="tag">consigliata</span><br><span class="muted">Chiude il ciclo della sopravvivenza: minerale → fornace → lingotto → strumento, e un posto dove tenere le cose. ~9 compiti.</span></div>
+<div class="opt"><b>B</b> Solo crafting (2x2 + banco)<br><span class="muted">Più corta (~5 compiti), ma senza fornace il ferro grezzo non serve e senza forziere l'inventario si riempie.</span></div>
+<div class="opt"><b>C</b> A + barile, fornace a fusione, affumicatore, incudine, banco del fabbro<br><span class="muted">Molto più lunga (~14 compiti). Meglio dopo, sopra la stessa base dei contenitori.</span></div>
+
+<h3>2 · Da dove prendere le ricette</h3>
+<div class="opt rec"><b>A</b> Il file delle ricette di Dragonfly (tutte quelle vanilla) <span class="tag">consigliata</span><br><span class="muted">Uno script le converte, come per oggetti e tabelle dei drop. Licenza MIT, si cita.</span></div>
+<div class="opt"><b>B</b> Un elenco scritto a mano delle ricette principali<br><span class="muted">Meno dati, ma ne mancherebbero centinaia e sarebbe facile sbagliare.</span></div>
+
+<h3>3 · Contenuto di forzieri e fornaci</h3>
+<div class="opt rec"><b>A</b> Salvato nel mondo come fa Minecraft (dentro i chunk) <span class="tag">consigliata</span><br><span class="muted">Il server lo sa già fare; un mondo aperto con Minecraft vero ritrova i forzieri pieni.</span></div>
+<div class="opt"><b>B</b> In un file a parte del server<br><span class="muted">Più semplice da scrivere, ma il mondo non resta compatibile con Minecraft.</span></div>
+
+<h3>4 · Due giocatori nello stesso forziere</h3>
+<div class="opt rec"><b>A</b> Lo vedono aperto insieme e ognuno vede subito cosa fa l'altro <span class="tag">consigliata</span><br><span class="muted">Come vanilla. Si prova con un secondo account o con il bot (il bot non apre forzieri: la prova vera va fatta in due).</span></div>
+<div class="opt"><b>B</b> Uno alla volta<br><span class="muted">Più semplice, ma non è come il gioco vero.</span></div>
+
+<h2>Trappole</h2>
+<div class="trap"><b>Il crafting passa dalle "richieste di pila".</b> Il client dice "uso la ricetta N" e il server deve controllare ingredienti e risultato. Se il numero della ricetta non coincide con quello mandato all'ingresso, il client rifiuta tutto. Byte da gophertunnel, comportamento da Dragonfly.</div>
+<div class="trap"><b>Forziere doppio.</b> Due forzieri vicini diventano uno grande: va gestito l'abbinamento (anche al caricamento del mondo).</div>
+<div class="trap"><b>La fornace lavora da sola.</b> Cuoce anche se nessuno la guarda, ma solo nei chunk caricati: va legata al ciclo a 20 Hz senza rallentarlo.</div>
+<div class="trap"><b>Duplicazioni.</b> Prendere il risultato con Shift, chiudere il banco con oggetti nella griglia, rompere un forziere aperto da un altro: sono i classici punti dove gli oggetti si duplicano o spariscono. Ogni caso avrà il suo test.</div>
+
+<h2>Scartato (per ora)</h2>
+<ul>
+<li>Incantesimi, incudine, pozioni, banco del fabbro → tappe successive.</li>
+<li>Tramogge e redstone che spostano oggetti → dopo.</li>
+<li>Libro delle ricette che si sblocca piano piano → all'inizio tutte le ricette sbloccate (si può cambiare).</li>
+</ul>
+
+<h2>Tempi e costi</h2>
+<p>Con le scelte consigliate: circa 9 compiti, con subagenti come le tappe 2 e 3 (piano, compiti, revisioni, prova nel gioco). Con i token quasi finiti conviene fare oggi solo design e piano, e costruire con i token pieni.</p>
+</main>
+</body>
+</html>
