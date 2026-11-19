@@ -609,6 +609,7 @@ impl Server {
     /// Svuota inventario, armatura e mano secondaria di `pid` e ne fa oggetti a terra in `feet` (uno per casella non vuota, con una piccola
     /// spinta casuale come Dragonfly `dropItems`: `[rand*0.2-0.1, 0.2, rand*0.2-0.1]`). Poi rimanda il contenuto vuoto a lui e l'armatura tolta a chi lo vede.
     fn drop_inventory(&mut self, pid: u64, feet: [f32; 3]) {
+        self.close_window(pid); // chi muore lascia il banco o il forziere aperto
         let Some(p) = self.players.get_mut(&pid) else { return };
         let (held, armor) = (p.inventory.held().stack(0), armor_of(p));
         for item in p.inventory.take_all() {

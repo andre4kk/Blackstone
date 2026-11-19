@@ -49,7 +49,7 @@ impl Dir {
         }
     }
 
-    pub(super) fn rotate_right(self) -> Dir {
+    pub(crate) fn rotate_right(self) -> Dir {
         match self {
             Dir::North => Dir::East,
             Dir::East => Dir::South,
@@ -58,8 +58,23 @@ impl Dir {
         }
     }
 
-    pub(super) fn rotate_left(self) -> Dir {
+    pub(crate) fn rotate_left(self) -> Dir {
         self.rotate_right().opposite()
+    }
+
+    /// La direzione col nome dello stato `minecraft:cardinal_direction` ("north", "south", "west", "east").
+    pub(crate) fn from_name(name: &str) -> Option<Dir> {
+        [Dir::North, Dir::South, Dir::West, Dir::East].into_iter().find(|d| d.name() == name)
+    }
+
+    /// La cella accanto a `pos` in questa direzione (nord z-1, sud z+1, ovest x-1, est x+1).
+    pub(crate) fn step(self, pos: [i32; 3]) -> [i32; 3] {
+        match self {
+            Dir::North => [pos[0], pos[1], pos[2] - 1],
+            Dir::South => [pos[0], pos[1], pos[2] + 1],
+            Dir::West => [pos[0] - 1, pos[1], pos[2]],
+            Dir::East => [pos[0] + 1, pos[1], pos[2]],
+        }
     }
 
     pub(crate) fn name(self) -> &'static str {

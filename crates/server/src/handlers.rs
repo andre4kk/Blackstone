@@ -1,5 +1,6 @@
 //! Un handler per ogni pacchetto che il server sa gestire.
 use crate::{
+    chest::CONTAINER_TYPE_CONTAINER,
     entity::{armor_of, EntityKind},
     events::WorldAction,
     inventory::{window, CONTAINER_TYPE_WORKBENCH, HOTBAR_SLOTS},
@@ -41,6 +42,7 @@ impl Server {
         log!("[#{pid}] disconnesso");
         let name = self.name(pid);
         self.waiting_start.retain(|&w| w != pid);
+        self.close_chest_view(pid); // l'animazione del forziere si chiude se era l'ultimo a guardarlo
         self.return_ui_items(pid); // la griglia di crafting aperta non si perde
         if let Some(mut p) = self.players.remove(&pid) {
             survival::settle_dead(&mut p, self.spawn);
@@ -375,6 +377,9 @@ impl Server {
         let Some(p) = self.players.get_mut(&pid) else { return };
         let (held, armor) = (p.inventory.held().stack(0), armor_of(p));
         let result = p.inventory.handle(request, p.mode.creative_inventory());
+        if p.inventory.touches_chest(request) {
+            self.sync_chest(pid);
+        }
         if let Some(error) = &result.error {
             log!("[#{pid}] richiesta di pila {} rifiutata: {error}", request.request_id);
         }
@@ -482,14 +487,22 @@ impl Server {
         // Griglia e cursore tornano all'inventario: alla chiusura del banco, e a quella dell'inventario se il banco non è aperto (griglia 2x2).
         let table_window = p.inventory.table_window();
         let closes_table = table_window == Some(c.container_id);
-        if closes_table || c.container_id == 0xff || (c.container_id == window::INVENTORY as u8 && table_window.is_none()) {
+        let closes_chest = p.inventory.chest().is_some_and(|w| w.window == c.container_id);
+        let chest_open = p.inventory.chest().is_some();
+        if closes_table || closes_chest || c.container_id == 0xff || (c.container_id == window::INVENTORY as u8 && table_window.is_none() && !chest_open) {
             self.return_ui_items(pid);
+        }
+        // chiudere il forziere (o aprire la chat con una finestra aperta) toglie la vista, che spegne l'animazione se era l'ultimo
+        if closes_chest || (c.container_id == 0xff && chest_open) {
+            self.close_chest_view(pid);
         }
         if c.container_id == 0xff {
             return;
         }
         let container_type = if closes_table {
             CONTAINER_TYPE_WORKBENCH
+        } else if closes_chest {
+            CONTAINER_TYPE_CONTAINER
         } else if c.container_id == window::INVENTORY as u8 {
             0
         } else {

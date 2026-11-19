@@ -183,6 +183,11 @@ impl Server {
             }
             return true;
         }
+        if short(state) == "chest" {
+            // Forziere (Dragonfly `Chest.Activate`): apre la finestra con le sue 27 (o 54) caselle.
+            self.use_chest(pid, u.pos, mode, eyes);
+            return true;
+        }
         let Some(changes) = activate(state, u.pos, ctx, &view) else { return false };
         let creative = mode == GameMode::Creative;
         let others: Vec<[i32; 3]> = changes.iter().map(|c| c.pos).filter(|&p| p != u.pos).collect();
@@ -221,6 +226,8 @@ impl Server {
         if p.inventory.table() == Some(pos) {
             return;
         }
+        // chiude ciò che era aperto (un altro banco o un forziere) e restituisce la griglia
+        self.close_window(pid);
         self.return_ui_items(pid);
         let Some(p) = self.players.get_mut(&pid) else { return };
         let window = p.inventory.open_table(pos);

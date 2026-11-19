@@ -863,6 +863,27 @@ mod tests {
     }
 
     #[test]
+    fn chest_content_survives_save_and_reopen() {
+        use crate::{chest::ChestData, inventory::Item};
+        let dir = TempDir::new("chest");
+        let mut chunk = sample_chunk(Dim::Overworld, 1, 2);
+        let mut data = ChestData::empty();
+        data.items[0] = Item::from_name("minecraft:cobblestone", 33).unwrap();
+        data.items[26] = Item::from_name("minecraft:iron_pickaxe", 1).unwrap();
+        data.name = Some("Tesoro".into());
+        data.pair = Some([17, 33]);
+        chunk.put_block_entity(data.entity([16, 5, 32]));
+        let mut w = open(&dir);
+        w.save(&chunk).unwrap();
+        w.flush().unwrap();
+        drop(w);
+        let mut w = open(&dir);
+        let loaded = w.load(Dim::Overworld, 1, 2).expect("chunk salvato");
+        let be = loaded.block_entities.iter().find(|b| [b.x, b.y, b.z] == [16, 5, 32]).expect("il forziere c'è ancora");
+        assert_eq!(ChestData::parse(&be.nbt), data, "oggetti, nome e abbinamento tornano uguali");
+    }
+
+    #[test]
     fn chunk_survives_save_and_reopen() {
         let dir = TempDir::new("survive");
         let original = sample_chunk(Dim::Overworld, 5, -7);

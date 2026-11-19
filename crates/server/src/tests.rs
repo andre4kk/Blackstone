@@ -5113,3 +5113,307 @@ mod crafting {
         assert_eq!(h.server.players[&1].craft_logs, crate::HEX_LOGS);
     }
 }
+
+// ---------- forzieri ----------
+
+mod chests {
+    use super::blocks::{air, change};
+    use super::placing::{packets, place_packet, place_packet_slot, setup, EYES, TOP};
+    use super::*;
+    use crate::{
+        chest::{ChestData, CONTAINER_TYPE_CONTAINER},
+        inventory::Item,
+        registry::{blocks, StateValue},
+    };
+    use bedrock_protocol::{
+        block_event::BlockEvent,
+        generated::{
+            enums::container_enum_name::{CURSOR_CONTAINER, HOTBAR_CONTAINER, LEVEL_ENTITY_CONTAINER},
+            InventorySlot,
+        },
+    };
+    use vgen::Dim;
+
+    fn item(name: &str, count: u16) -> Item {
+        Item::from_name(name, count).unwrap()
+    }
+
+    /// Mette un forziere con quell'orientamento in `pos` e lo registra come se fosse stato piazzato.
+    fn put_chest(h: &mut Harness, pos: [i32; 3], facing: &str) {
+        let base = blocks().state(blocks().default_hash("minecraft:chest").unwrap()).unwrap().clone();
+        let hash = base.with("minecraft:cardinal_direction", StateValue::Str(facing.into())).hash();
+        h.server.set_blocks(Dim::Overworld, &[change(pos, hash, false)]);
+        h.server.chest_placed(pos);
+    }
+
+    fn click(h: &mut Harness, pid: u64, pos: [i32; 3]) -> Vec<(u64, Packet)> {
+        h.receive(pid, &[place_packet(pos, 1, &ItemStack::air())]);
+        packets(&mut h.sent)
+    }
+
+    fn to(out: &[(u64, Packet)], pid: u64, packet_id: u32) -> Vec<&Packet> {
+        out.iter().filter(|(t, p)| *t == pid && p.id == packet_id).map(|(_, p)| p).collect()
+    }
+
+    /// Alice e Bob con la stessa vista; Bob a portata come lei.
+    fn two_players() -> Harness {
+        let mut h = setup(GameMode::Survival);
+        h.server.players.get_mut(&2).unwrap().pos = EYES;
+        h
+    }
+
+    /// `Place` di `count` oggetti da `src` a `dst` (contenitore, casella, ID di pila).
+    fn place_items(request_id: i32, count: u8, src: (u8, u8, i32), dst: (u8, u8, i32)) -> Packet {
+        stack_request_packet(|w| {
+            w.var_i32(request_id);
+            w.var_u32(1);
+            w.var_u32(1);
+            w.u8(1);
+            w.u8(count);
+            slot_bytes(w, src.0, src.1, src.2);
+            slot_bytes(w, dst.0, dst.1, dst.2);
+            w.var_u32(0);
+            w.i32(-1);
+        })
+    }
+
+    fn net_id(h: &Harness, pid: u64, container: u8, slot: u8) -> i32 {
+        h.server.players[&pid].inventory.stack_at(container, slot).unwrap().net_id.unwrap_or(0)
+    }
+
+    fn chest_window(h: &Harness, pid: u64) -> u8 {
+        h.server.players[&pid].inventory.chest().unwrap().window
+    }
+
+    fn close_packet(window: u8) -> Packet {
+        ContainerClose { container_id: window, container_type: 0, server_initiated_close: false }.packet()
+    }
+
+    #[test]
+    fn placing_a_chest_creates_its_block_entity() {
+        let mut h = setup(GameMode::Survival);
+        h.server.players.get_mut(&1).unwrap().inventory.set_main(1, item("minecraft:chest", 2));
+        let held = item("minecraft:chest", 1).stack(1);
+        drop(packets(&mut h.sent));
+        h.receive(1, &[place_packet_slot(super::placing::ROCK, 1, &held, 1)]);
+        let out = packets(&mut h.sent);
+        let chunk = &h.server.chunks[&(0, 0, 0)];
+        let be = chunk.block_entities.iter().find(|b| [b.x, b.y, b.z] == TOP).expect("il forziere ha il suo block entity");
+        let tag = crate::nbt::Reader::new(&be.nbt, crate::nbt::Enc::Network).root().unwrap().1;
+        assert_eq!(tag.get("id").and_then(crate::nbt::Tag::as_str), Some("Chest"));
+        assert!(tag.get("pairx").is_none());
+        assert_eq!(ChestData::parse(&be.nbt), ChestData::empty());
+        assert!(!to(&out, 2, bedrock_protocol::generated::BlockActorData::ID).is_empty(), "Bob riceve il block entity");
+        assert!(chunk.dirty, "il chunk si salva");
+    }
+
+    #[test]
+    fn click_opens_the_chest_once_with_its_content_and_animation() {
+        let mut h = two_players();
+        put_chest(&mut h, TOP, "north");
+        let mut data = ChestData::empty();
+        data.items[2] = item("minecraft:cobblestone", 7);
+        h.server.save_chest_for_test(TOP, &data);
+        drop(packets(&mut h.sent));
+        let out = click(&mut h, 1, TOP);
+        let opens = to(&out, 1, ContainerOpen::ID);
+        assert_eq!(opens.len(), 1);
+        assert!((1..=99).contains(&opens[0].body[0]) && opens[0].body[1] == CONTAINER_TYPE_CONTAINER, "{:02x?}", opens[0].body);
+        let content = to(&out, 1, InventoryContent::ID);
+        assert_eq!((content.len(), content[0].body[0], content[0].body[1]), (1, opens[0].body[0], 27), "27 caselle nella finestra del forziere");
+        // animazione di apertura: a chi vede il chunk (Alice e Bob), dati 1
+        let events: Vec<_> = out.iter().filter(|(_, p)| p.id == id::BLOCK_EVENT).collect();
+        assert_eq!(events.len(), 2);
+        let open = BlockEvent { position: bedrock_protocol::generated::BlockPos { x: 3, y: 11, z: 4 }, event_type: 1, event_data: 1 }.packet();
+        assert!(events.iter().all(|(_, p)| p.body == open.body));
+        // un secondo clic non rimanda ContainerOpen né l'animazione
+        let again = click(&mut h, 1, TOP);
+        assert!(again.iter().all(|(_, p)| p.id != ContainerOpen::ID && p.id != id::BLOCK_EVENT));
+        // e non ha piazzato nulla sopra
+        assert_eq!(h.server.block_at(Dim::Overworld, [3, 12, 4]).map(|b| b.0), Some(air()));
+    }
+
+    #[test]
+    fn spectators_far_players_and_covered_chests_do_not_open() {
+        let mut h = setup(GameMode::Spectator);
+        put_chest(&mut h, TOP, "north");
+        assert!(click(&mut h, 1, TOP).iter().all(|(_, p)| p.id != ContainerOpen::ID));
+        let mut h = setup(GameMode::Survival);
+        put_chest(&mut h, TOP, "north");
+        h.server.players.get_mut(&1).unwrap().pos = [60.0, 11.6, 4.5];
+        assert!(click(&mut h, 1, TOP).iter().all(|(_, p)| p.id != ContainerOpen::ID));
+        let mut h = setup(GameMode::Survival);
+        put_chest(&mut h, TOP, "north");
+        let stone = blocks().default_hash("minecraft:stone").unwrap();
+        h.server.set_blocks(Dim::Overworld, &[change([3, 12, 4], stone, false)]);
+        assert!(click(&mut h, 1, TOP).iter().all(|(_, p)| p.id != ContainerOpen::ID), "un blocco pieno sopra impedisce l'apertura");
+        assert!(h.server.players[&1].inventory.chest().is_none());
+    }
+
+    #[test]
+    fn items_move_in_and_out_and_are_saved_in_the_block_entity() {
+        let mut h = two_players();
+        put_chest(&mut h, TOP, "north");
+        click(&mut h, 1, TOP);
+        let window = chest_window(&h, 1);
+        let src = net_id(&h, 1, HOTBAR_CONTAINER, 0);
+        h.receive(1, &[place_items(-1, 10, (HOTBAR_CONTAINER, 0, src), (LEVEL_ENTITY_CONTAINER, 4, 0))]);
+        let out = packets(&mut h.sent);
+        assert_eq!(to(&out, 1, id::ITEM_STACK_RESPONSE)[0].body[..2], [1, 0], "esito riuscito");
+        let data = h.server.chest_data(TOP);
+        assert_eq!((data.items[4].id, data.items[4].count), (item("minecraft:stone", 1).id, 10));
+        assert_eq!(h.server.players[&1].inventory.main(0).count, 54);
+        assert!(h.server.chunks[&(0, 0, 0)].dirty);
+        // si riprende: dalla casella 4 del forziere alla 5 della barra
+        let chest_id = net_id(&h, 1, LEVEL_ENTITY_CONTAINER, 4);
+        h.receive(1, &[place_items(-3, 4, (LEVEL_ENTITY_CONTAINER, 4, chest_id), (HOTBAR_CONTAINER, 5, 0))]);
+        assert_eq!(packets(&mut h.sent).iter().find(|(_, p)| p.id == id::ITEM_STACK_RESPONSE).unwrap().1.body[..2], [1, 0]);
+        assert_eq!(h.server.chest_data(TOP).items[4].count, 6);
+        assert_eq!(h.server.players[&1].inventory.main(5).count, 4);
+        // un ID di pila sbagliato nel forziere si rifiuta e non cambia nulla
+        h.receive(1, &[place_items(-5, 1, (LEVEL_ENTITY_CONTAINER, 4, 12345), (HOTBAR_CONTAINER, 6, 0))]);
+        let out = packets(&mut h.sent);
+        assert_eq!(to(&out, 1, id::ITEM_STACK_RESPONSE)[0].body[..2], [1, 1]);
+        assert_eq!(h.server.chest_data(TOP).items[4].count, 6);
+        // chiusura: il client conferma e, essendo l'unico, l'animazione si chiude
+        h.receive(1, &[close_packet(window)]);
+        let out = packets(&mut h.sent);
+        assert_eq!(to(&out, 1, ContainerClose::ID)[0].body, [window, CONTAINER_TYPE_CONTAINER, 0]);
+        let close: Vec<_> = out.iter().filter(|(_, p)| p.id == id::BLOCK_EVENT).collect();
+        assert_eq!(close.len(), 2);
+        assert!(close.iter().all(|(_, p)| p.body[p.body.len() - 1] == 0), "dati 0 = chiuso");
+        assert!(h.server.players[&1].inventory.chest().is_none());
+    }
+
+    #[test]
+    fn cursor_items_return_when_the_chest_closes() {
+        let mut h = two_players();
+        put_chest(&mut h, TOP, "north");
+        click(&mut h, 1, TOP);
+        let window = chest_window(&h, 1);
+        let src = net_id(&h, 1, HOTBAR_CONTAINER, 0);
+        h.receive(1, &[place_items(-1, 5, (HOTBAR_CONTAINER, 0, src), (CURSOR_CONTAINER, 0, 0))]);
+        assert_eq!(h.server.players[&1].inventory.main(0).count, 59);
+        h.receive(1, &[close_packet(window)]);
+        let inv = &h.server.players[&1].inventory;
+        assert_eq!((0..36).map(|i| inv.main(i).count as u32).sum::<u32>(), 64, "le 5 pietre sul cursore sono tornate");
+    }
+
+    #[test]
+    fn two_viewers_see_each_others_changes_and_the_animation_closes_with_the_last() {
+        let mut h = two_players();
+        put_chest(&mut h, TOP, "north");
+        click(&mut h, 1, TOP);
+        let out = click(&mut h, 2, TOP);
+        assert!(out.iter().all(|(_, p)| p.id != id::BLOCK_EVENT), "il secondo che apre non rifà l'animazione");
+        let (wa, wb) = (chest_window(&h, 1), chest_window(&h, 2));
+        let src = net_id(&h, 1, HOTBAR_CONTAINER, 0);
+        h.receive(1, &[place_items(-1, 3, (HOTBAR_CONTAINER, 0, src), (LEVEL_ENTITY_CONTAINER, 0, 0))]);
+        let out = packets(&mut h.sent);
+        let slots = to(&out, 2, InventorySlot::ID);
+        assert_eq!(slots.len(), 1, "Bob riceve la casella cambiata");
+        assert_eq!((slots[0].body[0], slots[0].body[1]), (wb, 0));
+        assert!(to(&out, 1, InventorySlot::ID).is_empty(), "Alice no: ha già la risposta");
+        assert_eq!(h.server.players[&2].inventory.chest_items()[0].count, 3);
+        // se chiude Alice resta Bob: niente animazione di chiusura
+        h.receive(1, &[close_packet(wa)]);
+        assert!(packets(&mut h.sent).iter().all(|(_, p)| p.id != id::BLOCK_EVENT));
+        h.receive(2, &[close_packet(wb)]);
+        assert!(packets(&mut h.sent).iter().any(|(_, p)| p.id == id::BLOCK_EVENT));
+    }
+
+    #[test]
+    fn adjacent_chests_with_the_same_facing_pair_into_a_double_chest() {
+        let mut h = two_players();
+        put_chest(&mut h, TOP, "north");
+        put_chest(&mut h, [4, 11, 4], "north");
+        let (a, b) = (h.server.chest_data(TOP), h.server.chest_data([4, 11, 4]));
+        assert_eq!((a.pair, b.pair), (Some([4, 4]), Some([3, 4])));
+        // con un altro orientamento non si abbinano
+        put_chest(&mut h, [2, 11, 4], "south");
+        assert_eq!(h.server.chest_data([2, 11, 4]).pair, None);
+        assert_eq!(h.server.chest_data(TOP).pair, Some([4, 4]));
+        // aperto da una metà: finestra da 54 caselle e animazione su tutte e due
+        drop(packets(&mut h.sent));
+        let out = click(&mut h, 1, TOP);
+        assert_eq!(to(&out, 1, InventoryContent::ID)[0].body[1], 54);
+        assert_eq!(to(&out, 1, id::BLOCK_EVENT).len(), 2);
+        // la seconda metà della finestra è l'altro forziere
+        let src = net_id(&h, 1, HOTBAR_CONTAINER, 0);
+        h.receive(1, &[place_items(-1, 8, (HOTBAR_CONTAINER, 0, src), (LEVEL_ENTITY_CONTAINER, 30, 0))]);
+        let parts = h.server.players[&1].inventory.chest().unwrap().parts.clone();
+        assert_eq!(parts.len(), 2);
+        let (left, right) = (h.server.chest_data(parts[0]), h.server.chest_data(parts[1]));
+        assert!(left.items.iter().all(Item::is_empty));
+        assert_eq!(right.items[3].count, 8);
+        // aperto dall'altra metà è lo stesso forziere, con le stesse caselle
+        drop(packets(&mut h.sent));
+        click(&mut h, 2, [4, 11, 4]);
+        assert_eq!(h.server.players[&2].inventory.chest().unwrap().parts, parts);
+        assert_eq!(h.server.players[&2].inventory.chest_items()[30].count, 8);
+    }
+
+    #[test]
+    fn breaking_a_chest_drops_its_content_closes_viewers_and_unpairs() {
+        let mut h = two_players();
+        put_chest(&mut h, TOP, "north");
+        put_chest(&mut h, [4, 11, 4], "north");
+        let mut data = h.server.chest_data(TOP);
+        data.items[0] = item("minecraft:cobblestone", 12);
+        data.items[26] = item("minecraft:dirt", 3);
+        h.server.save_chest_for_test(TOP, &data);
+        click(&mut h, 2, TOP);
+        let window = chest_window(&h, 2);
+        drop(packets(&mut h.sent));
+        h.server.break_block(1, TOP);
+        let out = packets(&mut h.sent);
+        assert_eq!(h.server.block_at(Dim::Overworld, TOP).map(|b| b.0), Some(air()));
+        assert!(h.server.chunks[&(0, 0, 0)].block_entities.iter().all(|b| [b.x, b.y, b.z] != TOP), "il block entity è tolto");
+        let mut dropped: Vec<u16> = h
+            .server
+            .entities
+            .iter()
+            .filter_map(|e| match &e.kind {
+                crate::entity::EntityKind::Item { item, .. } => Some(item.count),
+                _ => None,
+            })
+            .collect();
+        dropped.sort();
+        assert_eq!(dropped, [1, 3, 12], "il forziere (1) e il suo contenuto cadono a terra");
+        // Bob viene chiuso dal server
+        assert_eq!(to(&out, 2, ContainerClose::ID)[0].body, [window, CONTAINER_TYPE_CONTAINER, 1]);
+        assert!(h.server.players[&2].inventory.chest().is_none());
+        // l'altra metà torna singola
+        assert_eq!(h.server.chest_data([4, 11, 4]).pair, None);
+        // una richiesta sulla vecchia finestra si rifiuta
+        h.receive(2, &[place_items(-1, 1, (LEVEL_ENTITY_CONTAINER, 0, 0), (HOTBAR_CONTAINER, 1, 0))]);
+        assert_eq!(to(&packets(&mut h.sent), 2, id::ITEM_STACK_RESPONSE)[0].body[..2], [1, 1]);
+    }
+
+    #[test]
+    fn breaking_the_crafting_table_closes_the_window_and_returns_the_grid() {
+        let mut h = setup(GameMode::Survival);
+        let table = blocks().default_hash("minecraft:crafting_table").unwrap();
+        h.server.set_blocks(Dim::Overworld, &[change(TOP, table, false)]);
+        click(&mut h, 1, TOP);
+        let window = h.server.players[&1].inventory.table_window().unwrap();
+        h.server.players.get_mut(&1).unwrap().inventory.set_grid(0, item("minecraft:dirt", 2));
+        drop(packets(&mut h.sent));
+        h.server.set_blocks(Dim::Overworld, &[change(TOP, air(), false)]);
+        let out = packets(&mut h.sent);
+        assert_eq!(to(&out, 1, ContainerClose::ID)[0].body, [window, crate::inventory::CONTAINER_TYPE_WORKBENCH, 1]);
+        let inv = &h.server.players[&1].inventory;
+        assert_eq!(inv.table(), None);
+        assert!((0..36).any(|i| inv.main(i).id == item("minecraft:dirt", 1).id && inv.main(i).count == 2), "la griglia è tornata nell'inventario");
+    }
+
+    #[test]
+    fn leaving_with_the_chest_open_closes_its_animation() {
+        let mut h = two_players();
+        put_chest(&mut h, TOP, "north");
+        click(&mut h, 1, TOP);
+        drop(packets(&mut h.sent));
+        h.server.close(1);
+        assert!(packets(&mut h.sent).iter().any(|(to, p)| *to == 2 && p.id == id::BLOCK_EVENT), "Bob vede il forziere chiudersi");
+    }
+}

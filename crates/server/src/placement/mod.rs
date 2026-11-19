@@ -409,6 +409,10 @@ impl Server {
         for c in changes.iter().filter(|c| name_of(c.hash) == Some("bed")) {
             self.put_block_entity(dim, special::bed_entity(c.pos, held.aux));
         }
+        // il forziere ha il suo block entity (e si abbina a quello accanto)
+        for c in changes.iter().filter(|c| crate::chest::is_chest(c.hash)) {
+            self.chest_placed(c.pos);
+        }
         for p in self.players.values_mut() {
             // una rottura chiesta due volte nello stesso tick vale una, ma non se in mezzo la cella è stata riempita
             if p.last_break.is_some_and(|(_, pos)| changes.iter().any(|c| c.pos == pos)) {

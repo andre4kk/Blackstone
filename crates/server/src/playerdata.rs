@@ -35,7 +35,7 @@ pub(crate) struct PlayerData {
 }
 
 /// Intero di un tag numerico qualunque (i mondi veri usano Byte, Short o Int a seconda del campo).
-fn int(tag: &Tag) -> Option<i64> {
+pub(crate) fn int(tag: &Tag) -> Option<i64> {
     match tag {
         Tag::Byte(v) => Some(*v as i64),
         Tag::Short(v) => Some(*v as i64),
@@ -78,7 +78,7 @@ fn block_tag(hash: i32) -> Option<Tag> {
 }
 
 /// Un oggetto come pila NBT; `None` se è vuoto o il suo ID non ha un nome. `slot` è la casella, per le liste che la dichiarano.
-fn stack_to_tag(item: &Item, slot: Option<u8>) -> Option<Tag> {
+pub(crate) fn stack_to_tag(item: &Item, slot: Option<u8>) -> Option<Tag> {
     if item.is_empty() {
         return None;
     }
@@ -120,7 +120,7 @@ fn slot_tag(item: &Item, slot: u8) -> Tag {
 }
 
 /// Una pila NBT come oggetto. `None` se è vuota o se l'oggetto non esiste in questa versione (si salta, con una riga di log).
-fn stack_from_tag(tag: &Tag) -> Option<Item> {
+pub(crate) fn stack_from_tag(tag: &Tag) -> Option<Item> {
     let name = tag.get("Name")?.as_str()?;
     let count = tag.get("Count").and_then(int).unwrap_or(0);
     if name.is_empty() || count <= 0 {

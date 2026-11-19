@@ -12,9 +12,10 @@ use bedrock_protocol::{
     generated::{
         enums::container_enum_name::{
             ARMOR_CONTAINER, COMBINED_HOTBAR_AND_INVENTORY_CONTAINER, CRAFTING_INPUT_CONTAINER, CREATED_OUTPUT_CONTAINER, CURSOR_CONTAINER, HOTBAR_CONTAINER,
-            INVENTORY_CONTAINER, OFFHAND_CONTAINER,
+            INVENTORY_CONTAINER, LEVEL_ENTITY_CONTAINER, OFFHAND_CONTAINER,
         },
-        FullContainerName, InventorySlot, ItemStackResponse, ItemStackResponseContainerInfo, ItemStackResponseInfo, ItemStackResponseSlotInfo, PlayerHotbar,
+        FullContainerName, InventoryContent, InventorySlot, ItemStackResponse, ItemStackResponseContainerInfo, ItemStackResponseInfo,
+        ItemStackResponseSlotInfo, PlayerHotbar,
     },
     input::{stack_type, SlotRef, StackAction, StackRequest},
     item::ItemStack,
@@ -222,12 +223,26 @@ enum Loc {
     Created,
     /// Casella della griglia di crafting (0..4 senza banco, 0..9 col banco).
     Grid(u8),
+    /// Casella del forziere aperto (0..27, 0..54 se doppio).
+    Chest(u8),
+}
+
+/// Quali finestre ha aperte il giocatore: serve a dare un senso ai numeri di casella e di finestra che scrive il client.
+#[derive(Clone, Copy, Debug, Default)]
+struct Ctx {
+    /// Banco da lavoro aperto (griglia 3x3).
+    table: bool,
+    /// Caselle del forziere aperto (0 se nessuno) e ID della sua finestra.
+    chest: usize,
+    chest_window: u8,
 }
 
 impl Loc {
     /// Contenitore e casella dati dal client. Barra e inventario sono due viste dello stesso inventario.
-    fn resolve(container: u8, slot: u8, table: bool) -> Option<Loc> {
+    fn resolve(container: u8, slot: u8, ctx: Ctx) -> Option<Loc> {
+        let table = ctx.table;
         match container {
+            LEVEL_ENTITY_CONTAINER if (slot as usize) < ctx.chest => Some(Loc::Chest(slot)),
             CRAFTING_INPUT_CONTAINER => {
                 let (offset, size) = if table { (GRID_LARGE_OFFSET, GRID_LARGE) } else { (GRID_SMALL_OFFSET, GRID_SMALL) };
                 slot.checked_sub(offset).filter(|i| *i < size).map(Loc::Grid)
@@ -243,8 +258,10 @@ impl Loc {
     }
 
     /// Finestra, casella e nome del contenitore per `InventorySlot`.
-    fn window(self, table: bool) -> (u32, u32, u8) {
+    fn window(self, ctx: Ctx) -> (u32, u32, u8) {
+        let table = ctx.table;
         match self {
+            Loc::Chest(i) => (ctx.chest_window as u32, i as u32, LEVEL_ENTITY_CONTAINER),
             Loc::Grid(i) => (window::UI, i as u32 + if table { GRID_LARGE_OFFSET } else { GRID_SMALL_OFFSET } as u32, CRAFTING_INPUT_CONTAINER),
             Loc::Main(i) => (window::INVENTORY, i as u32, INVENTORY_CONTAINER),
             Loc::Offhand => (window::OFFHAND, 0, OFFHAND_CONTAINER),
@@ -264,6 +281,8 @@ struct Contents {
     cursor: Slot,
     created: Slot,
     grid: [Slot; GRID_LARGE as usize],
+    /// Caselle del forziere aperto (vuoto se non ce n'è uno).
+    chest: Vec<Slot>,
 }
 
 impl Contents {
@@ -275,6 +294,7 @@ impl Contents {
             Loc::Cursor => &self.cursor,
             Loc::Created => &self.created,
             Loc::Grid(i) => &self.grid[i as usize],
+            Loc::Chest(i) => &self.chest[i as usize],
         }
     }
 
@@ -286,6 +306,7 @@ impl Contents {
             Loc::Cursor => &mut self.cursor,
             Loc::Created => &mut self.created,
             Loc::Grid(i) => &mut self.grid[i as usize],
+            Loc::Chest(i) => &mut self.chest[i as usize],
         }
     }
 }
@@ -322,6 +343,17 @@ pub(crate) struct Inventory {
     /// ID della finestra aperta del banco (1..=99, come Dragonfly `nextWindowID`) e ultimo assegnato.
     table_window: u8,
     last_window: u8,
+    /// Forziere aperto: finestra e posizioni dei blocchi che ne contengono le caselle (una, o due se è doppio: prima metà della
+    /// finestra nel primo blocco, seconda metà nel secondo). Le caselle stanno in `contents.chest`.
+    chest: Option<ChestWindow>,
+}
+
+/// La finestra di un forziere aperto.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct ChestWindow {
+    pub window: u8,
+    /// Blocchi che la compongono, nell'ordine delle caselle (27 ciascuno).
+    pub parts: Vec<[i32; 3]>,
 }
 
 impl Default for Inventory {
@@ -334,6 +366,7 @@ impl Default for Inventory {
                 cursor: Slot::default(),
                 created: Slot::default(),
                 grid: std::array::from_fn(|_| Slot::default()),
+                chest: Vec::new(),
             },
             selected: 0,
             next_id: 1,
@@ -341,6 +374,7 @@ impl Default for Inventory {
             table: None,
             table_window: 0,
             last_window: 0,
+            chest: None,
         }
     }
 }
@@ -369,11 +403,11 @@ impl Inventory {
 
     /// Il pacchetto `InventorySlot` per una casella nominata dal client (`None` se non esiste).
     pub fn slot_packet_at(&self, container: u8, slot: u8) -> Option<Packet> {
-        Loc::resolve(container, slot, self.table.is_some()).map(|loc| self.slot_packet(loc))
+        Loc::resolve(container, slot, self.ctx()).map(|loc| self.slot_packet(loc))
     }
 
     fn slot_packet(&self, loc: Loc) -> Packet {
-        let (window, index, name) = loc.window(self.table.is_some());
+        let (window, index, name) = loc.window(self.ctx());
         InventorySlot {
             container_id: window as u8,
             slot: index,
@@ -437,10 +471,78 @@ impl Inventory {
 
     /// Apre il banco in `pos` e dà l'ID della finestra (1..=99). Gli oggetti della griglia di prima vanno restituiti prima con `release_ui`.
     pub fn open_table(&mut self, pos: [i32; 3]) -> u8 {
-        self.last_window = if self.last_window >= 99 { 1 } else { self.last_window + 1 };
         self.table = Some(pos);
-        self.table_window = self.last_window;
+        self.table_window = self.next_window();
+        self.table_window
+    }
+
+    /// Il prossimo ID di finestra (1..=99, come Dragonfly `nextWindowID`): uno solo per banco, forzieri e il resto.
+    fn next_window(&mut self) -> u8 {
+        self.last_window = if self.last_window >= 99 { 1 } else { self.last_window + 1 };
         self.last_window
+    }
+
+    fn ctx(&self) -> Ctx {
+        Ctx { table: self.table.is_some(), chest: self.contents.chest.len(), chest_window: self.chest.as_ref().map_or(0, |c| c.window) }
+    }
+
+    /// Il forziere aperto, se c'è.
+    pub fn chest(&self) -> Option<&ChestWindow> {
+        self.chest.as_ref()
+    }
+
+    /// Apre un forziere composto dai blocchi `parts` con le caselle `items` (27 per blocco) e dà l'ID della finestra. Ogni casella piena
+    /// prende un ID di pila nuovo. Ciò che era aperto va chiuso prima.
+    pub fn open_chest(&mut self, parts: Vec<[i32; 3]>, items: Vec<Item>) -> u8 {
+        let window = self.next_window();
+        self.contents.chest = vec![Slot::default(); items.len()];
+        for (i, item) in items.into_iter().enumerate() {
+            self.fill(Loc::Chest(i as u8), item);
+        }
+        self.chest = Some(ChestWindow { window, parts });
+        window
+    }
+
+    /// Chiude il forziere e restituisce la sua finestra (`None` se non ce n'era uno).
+    pub fn close_chest(&mut self) -> Option<ChestWindow> {
+        self.contents.chest.clear();
+        self.chest.take()
+    }
+
+    /// Gli oggetti delle caselle del forziere aperto.
+    pub fn chest_items(&self) -> Vec<Item> {
+        self.contents.chest.iter().map(|s| s.item.clone()).collect()
+    }
+
+    /// Allinea la casella `i` del forziere a `item` (cambiata da un altro giocatore): se è diversa prende un ID nuovo e restituisce il
+    /// pacchetto `InventorySlot` da mandare; `None` se era già uguale.
+    pub fn refresh_chest_slot(&mut self, i: usize, item: Item) -> Option<Packet> {
+        if i >= self.contents.chest.len() || self.contents.chest[i].item == item {
+            return None;
+        }
+        self.fill(Loc::Chest(i as u8), item);
+        Some(self.slot_packet(Loc::Chest(i as u8)))
+    }
+
+    /// `InventoryContent` del forziere aperto (tutte le caselle).
+    pub fn chest_content_packet(&self) -> Option<Packet> {
+        let window = self.chest.as_ref()?.window;
+        let slots = (0..self.contents.chest.len() as u8).map(|i| self.stack_of(Loc::Chest(i))).collect();
+        Some(
+            InventoryContent {
+                container_id: window as u32,
+                slots,
+                full_container_name: FullContainerName { container_name: LEVEL_ENTITY_CONTAINER, dynamic_id: None },
+                storage_item: ItemStack::air(),
+            }
+            .packet(),
+        )
+    }
+
+    /// Vero se la richiesta tocca caselle del forziere aperto.
+    pub fn touches_chest(&self, req: &StackRequest) -> bool {
+        self.chest.is_some()
+            && referenced(req).iter().any(|&(container, slot)| container == LEVEL_ENTITY_CONTAINER && (slot as usize) < self.contents.chest.len())
     }
 
     /// Chiude il banco e svuota la griglia di crafting e il cursore (Dragonfly `MoveItemsToInventory`: `ui.Clear()`): restituisce
@@ -474,7 +576,7 @@ impl Inventory {
 
     /// La casella com'è per il client; `None` se contenitore e casella non esistono.
     pub fn stack_at(&self, container: u8, slot: u8) -> Option<ItemStack> {
-        Loc::resolve(container, slot, self.table.is_some()).map(|loc| self.stack_of(loc))
+        Loc::resolve(container, slot, self.ctx()).map(|loc| self.stack_of(loc))
     }
 
     /// Le 36 caselle principali per `InventoryContent`.
@@ -512,7 +614,7 @@ impl Inventory {
                 self.pending.remove(&req.request_id);
                 let mut changed = Vec::new();
                 for (container, slot) in referenced(req) {
-                    if Loc::resolve(container, slot, self.table.is_some()).is_some() && !changed.contains(&(container, slot)) {
+                    if Loc::resolve(container, slot, self.ctx()).is_some() && !changed.contains(&(container, slot)) {
                         changed.push((container, slot));
                     }
                 }
@@ -563,7 +665,7 @@ impl Inventory {
 
     /// Dà la casella indicata dal client e controlla che l'ID di pila che il client ci vede sia quello del server.
     fn verified(&mut self, r: &SlotRef) -> Result<Loc, String> {
-        let loc = Loc::resolve(r.container, r.slot, self.table.is_some()).ok_or_else(|| format!("casella {}/{} inesistente", r.container, r.slot))?;
+        let loc = Loc::resolve(r.container, r.slot, self.ctx()).ok_or_else(|| format!("casella {}/{} inesistente", r.container, r.slot))?;
         if loc == Loc::Created {
             return Ok(loc); // il contenuto lo ha deciso il server in questa stessa richiesta: niente da confrontare
         }
@@ -832,7 +934,7 @@ impl Inventory {
     /// Rimette in una casella un oggetto buttato che un gancio ha annullato. Se nel frattempo la casella contiene altro, l'oggetto va
     /// nella prima casella libera dell'inventario; se è pieno, si perde (non può accadere: l'oggetto era appena uscito da lì).
     pub fn restore(&mut self, container: u8, slot: u8, item: Item) {
-        let Some(loc) = Loc::resolve(container, slot, self.table.is_some()) else { return };
+        let Some(loc) = Loc::resolve(container, slot, self.ctx()) else { return };
         let current = self.contents.get(loc).item.clone();
         if current.is_empty() {
             return self.fill(loc, item);
@@ -854,8 +956,8 @@ impl Inventory {
                 vec![ItemStackResponse { responses: vec![ItemStackResponseInfo { result: RESULT_ERROR, client_request_id: request_id, containers: None }] }
                     .packet()];
             for &(container, slot) in &result.changed {
-                if let Some(loc) = Loc::resolve(container, slot, self.table.is_some()) {
-                    let (window, index, name) = loc.window(self.table.is_some());
+                if let Some(loc) = Loc::resolve(container, slot, self.ctx()) {
+                    let (window, index, name) = loc.window(self.ctx());
                     packets.push(
                         InventorySlot {
                             container_id: window as u8,
@@ -1305,11 +1407,11 @@ mod tests {
     #[test]
     fn two_by_two_grid_slots_are_numbered_from_28_and_three_by_three_from_32() {
         let mut inv = Inventory::default();
-        assert_eq!(Loc::resolve(CRAFTING_INPUT_CONTAINER, 28, false), Some(Loc::Grid(0)));
-        assert_eq!(Loc::resolve(CRAFTING_INPUT_CONTAINER, 31, false), Some(Loc::Grid(3)));
-        assert_eq!(Loc::resolve(CRAFTING_INPUT_CONTAINER, 32, false), None);
-        assert_eq!(Loc::resolve(CRAFTING_INPUT_CONTAINER, 40, true), Some(Loc::Grid(8)));
-        assert_eq!(Loc::resolve(CRAFTING_INPUT_CONTAINER, 28, true), None);
+        assert_eq!(Loc::resolve(CRAFTING_INPUT_CONTAINER, 28, Ctx::default()), Some(Loc::Grid(0)));
+        assert_eq!(Loc::resolve(CRAFTING_INPUT_CONTAINER, 31, Ctx::default()), Some(Loc::Grid(3)));
+        assert_eq!(Loc::resolve(CRAFTING_INPUT_CONTAINER, 32, Ctx::default()), None);
+        assert_eq!(Loc::resolve(CRAFTING_INPUT_CONTAINER, 40, Ctx { table: true, ..Ctx::default() }), Some(Loc::Grid(8)));
+        assert_eq!(Loc::resolve(CRAFTING_INPUT_CONTAINER, 28, Ctx { table: true, ..Ctx::default() }), None);
         inv.open_table([1, 2, 3]);
         assert_eq!(inv.slot_packet_at(CRAFTING_INPUT_CONTAINER, 40).map(|p| p.id), Some(id::INVENTORY_SLOT));
     }

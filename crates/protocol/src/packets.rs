@@ -34,6 +34,7 @@ pub mod id {
     pub const PLAYER_HOTBAR: u32 = 48;
     pub const INVENTORY_CONTENT: u32 = 49;
     pub const INVENTORY_SLOT: u32 = 50;
+    pub const BLOCK_EVENT: u32 = 26;
     pub const BLOCK_ACTOR_DATA: u32 = 56;
     pub const SET_PLAYER_GAME_TYPE: u32 = 62;
     pub const LEVEL_SOUND_EVENT: u32 = 123;

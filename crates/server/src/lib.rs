@@ -3,6 +3,7 @@ mod biomes;
 mod bot;
 mod breaking;
 mod chat;
+mod chest;
 pub mod config;
 mod disk;
 mod entity;
@@ -491,6 +492,9 @@ impl Server {
     fn apply_blocks(&mut self, dim: Dim, changes: &[BlockChange]) -> Vec<BlockChange> {
         let (min, max) = dim.height_range();
         let mut applied = Vec::with_capacity(changes.len());
+        // Celle il cui blocco ha cambiato nome (chi aveva aperto una finestra lì la perde) e block entity di forziere perduti (il contenuto cade a terra).
+        let mut gone: Vec<[i32; 3]> = Vec::new();
+        let mut lost_chests: Vec<([i32; 3], Vec<u8>)> = Vec::new();
         for c in changes.iter().filter(|c| (min..max).contains(&c.pos[1])) {
             let (cx, cz) = (c.pos[0].div_euclid(16), c.pos[2].div_euclid(16));
             let Some(chunk) = self.chunks.get_mut(&(dim as u8, cx, cz)) else { continue };
@@ -498,7 +502,13 @@ impl Server {
             let old = chunk.block(lx, c.pos[1], lz);
             chunk.set_block(lx, c.pos[1], lz, c.hash, c.water);
             if old != c.hash && registry::blocks().state(old).map(|s| &s.name) != registry::blocks().state(c.hash).map(|s| &s.name) {
+                if crate::chest::is_chest(old) {
+                    if let Some(be) = chunk.block_entities.iter().find(|b| [b.x, b.y, b.z] == c.pos) {
+                        lost_chests.push((c.pos, be.nbt.clone()));
+                    }
+                }
                 chunk.remove_block_entity(c.pos);
+                gone.push(c.pos);
             }
             if chunk.fallback {
                 // un chunk di ripiego (mondo piatto, o generazione fallita) non è il mondo vero: salvarlo ne cancellerebbe la
@@ -517,18 +527,32 @@ impl Server {
                 self.send(pid, &packets);
             }
         }
+        for pos in gone {
+            self.close_windows_at(pos);
+        }
+        for (pos, nbt) in lost_chests {
+            self.chest_removed(pos, &nbt);
+        }
         applied.into_iter().map(|(_, c)| c).collect()
     }
 
     /// Mette (o sostituisce) il block entity di una cella e lo manda a chi vede il chunk (`BlockActorData`). Fuori dai chunk
     /// in memoria non fa nulla.
     pub(crate) fn put_block_entity(&mut self, dim: Dim, entity: vgen::BlockEntity) {
+        self.store_block_entity(dim, entity, true);
+    }
+
+    /// Come `put_block_entity`; con `notify` falso non manda `BlockActorData` (per i cambi che il client non deve vedere, come il contenuto di un forziere).
+    pub(crate) fn store_block_entity(&mut self, dim: Dim, entity: vgen::BlockEntity, notify: bool) {
         let (cx, cz) = (entity.x.div_euclid(16), entity.z.div_euclid(16));
         let Some(chunk) = self.chunks.get_mut(&(dim as u8, cx, cz)) else { return };
         let packet = BlockActorData { block_position: BlockPos { x: entity.x, y: entity.y, z: entity.z }, actor_data_tags: entity.nbt.clone() }.packet();
         chunk.put_block_entity(entity);
         if chunk.fallback {
             chunk.dirty = false; // vedi `apply_blocks`: i chunk di ripiego non si salvano mai
+        }
+        if !notify {
+            return;
         }
         for (&pid, _) in self.players.iter().filter(|(_, p)| p.sent.contains(&(cx, cz))) {
             self.send(pid, std::slice::from_ref(&packet));
