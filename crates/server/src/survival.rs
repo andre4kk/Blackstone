@@ -121,8 +121,21 @@ impl Server {
     /// Vero se la cella dei piedi di `pid` (a `feet_y`) azzera la caduta. Come Dragonfly (`fallDistanceEntity` di acqua, lava, scala, rampicante,
     /// ragnatela): acqua (strato dei liquidi o blocco), lava, scala, vite e ragnatela. Il client si arrampica già da solo.
     fn feet_resets_fall(&self, pid: u64, feet_y: f32) -> bool {
-        const BLOCKS: [&str; 7] =
-            ["minecraft:water", "minecraft:flowing_water", "minecraft:lava", "minecraft:flowing_lava", "minecraft:ladder", "minecraft:vine", "minecraft:web"];
+        // Elenco di Dragonfly più i rampicanti che Dragonfly non ha ma il client fa scalare (vite del Nether, impalcatura).
+        const BLOCKS: [&str; 12] = [
+            "minecraft:water",
+            "minecraft:flowing_water",
+            "minecraft:lava",
+            "minecraft:flowing_lava",
+            "minecraft:ladder",
+            "minecraft:vine",
+            "minecraft:web",
+            "minecraft:twisting_vines",
+            "minecraft:weeping_vines",
+            "minecraft:cave_vines",
+            "minecraft:cave_vines_body_with_berries",
+            "minecraft:scaffolding",
+        ];
         let Some(p) = self.players.get(&pid) else { return false };
         let cell = [p.pos[0].floor() as i32, feet_y.floor() as i32, p.pos[2].floor() as i32];
         self.block_at(Dim::Overworld, cell)
