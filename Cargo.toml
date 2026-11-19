@@ -27,3 +27,8 @@ serde = { version = "1", features = ["derive"] }
 lto = true
 codegen-units = 1
 panic = "abort"
+
+# `cargo run` in dev: le dipendenze (cifratura WebRTC, compressione, LevelDB) sono lente a opt-level 0 e il client lo sente;
+# il nostro codice resta a opt-level 0 e debuggabile.
+[profile.dev.package."*"]
+opt-level = 2
