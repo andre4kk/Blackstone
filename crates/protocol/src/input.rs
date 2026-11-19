@@ -155,13 +155,35 @@ fn skip_inventory_actions(r: &mut Reader) -> Option<()> {
     Some(())
 }
 
-/// Pacchetto 30. Solo il tipo `ItemUse` (2) porta dati che ci servono.
+/// Rilascio dell'oggetto usato a lungo (tipo 4 di `InventoryTransaction`, `ReleaseItemTransactionData` di gophertunnel): il client smette di
+/// tenere premuto mentre mangia, tende l'arco...
+#[derive(Clone, Debug, PartialEq)]
+pub struct ReleaseItem {
+    /// Sempre 0 dal 1.13 (gophertunnel): rilasciare un cibo e un arco è la stessa cosa per il client.
+    pub action: i32,
+    pub hotbar_slot: i32,
+    /// Oggetto in mano secondo il client.
+    pub held: ItemStack,
+    /// Posizione della testa.
+    pub head_pos: [f32; 3],
+    /// 0 = mano principale, 1 = secondaria.
+    pub hand: u8,
+}
+
+impl ReleaseItem {
+    fn read(r: &mut Reader) -> Option<Self> {
+        Some(Self { action: r.var_i32()?, hotbar_slot: r.var_i32()?, held: ItemStack::decode(r)?, head_pos: r.vec3()?, hand: r.u8()? })
+    }
+}
+
+/// Pacchetto 30. Solo i tipi `ItemUse` (2) e `ReleaseItem` (4) portano dati che ci servono.
 #[derive(Clone, Debug, PartialEq)]
 pub struct InventoryTransaction {
     pub legacy_request_id: i32,
     pub legacy_slots: LegacySlots,
     pub kind: u32,
     pub use_item: Option<UseItem>,
+    pub release: Option<ReleaseItem>,
 }
 
 impl InventoryTransaction {
@@ -172,7 +194,8 @@ impl InventoryTransaction {
         let kind = r.var_u32()?;
         skip_inventory_actions(r)?;
         let use_item = if kind == 2 { Some(UseItem::read(r)?) } else { None };
-        Some(Self { legacy_request_id, legacy_slots, kind, use_item })
+        let release = if kind == 4 { Some(ReleaseItem::read(r)?) } else { None };
+        Some(Self { legacy_request_id, legacy_slots, kind, use_item, release })
     }
 }
 
@@ -682,6 +705,28 @@ mod tests {
     fn inventory_transaction_of_other_kind_has_no_use_item() {
         let t = InventoryTransaction::decode(&[0, 0, 1, 0]).expect("Mismatch senza azioni");
         assert_eq!((t.kind, t.use_item), (1, None));
+    }
+
+    #[test]
+    fn inventory_transaction_release_item() {
+        // layout di `ReleaseItemTransactionData.Marshal` (gophertunnel v1.63.0)
+        let mut w = Writer::default();
+        w.var_i32(0); // id legacy
+        w.u8(0); // niente slot legacy
+        w.var_u32(4); // tipo ReleaseItem
+        w.var_u32(0); // niente azioni
+        w.var_i32(0); // azione
+        w.var_i32(3); // casella
+        ItemStack::air().encode(&mut w);
+        [1.5f32, 70.0, -2.5].iter().for_each(|&v| w.f32(v));
+        w.u8(0); // mano
+        let t = InventoryTransaction::decode(&w.0).expect("leggibile");
+        assert_eq!((t.kind, t.use_item), (4, None));
+        let r = t.release.expect("rilascio");
+        assert_eq!((r.action, r.hotbar_slot, r.held, r.head_pos, r.hand), (0, 3, ItemStack::air(), [1.5, 70.0, -2.5], 0));
+        for n in 0..w.0.len() {
+            assert!(InventoryTransaction::decode(&w.0[..n]).is_none(), "tagliato a {n}");
+        }
     }
 
     #[test]

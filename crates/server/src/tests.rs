@@ -4206,4 +4206,192 @@ mod survival {
         crate::survival::settle_dead(player(&mut h), None);
         assert_eq!(h.server.players[&1].food_tick, 1);
     }
+
+    // ---------- mangiare ----------
+
+    /// `InventoryTransaction` ItemUse con azione `action` (1 = ClickAir) e `held` in mano secondo il client, casella 0.
+    fn use_air(action: i32, held: &Item) -> Packet {
+        let mut w = Writer::default();
+        w.var_i32(0); // id legacy
+        w.u8(0); // niente slot legacy
+        w.var_u32(2); // tipo ItemUse
+        w.var_u32(0); // niente azioni
+        w.var_i32(action);
+        w.u8(1); // trigger
+        [0, 0, 0].iter().for_each(|&c| w.var_i32(c));
+        w.u8(255); // faccia
+        w.var_i32(0); // casella
+        w.u8(0); // mano
+        held.stack(1).encode(&mut w);
+        (0..6).for_each(|_| w.f32(0.5));
+        w.var_u32(0);
+        w.u8(1);
+        w.u8(0);
+        Packet::new(id::INVENTORY_TRANSACTION, w.0)
+    }
+
+    /// `InventoryTransaction` ReleaseItem con `held` in mano, casella 0.
+    fn release(held: &Item) -> Packet {
+        let mut w = Writer::default();
+        w.var_i32(0);
+        w.u8(0);
+        w.var_u32(4);
+        w.var_u32(0);
+        w.var_i32(0); // azione
+        w.var_i32(0); // casella
+        held.stack(1).encode(&mut w);
+        (0..3).for_each(|_| w.f32(0.5));
+        w.u8(0);
+        Packet::new(id::INVENTORY_TRANSACTION, w.0)
+    }
+
+    /// Alice ha `n` di `name` in mano (casella 0), fame `food`, saturazione `sat`.
+    fn hungry(mode: GameMode, name: &str, n: u16, food: u8, sat: f32) -> (Harness, Item) {
+        let mut h = setup(mode);
+        let item = Item::from_name(name, n).unwrap();
+        let p = player(&mut h);
+        p.inventory.set_main(0, item.clone());
+        p.inventory.selected = 0;
+        (p.food, p.saturation) = (food, sat);
+        h.packets_by_player();
+        (h, item)
+    }
+
+    fn held_count(h: &Harness) -> u16 {
+        h.server.players[&1].inventory.held().count
+    }
+
+    /// Alice mangia `item` da quando comincia a quando finisce (`ticks` dopo).
+    fn eat_for(h: &mut Harness, item: &Item, ticks: u64) {
+        h.receive(1, &[use_air(1, item)]);
+        h.server.tick_count += ticks;
+        h.receive(1, &[use_air(1, item)]);
+    }
+
+    #[test]
+    fn eating_bread_for_32_ticks_feeds_and_takes_one_loaf() {
+        let (mut h, bread) = hungry(GameMode::Survival, "minecraft:bread", 5, 10, 0.0);
+        h.receive(1, &[use_air(1, &bread)]);
+        assert!(h.server.players[&1].eating_since.is_some());
+        let sent = h.packets_by_player();
+        assert!(sent[&2].iter().any(|p| p.id == bedrock_protocol::actor::SET_ACTOR_DATA), "chi guarda vede che usa l'oggetto");
+        h.server.tick_count += 31;
+        h.receive(1, &[use_air(1, &bread)]);
+        assert_eq!((hunger(&h).0, held_count(&h)), (10, 5), "31 tick non bastano");
+        h.server.tick_count += 1;
+        h.receive(1, &[use_air(1, &bread)]);
+        assert_eq!(hunger(&h), (15, 6.0, 0.0));
+        assert_eq!(held_count(&h), 4);
+        let sent = h.packets_by_player();
+        assert!(sent[&1].contains(&vitals_packet(&h)));
+        assert!(sent[&1].iter().any(|p| p.id == id::INVENTORY_SLOT), "casella rimandata");
+        assert!(sent[&2].iter().any(|p| p.id == id::MOB_EQUIPMENT), "chi guarda vede il pane in meno");
+        assert!(h.server.players[&1].eating_since.is_some(), "il conto riparte per il pane seguente");
+    }
+
+    #[test]
+    fn saturation_never_exceeds_food() {
+        for (food, sat, want) in [(18u8, 1.5f32, (20u8, 7.5f32)), (10, 0.0, (15, 6.0)), (15, 12.0, (20, 18.0)), (16, 18.0, (20, 20.0))] {
+            let (mut h, bread) = hungry(GameMode::Survival, "minecraft:bread", 2, food, sat);
+            eat_for(&mut h, &bread, 32);
+            assert_eq!((hunger(&h).0, hunger(&h).1), want, "fame {food}, saturazione {sat}");
+        }
+    }
+
+    #[test]
+    fn releasing_early_cancels_and_releasing_in_time_finishes() {
+        let (mut h, bread) = hungry(GameMode::Survival, "minecraft:bread", 3, 10, 0.0);
+        h.receive(1, &[use_air(1, &bread)]);
+        h.server.tick_count += 31;
+        h.receive(1, &[release(&bread)]);
+        assert_eq!((hunger(&h).0, held_count(&h), h.server.players[&1].eating_since), (10, 3, None));
+        h.receive(1, &[use_air(1, &bread)]);
+        h.server.tick_count += 32;
+        h.receive(1, &[release(&bread)]);
+        assert_eq!((hunger(&h).0, held_count(&h), h.server.players[&1].eating_since), (15, 2, None));
+    }
+
+    #[test]
+    fn changing_slot_or_dying_stops_eating() {
+        let (mut h, bread) = hungry(GameMode::Survival, "minecraft:bread", 3, 10, 0.0);
+        h.receive(1, &[use_air(1, &bread)]);
+        h.receive(1, &[mob_equipment(1, 1)]);
+        assert_eq!(h.server.players[&1].eating_since, None);
+        h.receive(1, &[mob_equipment(0, 0)]);
+        h.receive(1, &[use_air(1, &bread)]);
+        assert!(h.server.players[&1].eating_since.is_some());
+        h.server.hurt(1, 100.0, DamageCause::Kill);
+        assert_eq!(h.server.players[&1].eating_since, None);
+    }
+
+    #[test]
+    fn full_belly_refuses_normal_food_but_not_golden_apple() {
+        let (mut h, bread) = hungry(GameMode::Survival, "minecraft:bread", 3, 20, 5.0);
+        h.receive(1, &[use_air(1, &bread)]);
+        assert_eq!(h.server.players[&1].eating_since, None);
+        let (mut h, apple) = hungry(GameMode::Survival, "minecraft:golden_apple", 2, 20, 5.0);
+        eat_for(&mut h, &apple, 32);
+        assert_eq!((held_count(&h), hunger(&h).0), (1, 20));
+    }
+
+    #[test]
+    fn creative_eats_without_consuming_and_spectator_does_not_eat() {
+        let (mut h, bread) = hungry(GameMode::Creative, "minecraft:bread", 3, 10, 0.0);
+        eat_for(&mut h, &bread, 32);
+        assert_eq!((held_count(&h), hunger(&h).0), (3, 15), "come Dragonfly: il cibo resta ma la fame sale");
+        let (mut h, bread) = hungry(GameMode::Creative, "minecraft:bread", 3, 20, 5.0);
+        h.receive(1, &[use_air(1, &bread)]);
+        assert!(h.server.players[&1].eating_since.is_some(), "la creativa mangia anche a pancia piena");
+        let (mut h, bread) = hungry(GameMode::Spectator, "minecraft:bread", 3, 10, 0.0);
+        h.receive(1, &[use_air(1, &bread)]);
+        assert_eq!(h.server.players[&1].eating_since, None);
+    }
+
+    #[test]
+    fn last_item_leaves_the_hand_empty_and_stew_leaves_a_bowl() {
+        let (mut h, bread) = hungry(GameMode::Survival, "minecraft:bread", 1, 10, 0.0);
+        eat_for(&mut h, &bread, 32);
+        assert!(h.server.players[&1].inventory.held().is_empty());
+        assert_eq!(h.server.players[&1].eating_since, None);
+        let (mut h, stew) = hungry(GameMode::Survival, "minecraft:mushroom_stew", 1, 10, 0.0);
+        eat_for(&mut h, &stew, 32);
+        let held = h.server.players[&1].inventory.held();
+        assert_eq!(registry::items().name(held.id), Some("minecraft:bowl"));
+    }
+
+    #[test]
+    fn a_hook_can_cancel_the_meal_and_a_wrong_held_item_is_resynced() {
+        let (mut h, bread) = hungry(GameMode::Survival, "minecraft:bread", 3, 10, 0.0);
+        h.server.hooks.push(Box::new(|a| !matches!(a, WorldAction::Eat { .. })));
+        eat_for(&mut h, &bread, 32);
+        assert_eq!((hunger(&h).0, held_count(&h)), (10, 3));
+        let (mut h, _) = hungry(GameMode::Survival, "minecraft:bread", 3, 10, 0.0);
+        h.receive(1, &[use_air(1, &Item::from_name("minecraft:apple", 1).unwrap())]);
+        assert_eq!(h.server.players[&1].eating_since, None);
+        assert!(h.packets_by_player()[&1].iter().any(|p| p.id == id::INVENTORY_SLOT));
+    }
+
+    #[test]
+    fn eating_sends_the_feed_event_every_four_ticks() {
+        let (mut h, bread) = hungry(GameMode::Survival, "minecraft:bread", 3, 10, 0.0);
+        h.receive(1, &[use_air(1, &bread)]);
+        h.packets_by_player();
+        h.server.tick_count = 4;
+        h.server.eating_tick();
+        let event = actor_event(1, actor_event_type::EATING_ITEM, (bread.id as i32) << 16);
+        let sent = h.packets_by_player();
+        assert!(sent[&1].contains(&event) && sent[&2].contains(&event));
+        h.server.tick_count = 5;
+        h.server.eating_tick();
+        assert!(h.packets_by_player().values().all(|v| v.is_empty()));
+    }
+
+    #[test]
+    fn use_and_release_packets_are_logged_at_most_hex_logs_times() {
+        let (mut h, bread) = hungry(GameMode::Survival, "minecraft:bread", 3, 20, 5.0);
+        for _ in 0..5 {
+            h.receive(1, &[use_air(1, &bread), release(&bread)]);
+        }
+        assert_eq!(h.server.players[&1].use_logs, crate::HEX_LOGS);
+    }
 }

@@ -49,7 +49,6 @@ pub(crate) struct BlockDrops {
     pub drops: Vec<Drop>,
 }
 
-#[allow(dead_code)] // lo usa un compito seguente (mangiare / danni)
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct Food {
     pub points: u8,
@@ -67,7 +66,6 @@ struct DropsFile {
     blocks: HashMap<String, BlockDrops>,
 }
 
-#[allow(dead_code)] // lo usa un compito seguente (mangiare / danni)
 #[derive(Deserialize)]
 struct FoodsFile {
     foods: HashMap<String, Food>,
@@ -86,7 +84,6 @@ pub(crate) fn block_drops(block_name: &str) -> Option<&'static BlockDrops> {
 }
 
 /// Cibo con questo nome, se lo e'.
-#[allow(dead_code)] // lo usa un compito seguente (mangiare / danni)
 pub(crate) fn food(item_name: &str) -> Option<&'static Food> {
     static T: OnceLock<HashMap<String, Food>> = OnceLock::new();
     T.get_or_init(|| serde_json::from_str::<FoodsFile>(include_str!("../data/foods.json")).expect("foods.json non valido").foods).get(item_name)
@@ -172,6 +169,22 @@ mod tests {
         assert_eq!((f.points, f.saturation, f.always_edible), (5, 6.0, false));
         assert_eq!(food("minecraft:cooked_beef").unwrap().points, 8);
         assert!(food("minecraft:stick").is_none());
+    }
+
+    #[test]
+    fn foods_missing_from_dragonfly_have_vanilla_values() {
+        for (name, points, saturation, always) in [
+            ("carrot", 3, 3.6, false),
+            ("potato", 1, 0.6, false),
+            ("sweet_berries", 2, 0.4, false),
+            ("glow_berries", 2, 0.4, false),
+            ("chorus_fruit", 4, 2.4, true),
+            ("dried_kelp", 1, 0.6, false),
+            ("beetroot", 1, 1.2, false),
+        ] {
+            let f = food(&format!("minecraft:{name}")).unwrap_or_else(|| panic!("{name}"));
+            assert_eq!((f.points, f.saturation, f.always_edible), (points, saturation, always), "{name}");
+        }
     }
 
     #[test]

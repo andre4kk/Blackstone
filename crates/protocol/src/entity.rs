@@ -247,6 +247,8 @@ pub mod actor_event_type {
     pub const HURT: u8 = 2;
     /// L'entità muore.
     pub const DEATH: u8 = 3;
+    /// L'entità mangia (`ActorEventFeed`): particelle e suono del cibo in mano; il dato è `(ID oggetto << 16) | valore ausiliario`.
+    pub const EATING_ITEM: u8 = 57;
 }
 
 /// `ActorEvent` (27) come `ActorEvent.Marshal` di gophertunnel v1.63.0: ID di runtime (varint), evento u8, dato varint32 e posizione

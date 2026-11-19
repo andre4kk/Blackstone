@@ -220,7 +220,14 @@ impl Server {
         flags |= (bot_sneaking as i64) << flag::SNEAKING;
         let (mut sneaking, mut crawling) = (bot_sneaking, false);
         if let Some(p) = state {
-            for (on, bit) in [(p.sneaking, flag::SNEAKING), (p.sprinting, flag::SPRINTING), (p.swimming, flag::SWIMMING), (p.gliding, flag::GLIDING)] {
+            let using = p.eating_since.is_some();
+            for (on, bit) in [
+                (p.sneaking, flag::SNEAKING),
+                (p.sprinting, flag::SPRINTING),
+                (p.swimming, flag::SWIMMING),
+                (p.gliding, flag::GLIDING),
+                (using, flag::USING_ITEM),
+            ] {
                 flags |= (on as i64) << bit;
             }
             sneaking |= p.sneaking;

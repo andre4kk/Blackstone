@@ -572,6 +572,22 @@ def main(dragonfly, data):
         lits = re.findall(r'"(minecraft:[^"]*)"', s)
         assert len(sat) == 1 and len(set(lits)) == 1, (base, sat, lits)
         foods[lits[0]] = {"points": int(sat[0][0]), "saturation": float(sat[0][1]), "always_edible": always_edible}
+    # Cibi che Dragonfly non ha (o ha sbagliati) ma che in vanilla si mangiano: (punti, saturazione, sempre commestibile).
+    # Valori vanilla noti (wiki): carota 3/3.6, patata 1/0.6, bacche dolci e luminose 2/0.4, frutto del coro 4/2.4 (si mangia anche a pancia
+    # piena), alga secca 1/0.6 (Dragonfly ha 0.2), barbabietola 1/1.2 (gia' in Dragonfly: controllata sotto).
+    EXTRA = {
+        "minecraft:carrot": (3, 3.6, False),
+        "minecraft:potato": (1, 0.6, False),
+        "minecraft:sweet_berries": (2, 0.4, False),
+        "minecraft:glow_berries": (2, 0.4, False),
+        "minecraft:chorus_fruit": (4, 2.4, True),
+        "minecraft:dried_kelp": (1, 0.6, False),
+        "minecraft:beetroot": (1, 1.2, False),
+    }
+    for n, (p, sa, always_edible) in EXTRA.items():
+        if n == "minecraft:beetroot":
+            assert foods[n] == {"points": p, "saturation": sa, "always_edible": always_edible}, foods.get(n)
+        foods[n] = {"points": p, "saturation": sa, "always_edible": always_edible}
     for n in foods:
         assert n in items, n
     with open(os.path.join(data, "foods.json"), "w", encoding="utf8", newline="\n") as f:

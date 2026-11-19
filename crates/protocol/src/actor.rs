@@ -22,6 +22,8 @@ pub mod key {
 pub mod flag {
     pub const SNEAKING: u32 = 1;
     pub const SPRINTING: u32 = 3;
+    /// Sta usando un oggetto a lungo (mangia, beve).
+    pub const USING_ITEM: u32 = 4;
     pub const SHOW_NAME: u32 = 14;
     pub const ALWAYS_SHOW_NAME: u32 = 15;
     pub const CAN_CLIMB: u32 = 19;

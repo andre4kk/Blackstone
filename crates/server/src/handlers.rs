@@ -227,7 +227,8 @@ impl Server {
     }
 
     /// Pacchetto `InventoryTransaction`: l'uso di un oggetto con azione Destroy rompe un blocco, con azione Place attiva il blocco
-    /// cliccato (porta, leva...) o ne piazza uno. Gli altri usi e gli altri tipi di transazione non servono ancora.
+    /// cliccato (porta, leva...) o ne piazza uno, con azione Use (ClickAir) comincia o finisce di mangiare; il rilascio (tipo ReleaseItem)
+    /// interrompe o finisce il pasto. Gli altri tipi di transazione non servono ancora.
     fn inventory_transaction(&mut self, pid: u64, body: &[u8]) {
         if self.players.get(&pid).is_some_and(|p| p.dead) {
             return;
@@ -235,10 +236,21 @@ impl Server {
         let Some(transaction) = InventoryTransaction::decode(body) else {
             return log!("[#{pid}] InventoryTransaction illeggibile ({} byte): ignorata", body.len());
         };
+        // gli usi nell'aria (ClickAir: si comincia o si finisce di mangiare) e i rilasci: i primi si loggano in esadecimale per vedere cosa manda il client vero
+        let click_air = transaction.use_item.as_ref().is_some_and(|u| u.action == use_item::USE);
+        if let Some(p) = self.players.get_mut(&pid).filter(|p| p.use_logs < HEX_LOGS && (click_air || transaction.release.is_some())) {
+            p.use_logs += 1;
+            let what = if click_air { "uso nell'aria" } else { "rilascio" };
+            log!("[#{pid}] InventoryTransaction di {what} ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
+        }
         match &transaction.use_item {
             Some(u) if u.action == use_item::DESTROY => self.break_block(pid, u.pos),
             Some(u) if u.action == use_item::PLACE => self.place_item(pid, u),
+            Some(u) if u.action == use_item::USE => self.use_item_in_air(pid, u),
             _ => {}
+        }
+        if let Some(r) = &transaction.release {
+            self.release_item(pid, r);
         }
         self.resend_legacy_slots(pid, &transaction.legacy_slots);
     }
@@ -401,8 +413,12 @@ impl Server {
         let Some(p) = self.players.get_mut(&pid) else { return };
         if equipment.selected_slot < HOTBAR_SLOTS {
             let (held, armor) = (p.inventory.held().stack(0), armor_of(p));
+            let changed = p.inventory.selected != equipment.selected_slot;
             p.inventory.selected = equipment.selected_slot;
             self.send_equipment_changes(pid, &held, &armor);
+            if changed {
+                self.stop_eating(pid); // cambiare casella interrompe il pasto (Dragonfly `SetHeldSlot`)
+            }
         } else {
             log!("[#{pid}] MobEquipment con la casella {} fuori dalla barra: ignorato", equipment.selected_slot);
         }

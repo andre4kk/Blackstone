@@ -27,6 +27,8 @@ pub(crate) enum WorldAction {
     Damage { pid: u64, amount: f32, cause: DamageCause },
     /// Il giocatore è appena morto (vita a 0). I ganci possono solo osservare: la loro risposta è ignorata (la morte non si annulla).
     Death { pid: u64 },
+    /// Il giocatore sta per finire di mangiare `item` (come `HandleItemConsume` di Dragonfly: si può annullare, e allora non si consuma nulla).
+    Eat { pid: u64, item: Item },
 }
 
 /// Un gancio vede l'azione e risponde `true` per lasciarla passare, `false` per annullarla.

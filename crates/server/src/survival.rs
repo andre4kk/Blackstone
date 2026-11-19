@@ -2,16 +2,18 @@
 use crate::{
     entity::{armor_of, EntityKind},
     events::WorldAction,
+    inventory::{Item, HOTBAR_SLOTS},
     join::vitals_attributes,
     playerdata::EYE_HEIGHT,
-    GameMode, Player, Server,
+    registry, tables, GameMode, Player, Server,
 };
 use bedrock_net::log;
 use bedrock_protocol::{
     actor::set_actor_data,
     entity::{actor_event, actor_event_type, move_player_teleport, remove_actor, respawn, set_actor_motion},
     generated::UpdateAttributes,
-    input::respawn_state,
+    input::{respawn_state, ReleaseItem, UseItem},
+    item::ItemStack,
     packets::{text_type, Text},
     wire::ServerPacket,
 };
@@ -34,6 +36,38 @@ pub(crate) const IMMUNITY_TICKS: u64 = 10;
 const DEATH_PICKUP_DELAY: u64 = 10;
 /// Quanto resta visibile il corpo di chi è morto: 1,1 s come Dragonfly (`finishDying`).
 pub(crate) const BODY_TICKS: u64 = 22;
+
+/// Quanto serve per mangiare: 32 tick (Dragonfly `DefaultConsumeDuration`, 1,61 s). L'alga secca metà, la bottiglia di miele un quarto in più (come Dragonfly).
+const CONSUME_TICKS: u64 = 32;
+/// Ogni quanti tick di uso compaiono le particelle del cibo (Dragonfly: `current%4 == 0`).
+const EAT_EFFECT_TICKS: u64 = 4;
+
+/// Tick di uso per finire `name`.
+fn consume_ticks(name: &str) -> u64 {
+    match name {
+        "minecraft:dried_kelp" => CONSUME_TICKS / 2,
+        "minecraft:honey_bottle" => CONSUME_TICKS * 5 / 4,
+        _ => CONSUME_TICKS,
+    }
+}
+
+/// Cosa resta in mano dopo aver mangiato `name` (le zuppe lasciano la ciotola, il miele la bottiglia: `Consume` di Dragonfly).
+fn leftover(name: &str) -> Option<&'static str> {
+    match name {
+        "minecraft:mushroom_stew" | "minecraft:rabbit_stew" | "minecraft:beetroot_soup" | "minecraft:suspicious_stew" => Some("minecraft:bowl"),
+        "minecraft:honey_bottle" => Some("minecraft:glass_bottle"),
+        _ => None,
+    }
+}
+
+/// Nome e valori dell'oggetto se è un cibo (e non è vuoto).
+fn edible(item: &Item) -> Option<(&'static str, &'static tables::Food)> {
+    if item.is_empty() {
+        return None;
+    }
+    let name = registry::items().name(item.id)?;
+    Some((name, tables::food(name)?))
+}
 
 /// Da cosa viene un danno.
 #[derive(Clone, Debug, PartialEq)]
@@ -304,6 +338,154 @@ impl Server {
         }
     }
 
+    /// Il client usa l'oggetto in mano nell'aria (`InventoryTransaction` ItemUse, azione ClickAir). Sul modello di Dragonfly `UseItem` per i
+    /// cibi (`item.Consumable`): la casella dichiarata dal client diventa quella in mano (se l'oggetto non è quello del server si rimanda la
+    /// casella e non si fa nulla, come `VerifyAndSetHeldSlot`); fuori dai cibi non succede niente. Con la pancia piena (fame 20, in
+    /// sopravvivenza o avventura) un cibo normale non si mangia (la mela d'oro e il frutto del coro sì); la creativa mangia sempre. La prima
+    /// volta comincia a mangiare (`eating_since`, flag "usa oggetto" a chi guarda); gli usi seguenti, mentre mangia, finiscono il pasto
+    /// se sono passati abbastanza tick e se no non fanno nulla. Gli spettatori non usano oggetti.
+    pub(crate) fn use_item_in_air(&mut self, pid: u64, u: &UseItem) {
+        if !self.players.get(&pid).is_some_and(|p| p.spawned && !p.dead && p.mode != GameMode::Spectator) || !self.adopt_held_slot(pid, u.hotbar_slot, &u.held)
+        {
+            return;
+        }
+        let Some(p) = self.players.get(&pid) else { return };
+        let Some((name, food)) = edible(p.inventory.held()) else { return self.stop_eating(pid) };
+        if !food.always_edible && matches!(p.mode, GameMode::Survival | GameMode::Adventure) && p.food >= MAX_FOOD {
+            return self.stop_eating(pid); // Dragonfly: `ReleaseItem()` senza consumare
+        }
+        let Some(since) = p.eating_since else {
+            if let Some(p) = self.players.get_mut(&pid) {
+                p.eating_since = Some(self.tick_count);
+            }
+            return self.send_entity_state(pid);
+        };
+        if self.tick_count.saturating_sub(since) >= consume_ticks(name) {
+            self.finish_eating(pid);
+        }
+    }
+
+    /// Il client rilascia l'oggetto che teneva premuto (`InventoryTransaction` ReleaseItem). Dragonfly lo tratta come un annullamento del cibo
+    /// (il pasto finisce con un altro uso, vedi [`Server::use_item_in_air`]); qui, se il client lo manda al posto di quell'uso e i tick sono
+    /// passati, il pasto finisce comunque: il rilascio senza abbastanza tick lo annulla. La mano secondaria non mangia (si rimanda l'inventario).
+    pub(crate) fn release_item(&mut self, pid: u64, r: &ReleaseItem) {
+        if !self.players.get(&pid).is_some_and(|p| p.spawned && !p.dead) {
+            return;
+        }
+        if r.hand != 0 {
+            return self.send_inventory(pid);
+        }
+        if !self.adopt_held_slot(pid, r.hotbar_slot, &r.held) {
+            return;
+        }
+        let Some(p) = self.players.get(&pid) else { return };
+        if let (Some(since), Some((name, _)), true) = (p.eating_since, edible(p.inventory.held()), p.mode != GameMode::Spectator) {
+            if self.tick_count.saturating_sub(since) >= consume_ticks(name) {
+                self.finish_eating(pid);
+            }
+        }
+        self.stop_eating(pid);
+    }
+
+    /// La casella della barra dichiarata dal client diventa quella in mano (se valida; cambiare casella interrompe il pasto) e deve contenere
+    /// quello che il server crede: altrimenti si rimanda la casella al client e si restituisce `false`.
+    fn adopt_held_slot(&mut self, pid: u64, hotbar_slot: i32, claimed: &ItemStack) -> bool {
+        let Some(p) = self.players.get_mut(&pid) else { return false };
+        if (0..HOTBAR_SLOTS as i32).contains(&hotbar_slot) && p.inventory.selected as i32 != hotbar_slot {
+            let (held, armor) = (p.inventory.held().stack(0), armor_of(p));
+            p.inventory.selected = hotbar_slot as u8;
+            self.send_equipment_changes(pid, &held, &armor);
+            self.stop_eating(pid);
+        }
+        let Some(p) = self.players.get(&pid) else { return false };
+        if p.inventory.held().same_kind(&Item::kind_of(claimed)) {
+            return true;
+        }
+        self.send(pid, &[p.inventory.held_slot_packet(), p.inventory.hotbar_packet()]);
+        false
+    }
+
+    /// Smette di mangiare (cambio di casella, rilascio, morte, spettatore, oggetto che non è più un cibo) e lo dice a chi guarda.
+    pub(crate) fn stop_eating(&mut self, pid: u64) {
+        if self.players.get_mut(&pid).is_some_and(|p| p.eating_since.take().is_some()) {
+            self.send_entity_state(pid);
+        }
+    }
+
+    /// Il pasto è finito (Dragonfly `UseItem` ramo `Consumable`, durata raggiunta). Il conto riparte subito per il cibo seguente della pila, come
+    /// in Dragonfly; i ganci vedono `WorldAction::Eat` (un'unità) e possono annullare (non si consuma nulla). Altrimenti fame e saturazione
+    /// crescono (`Saturate`: la saturazione non supera mai la fame, `hungerManager.saturate`), in sopravvivenza e avventura si toglie un
+    /// cibo dalla casella (restano ciotola o bottiglia dove previsto) e il client riceve vitali e casella; in creativa il cibo resta (Dragonfly:
+    /// `subtractItem` non toglie in creativa) ma fame e saturazione salgono comunque. Gli effetti (rigenerazione, veleno, fame...) e il
+    /// ruttino non ci sono: il server non ha effetti né suoni di giocatore.
+    fn finish_eating(&mut self, pid: u64) {
+        let tick = self.tick_count;
+        let Some(p) = self.players.get_mut(&pid) else { return };
+        p.eating_since = Some(tick);
+        let held = p.inventory.held().clone();
+        let Some((name, food)) = edible(&held) else { return };
+        let (points, saturation) = (food.points, food.saturation);
+        if !self.allow(&WorldAction::Eat { pid, item: Item { count: 1, ..held.clone() } }) {
+            return;
+        }
+        let Some(p) = self.players.get_mut(&pid) else { return };
+        let (before_held, armor) = (held.stack(0), armor_of(p));
+        p.food = (p.food + points).min(MAX_FOOD);
+        p.saturation = (p.saturation + saturation).clamp(0.0, p.food as f32);
+        let mut packets = Vec::new();
+        let (mut overflow, mut emptied) = (Item::default(), false);
+        if p.mode != GameMode::Creative {
+            let slot = p.inventory.selected as usize;
+            let left = held.count - 1;
+            let rest = leftover(name).and_then(|n| Item::from_name(n, 1)).unwrap_or_default();
+            // la mano che si svuota riceve il resto (Dragonfly `addNewItem`); se la pila continua, il resto va nell'inventario
+            p.inventory.set_main(slot, if left > 0 { Item { count: left, ..held } } else { rest.clone() });
+            packets.push(p.inventory.held_slot_packet());
+            if left > 0 && !rest.is_empty() {
+                let (over, changed) = p.inventory.add(rest);
+                packets.extend(changed.iter().filter_map(|&(container, s)| p.inventory.slot_packet_at(container, s)));
+                overflow = over;
+            }
+            if p.inventory.held().is_empty() {
+                p.eating_since = None; // niente più da mangiare
+                emptied = true;
+            }
+        }
+        self.send_vitals(pid);
+        self.send(pid, &packets);
+        self.send_equipment_changes(pid, &before_held, &armor);
+        if emptied {
+            self.send_entity_state(pid);
+        }
+        if !overflow.is_empty() {
+            self.drop_item(pid, overflow); // inventario pieno: il resto finisce a terra
+        }
+    }
+
+    /// Un tick per chi sta mangiando: se non può più (morto, spettatore, in mano non c'è più un cibo) smette; ogni `EAT_EFFECT_TICKS` tick
+    /// manda a chi guarda, e a lui, l'evento "mangia" (`EatAction` di Dragonfly: `ActorEventFeed`, dato `(ID oggetto << 16) | aux`).
+    pub(crate) fn eating_tick(&mut self) {
+        let eating: Vec<(u64, bool, i32)> = self
+            .players
+            .iter()
+            .filter(|(_, p)| p.eating_since.is_some())
+            .map(|(&pid, p)| {
+                let held = p.inventory.held();
+                let can = p.spawned && !p.dead && p.mode != GameMode::Spectator && edible(held).is_some();
+                (pid, can, ((held.id as i32) << 16) | (held.aux & 0xffff) as i32)
+            })
+            .collect();
+        for (pid, can, data) in eating {
+            if !can {
+                self.stop_eating(pid);
+            } else if self.tick_count.is_multiple_of(EAT_EFFECT_TICKS) {
+                let event = actor_event(pid, actor_event_type::EATING_ITEM, data);
+                self.send(pid, std::slice::from_ref(&event));
+                self.broadcast_to_viewers(pid, std::slice::from_ref(&event));
+            }
+        }
+    }
+
     /// Manda a `pid` vita, fame, saturazione ed esaurimento attuali (`UpdateAttributes`, stessi nomi e massimi dello spawn).
     pub(crate) fn send_vitals(&self, pid: u64) {
         let Some(p) = self.players.get(&pid) else { return };
@@ -332,6 +514,7 @@ impl Server {
         let (mode, feet) = (p.mode, [p.pos[0], p.pos[1] - EYE_HEIGHT, p.pos[2]]);
         log!("[#{pid}] morto: {cause:?}");
         self.allow(&WorldAction::Death { pid }); // solo osservazione: la morte non si annulla
+        self.stop_eating(pid);
         if state_changed {
             self.send_entity_state(pid); // come Dragonfly `StopSneaking`/`StopSprinting`: `updateState`
         }

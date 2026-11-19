@@ -31,10 +31,20 @@
    "saturation": 6.0,
    "always_edible": false
   },
+  "minecraft:carrot": {
+   "points": 3,
+   "saturation": 3.6,
+   "always_edible": false
+  },
   "minecraft:chicken": {
    "points": 2,
    "saturation": 1.2,
    "always_edible": false
+  },
+  "minecraft:chorus_fruit": {
+   "points": 4,
+   "saturation": 2.4,
+   "always_edible": true
   },
   "minecraft:cod": {
    "points": 2,
@@ -83,13 +93,18 @@
   },
   "minecraft:dried_kelp": {
    "points": 1,
-   "saturation": 0.2,
+   "saturation": 0.6,
    "always_edible": false
   },
   "minecraft:enchanted_golden_apple": {
    "points": 4,
    "saturation": 9.6,
    "always_edible": true
+  },
+  "minecraft:glow_berries": {
+   "points": 2,
+   "saturation": 0.4,
+   "always_edible": false
   },
   "minecraft:golden_apple": {
    "points": 4,
@@ -131,6 +146,11 @@
    "saturation": 1.8,
    "always_edible": false
   },
+  "minecraft:potato": {
+   "points": 1,
+   "saturation": 0.6,
+   "always_edible": false
+  },
   "minecraft:pufferfish": {
    "points": 1,
    "saturation": 0.2,
@@ -170,6 +190,11 @@
    "points": 6,
    "saturation": 7.2,
    "always_edible": true
+  },
+  "minecraft:sweet_berries": {
+   "points": 2,
+   "saturation": 0.4,
+   "always_edible": false
   },
   "minecraft:tropical_fish": {
    "points": 1,

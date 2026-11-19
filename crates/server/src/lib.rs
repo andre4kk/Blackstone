@@ -173,6 +173,10 @@ struct Player {
     respawn_logs: u8,
     /// Altezza dei piedi da cui è iniziata la caduta in corso (il punto più alto prima della discesa); `None` se non sta cadendo.
     fall_start_y: Option<f32>,
+    /// Il tick in cui ha cominciato a mangiare il cibo in mano (Dragonfly `usingItem`/`usingSince`); `None` se non mangia.
+    eating_since: Option<u64>,
+    /// Quanti usi e rilasci di oggetti (`InventoryTransaction` ClickAir e ReleaseItem) sono già stati loggati in esadecimale (al massimo `HEX_LOGS`).
+    use_logs: u8,
 }
 
 impl Default for Player {
@@ -218,6 +222,8 @@ impl Default for Player {
             death_tick: 0,
             respawn_logs: 0,
             fall_start_y: None,
+            eating_since: None,
+            use_logs: 0,
         }
     }
 }
@@ -409,6 +415,7 @@ impl Server {
         self.movement_tick();
         self.void_tick();
         self.hunger_tick();
+        self.eating_tick();
         self.tick_count += 1;
         self.run_scheduled();
         if self.tick_count.is_multiple_of(AUTOSAVE_TICKS) {
