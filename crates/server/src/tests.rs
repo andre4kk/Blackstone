@@ -5060,6 +5060,67 @@ mod crafting {
         assert_eq!(inv.table(), None);
     }
 
+    /// Ricetta delle assi di quercia dal tronco di quercia.
+    fn planks_from_log() -> u32 {
+        recipes()
+            .all()
+            .iter()
+            .find(|r| {
+                r.output[0].name == "minecraft:oak_planks"
+                    && matches!(r.input.iter().find(|i| **i != Ingredient::Empty), Some(Ingredient::Item { name, .. }) if name == "minecraft:oak_log")
+            })
+            .unwrap()
+            .id
+    }
+
+    /// Place dalla casella 1 della barra alla casella `dst` della griglia (contenitore 13), con l'ID di pila vero.
+    fn place_in_grid(h: &Harness, dst: u8, count: u8) -> Packet {
+        let stack_id = h.server.players[&1].inventory.stack_at(12, 1).unwrap().net_id.unwrap();
+        stack_request_packet(|w| {
+            w.var_i32(-1);
+            w.var_u32(1);
+            w.var_u32(1);
+            w.u8(1); // Place
+            w.u8(count);
+            slot_bytes(w, 28, 1, stack_id);
+            slot_bytes(w, 13, dst, 0);
+            w.var_u32(0);
+            w.i32(-1);
+        })
+    }
+
+    /// Un tronco nella casella `dst` della griglia, `CraftRecipe` delle assi e risultato sul cursore: il percorso del client vero.
+    fn log_to_planks(h: &mut Harness, dst: u8) {
+        h.server.players.get_mut(&1).unwrap().inventory.set_main(1, item("minecraft:oak_log", 3));
+        h.receive(1, &[place_in_grid(h, dst, 1)]);
+        let out = packets(&mut h.sent);
+        let response = out.iter().find(|(_, p)| p.id == id::ITEM_STACK_RESPONSE).map(|(_, p)| &p.body).unwrap();
+        assert_eq!(response[..2], [1, 0], "il tronco entra nella griglia: {response:02x?}");
+        assert_eq!(h.server.players[&1].inventory.stack_at(13, dst).unwrap().count, 1);
+        h.receive(1, &[craft_to_cursor(planks_from_log(), 1, 4)]);
+        let out = packets(&mut h.sent);
+        let response = out.iter().find(|(_, p)| p.id == id::ITEM_STACK_RESPONSE).map(|(_, p)| &p.body).unwrap();
+        assert_eq!(response[..2], [1, 0], "ricetta riuscita: {response:02x?}");
+        let inv = &h.server.players[&1].inventory;
+        let cursor = inv.stack_at(CURSOR_CONTAINER, 0).unwrap();
+        assert_eq!((cursor.id, cursor.count), (item("minecraft:oak_planks", 1).id, 4));
+        assert_eq!(inv.stack_at(13, dst).unwrap().count, 0, "tronco consumato");
+    }
+
+    #[test]
+    fn log_in_the_two_by_two_grid_becomes_planks() {
+        let mut h = setup(GameMode::Survival);
+        log_to_planks(&mut h, 28);
+    }
+
+    #[test]
+    fn log_in_the_table_grid_becomes_planks() {
+        let mut h = setup(GameMode::Survival);
+        put_table(&mut h);
+        click_table(&mut h);
+        log_to_planks(&mut h, 32);
+    }
+
     #[test]
     fn missing_ingredients_are_refused_with_an_error_response() {
         let mut h = setup(GameMode::Survival);

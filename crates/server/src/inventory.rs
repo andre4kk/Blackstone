@@ -1416,6 +1416,31 @@ mod tests {
         assert_eq!(inv.slot_packet_at(CRAFTING_INPUT_CONTAINER, 40).map(|p| p.id), Some(id::INVENTORY_SLOT));
     }
 
+    /// Le due richieste vere del client (log del gioco): prende 64 pezzi dalla casella 1 della barra e li mette nella casella 28
+    /// del contenitore `CraftingInput` (griglia 2x2).
+    #[test]
+    fn real_client_grid_requests_are_accepted() {
+        use bedrock_protocol::input::ItemStackRequestPacket;
+        let take = [
+            0x01, 0x3d, 0x01, 0x00, 0x00, 0x40, 0x1c, 0x00, 0x01, 0x03, 0x00, 0x00, 0x00, 0x3b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff,
+            0xff,
+        ];
+        let place = [
+            0x01, 0x41, 0x01, 0x01, 0x01, 0x40, 0x3b, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0d, 0x00, 0x1c, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff,
+            0xff,
+        ];
+        let mut inv = Inventory::default();
+        inv.contents.main[1] = Slot { item: named("minecraft:oak_log", 64), stack_id: 3 };
+        inv.next_id = 4;
+        for body in [take, place] {
+            let packet = ItemStackRequestPacket::decode(&body).expect("leggibile");
+            let result = inv.handle(&packet.requests[0], false);
+            assert!(result.ok, "{:?}", result.error);
+        }
+        assert_eq!(inv.contents.grid[0].item.count, 64);
+        assert!(inv.contents.main[1].item.is_empty() && inv.contents.cursor.item.is_empty());
+    }
+
     #[test]
     fn log_becomes_planks_in_the_inventory_grid() {
         let mut inv = Inventory::default();
