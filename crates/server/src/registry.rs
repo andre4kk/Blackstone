@@ -118,7 +118,7 @@ struct StateDef {
     values: Vec<serde_json::Value>,
 }
 
-fn state_value(kind: &str, v: &serde_json::Value) -> StateValue {
+pub(crate) fn state_value(kind: &str, v: &serde_json::Value) -> StateValue {
     match kind {
         "byte" => StateValue::Byte(v.as_u64().and_then(|n| u8::try_from(n).ok()).expect("valore byte non valido")),
         "int" => StateValue::Int(v.as_i64().and_then(|n| i32::try_from(n).ok()).expect("valore int non valido")),

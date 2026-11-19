@@ -16,6 +16,7 @@ mod join;
 mod nbt;
 mod placement;
 mod playerdata;
+mod recipes;
 mod registry;
 mod storage;
 mod streaming;

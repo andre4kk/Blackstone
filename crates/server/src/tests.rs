@@ -260,6 +260,16 @@ fn join_sends_full_creative_menu() {
 }
 
 #[test]
+fn join_sends_crafting_data_after_the_creative_menu() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    let ids: Vec<u32> = h.packets_to(1).iter().map(|p| p.id).collect();
+    let creative = ids.iter().position(|&i| i == CreativeContent::ID).expect("CreativeContent");
+    let crafting = ids.iter().position(|&i| i == id::CRAFTING_DATA).expect("CraftingData mandato al login");
+    assert_eq!(crafting, creative + 1, "le ricette subito dopo il menu creativo, come Dragonfly");
+}
+
+#[test]
 fn join_sends_inventory_game_type_and_abilities() {
     let mut h = Harness::new();
     h.join(1, "Alice");

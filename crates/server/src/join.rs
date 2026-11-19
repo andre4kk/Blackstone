@@ -33,7 +33,7 @@ const EMPTY_NBT: [u8; 3] = [0x0a, 0, 0];
 /// Interruttori di diagnostica (variabili d'ambiente), per isolare un problema senza ricompilare:
 /// NO_CHUNKS=1 non invia chunk;
 /// CHUNKS_EARLY=1 manda biomi e chunk subito dopo PlayerSpawn, senza aspettare SetLocalPlayerAsInitialized;
-/// SKIP=jigsaw,voxel,items,creative,publisher non invia i pacchetti elencati;
+/// SKIP=jigsaw,voxel,items,creative,recipes,publisher non invia i pacchetti elencati;
 /// SEND=biomes,actors invia anche i pacchetti spenti di default (vedi `send`).
 fn flag(name: &str) -> bool {
     std::env::var(name).is_ok_and(|v| v == "1")
@@ -232,6 +232,7 @@ fn creative_packet() -> &'static Packet {
 pub(crate) fn warm_up() {
     registry::blocks();
     creative_packet();
+    crate::recipes::crafting_data_packet();
 }
 
 impl Server {
@@ -365,6 +366,10 @@ impl Server {
             vec![ChunkRadiusUpdated { chunk_radius: radius }.packet(), Packet::new(id::PLAY_STATUS, PlayStatus { status: play_status::PLAYER_SPAWN }.encode())];
         if !skip("creative") {
             packets.push(creative_packet().clone());
+        }
+        if !skip("recipes") {
+            // come Dragonfly: le ricette subito dopo il menu creativo
+            packets.push(crate::recipes::crafting_data_packet().clone());
         }
         let attributes = self.players.get(&pid).map(|p| spawn_attributes(pid, p).packet());
         packets.extend(attributes);

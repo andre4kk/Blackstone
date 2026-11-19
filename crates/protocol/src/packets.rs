@@ -38,6 +38,7 @@ pub mod id {
     pub const SET_PLAYER_GAME_TYPE: u32 = 62;
     pub const LEVEL_SOUND_EVENT: u32 = 123;
     pub const CREATIVE_CONTENT: u32 = 145;
+    pub const CRAFTING_DATA: u32 = 52;
     pub const ITEM_STACK_REQUEST: u32 = 147;
     pub const ITEM_STACK_RESPONSE: u32 = 148;
     pub const UPDATE_PLAYER_GAME_TYPE: u32 = 151;
