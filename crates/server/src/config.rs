@@ -32,7 +32,7 @@ pub struct ServerConfig {
 impl Default for ServerConfig {
     fn default() -> Self {
         ServerConfig {
-            world: "Mondo".into(),
+            world: "world".into(),
             seed: None,
             generator: PathBuf::from(format!("generator/target/release/blackstone-gen{}", std::env::consts::EXE_SUFFIX)),
             view_distance: 6,
@@ -114,7 +114,7 @@ mod tests {
         let path = dir.0.join("server.toml");
         let cfg = ServerConfig::load(&path);
         assert_eq!(cfg, ServerConfig::default());
-        assert_eq!((cfg.world.as_str(), cfg.seed, cfg.view_distance, cfg.port), ("Mondo", None, 6, 19132));
+        assert_eq!((cfg.world.as_str(), cfg.seed, cfg.view_distance, cfg.port), ("world", None, 6, 19132));
         assert!(!cfg.keep_inventory);
         assert!(cfg.pvp);
         assert!(cfg.generator.to_string_lossy().starts_with("generator/target/release/blackstone-gen"));
