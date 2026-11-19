@@ -168,5 +168,7 @@ impl Server {
         for (&viewer, _) in self.players.iter().filter(|(_, p)| p.sent.contains(&chunk)) {
             self.send(viewer, std::slice::from_ref(&effect));
         }
+        // Dragonfly `BreakBlock`: `p.Exhaust(0.005)` (nulla in creativa: `exhaust` lo esclude)
+        self.exhaust(pid, 0.005);
     }
 }

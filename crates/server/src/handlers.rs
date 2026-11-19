@@ -179,7 +179,13 @@ impl Server {
             }
         };
         // Limite del mondo di Minecraft: 30 milioni di blocchi per lato.
+        // Esaurimento da salto (Dragonfly `Jump`: 0,2 in corsa, 0,05 altrimenti) e da movimento (`Move`: 0,01 a nuoto, 0,1 in corsa per blocco).
+        if input.as_ref().is_some_and(|i| i.has(flag::START_JUMPING)) {
+            let sprinting = self.players.get(&pid).is_some_and(|p| p.sprinting);
+            self.exhaust(pid, if sprinting { 0.2 } else { 0.05 });
+        }
         if position.iter().all(|v| v.is_finite() && v.abs() <= 30_000_000.0) {
+            self.exhaust_by_movement(pid, position);
             // la caduta si valuta prima di `on_move`: serve ancora la posizione del tick precedente
             let on_ground = input.as_ref().is_some_and(|i| i.has(flag::VERTICAL_COLLISION));
             self.fall_tick(pid, position[1] - EYE_HEIGHT, on_ground);

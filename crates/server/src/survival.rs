@@ -23,6 +23,11 @@ pub(crate) const MAX_FOOD: u8 = 20;
 /// Saturazione massima (come la fame) e quella di partenza (vanilla e Dragonfly).
 pub(crate) const MAX_SATURATION: f32 = 20.0;
 pub(crate) const START_SATURATION: f32 = 5.0;
+/// Fame minima per rigenerare (Dragonfly `canRegenerate`: 18-20) e fame fino a cui non si corre (`canSprint`: serve più di 6).
+const REGEN_FOOD: u8 = 18;
+const NO_SPRINT_FOOD: u8 = 6;
+/// A difficoltà normale la fame toglie vita solo sopra questo valore (vanilla: si arriva a mezzo cuore; il 2 di Dragonfly è una sua scelta).
+const STARVATION_HEALTH_LIMIT: f32 = 1.0;
 /// Dopo un colpo si è invulnerabili per mezzo secondo (Dragonfly: `immunity := time.Second / 2`).
 pub(crate) const IMMUNITY_TICKS: u64 = 10;
 /// Tick prima che gli oggetti lasciati da chi muore si possano raccogliere (mezzo secondo).
@@ -37,8 +42,7 @@ pub(crate) enum DamageCause {
     Fall,
     /// Fuori dal mondo (sotto il fondo).
     Void,
-    /// Fame a zero (la userà la fame, Task 6).
-    #[allow(dead_code)]
+    /// Fame a zero.
     Starvation,
     /// Colpito dall'entità `attacker` (la userà il combattimento, Task 8; per ora i test).
     #[allow(dead_code)]
@@ -51,6 +55,27 @@ impl DamageCause {
     /// Vuoto e `/kill` colpiscono anche in creativa e ignorano l'invulnerabilità dopo un colpo (vanilla).
     fn unavoidable(&self) -> bool {
         matches!(self, DamageCause::Void | DamageCause::Kill)
+    }
+
+    /// Dragonfly `Hurt`: solo i danni ridotti dall'armatura (`ReducedByArmour`) costano 0,1 di esaurimento. Fame, vuoto e `/kill` no.
+    fn reduced_by_armour(&self) -> bool {
+        matches!(self, DamageCause::Fall | DamageCause::Attack { .. })
+    }
+}
+
+impl Player {
+    /// Dragonfly `hungerManager.exhaust`: somma l'esaurimento e, a ogni 4 punti, toglie 1 di saturazione o, a saturazione 0, 1 di fame
+    /// (`desaturate`). Non guarda modalità né morte: lo fa [`Server::exhaust`].
+    fn exhaust(&mut self, points: f32) {
+        self.exhaustion += points;
+        while self.exhaustion >= 4.0 {
+            self.exhaustion -= 4.0;
+            if self.saturation <= 0.0 && self.food != 0 {
+                self.food -= 1;
+            } else if self.saturation > 0.0 {
+                self.saturation = (self.saturation - 1.0).max(0.0);
+            }
+        }
     }
 }
 
@@ -89,6 +114,9 @@ impl Server {
         let dead = p.health <= f32::EPSILON;
         if dead {
             p.health = 0.0;
+        }
+        if cause.reduced_by_armour() {
+            self.exhaust(pid, 0.1); // prima dell'invio: l'ultimo `UpdateAttributes` porta anche l'esaurimento nuovo
         }
         self.send_vitals(pid);
         // l'animazione del colpo la vedono lui e chi lo guarda (Dragonfly: `viewer.ViewEntityAction(p, HurtAction{})`)
@@ -168,18 +196,111 @@ impl Server {
         }
     }
 
-    /// Cura `pid` di `amount` (senza superare la vita massima). Come Dragonfly `Heal`: nulla per i morti, per chi non può subire
-    /// danno (creativa, spettatore) e per quantità negative o NaN; i ganci non vedono la cura (non c'è un'azione dedicata).
-    #[allow(dead_code)] // la useranno la rigenerazione e il cibo (Task 6)
-    pub(crate) fn heal(&mut self, pid: u64, amount: f32) {
-        let Some(p) = self.players.get_mut(&pid) else { return };
+    /// Cura `pid` di `amount` (senza superare la vita massima) e restituisce quanta vita è tornata davvero. Come Dragonfly `Heal`: nulla per i
+    /// morti, per chi non può subire danno (creativa, spettatore) e per quantità negative o NaN; i ganci non vedono la cura (non c'è un'azione dedicata).
+    pub(crate) fn heal(&mut self, pid: u64, amount: f32) -> f32 {
+        let Some(p) = self.players.get_mut(&pid) else { return 0.0 };
         if p.dead || !matches!(p.mode, GameMode::Survival | GameMode::Adventure) || amount.is_nan() || amount < 0.0 {
-            return;
+            return 0.0;
         }
         let before = p.health;
         p.health = (p.health + amount).min(MAX_HEALTH);
-        if p.health != before {
+        let healed = p.health - before;
+        if healed != 0.0 {
             self.send_vitals(pid);
+        }
+        healed
+    }
+
+    /// Stanca `pid` di `points` (Dragonfly `Exhaust`): nulla per chi non subisce danno (creativa, spettatore) e per i morti. A ogni 4 punti di
+    /// esaurimento si toglie 1 di saturazione o, a saturazione 0, 1 di fame. `UpdateAttributes` parte solo se fame o saturazione sono cambiate
+    /// (l'esaurimento da solo no: cambia a ogni passo e il client non ne ha bisogno finché non cambia la barra). Se la fame scende a 6 o meno
+    /// la corsa si ferma, come Dragonfly (`StopSprinting`). Non c'è l'evento `HandleFoodLoss`: i ganci non vedono la perdita di fame.
+    pub(crate) fn exhaust(&mut self, pid: u64, points: f32) {
+        let Some(p) = self.players.get_mut(&pid) else { return };
+        if p.dead || !matches!(p.mode, GameMode::Survival | GameMode::Adventure) {
+            return;
+        }
+        let before = (p.food, p.saturation);
+        p.exhaust(points);
+        if before != (p.food, p.saturation) {
+            self.stop_sprint_if_too_hungry(pid);
+            self.send_vitals(pid);
+        }
+    }
+
+    /// Dragonfly `canSprint`: con fame 6 o meno non si corre. Ferma la corsa e lo dice a chi guarda.
+    fn stop_sprint_if_too_hungry(&mut self, pid: u64) {
+        let Some(p) = self.players.get_mut(&pid) else { return };
+        if p.food <= NO_SPRINT_FOOD && p.sprinting {
+            p.sprinting = false;
+            self.send_entity_state(pid);
+        }
+    }
+
+    /// Esaurimento da movimento orizzontale (Dragonfly `Move`: 0,01 per blocco a nuoto, 0,1 per blocco in corsa), dalla distanza tra la
+    /// posizione attuale e quella nuova (occhi, quindi la differenza verticale non conta). Spostamenti oltre `MAX_STEP` in un tick sono
+    /// teletrasporti, non passi.
+    pub(crate) fn exhaust_by_movement(&mut self, pid: u64, new_eyes: [f32; 3]) {
+        const MAX_STEP: f32 = 8.0;
+        let Some(p) = self.players.get(&pid) else { return };
+        let distance = (new_eyes[0] - p.pos[0]).hypot(new_eyes[2] - p.pos[2]);
+        if !distance.is_finite() || distance > MAX_STEP {
+            return;
+        }
+        if p.swimming {
+            self.exhaust(pid, 0.01 * distance);
+        } else if p.sprinting {
+            self.exhaust(pid, 0.1 * distance);
+        }
+    }
+
+    /// Un tick di fame per ogni giocatore vivo in sopravvivenza o avventura (Dragonfly `tickFood`, difficoltà fissa "normale"):
+    /// a `food_tick` 1 con fame 18 o più si recupera mezzo cuore (e si spende 6 di esaurimento), a fame 0 si perde mezzo cuore
+    /// finché ne resta almeno uno; con fame 20 e saturazione si recupera mezzo cuore anche ogni 20 tick (la regola rapida di Dragonfly,
+    /// che nel codice scatta a `foodTick % 10 == 0 && % 20 == 0`, cioè ogni 20 tick e non ogni 10 come dice il suo commento). Il contatore va da 1 a 80.
+    pub(crate) fn hunger_tick(&mut self) {
+        let pids: Vec<u64> = self
+            .players
+            .iter()
+            .filter(|(_, p)| p.spawned && !p.dead && matches!(p.mode, GameMode::Survival | GameMode::Adventure))
+            .map(|(&pid, _)| pid)
+            .collect();
+        for pid in pids {
+            let Some(p) = self.players.get(&pid) else { continue };
+            let (tick, food, saturation) = (p.food_tick, p.food, p.saturation);
+            if tick % 20 == 0 && food == MAX_FOOD && saturation > 0.0 {
+                self.regenerate(pid);
+            }
+            if tick == 1 {
+                let food = self.players.get(&pid).map_or(0, |p| p.food);
+                if food >= REGEN_FOOD {
+                    self.regenerate(pid);
+                } else if food == 0 {
+                    self.starve(pid);
+                }
+            }
+            self.stop_sprint_if_too_hungry(pid);
+            if let Some(p) = self.players.get_mut(&pid) {
+                p.food_tick = if p.food_tick >= 80 { 1 } else { p.food_tick + 1 };
+            }
+        }
+    }
+
+    /// Dragonfly `regenerate`: mezzo cuore di vita, e se è tornato davvero costa 6 di esaurimento. Niente a vita piena.
+    fn regenerate(&mut self, pid: u64) {
+        if self.players.get(&pid).is_none_or(|p| p.health >= MAX_HEALTH) {
+            return;
+        }
+        if self.heal(pid, 1.0) > 0.0 {
+            self.exhaust(pid, 6.0);
+        }
+    }
+
+    /// Dragonfly `starve`: un punto di danno da fame (a difficoltà normale solo se resta più di 1 di vita: la fame non uccide).
+    fn starve(&mut self, pid: u64) {
+        if self.players.get(&pid).is_some_and(|p| p.health > STARVATION_HEALTH_LIMIT) {
+            self.hurt(pid, 1.0, DamageCause::Starvation);
         }
     }
 
@@ -286,7 +407,7 @@ pub(crate) fn settle_dead(p: &mut Player, spawn: Option<(i32, i32, i32)>) {
     }
     p.dead = false;
     (p.health, p.food, p.saturation, p.exhaustion) = (MAX_HEALTH, MAX_FOOD, START_SATURATION, 0.0);
-    (p.invulnerable_until, p.last_damage, p.fall_start_y) = (0, 0.0, None);
+    (p.invulnerable_until, p.last_damage, p.fall_start_y, p.food_tick) = (0, 0.0, None, 1);
     if let Some((x, y, z)) = spawn {
         p.pos = [x as f32 + 0.5, y as f32 + EYE_HEIGHT, z as f32 + 0.5];
     }

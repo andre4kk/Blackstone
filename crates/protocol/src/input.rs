@@ -19,6 +19,8 @@ pub mod flag {
     pub const STOP_SNEAKING: u32 = 28;
     pub const START_SWIMMING: u32 = 29;
     pub const STOP_SWIMMING: u32 = 30;
+    /// `InputFlagStartJumping` (gophertunnel `player_auth_input.go`): il client ha iniziato un salto.
+    pub const START_JUMPING: u32 = 31;
     pub const START_GLIDING: u32 = 32;
     pub const STOP_GLIDING: u32 = 33;
     /// Il client vuole iniziare/smettere di volare (doppio salto): il server risponde con `UpdateAbilities`.

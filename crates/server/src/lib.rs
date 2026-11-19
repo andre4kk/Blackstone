@@ -160,6 +160,8 @@ struct Player {
     food: u8,
     saturation: f32,
     exhaustion: f32,
+    /// Contatore della fame (1..=80, Dragonfly `foodTick`): a 1 si rigenera o si muore di fame, ogni 20 la rigenerazione rapida.
+    food_tick: u32,
     /// Fino a questo tick (escluso) il giocatore è nel periodo di invulnerabilità dopo un colpo; `last_damage` è il danno di quel colpo.
     invulnerable_until: u64,
     last_damage: f32,
@@ -209,6 +211,7 @@ impl Default for Player {
             food: survival::MAX_FOOD,
             saturation: survival::START_SATURATION,
             exhaustion: 0.0,
+            food_tick: 1,
             invulnerable_until: 0,
             last_damage: 0.0,
             dead: false,
@@ -405,6 +408,7 @@ impl Server {
         self.pickup_tick();
         self.movement_tick();
         self.void_tick();
+        self.hunger_tick();
         self.tick_count += 1;
         self.run_scheduled();
         if self.tick_count.is_multiple_of(AUTOSAVE_TICKS) {

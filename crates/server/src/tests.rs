@@ -3941,4 +3941,269 @@ mod survival {
         assert_eq!(attributes[2].current_value, 3.5);
         assert_eq!(attributes[3].current_value, 1.5);
     }
+
+    // ---------- fame ----------
+
+    fn player(h: &mut Harness) -> &mut crate::Player {
+        h.server.players.get_mut(&1).unwrap()
+    }
+
+    fn set_hunger(h: &mut Harness, food: u8, saturation: f32, exhaustion: f32) {
+        let p = player(h);
+        (p.food, p.saturation, p.exhaustion) = (food, saturation, exhaustion);
+    }
+
+    fn hunger(h: &Harness) -> (u8, f32, f32) {
+        let p = &h.server.players[&1];
+        (p.food, p.saturation, p.exhaustion)
+    }
+
+    #[test]
+    fn exhaustion_of_four_costs_saturation_then_food() {
+        let mut h = setup(GameMode::Survival);
+        h.server.exhaust(1, 3.5);
+        assert_eq!(hunger(&h), (20, 5.0, 3.5), "sotto 4 non cambia nulla");
+        assert!(h.packets_to(1).is_empty(), "e non si manda nulla: cambia solo l'esaurimento");
+        h.server.exhaust(1, 0.5);
+        assert_eq!(hunger(&h), (20, 4.0, 0.0));
+        assert!(h.packets_to(1).contains(&vitals_packet(&h)), "saturazione cambiata: UpdateAttributes");
+        set_hunger(&mut h, 20, 0.5, 0.0);
+        h.server.exhaust(1, 4.0);
+        assert_eq!(hunger(&h), (20, 0.0, 0.0), "la saturazione non scende sotto 0");
+        h.server.exhaust(1, 4.0);
+        assert_eq!(hunger(&h), (19, 0.0, 0.0), "a saturazione 0 si perde fame");
+        h.server.exhaust(1, 9.0);
+        assert_eq!(hunger(&h), (17, 0.0, 1.0), "più giri in una volta");
+        set_hunger(&mut h, 0, 0.0, 0.0);
+        h.server.exhaust(1, 8.0);
+        assert_eq!(hunger(&h).0, 0, "la fame non va sotto 0");
+    }
+
+    #[test]
+    fn exhaustion_does_nothing_in_creative_or_for_the_dead() {
+        for mode in [GameMode::Creative, GameMode::Spectator] {
+            let mut h = setup(mode);
+            h.server.exhaust(1, 10.0);
+            assert_eq!(hunger(&h), (20, 5.0, 0.0));
+        }
+        let mut h = setup(GameMode::Survival);
+        h.server.hurt(1, 100.0, DamageCause::Kill);
+        set_hunger(&mut h, 20, 5.0, 0.0);
+        h.server.exhaust(1, 10.0);
+        assert_eq!(hunger(&h), (20, 5.0, 0.0));
+        h.server.exhaust(99, 1.0); // giocatore inesistente: nessun panico
+    }
+
+    #[test]
+    fn losing_food_down_to_six_stops_sprinting() {
+        let mut h = setup(GameMode::Survival);
+        set_hunger(&mut h, 7, 0.0, 0.0);
+        player(&mut h).sprinting = true;
+        h.server.exhaust(1, 3.0);
+        assert!(h.server.players[&1].sprinting, "ancora fame 7");
+        h.server.exhaust(1, 1.0);
+        assert_eq!(hunger(&h).0, 6);
+        assert!(!h.server.players[&1].sprinting);
+        assert!(h.packets_by_player()[&2].iter().any(|p| p.id == bedrock_protocol::actor::SET_ACTOR_DATA), "chi guarda vede che non corre più");
+    }
+
+    /// `PlayerAuthInput` con gli occhi in `eyes` e i flag di input dati.
+    fn pai_flags(eyes: [f32; 3], flags: &[i32]) -> Packet {
+        let mut w = Writer::default();
+        for v in [0.0, 0.0, eyes[0], eyes[1], eyes[2], 0.0, 0.0, 0.0] {
+            w.f32(v);
+        }
+        w.var_u32(flags.len() as u32);
+        flags.iter().for_each(|&f| w.var_i32(f));
+        w.var_u32(1);
+        w.var_u32(0);
+        w.var_i32(2);
+        (0..2).for_each(|_| w.f32(0.0));
+        w.var_u64(10);
+        (0..3).for_each(|_| w.f32(0.0));
+        (0..5).for_each(|_| w.u8(0));
+        (0..7).for_each(|_| w.f32(0.0));
+        Packet::new(id::PLAYER_AUTH_INPUT, w.0)
+    }
+
+    #[test]
+    fn jumping_costs_exhaustion_more_when_sprinting() {
+        use bedrock_protocol::input::flag;
+        let mut h = setup(GameMode::Survival);
+        player(&mut h).pos = [0.0, 70.0, 0.0];
+        h.receive(1, &[pai_flags([0.0, 70.0, 0.0], &[flag::START_JUMPING as i32])]);
+        assert_eq!(hunger(&h).2, 0.05);
+        h.receive(1, &[pai_flags([0.0, 70.0, 0.0], &[flag::START_SPRINTING as i32, flag::START_JUMPING as i32])]);
+        assert!((hunger(&h).2 - 0.25).abs() < 1e-6, "{:?}", hunger(&h));
+        h.receive(1, &[pai_flags([0.0, 70.0, 0.0], &[])]);
+        assert!((hunger(&h).2 - 0.25).abs() < 1e-6, "senza il flag di salto nulla");
+    }
+
+    #[test]
+    fn sprinting_costs_a_tenth_per_block_and_walking_nothing() {
+        use bedrock_protocol::input::flag;
+        let mut h = setup(GameMode::Survival);
+        player(&mut h).pos = [0.0, 70.0, 0.0];
+        h.receive(1, &[pai_flags([3.0, 70.0, 0.0], &[])]);
+        assert_eq!(hunger(&h).2, 0.0, "a piedi nulla");
+        h.receive(1, &[pai_flags([3.0, 70.0, 4.0], &[flag::START_SPRINTING as i32])]);
+        assert!((hunger(&h).2 - 0.4).abs() < 1e-6, "4 blocchi in corsa: {:?}", hunger(&h));
+        h.receive(1, &[pai_flags([3.0, 90.0, 4.0], &[])]);
+        assert!((hunger(&h).2 - 0.4).abs() < 1e-6, "il movimento verticale non conta");
+        h.receive(1, &[pai_flags([103.0, 90.0, 4.0], &[])]);
+        assert!((hunger(&h).2 - 0.4).abs() < 1e-6, "un teletrasporto non è corsa");
+        let mut c = setup(GameMode::Creative);
+        player(&mut c).pos = [0.0, 70.0, 0.0];
+        c.receive(1, &[pai_flags([3.0, 70.0, 0.0], &[flag::START_SPRINTING as i32])]);
+        assert_eq!(hunger(&c).2, 0.0, "in creativa niente");
+    }
+
+    #[test]
+    fn swimming_costs_a_hundredth_per_block() {
+        use bedrock_protocol::input::flag;
+        let mut h = setup(GameMode::Survival);
+        player(&mut h).pos = [0.0, 70.0, 0.0];
+        h.receive(1, &[pai_flags([2.0, 70.0, 0.0], &[flag::START_SWIMMING as i32, flag::START_SPRINTING as i32])]);
+        assert!((hunger(&h).2 - 0.02).abs() < 1e-6, "{:?}", hunger(&h));
+    }
+
+    #[test]
+    fn damage_costs_a_tenth_only_when_armour_would_reduce_it() {
+        let mut h = setup(GameMode::Survival);
+        h.server.hurt(1, 1.0, DamageCause::Fall);
+        assert!((hunger(&h).2 - 0.1).abs() < 1e-6);
+        h.server.tick_count += 10;
+        h.server.hurt(1, 1.0, DamageCause::Attack { attacker: 2 });
+        assert!((hunger(&h).2 - 0.2).abs() < 1e-6);
+        h.server.tick_count += 10;
+        h.server.hurt(1, 1.0, DamageCause::Starvation);
+        h.server.hurt(1, 1.0, DamageCause::Void);
+        assert!((hunger(&h).2 - 0.2).abs() < 1e-6, "fame e vuoto no");
+    }
+
+    #[test]
+    fn breaking_a_block_costs_five_thousandths_in_survival_only() {
+        use super::blocks::{change, harness_with_chunk, stone};
+        for (mode, expected) in [(GameMode::Survival, 0.005), (GameMode::Creative, 0.0)] {
+            let mut h = harness_with_chunk();
+            h.join(1, "Alice");
+            let p = player(&mut h);
+            (p.mode, p.pos) = (mode, [3.5, 11.6, 4.5]);
+            h.server.set_blocks(Dim::Overworld, &[change([3, 10, 4], stone(), false)]);
+            h.server.break_block(1, [3, 10, 4]);
+            assert_eq!(hunger(&h).2, expected, "{mode:?}");
+        }
+    }
+
+    /// Fa girare `hunger_tick` `n` volte.
+    fn run_hunger(h: &mut Harness, n: u32) {
+        for _ in 0..n {
+            h.server.hunger_tick();
+        }
+    }
+
+    #[test]
+    fn well_fed_player_regains_half_a_heart_every_eighty_ticks_and_pays_six_exhaustion() {
+        let mut h = setup(GameMode::Survival);
+        set_hunger(&mut h, 18, 0.0, 0.0);
+        player(&mut h).health = 10.0;
+        h.server.hunger_tick(); // food_tick 1
+        assert_eq!(health(&h), 11.0);
+        assert_eq!(hunger(&h), (17, 0.0, 2.0), "6 di esaurimento: -1 fame e 2 restano");
+        assert_eq!(h.server.players[&1].food_tick, 2);
+        assert!(h.packets_to(1).contains(&vitals_packet(&h)));
+        set_hunger(&mut h, 18, 0.0, 0.0);
+        run_hunger(&mut h, 78); // fino al tick 79 compreso: nulla
+        assert_eq!(health(&h), 11.0);
+        assert_eq!(h.server.players[&1].food_tick, 80);
+        h.server.hunger_tick(); // 80, poi riparte da 1
+        assert_eq!(h.server.players[&1].food_tick, 1);
+        h.server.hunger_tick();
+        assert_eq!(health(&h), 12.0, "80 tick dopo");
+    }
+
+    #[test]
+    fn hunger_below_eighteen_does_not_regenerate() {
+        let mut h = setup(GameMode::Survival);
+        set_hunger(&mut h, 17, 0.0, 0.0);
+        player(&mut h).health = 10.0;
+        run_hunger(&mut h, 160);
+        assert_eq!(health(&h), 10.0);
+    }
+
+    #[test]
+    fn regeneration_at_full_health_costs_nothing() {
+        let mut h = setup(GameMode::Survival);
+        set_hunger(&mut h, 20, 5.0, 0.0);
+        run_hunger(&mut h, 80);
+        assert_eq!(hunger(&h), (20, 5.0, 0.0));
+    }
+
+    #[test]
+    fn full_food_with_saturation_regenerates_quickly_every_twenty_ticks() {
+        let mut h = setup(GameMode::Survival);
+        set_hunger(&mut h, 20, 20.0, 0.0);
+        player(&mut h).health = 5.0;
+        h.server.hunger_tick(); // tick 1: regola lenta
+        assert_eq!(health(&h), 6.0);
+        set_hunger(&mut h, 20, 20.0, 0.0);
+        run_hunger(&mut h, 18); // fino al tick 19
+        assert_eq!(health(&h), 6.0);
+        h.server.hunger_tick(); // tick 20: regola rapida
+        assert_eq!(health(&h), 7.0);
+        set_hunger(&mut h, 20, 20.0, 0.0);
+        run_hunger(&mut h, 20); // tick 40
+        assert_eq!(health(&h), 8.0);
+        set_hunger(&mut h, 20, 0.0, 0.0);
+        run_hunger(&mut h, 20); // senza saturazione niente regola rapida
+        assert_eq!(health(&h), 8.0);
+    }
+
+    #[test]
+    fn starvation_hurts_every_eighty_ticks_down_to_one_health() {
+        let mut h = setup(GameMode::Survival);
+        set_hunger(&mut h, 0, 0.0, 0.0);
+        player(&mut h).health = 3.0;
+        h.server.hunger_tick();
+        assert_eq!(health(&h), 2.0);
+        run_hunger(&mut h, 79);
+        assert_eq!(health(&h), 2.0, "una volta ogni 80 tick");
+        h.server.tick_count += 10;
+        h.server.hunger_tick();
+        assert_eq!(health(&h), 1.0);
+        h.server.tick_count += 10;
+        run_hunger(&mut h, 79);
+        h.server.hunger_tick();
+        assert_eq!(health(&h), 1.0, "la fame non uccide a difficoltà normale");
+        assert!(!h.server.players[&1].dead);
+    }
+
+    #[test]
+    fn hunger_tick_does_nothing_in_creative_for_the_dead_or_when_unchanged() {
+        let mut h = setup(GameMode::Creative);
+        set_hunger(&mut h, 0, 0.0, 0.0);
+        player(&mut h).health = 10.0;
+        run_hunger(&mut h, 80);
+        assert_eq!(health(&h), 10.0);
+        assert_eq!(h.server.players[&1].food_tick, 1, "il contatore non gira per chi non ha fame");
+        let mut h = setup(GameMode::Survival);
+        h.server.hurt(1, 100.0, DamageCause::Kill);
+        set_hunger(&mut h, 20, 20.0, 0.0);
+        h.packets_by_player();
+        run_hunger(&mut h, 80);
+        assert!(h.packets_to(1).is_empty());
+        let mut h = setup(GameMode::Survival);
+        h.packets_by_player();
+        run_hunger(&mut h, 80);
+        assert!(h.packets_to(1).is_empty(), "nulla è cambiato: nessun UpdateAttributes");
+    }
+
+    #[test]
+    fn respawn_restarts_the_hunger_counter() {
+        let mut h = setup(GameMode::Survival);
+        h.server.hurt(1, 100.0, DamageCause::Kill);
+        player(&mut h).food_tick = 55;
+        crate::survival::settle_dead(player(&mut h), None);
+        assert_eq!(h.server.players[&1].food_tick, 1);
+    }
 }
