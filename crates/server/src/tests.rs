@@ -5824,3 +5824,212 @@ mod furnaces {
         assert_eq!(h.server.furnace_data(TOP).items[0].count, 1, "fermo finché il chunk non è in memoria");
     }
 }
+
+// ---------- correzioni della revisione finale (tappa 4) ----------
+
+mod final_fixes {
+    use super::blocks::change;
+    use super::placing::{packets, place_packet, setup, EYES, TOP};
+    use super::*;
+    use crate::{
+        events::WorldAction,
+        inventory::Item,
+        registry::{blocks, StateValue},
+    };
+    use bedrock_protocol::generated::{
+        enums::container_enum_name::{CURSOR_CONTAINER, HOTBAR_CONTAINER, LEVEL_ENTITY_CONTAINER},
+        InventorySlot,
+    };
+    use vgen::Dim;
+
+    fn item(name: &str, count: u16) -> Item {
+        Item::from_name(name, count).unwrap()
+    }
+
+    fn put_chest(h: &mut Harness, pos: [i32; 3]) {
+        let base = blocks().state(blocks().default_hash("minecraft:chest").unwrap()).unwrap().clone();
+        let hash = base.with("minecraft:cardinal_direction", StateValue::Str("north".into())).hash();
+        h.server.set_blocks(Dim::Overworld, &[change(pos, hash, false)]);
+        h.server.chest_placed(pos);
+    }
+
+    fn click(h: &mut Harness, pid: u64, pos: [i32; 3]) -> Vec<(u64, Packet)> {
+        h.receive(pid, &[place_packet(pos, 1, &ItemStack::air())]);
+        packets(&mut h.sent)
+    }
+
+    fn net_id(h: &Harness, container: u8, slot: u8) -> i32 {
+        h.server.players[&1].inventory.stack_at(container, slot).unwrap().net_id.unwrap_or(0)
+    }
+
+    fn move_items(request_id: i32, variant: u8, count: u8, src: (u8, u8, i32), dst: (u8, u8, i32)) -> Packet {
+        stack_request_packet(|w| {
+            w.var_i32(request_id);
+            w.var_u32(1);
+            w.var_u32(1);
+            w.u8(variant); // 0 Take, 1 Place
+            w.u8(count);
+            slot_bytes(w, src.0, src.1, src.2);
+            slot_bytes(w, dst.0, dst.1, dst.2);
+            w.var_u32(0);
+            w.i32(-1);
+        })
+    }
+
+    fn chest_with_stone(h: &mut Harness) {
+        put_chest(h, TOP);
+        let mut data = h.server.chest_data(TOP);
+        data.items[0] = item("minecraft:cobblestone", 10);
+        h.server.save_chest_for_test(TOP, &data);
+    }
+
+    fn total(h: &Harness) -> u32 {
+        let inv = &h.server.players[&1].inventory;
+        (0..36).map(|i| inv.main(i).count as u32).sum()
+    }
+
+    #[test]
+    fn shutdown_returns_grid_and_cursor_items_to_the_inventory() {
+        let mut h = setup(GameMode::Survival);
+        let before = total(&h);
+        h.server.players.get_mut(&1).unwrap().inventory.set_grid(1, item("minecraft:oak_log", 2));
+        let src = net_id(&h, HOTBAR_CONTAINER, 0);
+        h.receive(1, &[move_items(-1, 1, 5, (HOTBAR_CONTAINER, 0, src), (CURSOR_CONTAINER, 0, 0))]);
+        assert_eq!(total(&h), before - 5);
+        h.server.shutdown();
+        assert_eq!(total(&h), before + 2, "griglia e cursore sono tornati nell'inventario");
+    }
+
+    #[test]
+    fn requests_on_an_unloaded_chest_are_rejected_and_close_the_window() {
+        let mut h = setup(GameMode::Survival);
+        chest_with_stone(&mut h);
+        click(&mut h, 1, TOP);
+        let window = h.server.players[&1].inventory.chest().unwrap().window;
+        let before = total(&h);
+        let chunk = h.server.chunks.remove(&(0, 0, 0)).unwrap();
+        drop(packets(&mut h.sent));
+        let id = net_id(&h, LEVEL_ENTITY_CONTAINER, 0);
+        h.receive(1, &[move_items(-1, 0, 10, (LEVEL_ENTITY_CONTAINER, 0, id), (HOTBAR_CONTAINER, 1, 0))]);
+        let out = packets(&mut h.sent);
+        h.server.chunks.insert((0, 0, 0), chunk);
+        assert_eq!(total(&h), before, "niente è passato nell'inventario");
+        assert_eq!(h.server.chest_data(TOP).items[0].count, 10, "il forziere non cambia");
+        assert!(h.server.players[&1].inventory.chest().is_none(), "finestra chiusa");
+        let closes: Vec<_> = out.iter().filter(|(t, p)| *t == 1 && p.id == ContainerClose::ID).collect();
+        assert_eq!(closes[0].1.body[0], window);
+        let responses: Vec<_> = out.iter().filter(|(t, p)| *t == 1 && p.id == id::ITEM_STACK_RESPONSE).collect();
+        assert_eq!(responses[0].1.body[..2], [1, 1], "la richiesta è rifiutata");
+    }
+
+    #[test]
+    fn windows_close_when_their_chunk_unloads_or_the_player_walks_away() {
+        let mut h = setup(GameMode::Survival);
+        chest_with_stone(&mut h);
+        click(&mut h, 1, TOP);
+        h.server.windows_tick();
+        assert!(h.server.players[&1].inventory.chest().is_some(), "vicino e caricato: resta aperta");
+        h.server.players.get_mut(&1).unwrap().pos = [90.0, 11.6, 4.5];
+        drop(packets(&mut h.sent));
+        h.server.windows_tick();
+        assert!(h.server.players[&1].inventory.chest().is_none(), "troppo lontano: chiusa");
+        assert!(packets(&mut h.sent).iter().any(|(t, p)| *t == 1 && p.id == ContainerClose::ID));
+        // chunk scaricato
+        h.server.players.get_mut(&1).unwrap().pos = EYES;
+        click(&mut h, 1, TOP);
+        assert!(h.server.players[&1].inventory.chest().is_some());
+        let chunk = h.server.chunks.remove(&(0, 0, 0)).unwrap();
+        h.server.windows_tick();
+        h.server.chunks.insert((0, 0, 0), chunk);
+        assert!(h.server.players[&1].inventory.chest().is_none(), "chunk scaricato: chiusa");
+    }
+
+    #[test]
+    fn a_double_chest_is_not_unpaired_when_the_neighbour_chunk_is_not_loaded() {
+        let mut h = setup(GameMode::Survival);
+        h.server.chunks.insert((0, 1, 0), crate::world::Chunk::flat(Dim::Overworld, 1, 0));
+        put_chest(&mut h, [15, 11, 4]);
+        put_chest(&mut h, [16, 11, 4]);
+        assert_eq!(h.server.chest_data([15, 11, 4]).pair, Some([16, 4]));
+        h.server.chunks.remove(&(0, 1, 0));
+        h.server.open_chest(1, [15, 11, 4]);
+        assert_eq!(h.server.chest_data([15, 11, 4]).pair, Some([16, 4]), "l'abbinamento resta");
+    }
+
+    #[test]
+    fn a_vetoed_drop_from_a_chest_slot_stays_in_the_chest() {
+        let mut h = setup(GameMode::Survival);
+        chest_with_stone(&mut h);
+        click(&mut h, 1, TOP);
+        h.server.hooks.push(Box::new(|a| !matches!(a, WorldAction::DropItem { .. })));
+        let id = net_id(&h, LEVEL_ENTITY_CONTAINER, 0);
+        h.receive(
+            1,
+            &[stack_request_packet(|w| {
+                w.var_i32(-1);
+                w.var_u32(1);
+                w.var_u32(3); // Drop
+                w.u8(3);
+                w.u8(4);
+                slot_bytes(w, LEVEL_ENTITY_CONTAINER, 0, id);
+                w.bool(false);
+                w.var_u32(0);
+                w.i32(-1);
+            })],
+        );
+        assert_eq!(h.server.chest_data(TOP).items[0].count, 10, "il veto rimette tutto anche nel block entity");
+    }
+
+    #[test]
+    fn opening_the_table_with_a_cursor_item_tells_the_client() {
+        let mut h = setup(GameMode::Survival);
+        let table = blocks().default_hash("minecraft:crafting_table").unwrap();
+        h.server.set_blocks(Dim::Overworld, &[change(TOP, table, false)]);
+        let src = net_id(&h, HOTBAR_CONTAINER, 0);
+        h.receive(1, &[move_items(-1, 1, 5, (HOTBAR_CONTAINER, 0, src), (CURSOR_CONTAINER, 0, 0))]);
+        drop(packets(&mut h.sent));
+        let out = click(&mut h, 1, TOP);
+        let cursor = out.iter().filter(|(t, p)| *t == 1 && p.id == InventorySlot::ID && p.body[0] == crate::inventory::window::UI as u8).count();
+        assert_eq!(cursor, 1, "il cursore svuotato è comunicato");
+    }
+
+    fn put_furnace(h: &mut Harness) {
+        let base = blocks().state(blocks().default_hash("minecraft:furnace").unwrap()).unwrap().clone();
+        let hash = base.with("minecraft:cardinal_direction", StateValue::Str("north".into())).hash();
+        h.server.set_blocks(Dim::Overworld, &[change(TOP, hash, false)]);
+        h.server.furnace_placed(TOP);
+    }
+
+    #[test]
+    fn furnaces_are_tracked_while_their_chunk_and_block_exist() {
+        let mut h = setup(GameMode::Survival);
+        assert!(h.server.furnaces.is_empty());
+        put_furnace(&mut h);
+        assert!(h.server.furnaces.contains(&TOP));
+        h.server.set_blocks(Dim::Overworld, &[change(TOP, super::blocks::air(), false)]);
+        assert!(h.server.furnaces.is_empty(), "rotta: non più tracciata");
+        put_furnace(&mut h);
+        h.server.players.get_mut(&1).unwrap().pos = [3000.0, 70.0, 3000.0];
+        h.server.players.get_mut(&1).unwrap().last_chunk = (200, 200);
+        h.server.players.get_mut(&2).unwrap().last_chunk = (200, 200);
+        h.server.players.get_mut(&3).unwrap().last_chunk = (200, 200);
+        h.server.stream_tick();
+        assert!(!h.server.chunks.contains_key(&(0, 0, 0)));
+        assert!(h.server.furnaces.is_empty(), "chunk scaricato: non più tracciata");
+    }
+
+    #[test]
+    fn idle_furnaces_are_skipped_and_active_ones_still_cook() {
+        let mut h = setup(GameMode::Survival);
+        put_furnace(&mut h);
+        h.server.chunks.get_mut(&(0, 0, 0)).unwrap().dirty = false;
+        h.server.furnaces_tick();
+        assert!(!h.server.chunks[&(0, 0, 0)].dirty, "ferma: nessuna scrittura");
+        let mut data = h.server.furnace_data(TOP);
+        data.items[0] = item("minecraft:raw_iron", 1);
+        data.items[1] = item("minecraft:coal", 1);
+        h.server.save_furnace(TOP, &data, false);
+        h.server.furnaces_tick();
+        assert_eq!(h.server.furnace_data(TOP).cook_time, 1);
+    }
+}

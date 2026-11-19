@@ -311,6 +311,8 @@ struct Server {
     waiting_start: Vec<u64>,
     /// Chunk in memoria.
     chunks: HashMap<ChunkKey, world::Chunk>,
+    /// Posizioni delle fornaci nei chunk in memoria (Overworld): `furnaces_tick` percorre solo queste.
+    furnaces: HashSet<[i32; 3]>,
     /// Chunk chiesti al generatore e non ancora arrivati.
     requested: HashSet<ChunkKey>,
     /// Chunk in lettura dal disco.
@@ -371,6 +373,7 @@ impl Server {
             spawn: Some(world::FLAT_SPAWN),
             waiting_start: Vec::new(),
             chunks: HashMap::new(),
+            furnaces: HashSet::new(),
             requested: HashSet::new(),
             loading: HashSet::new(),
             queue: HashSet::new(),
@@ -415,6 +418,13 @@ impl Server {
 
     /// Chiusura ordinata: salva i giocatori ancora connessi e i chunk modificati, poi scarica il database.
     fn shutdown(&mut self) {
+        // griglia di crafting e cursore tornano nell'inventario prima di salvare (come alla disconnessione): il salvataggio
+        // contiene solo inventario, mano e armatura
+        let ids: Vec<u64> = self.players.keys().copied().collect();
+        for pid in ids {
+            self.close_chest_view(pid);
+            self.return_ui_items(pid);
+        }
         if self.disk.is_none() {
             return;
         }
@@ -449,6 +459,7 @@ impl Server {
         self.movement_tick();
         self.void_tick();
         self.hunger_tick();
+        self.windows_tick();
         self.furnaces_tick();
         self.eating_tick();
         self.tick_count += 1;
@@ -567,9 +578,13 @@ impl Server {
         let (cx, cz) = (entity.x.div_euclid(16), entity.z.div_euclid(16));
         let Some(chunk) = self.chunks.get_mut(&(dim as u8, cx, cz)) else { return };
         let packet = BlockActorData { block_position: BlockPos { x: entity.x, y: entity.y, z: entity.z }, actor_data_tags: entity.nbt.clone() }.packet();
+        let pos = [entity.x, entity.y, entity.z];
         chunk.put_block_entity(entity);
         if chunk.fallback {
             chunk.dirty = false; // vedi `apply_blocks`: i chunk di ripiego non si salvano mai
+        }
+        if dim == Dim::Overworld && self.block_at(dim, pos).is_some_and(|(hash, _)| crate::furnace::is_furnace(hash)) {
+            self.furnaces.insert(pos);
         }
         if !notify {
             return;

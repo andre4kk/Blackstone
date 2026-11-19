@@ -16,7 +16,7 @@ use crate::{
 };
 use bedrock_net::debug;
 use bedrock_protocol::{
-    generated::{BlockPos, ContainerOpen, LevelSoundEvent, Vec3},
+    generated::{enums::container_enum_name::CURSOR_CONTAINER, BlockPos, ContainerOpen, LevelSoundEvent, Vec3},
     input::UseItem,
     wire::ServerPacket,
 };
@@ -247,6 +247,7 @@ impl Server {
         let Some(p) = self.players.get_mut(&pid) else { return };
         let mut changed = Vec::new();
         let mut leftover = Vec::new();
+        let had_cursor = p.inventory.stack_at(CURSOR_CONTAINER, 0).is_some_and(|s| s.id != 0 && s.count > 0);
         for item in p.inventory.release_ui() {
             let (rest, slots) = p.inventory.add(item);
             changed.extend(slots);
@@ -256,7 +257,10 @@ impl Server {
         }
         changed.sort_unstable();
         changed.dedup();
-        let packets: Vec<_> = changed.iter().filter_map(|&(c, s)| p.inventory.slot_packet_at(c, s)).collect();
+        let mut packets: Vec<_> = changed.iter().filter_map(|&(c, s)| p.inventory.slot_packet_at(c, s)).collect();
+        if had_cursor {
+            packets.extend(p.inventory.slot_packet_at(CURSOR_CONTAINER, 0)); // il cursore svuotato: senza, il client mostrerebbe un oggetto fantasma
+        }
         if !packets.is_empty() {
             self.send(pid, &packets);
         }

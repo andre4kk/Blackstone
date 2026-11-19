@@ -187,10 +187,13 @@ fn load() -> Recipes {
                 .output
                 .into_iter()
                 .map(|o| {
-                    let block = o.block_states.map(|list| {
-                        let states = list.iter().map(|s| (s.key.clone(), state_value(&s.kind, &s.value))).collect();
-                        BlockState { name: o.name.clone(), states }.hash()
-                    });
+                    let block = o
+                        .block_states
+                        .map(|list| {
+                            let states = list.iter().map(|s| (s.key.clone(), state_value(&s.kind, &s.value))).collect();
+                            BlockState { name: o.name.clone(), states }.hash()
+                        })
+                        .or_else(|| registry::items().block_of(&o.name)); // come Dragonfly: i blocchi portano il loro hash
                     let item_id = registry::items().id(&o.name).unwrap_or_else(|| panic!("{}: oggetto senza ID", o.name));
                     Output { name: o.name, item_id, meta: o.meta, count: o.count, block }
                 })
@@ -336,5 +339,14 @@ mod tests {
         let mut r = bedrock_protocol::reader::Reader(&p.body);
         assert_eq!(r.var_u32(), Some(shaped as u32));
         assert!(p.body.len() > shaped + shapeless);
+    }
+
+    #[test]
+    fn block_outputs_carry_the_real_block_hash_on_the_wire() {
+        let table = find("minecraft:crafting_table", 1);
+        let expected = registry::items().block_of("minecraft:crafting_table").unwrap();
+        assert_eq!(wire_output(&table.output[0]).block_runtime_id, expected);
+        let stick = find("minecraft:stick", 4);
+        assert_eq!(wire_output(&stick.output[0]).block_runtime_id, 0, "gli oggetti che non sono blocchi restano a 0");
     }
 }

@@ -113,6 +113,12 @@ impl FurnaceData {
         BlockEntity { x: pos[0], y: pos[1], z: pos[2], nbt: write_root("", &Tag::Compound(fields), Enc::Network) }
     }
 
+    /// Vero se un tick non cambierebbe nulla a fornace spenta: niente combustibile in fiamme, niente cottura in corso e
+    /// niente da avviare (manca l'ingresso o il combustibile).
+    pub fn is_idle(&self) -> bool {
+        self.burn_time <= 0 && self.cook_time <= 0 && (self.items[0].is_empty() || self.items[1].is_empty())
+    }
+
     /// Un tick di cottura (Dragonfly `smelter.tickSmelting`, in tick invece che in millisecondi). `lit` è se il blocco è acceso;
     /// restituisce se deve esserlo adesso. `roll` dà un numero in [0, 1) per l'esperienza frazionaria.
     pub fn tick(&mut self, mut lit: bool, mut roll: impl FnMut() -> f32) -> bool {
@@ -261,6 +267,7 @@ impl Server {
 
     /// Una fornace in `pos` non c'è più (il suo block entity è già tolto): il contenuto cade a terra.
     pub(crate) fn furnace_removed(&mut self, pos: [i32; 3], nbt: &[u8]) {
+        self.furnaces.remove(&pos);
         let data = FurnaceData::parse(nbt);
         let center = [pos[0] as f32 + 0.5, pos[1] as f32 + 0.5, pos[2] as f32 + 0.5];
         for item in data.items.into_iter().filter(|i| !i.is_empty()) {
@@ -269,19 +276,31 @@ impl Server {
         }
     }
 
-    /// Un tick per ogni fornace nei chunk in memoria: cottura, barre per chi l'ha aperta, blocco acceso o spento.
+    /// Un tick per ogni fornace tracciata nei chunk in memoria: cottura, barre per chi l'ha aperta, blocco acceso o spento. Le
+    /// fornaci ferme (niente da cuocere e spente) si saltano subito, senza copie né confronti.
     pub(crate) fn furnaces_tick(&mut self) {
-        let cells: Vec<([i32; 3], i32, bool)> = self
-            .chunks
-            .iter()
-            .filter(|(key, _)| key.0 == Dim::Overworld as u8)
-            .flat_map(|(_, c)| c.block_entities.iter().map(|b| [b.x, b.y, b.z]))
-            .filter_map(|pos| self.block_at(Dim::Overworld, pos).filter(|&(hash, _)| is_furnace(hash)).map(|(hash, water)| (pos, hash, water)))
-            .collect();
+        let mut cells: Vec<([i32; 3], i32, bool)> = Vec::new();
+        let mut stale: Vec<[i32; 3]> = Vec::new();
+        for &pos in &self.furnaces {
+            let key = (Dim::Overworld as u8, pos[0].div_euclid(16), pos[2].div_euclid(16));
+            if !self.chunks.contains_key(&key) {
+                continue; // chunk non in memoria: ferma
+            }
+            match self.block_at(Dim::Overworld, pos) {
+                Some((hash, water)) if is_furnace(hash) => cells.push((pos, hash, water)),
+                _ => stale.push(pos),
+            }
+        }
+        for pos in stale {
+            self.furnaces.remove(&pos);
+        }
         for (pos, hash, water) in cells {
             let before = self.furnace_data(pos);
-            let mut data = before.clone();
             let lit_now = name_of(hash) == Some("minecraft:lit_furnace");
+            if !lit_now && before.is_idle() {
+                continue;
+            }
+            let mut data = before.clone();
             let lit = data.tick(lit_now, || self.roll());
             if data != before {
                 self.save_furnace(pos, &data, false);

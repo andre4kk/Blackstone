@@ -359,6 +359,15 @@ impl Server {
         }
     }
 
+    /// Riscrive nel block entity il contenuto della finestra di forziere o fornace di `pid` (non fa nulla se non ne ha una).
+    fn sync_window(&mut self, pid: u64) {
+        match self.players.get(&pid).and_then(|p| p.inventory.chest()).map(|c| c.kind) {
+            Some(crate::inventory::WindowKind::Furnace) => self.sync_furnace(pid),
+            Some(_) => self.sync_chest(pid),
+            None => {}
+        }
+    }
+
     /// Pacchetto `ItemStackRequest`: ogni richiesta ha la sua risposta.
     fn item_stack_request(&mut self, pid: u64, body: &[u8]) {
         if self.players.get(&pid).is_some_and(|p| p.dead) {
@@ -387,26 +396,32 @@ impl Server {
 
     /// Una richiesta di pila: si applica all'inventario e si risponde (con le caselle cambiate, o con l'errore e lo stato vero).
     fn stack_request(&mut self, pid: u64, request: &StackRequest) {
+        // un contenitore il cui chunk non è più in memoria non si può salvare: si chiude la finestra e la richiesta cade sulle
+        // caselle ormai inesistenti (rifiutata, niente oggetti dal nulla)
+        if self.players.get(&pid).is_some_and(|p| p.inventory.touches_chest(request)) && !self.container_loaded(pid) {
+            self.close_window(pid);
+        }
         let Some(p) = self.players.get_mut(&pid) else { return };
         let (held, armor) = (p.inventory.held().stack(0), armor_of(p));
         let result = p.inventory.handle(request, p.mode.creative_inventory());
         if p.inventory.touches_chest(request) {
-            if p.inventory.chest().is_some_and(|c| c.kind == crate::inventory::WindowKind::Furnace) {
-                self.sync_furnace(pid);
-            } else {
-                self.sync_chest(pid);
-            }
+            self.sync_window(pid);
         }
         if let Some(error) = &result.error {
             debug!("[#{pid}] richiesta di pila {} rifiutata: {error}", request.request_id);
         }
         // Gli oggetti buttati diventano oggetti a terra, a meno che un gancio non lo impedisca: allora tornano nella casella.
+        let mut restored = false;
         for (item, (container, slot)) in result.dropped.iter().cloned().zip(result.dropped_from.iter().copied()) {
             if self.allow(&WorldAction::DropItem { pid, item: item.clone() }) {
                 self.drop_item(pid, item);
             } else if let Some(p) = self.players.get_mut(&pid) {
                 p.inventory.restore(container, slot, item);
+                restored = true;
             }
+        }
+        if restored {
+            self.sync_window(pid); // se la casella era del forziere o della fornace, anche il block entity riprende l'oggetto
         }
         let Some(p) = self.players.get(&pid) else { return };
         let packets = p.inventory.response(request.request_id, &result);

@@ -153,6 +153,9 @@ impl Server {
         let mut mine = self.chest_data(pos);
         let Some([px, pz]) = mine.pair else { return vec![pos] };
         let other = [px, pos[1], pz];
+        if self.block_at(Dim::Overworld, other).is_none() {
+            return vec![pos]; // l'altra metà è in un chunk non ancora in memoria: l'abbinamento non si tocca
+        }
         let facing = facing_of(hash);
         let beside = facing.is_some_and(|f| other == f.rotate_left().step(pos) || other == f.rotate_right().step(pos));
         let mut theirs = self.chest_data(other);
@@ -254,6 +257,31 @@ impl Server {
         }
         if !packets.is_empty() {
             self.send(pid, &packets);
+        }
+    }
+
+    /// Vero se tutti i blocchi del forziere o della fornace aperti da `pid` sono in chunk in memoria (altrimenti le scritture si perderebbero).
+    pub(crate) fn container_loaded(&self, pid: u64) -> bool {
+        let Some(window) = self.players.get(&pid).and_then(|p| p.inventory.chest()) else { return true };
+        window.parts.iter().all(|part| self.chunks.contains_key(&(Dim::Overworld as u8, part[0].div_euclid(16), part[2].div_euclid(16))))
+    }
+
+    /// Chiude le finestre di forziere e fornace il cui chunk è stato scaricato o che sono rimaste troppo lontane dal giocatore (oltre la
+    /// portata di apertura): senza, le richieste di pila lavorerebbero su una copia che non si può più salvare.
+    pub(crate) fn windows_tick(&mut self) {
+        let far: Vec<u64> = self
+            .players
+            .iter()
+            .filter(|(_, p)| p.inventory.chest().is_some())
+            .filter(|&(&pid, p)| {
+                let near = p.inventory.chest().is_some_and(|c| c.parts.iter().any(|&part| in_reach(p.pos, part, p.mode == GameMode::Creative)));
+                !self.container_loaded(pid) || !near
+            })
+            .map(|(&pid, _)| pid)
+            .collect();
+        for pid in far {
+            debug!("[#{pid}] finestra chiusa: chunk scaricato o troppo lontano");
+            self.close_window(pid);
         }
     }
 

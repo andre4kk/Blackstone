@@ -165,6 +165,7 @@ impl Server {
         let far: Vec<ChunkKey> = self.chunks.keys().filter(|&&(_, x, z)| !near.iter().any(|&(c, r)| in_range(x - c.0, z - c.1, r))).copied().collect();
         for key in far {
             if let Some(chunk) = self.chunks.remove(&key) {
+                self.furnaces.retain(|p| (p[0].div_euclid(16), p[2].div_euclid(16)) != (key.1, key.2) || key.0 != Dim::Overworld as u8);
                 if chunk.dirty {
                     if let Some(disk) = &self.disk {
                         disk.save(chunk);
@@ -216,7 +217,21 @@ impl Server {
         if let Some(disk) = &self.disk {
             disk.save(chunk.clone());
         }
+        self.index_furnaces(&chunk, key);
         self.chunks.insert(key, chunk);
+    }
+
+    /// Registra le fornaci di un chunk appena in memoria (i block entity `Furnace`, se il blocco lo è ancora).
+    fn index_furnaces(&mut self, chunk: &Chunk, key: ChunkKey) {
+        if key.0 != Dim::Overworld as u8 {
+            return;
+        }
+        for b in &chunk.block_entities {
+            let (lx, lz) = (b.x.rem_euclid(16) as usize, b.z.rem_euclid(16) as usize);
+            if crate::furnace::is_furnace(chunk.block(lx, b.y, lz)) {
+                self.furnaces.insert([b.x, b.y, b.z]);
+            }
+        }
     }
 
     pub(crate) fn on_gen_event(&mut self, event: GenEvent) {
