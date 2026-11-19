@@ -31,6 +31,8 @@ pub(crate) struct ToolInfo {
     /// Livello di raccolta di Dragonfly (vedi il modulo): legno/oro 1, pietra 2, ferro 3, diamante e netherite 4.
     pub tier: u8,
     pub attack_damage: f32,
+    /// Velocita' di rottura sui blocchi su cui lo strumento e' efficace (`BaseMiningEfficiency` di Dragonfly: legno 2, pietra 4, ferro 6...).
+    pub efficiency: f32,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -61,6 +63,13 @@ pub(crate) struct BlockDrops {
     pub drops: Vec<Drop>,
 }
 
+/// Durezza di un blocco e strumento con cui si rompe piu' in fretta (`newBreakInfo` di Dragonfly: primo e terzo argomento).
+#[derive(Debug, Clone, Deserialize)]
+pub(crate) struct BlockHardness {
+    pub hardness: f64, // f64 come Dragonfly: i tick di rottura arrotondano per eccesso e in f32 `1 / 0,5` darebbe un tick in piu'
+    pub effective: Option<ToolKind>,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct Food {
     pub points: u8,
@@ -79,6 +88,11 @@ struct DropsFile {
 }
 
 #[derive(Deserialize)]
+struct HardnessFile {
+    blocks: HashMap<String, BlockHardness>,
+}
+
+#[derive(Deserialize)]
 struct FoodsFile {
     foods: HashMap<String, Food>,
 }
@@ -93,6 +107,17 @@ pub(crate) fn tool(item_name: &str) -> Option<&'static ToolInfo> {
 pub(crate) fn block_drops(block_name: &str) -> Option<&'static BlockDrops> {
     static T: OnceLock<HashMap<String, BlockDrops>> = OnceLock::new();
     T.get_or_init(|| serde_json::from_str::<DropsFile>(include_str!("../data/block_drops.json")).expect("block_drops.json non valido").blocks).get(block_name)
+}
+
+/// Durezza di ripiego dei blocchi che la tabella non elenca (Dragonfly non ha un valore: ogni blocco ne ha uno suo). Vale 1, la durezza di
+/// molti blocchi comuni; serve solo alla velocita' delle crepe, perche' il tempo vero di rottura lo decide il client.
+pub(crate) const FALLBACK_HARDNESS: f64 = 1.0;
+
+/// Durezza e strumento efficace del blocco con questo nome (senza stati). `None` = non in tabella: si usa `FALLBACK_HARDNESS` e nessuno strumento.
+pub(crate) fn block_hardness(block_name: &str) -> Option<&'static BlockHardness> {
+    static T: OnceLock<HashMap<String, BlockHardness>> = OnceLock::new();
+    T.get_or_init(|| serde_json::from_str::<HardnessFile>(include_str!("../data/block_hardness.json")).expect("block_hardness.json non valido").blocks)
+        .get(block_name)
 }
 
 /// Cibo con questo nome, se lo e'.

@@ -2,7 +2,7 @@
 
 Uso: python -I tools/extract_survival.py <vendor/dragonfly> <crates/server/data>
 
-Scrive in <data>: block_drops.json, tools.json, foods.json. Legge anche blocks.json e items.txt (gia' presenti) solo per
+Scrive in <data>: block_drops.json, block_hardness.json, tools.json, foods.json. Legge anche blocks.json e items.txt (gia' presenti) solo per
 controllare che ogni nome emesso esista davvero nel registro: un nome sbagliato interrompe lo script.
 
 Come funziona:
@@ -345,8 +345,8 @@ def snake(name):
 def load_tiers(dragonfly):
     s = open(os.path.join(dragonfly, "server", "item", "tool.go"), encoding="utf8").read()
     tiers = {}
-    for m in re.finditer(r"(ToolTier\w+) = ToolTier\{HarvestLevel: (\d+), Durability: \d+, BaseMiningEfficiency: [\d.]+, BaseAttackDamage: ([\d.]+), EnchantmentValue: \d+, Name: \"(\w+)\"\}", s):
-        tiers[m.group(1)] = {"harvest": int(m.group(2)), "attack": float(m.group(3)), "name": m.group(4)}
+    for m in re.finditer(r"(ToolTier\w+) = ToolTier\{HarvestLevel: (\d+), Durability: \d+, BaseMiningEfficiency: ([\d.]+), BaseAttackDamage: ([\d.]+), EnchantmentValue: \d+, Name: \"(\w+)\"\}", s):
+        tiers[m.group(1)] = {"harvest": int(m.group(2)), "efficiency": float(m.group(3)), "attack": float(m.group(4)), "name": m.group(5)}
     assert len(tiers) == 7, tiers
     return tiers
 
@@ -536,6 +536,73 @@ def copper_family(blocks):
     return out
 
 
+def parse_effective(arg):
+    """Lo strumento che rende veloce la rottura (`pickaxeEffective`, `axeEffective`... o una funzione inline); None = nessuno."""
+    a = arg.strip()
+    m = re.fullmatch(r"(pickaxe|axe|shovel|hoe|shears|sword)Effective", a)
+    if m:
+        return m.group(1)
+    m = re.search(r"ToolType\(\) == item\.Type(Pickaxe|Axe|Shovel|Hoe|Shears|Sword)", a)
+    return m.group(1).lower() if m else None
+
+
+def parse_hardness(dragonfly):
+    """Tipo Go -> (durezza, strumento efficace) da ogni `newBreakInfo(durezza, _, efficace, _)`. Le durezze che non sono un letterale
+    (minerali: `Type.Hardness()`, scale/lastre/muri: quella del blocco base) non si leggono qui: si danno a mano sotto."""
+    out = {}
+    for f in sorted(glob.glob(os.path.join(dragonfly, "server", "block", "*.go"))):
+        s = open(f, encoding="utf8").read()
+        for m in re.finditer(r"func \((\w+) \*?(\w+)\) BreakInfo\(\) BreakInfo \{\n(.*?)\n\}\n", s, re.S):
+            body = m.group(3)
+            k = body.find("newBreakInfo(")
+            if k < 0:
+                continue
+            args, _ = split_args(body, k + len("newBreakInfo("))
+            if len(args) == 4 and re.fullmatch(r"\d+(\.\d+)?", args[0].strip()):
+                out[m.group(2)] = (float(args[0]), parse_effective(args[2]))
+    return out
+
+
+def hardness_table(dragonfly, blocks):
+    """Durezza e strumento efficace di ogni blocco che si sa: letti da Dragonfly per tipo (stessi nomi di `NAMES`), piu' le famiglie
+    per nome (legno, lana, foglie, minerali, scale/lastre/muri). I blocchi non elencati usano il ripiego del server (vedi `tables.rs`)."""
+    by_type = parse_hardness(dragonfly)
+    out = {}
+    for typ, (h, eff) in by_type.items():
+        for n in NAMES.get(typ) or ["minecraft:" + snake(typ)]:
+            if n in blocks:
+                out[n] = (h, eff)
+    for n in sorted(blocks):
+        short = n[len("minecraft:"):]
+        base = re.sub(r"^(stripped_|waxed_|exposed_|weathered_|oxidized_)+", "", short)
+        wood = re.sub(r"_(planks|log|wood|stem|hyphae|stairs|slab|double_slab|fence|fence_gate|door|trapdoor|button|pressure_plate)$", "", base)
+        if re.fullmatch(r"\w+_ore", short):
+            out[n] = (4.5 if short.startswith("deepslate_") else 3.0, "pickaxe")  # ore.Hardness() di Dragonfly: 3, deepslate 4.5
+        elif re.fullmatch(r"\w+_(planks|log|wood|stem|hyphae)", base) and wood in WOOD_BASES:
+            out[n] = (2.0, "axe")  # Planks/Log/Wood: newBreakInfo(2, .., axeEffective)
+        elif re.fullmatch(r"\w+_(stairs|slab|double_slab)", base) and wood in WOOD_BASES:
+            out[n] = (2.0, "axe")  # prendono il BreakInfo del blocco base (legno)
+        elif re.fullmatch(r"\w+_(stairs|slab|double_slab)", base):
+            out[n] = (2.0, "pickaxe")  # pietra: durezza 2 e piccone (i tipi con 1.5 o 3 in vanilla qui sono approssimati)
+        elif short.endswith("_wall"):
+            out[n] = (2.0, "pickaxe")
+        elif re.fullmatch(r"\w*leaves(_\w+)?", short) and "leaf_litter" not in short:
+            out[n] = (0.2, "shears")
+        elif short.endswith("_wool"):
+            out[n] = (0.8, "shears")
+    # a mano: blackstone ha la durezza in una variabile (`hardness`); stone, deepslate e arenaria hanno piu' rami (il parser legge quello
+    # sbagliato, vedi EXCEPTIONS), qui valgono i numeri di Dragonfly per il ramo normale
+    for n, h in [("minecraft:blackstone", 1.5), ("minecraft:polished_blackstone", 2.0), ("minecraft:gilded_blackstone", 1.5), ("minecraft:stone", 1.5),
+                 ("minecraft:deepslate", 3.0), ("minecraft:sandstone", 0.8), ("minecraft:red_sandstone", 0.8), ("minecraft:chiseled_sandstone", 0.8),
+                 ("minecraft:cut_sandstone", 0.8), ("minecraft:chiseled_red_sandstone", 0.8), ("minecraft:cut_red_sandstone", 0.8)]:
+        out[n] = (h, "pickaxe")
+    for n in sorted(blocks):  # porte e botole di legno: durezza 3, ascia (Dragonfly WoodDoor/WoodTrapdoor)
+        m = re.fullmatch(r"minecraft:(\w+?)_(wooden_door|door|trapdoor)", n)
+        if m and "iron" not in n and "copper" not in n and (m.group(1) in WOOD_BASES or m.group(1) == "wooden"):
+            out[n] = (3.0, "axe")
+    return out
+
+
 def main(dragonfly, data):
     blocks_doc = {
         b["name"]: {st["key"]: st["values"] for st in b["states"] if st["type"] in ("int", "byte")}
@@ -609,6 +676,11 @@ def main(dragonfly, data):
     # acqua, fuoco, portali, blocchi di debug/educazione non lasciano niente nemmeno in vanilla).
     silent = sorted(n for n in blocks if n not in out and n not in items and not n.startswith(("minecraft:element_", "minecraft:hard_")))
     print(f"blocchi senza voce che non lasciano niente ({len(silent)}):", ", ".join(silent))
+    hard = hardness_table(dragonfly, blocks)
+    with open(os.path.join(data, "block_hardness.json"), "w", encoding="utf8", newline="\n") as f:
+        json.dump({"_license": LICENSE, "blocks": {n: {"hardness": h, "effective": e} for n, (h, e) in sorted(hard.items())}}, f, indent=1, ensure_ascii=False)
+        f.write("\n")
+    print(f"durezze: {len(hard)} blocchi")
     doc = {"_license": LICENSE, "blocks": out}
     with open(os.path.join(data, "block_drops.json"), "w", encoding="utf8", newline="\n") as f:
         json.dump(doc, f, indent=1, ensure_ascii=False)
@@ -628,10 +700,11 @@ def main(dragonfly, data):
         for kind in bonus:
             n = f"minecraft:{t['name']}_{kind}"
             if n in items:
-                tools[n] = {"kind": kind, "tier": t["harvest"], "attack_damage": t["attack"] + bonus[kind]}
+                efficiency = 1.5 if kind == "sword" else t["efficiency"]  # Sword.BaseMiningEfficiency: 1.5 (15 per la ragnatela: non modellato)
+                tools[n] = {"kind": kind, "tier": t["harvest"], "attack_damage": t["attack"] + bonus[kind], "efficiency": efficiency}
     s = open(os.path.join(dragonfly, "server", "item", "shears.go"), encoding="utf8").read()
     assert "TypeShears" in s and "minecraft:shears" in s
-    tools["minecraft:shears"] = {"kind": "shears", "tier": 0, "attack_damage": 1.0}
+    tools["minecraft:shears"] = {"kind": "shears", "tier": 0, "attack_damage": 1.0, "efficiency": 1.5}  # Shears.BaseMiningEfficiency
     with open(os.path.join(data, "tools.json"), "w", encoding="utf8", newline="\n") as f:
         json.dump({"_license": LICENSE, "tools": dict(sorted(tools.items()))}, f, indent=1, ensure_ascii=False)
         f.write("\n")

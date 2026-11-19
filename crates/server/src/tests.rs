@@ -1338,6 +1338,98 @@ mod breaking {
         assert_broken(&h);
     }
 
+    /// Gli eventi delle crepe (3600-3602) di `outbox`, ordinati per destinatario.
+    fn cracks(out: &[(u64, Packet)]) -> Vec<(u64, i32, [f32; 3], i32)> {
+        let mut c: Vec<_> = events(out).into_iter().filter(|e| (3600..=3602).contains(&e.1)).collect();
+        c.sort_by_key(|e| (e.0, e.1));
+        c
+    }
+
+    #[test]
+    fn break_ticks_follow_dragonfly_break_duration() {
+        use crate::breaking::break_ticks;
+        let state = |name: &str| crate::registry::blocks().state(block_hash(name, &[])).unwrap().clone();
+        let stone = state("minecraft:stone");
+        // a mano nuda: la pietra non si raccoglie (serve il piccone), 1 / 1,5 / 100 per tick -> 150 tick
+        assert_eq!(break_ticks(&stone, &Item::default(), false), 150);
+        // piccone di legno: efficacia 2 e raccolta valida, 2 / 1,5 / 30 -> ceil(22,5) = 23
+        assert_eq!(break_ticks(&stone, &held("minecraft:wooden_pickaxe"), false), 23);
+        // piccone di ferro (efficacia 6): 6 / 1,5 / 30 = 0,133 -> 8 tick; sott'acqua la velocità è 1/5: ceil(37,5) = 38
+        assert_eq!(break_ticks(&stone, &held("minecraft:iron_pickaxe"), false), 8);
+        assert_eq!(break_ticks(&stone, &held("minecraft:iron_pickaxe"), true), 38);
+        // la terra con la pala di diamante (8 / 0,5 / 30 = 0,53 -> 2 tick), con il piccone (strumento non efficace) 1 / 0,5 / 30 -> 15
+        let dirt = state("minecraft:dirt");
+        assert_eq!(break_ticks(&dirt, &held("minecraft:diamond_shovel"), false), 2);
+        assert_eq!(break_ticks(&dirt, &held("minecraft:diamond_pickaxe"), false), 15);
+        // durezza 0 (erba bassa) o danno >= 1 per tick: istantanea
+        assert_eq!(break_ticks(&state("minecraft:short_grass"), &Item::default(), false), 0);
+        assert_eq!(break_ticks(&state("minecraft:grass_block"), &held("minecraft:netherite_shovel"), false), 2); // 9 / 0,6 / 30 = 0,5
+                                                                                                                 // un piccone di legno su un blocco che vuole il ferro: niente bonus di velocità e raccolta invalida, 1 / 3 / 100 -> 300 tick
+        assert_eq!(break_ticks(&state("minecraft:iron_ore"), &held("minecraft:wooden_pickaxe"), false), 300);
+    }
+
+    #[test]
+    fn survival_breaking_shows_cracks_to_the_breaker_and_the_viewers() {
+        let mut h = setup(GameMode::Survival);
+        h.server.players.get_mut(&1).unwrap().inventory.set_main(0, held("minecraft:wooden_pickaxe"));
+        h.receive(1, &[action(player_action::START_BREAK, ROCK)]);
+        let corner = [ROCK[0] as f32, ROCK[1] as f32, ROCK[2] as f32];
+        // 65535 / 23 tick = 2849; chi rompe e chi vede il chunk (Alice e Bob), non Carol
+        assert_eq!(cracks(&outbox(&mut h.sent)), [(1, 3600, corner, 2849), (2, 3600, corner, 2849)]);
+        // lo stesso tempo di rottura: niente da aggiornare
+        h.receive(1, &[action(player_action::CONTINUE_DESTROY, ROCK)]);
+        assert!(cracks(&outbox(&mut h.sent)).is_empty());
+        // cambio di strumento a metà: Continue manda l'aggiornamento 3602 con la nuova velocità (ferro: 8 tick -> 8191)
+        h.server.players.get_mut(&1).unwrap().inventory.set_main(0, held("minecraft:iron_pickaxe"));
+        h.receive(1, &[action(player_action::CONTINUE_DESTROY, ROCK)]);
+        assert_eq!(cracks(&outbox(&mut h.sent)), [(1, 3602, corner, 8191), (2, 3602, corner, 8191)]);
+        // abbandono: 3601 senza dato
+        h.receive(1, &[action(player_action::ABORT_BREAK, ROCK)]);
+        assert_eq!(cracks(&outbox(&mut h.sent)), [(1, 3601, corner, 0), (2, 3601, corner, 0)]);
+        // un secondo abbandono non dice niente
+        h.receive(1, &[action(player_action::ABORT_BREAK, ROCK)]);
+        assert!(cracks(&outbox(&mut h.sent)).is_empty());
+    }
+
+    #[test]
+    fn finishing_the_break_stops_the_cracks_before_the_block_goes() {
+        let mut h = setup(GameMode::Survival);
+        h.receive(1, &[action(player_action::START_BREAK, ROCK)]);
+        drop(outbox(&mut h.sent));
+        h.receive(1, &[action(player_action::STOP_BREAK, ROCK)]);
+        let out = outbox(&mut h.sent);
+        let ids: Vec<i32> = events(&out).iter().filter(|e| e.0 == 2).map(|e| e.1).collect();
+        assert_eq!(ids, [3601, 2001], "prima si fermano le crepe, poi l'effetto di rottura");
+        assert_broken(&h);
+    }
+
+    #[test]
+    fn creative_and_instant_breaks_have_no_cracks() {
+        let mut h = setup(GameMode::Creative);
+        h.receive(1, &[action(player_action::START_BREAK, ROCK), action(player_action::CONTINUE_DESTROY, ROCK)]);
+        assert!(cracks(&outbox(&mut h.sent)).is_empty());
+        let mut h = setup(GameMode::Survival); // l'erba bassa ha durezza 0: si rompe in un tick, niente da animare
+        h.server.set_blocks(Dim::Overworld, &[change(ROCK, block_hash("minecraft:short_grass", &[]), false)]);
+        drop(outbox(&mut h.sent));
+        h.receive(1, &[action(player_action::START_BREAK, ROCK)]);
+        assert!(cracks(&outbox(&mut h.sent)).is_empty());
+    }
+
+    #[test]
+    fn cracks_never_start_on_air_out_of_reach_or_bedrock() {
+        let mut h = setup(GameMode::Survival);
+        let sky = [ROCK[0], ROCK[1] + 3, ROCK[2]];
+        h.receive(1, &[action(player_action::START_BREAK, sky)]);
+        h.server.players.get_mut(&1).unwrap().pos = [3.5, 40.0, 4.5];
+        h.receive(1, &[action(player_action::START_BREAK, ROCK)]);
+        assert!(cracks(&outbox(&mut h.sent)).is_empty());
+        let mut h = setup(GameMode::Survival);
+        h.server.set_blocks(Dim::Overworld, &[change(ROCK, block_hash("minecraft:bedrock", &[("infiniburn_bit", State::Byte(0))]), false)]);
+        drop(outbox(&mut h.sent));
+        h.receive(1, &[action(player_action::START_BREAK, ROCK)]);
+        assert!(cracks(&outbox(&mut h.sent)).is_empty());
+    }
+
     #[test]
     fn dead_player_breaks_nothing() {
         let mut h = setup(GameMode::Survival);

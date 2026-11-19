@@ -562,6 +562,7 @@ impl Server {
     /// tornare; Dragonfly lascia ai ganci solo `keepInv`). Dragonfly toglie anche il corpo dopo 1,1 s; qui il client fa da solo la sua
     /// animazione e il corpo sparisce a chi lo guarda alla rinascita.
     pub(crate) fn die(&mut self, pid: u64, cause: DamageCause) {
+        self.stop_crack(pid); // chi muore smette di rompere: le crepe spariscono
         let Some(p) = self.players.get_mut(&pid) else { return };
         p.dead = true;
         p.death_tick = self.tick_count;

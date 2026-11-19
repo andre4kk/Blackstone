@@ -1,0 +1,3109 @@
+{
+ "_license": "Da Dragonfly (MIT, https://github.com/df-mc/dragonfly, 1.26.60) server/block, server/item. Generato da tools/extract_survival.py.",
+ "blocks": {
+  "minecraft:acacia_door": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:acacia_double_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:acacia_leaves": {
+   "hardness": 0.2,
+   "effective": "shears"
+  },
+  "minecraft:acacia_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:acacia_planks": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:acacia_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:acacia_stairs": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:acacia_trapdoor": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:acacia_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:amethyst_block": {
+   "hardness": 1.5,
+   "effective": null
+  },
+  "minecraft:ancient_debris": {
+   "hardness": 30.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:andesite": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:andesite_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:andesite_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:andesite_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:andesite_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:anvil": {
+   "hardness": 5.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:azalea_leaves": {
+   "hardness": 0.2,
+   "effective": "shears"
+  },
+  "minecraft:azalea_leaves_flowered": {
+   "hardness": 0.2,
+   "effective": "shears"
+  },
+  "minecraft:bamboo": {
+   "hardness": 1.0,
+   "effective": "axe"
+  },
+  "minecraft:bamboo_block": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:bamboo_door": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:bamboo_double_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:bamboo_mosaic": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:bamboo_mosaic_double_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:bamboo_mosaic_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:bamboo_mosaic_stairs": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:bamboo_planks": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:bamboo_sapling": {
+   "hardness": 0.0,
+   "effective": "axe"
+  },
+  "minecraft:bamboo_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:bamboo_stairs": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:bamboo_trapdoor": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:barrel": {
+   "hardness": 2.5,
+   "effective": "axe"
+  },
+  "minecraft:basalt": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:beacon": {
+   "hardness": 3.0,
+   "effective": null
+  },
+  "minecraft:bed": {
+   "hardness": 0.2,
+   "effective": null
+  },
+  "minecraft:birch_door": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:birch_double_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:birch_leaves": {
+   "hardness": 0.2,
+   "effective": "shears"
+  },
+  "minecraft:birch_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:birch_planks": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:birch_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:birch_stairs": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:birch_trapdoor": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:birch_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:black_concrete": {
+   "hardness": 1.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:black_concrete_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:black_concrete_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:black_concrete_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:black_glazed_terracotta": {
+   "hardness": 1.4,
+   "effective": "pickaxe"
+  },
+  "minecraft:black_shulker_box": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:black_stained_glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:black_stained_glass_pane": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:black_terracotta": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:black_wool": {
+   "hardness": 0.8,
+   "effective": "shears"
+  },
+  "minecraft:black_wool_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:black_wool_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:black_wool_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:blackstone": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:blackstone_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:blackstone_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:blackstone_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:blackstone_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:blast_furnace": {
+   "hardness": 3.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:blue_concrete": {
+   "hardness": 1.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:blue_concrete_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:blue_concrete_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:blue_concrete_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:blue_glazed_terracotta": {
+   "hardness": 1.4,
+   "effective": "pickaxe"
+  },
+  "minecraft:blue_ice": {
+   "hardness": 2.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:blue_shulker_box": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:blue_stained_glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:blue_stained_glass_pane": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:blue_terracotta": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:blue_wool": {
+   "hardness": 0.8,
+   "effective": "shears"
+  },
+  "minecraft:blue_wool_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:blue_wool_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:blue_wool_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:bone_block": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:bookshelf": {
+   "hardness": 1.5,
+   "effective": "axe"
+  },
+  "minecraft:brain_coral": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:brain_coral_block": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:brewing_stand": {
+   "hardness": 0.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:brick_block": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:brick_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:brick_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:brick_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:brick_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:brown_concrete": {
+   "hardness": 1.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:brown_concrete_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:brown_concrete_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:brown_concrete_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:brown_glazed_terracotta": {
+   "hardness": 1.4,
+   "effective": "pickaxe"
+  },
+  "minecraft:brown_shulker_box": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:brown_stained_glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:brown_stained_glass_pane": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:brown_terracotta": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:brown_wool": {
+   "hardness": 0.8,
+   "effective": "shears"
+  },
+  "minecraft:brown_wool_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:brown_wool_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:brown_wool_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:bubble_coral": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:bubble_coral_block": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:cactus": {
+   "hardness": 0.4,
+   "effective": null
+  },
+  "minecraft:cake": {
+   "hardness": 0.5,
+   "effective": null
+  },
+  "minecraft:calcite": {
+   "hardness": 0.75,
+   "effective": "pickaxe"
+  },
+  "minecraft:campfire": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:candle": {
+   "hardness": 0.1,
+   "effective": null
+  },
+  "minecraft:cherry_door": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:cherry_double_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:cherry_leaves": {
+   "hardness": 0.2,
+   "effective": "shears"
+  },
+  "minecraft:cherry_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:cherry_planks": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:cherry_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:cherry_stairs": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:cherry_trapdoor": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:cherry_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:chest": {
+   "hardness": 2.5,
+   "effective": "axe"
+  },
+  "minecraft:chipped_anvil": {
+   "hardness": 5.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:chiseled_cinnabar": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:chiseled_nether_bricks": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:chiseled_quartz_block": {
+   "hardness": 0.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:chiseled_red_sandstone": {
+   "hardness": 0.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:chiseled_resin_bricks": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:chiseled_sandstone": {
+   "hardness": 0.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:chiseled_stone_bricks": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:chiseled_sulfur": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:chiseled_tuff": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:chiseled_tuff_bricks": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:cinnabar": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:cinnabar_brick_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cinnabar_brick_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cinnabar_brick_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cinnabar_brick_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cinnabar_bricks": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:cinnabar_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cinnabar_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cinnabar_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cinnabar_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:clay": {
+   "hardness": 0.6,
+   "effective": "shovel"
+  },
+  "minecraft:coal_block": {
+   "hardness": 5.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:coal_ore": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:coarse_dirt": {
+   "hardness": 0.5,
+   "effective": "shovel"
+  },
+  "minecraft:cobbled_deepslate": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cobbled_deepslate_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cobbled_deepslate_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cobbled_deepslate_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cobbled_deepslate_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cobblestone": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cobblestone_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cobblestone_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cobblestone_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:composter": {
+   "hardness": 0.6,
+   "effective": "axe"
+  },
+  "minecraft:copper_bars": {
+   "hardness": 5.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:copper_chain": {
+   "hardness": 5.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:copper_door": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:copper_golem_statue": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:copper_grate": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:copper_lantern": {
+   "hardness": 3.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:copper_ore": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:copper_torch": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:copper_trapdoor": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cracked_deepslate_bricks": {
+   "hardness": 3.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:cracked_deepslate_tiles": {
+   "hardness": 3.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:cracked_nether_bricks": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cracked_polished_blackstone_bricks": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:cracked_stone_bricks": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:crafting_table": {
+   "hardness": 2.5,
+   "effective": "axe"
+  },
+  "minecraft:crimson_door": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:crimson_double_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:crimson_hyphae": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:crimson_planks": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:crimson_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:crimson_stairs": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:crimson_stem": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:crimson_trapdoor": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:crying_obsidian": {
+   "hardness": 35.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cut_copper_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cut_copper_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cut_red_sandstone": {
+   "hardness": 0.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:cut_red_sandstone_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cut_red_sandstone_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cut_sandstone": {
+   "hardness": 0.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:cut_sandstone_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cut_sandstone_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cyan_concrete": {
+   "hardness": 1.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:cyan_concrete_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cyan_concrete_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cyan_concrete_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cyan_glazed_terracotta": {
+   "hardness": 1.4,
+   "effective": "pickaxe"
+  },
+  "minecraft:cyan_shulker_box": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cyan_stained_glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:cyan_stained_glass_pane": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:cyan_terracotta": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:cyan_wool": {
+   "hardness": 0.8,
+   "effective": "shears"
+  },
+  "minecraft:cyan_wool_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cyan_wool_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:cyan_wool_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:damaged_anvil": {
+   "hardness": 5.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:dark_oak_door": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:dark_oak_double_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:dark_oak_leaves": {
+   "hardness": 0.2,
+   "effective": "shears"
+  },
+  "minecraft:dark_oak_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:dark_oak_planks": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:dark_oak_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:dark_oak_stairs": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:dark_oak_trapdoor": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:dark_oak_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:dark_prismarine": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:dark_prismarine_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:dark_prismarine_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:dark_prismarine_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:dead_brain_coral": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:dead_bubble_coral": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:dead_fire_coral": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:dead_horn_coral": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:dead_tube_coral": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:deadbush": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:decorated_pot": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:deepslate": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_brick_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_brick_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_brick_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_brick_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_bricks": {
+   "hardness": 3.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_coal_ore": {
+   "hardness": 4.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_copper_ore": {
+   "hardness": 4.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_diamond_ore": {
+   "hardness": 4.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_emerald_ore": {
+   "hardness": 4.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_gold_ore": {
+   "hardness": 4.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_iron_ore": {
+   "hardness": 4.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_lapis_ore": {
+   "hardness": 4.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_redstone_ore": {
+   "hardness": 4.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_tile_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_tile_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_tile_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_tile_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:deepslate_tiles": {
+   "hardness": 3.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:diamond_block": {
+   "hardness": 5.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:diamond_ore": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:diorite": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:diorite_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:diorite_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:diorite_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:diorite_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:dirt": {
+   "hardness": 0.5,
+   "effective": "shovel"
+  },
+  "minecraft:double_cut_copper_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:dragon_egg": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:dripstone_block": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:emerald_block": {
+   "hardness": 5.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:emerald_ore": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:enchanting_table": {
+   "hardness": 5.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:end_brick_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:end_bricks": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:end_rod": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:end_stone": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:end_stone_brick_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:end_stone_brick_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:end_stone_brick_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:ender_chest": {
+   "hardness": 22.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:exposed_cut_copper_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:exposed_cut_copper_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:exposed_double_cut_copper_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:farmland": {
+   "hardness": 0.6,
+   "effective": "shovel"
+  },
+  "minecraft:fern": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:fire_coral": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:fire_coral_block": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:fletching_table": {
+   "hardness": 2.5,
+   "effective": "axe"
+  },
+  "minecraft:furnace": {
+   "hardness": 3.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:gilded_blackstone": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:glass_pane": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:glowstone": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:gold_block": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:gold_ore": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:granite": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:granite_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:granite_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:granite_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:granite_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:grass_block": {
+   "hardness": 0.6,
+   "effective": "shovel"
+  },
+  "minecraft:grass_path": {
+   "hardness": 0.65,
+   "effective": "shovel"
+  },
+  "minecraft:gravel": {
+   "hardness": 0.6,
+   "effective": "shovel"
+  },
+  "minecraft:gray_concrete": {
+   "hardness": 1.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:gray_concrete_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:gray_concrete_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:gray_concrete_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:gray_glazed_terracotta": {
+   "hardness": 1.4,
+   "effective": "pickaxe"
+  },
+  "minecraft:gray_shulker_box": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:gray_stained_glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:gray_stained_glass_pane": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:gray_terracotta": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:gray_wool": {
+   "hardness": 0.8,
+   "effective": "shears"
+  },
+  "minecraft:gray_wool_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:gray_wool_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:gray_wool_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:green_concrete": {
+   "hardness": 1.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:green_concrete_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:green_concrete_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:green_concrete_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:green_glazed_terracotta": {
+   "hardness": 1.4,
+   "effective": "pickaxe"
+  },
+  "minecraft:green_shulker_box": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:green_stained_glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:green_stained_glass_pane": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:green_terracotta": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:green_wool": {
+   "hardness": 0.8,
+   "effective": "shears"
+  },
+  "minecraft:green_wool_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:green_wool_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:green_wool_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:grindstone": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:hardened_clay": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:hopper": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:horn_coral": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:horn_coral_block": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:ice": {
+   "hardness": 0.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:infested_chiseled_stone_bricks": {
+   "hardness": 0.75,
+   "effective": "pickaxe"
+  },
+  "minecraft:infested_cobblestone": {
+   "hardness": 1.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:infested_cracked_stone_bricks": {
+   "hardness": 0.75,
+   "effective": "pickaxe"
+  },
+  "minecraft:infested_deepslate": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:infested_mossy_stone_bricks": {
+   "hardness": 0.75,
+   "effective": "pickaxe"
+  },
+  "minecraft:infested_stone": {
+   "hardness": 0.75,
+   "effective": "pickaxe"
+  },
+  "minecraft:infested_stone_bricks": {
+   "hardness": 0.75,
+   "effective": "pickaxe"
+  },
+  "minecraft:iron_bars": {
+   "hardness": 5.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:iron_block": {
+   "hardness": 5.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:iron_chain": {
+   "hardness": 5.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:iron_ore": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:jukebox": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:jungle_door": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:jungle_double_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:jungle_leaves": {
+   "hardness": 0.2,
+   "effective": "shears"
+  },
+  "minecraft:jungle_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:jungle_planks": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:jungle_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:jungle_stairs": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:jungle_trapdoor": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:jungle_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:kelp": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:ladder": {
+   "hardness": 0.4,
+   "effective": "axe"
+  },
+  "minecraft:lantern": {
+   "hardness": 3.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:lapis_block": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:lapis_ore": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:lectern": {
+   "hardness": 2.5,
+   "effective": "axe"
+  },
+  "minecraft:lever": {
+   "hardness": 0.5,
+   "effective": null
+  },
+  "minecraft:light_blue_concrete": {
+   "hardness": 1.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_blue_concrete_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_blue_concrete_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_blue_concrete_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_blue_glazed_terracotta": {
+   "hardness": 1.4,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_blue_shulker_box": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_blue_stained_glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:light_blue_stained_glass_pane": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:light_blue_terracotta": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_blue_wool": {
+   "hardness": 0.8,
+   "effective": "shears"
+  },
+  "minecraft:light_blue_wool_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_blue_wool_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_blue_wool_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_gray_concrete": {
+   "hardness": 1.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_gray_concrete_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_gray_concrete_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_gray_concrete_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_gray_shulker_box": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_gray_stained_glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:light_gray_stained_glass_pane": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:light_gray_terracotta": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_gray_wool": {
+   "hardness": 0.8,
+   "effective": "shears"
+  },
+  "minecraft:light_gray_wool_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_gray_wool_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:light_gray_wool_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:lime_concrete": {
+   "hardness": 1.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:lime_concrete_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:lime_concrete_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:lime_concrete_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:lime_glazed_terracotta": {
+   "hardness": 1.4,
+   "effective": "pickaxe"
+  },
+  "minecraft:lime_shulker_box": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:lime_stained_glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:lime_stained_glass_pane": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:lime_terracotta": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:lime_wool": {
+   "hardness": 0.8,
+   "effective": "shears"
+  },
+  "minecraft:lime_wool_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:lime_wool_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:lime_wool_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:lit_deepslate_redstone_ore": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:lit_pumpkin": {
+   "hardness": 1.0,
+   "effective": "axe"
+  },
+  "minecraft:lit_redstone_ore": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:loom": {
+   "hardness": 2.5,
+   "effective": "axe"
+  },
+  "minecraft:magenta_concrete": {
+   "hardness": 1.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:magenta_concrete_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:magenta_concrete_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:magenta_concrete_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:magenta_glazed_terracotta": {
+   "hardness": 1.4,
+   "effective": "pickaxe"
+  },
+  "minecraft:magenta_shulker_box": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:magenta_stained_glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:magenta_stained_glass_pane": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:magenta_terracotta": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:magenta_wool": {
+   "hardness": 0.8,
+   "effective": "shears"
+  },
+  "minecraft:magenta_wool_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:magenta_wool_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:magenta_wool_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:magma": {
+   "hardness": 0.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:mangrove_door": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:mangrove_double_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:mangrove_leaves": {
+   "hardness": 0.2,
+   "effective": "shears"
+  },
+  "minecraft:mangrove_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:mangrove_planks": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:mangrove_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:mangrove_stairs": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:mangrove_trapdoor": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:mangrove_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:melon_block": {
+   "hardness": 1.0,
+   "effective": "axe"
+  },
+  "minecraft:moss_carpet": {
+   "hardness": 0.1,
+   "effective": null
+  },
+  "minecraft:mossy_cobblestone": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:mossy_cobblestone_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:mossy_cobblestone_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:mossy_cobblestone_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:mossy_cobblestone_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:mossy_stone_brick_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:mossy_stone_brick_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:mossy_stone_brick_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:mossy_stone_brick_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:mossy_stone_bricks": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:mud": {
+   "hardness": 0.5,
+   "effective": "shovel"
+  },
+  "minecraft:mud_brick_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:mud_brick_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:mud_brick_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:mud_brick_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:mud_bricks": {
+   "hardness": 1.5,
+   "effective": null
+  },
+  "minecraft:muddy_mangrove_roots": {
+   "hardness": 0.7,
+   "effective": "shovel"
+  },
+  "minecraft:mycelium": {
+   "hardness": 0.6,
+   "effective": "shovel"
+  },
+  "minecraft:nether_brick": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:nether_brick_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:nether_brick_fence": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:nether_brick_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:nether_brick_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:nether_brick_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:nether_gold_ore": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:nether_sprouts": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:nether_wart": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:nether_wart_block": {
+   "hardness": 1.0,
+   "effective": "hoe"
+  },
+  "minecraft:netherite_block": {
+   "hardness": 50.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:netherrack": {
+   "hardness": 0.4,
+   "effective": "pickaxe"
+  },
+  "minecraft:normal_stone_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:normal_stone_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:normal_stone_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:oak_double_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:oak_leaves": {
+   "hardness": 0.2,
+   "effective": "shears"
+  },
+  "minecraft:oak_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:oak_planks": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:oak_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:oak_stairs": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:oak_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:obsidian": {
+   "hardness": 35.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:orange_concrete": {
+   "hardness": 1.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:orange_concrete_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:orange_concrete_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:orange_concrete_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:orange_glazed_terracotta": {
+   "hardness": 1.4,
+   "effective": "pickaxe"
+  },
+  "minecraft:orange_poplar_leaves": {
+   "hardness": 0.2,
+   "effective": "shears"
+  },
+  "minecraft:orange_shulker_box": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:orange_stained_glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:orange_stained_glass_pane": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:orange_terracotta": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:orange_wool": {
+   "hardness": 0.8,
+   "effective": "shears"
+  },
+  "minecraft:orange_wool_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:orange_wool_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:orange_wool_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:oxidized_cut_copper_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:oxidized_cut_copper_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:oxidized_double_cut_copper_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:packed_ice": {
+   "hardness": 0.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:packed_mud": {
+   "hardness": 1.0,
+   "effective": null
+  },
+  "minecraft:pale_oak_door": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:pale_oak_double_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:pale_oak_leaves": {
+   "hardness": 0.2,
+   "effective": "shears"
+  },
+  "minecraft:pale_oak_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:pale_oak_planks": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:pale_oak_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:pale_oak_stairs": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:pale_oak_trapdoor": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:pale_oak_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:petrified_oak_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:petrified_oak_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:pink_concrete": {
+   "hardness": 1.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:pink_concrete_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:pink_concrete_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:pink_concrete_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:pink_glazed_terracotta": {
+   "hardness": 1.4,
+   "effective": "pickaxe"
+  },
+  "minecraft:pink_petals": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:pink_shulker_box": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:pink_stained_glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:pink_stained_glass_pane": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:pink_terracotta": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:pink_wool": {
+   "hardness": 0.8,
+   "effective": "shears"
+  },
+  "minecraft:pink_wool_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:pink_wool_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:pink_wool_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:podzol": {
+   "hardness": 0.5,
+   "effective": "shovel"
+  },
+  "minecraft:polished_andesite": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_andesite_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_andesite_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_andesite_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_basalt": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_blackstone": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_blackstone_brick_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_blackstone_brick_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_blackstone_brick_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_blackstone_brick_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_blackstone_bricks": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_blackstone_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_blackstone_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_blackstone_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_blackstone_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_cinnabar": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_cinnabar_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_cinnabar_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_cinnabar_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_cinnabar_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_deepslate": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_deepslate_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_deepslate_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_deepslate_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_deepslate_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_diorite": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_diorite_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_diorite_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_diorite_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_granite": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_granite_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_granite_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_granite_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_sulfur": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_sulfur_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_sulfur_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_sulfur_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_sulfur_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_tuff": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_tuff_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_tuff_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_tuff_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:polished_tuff_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:poplar_door": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:poplar_double_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:poplar_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:poplar_planks": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:poplar_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:poplar_stairs": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:poplar_trapdoor": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:poplar_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:prismarine": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:prismarine_brick_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:prismarine_brick_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:prismarine_bricks": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:prismarine_bricks_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:prismarine_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:prismarine_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:prismarine_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:prismarine_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:pumpkin": {
+   "hardness": 1.0,
+   "effective": "axe"
+  },
+  "minecraft:purple_concrete": {
+   "hardness": 1.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:purple_concrete_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:purple_concrete_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:purple_concrete_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:purple_glazed_terracotta": {
+   "hardness": 1.4,
+   "effective": "pickaxe"
+  },
+  "minecraft:purple_shulker_box": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:purple_stained_glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:purple_stained_glass_pane": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:purple_terracotta": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:purple_wool": {
+   "hardness": 0.8,
+   "effective": "shears"
+  },
+  "minecraft:purple_wool_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:purple_wool_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:purple_wool_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:purpur_block": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:purpur_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:purpur_pillar": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:purpur_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:purpur_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:quartz_bricks": {
+   "hardness": 0.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:quartz_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:quartz_ore": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:quartz_pillar": {
+   "hardness": 0.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:quartz_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:quartz_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:raw_copper_block": {
+   "hardness": 5.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:raw_gold_block": {
+   "hardness": 5.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:raw_iron_block": {
+   "hardness": 5.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_concrete": {
+   "hardness": 1.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_concrete_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_concrete_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_concrete_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_glazed_terracotta": {
+   "hardness": 1.4,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_nether_brick": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_nether_brick_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_nether_brick_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_nether_brick_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_nether_brick_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_poplar_leaves": {
+   "hardness": 0.2,
+   "effective": "shears"
+  },
+  "minecraft:red_sandstone": {
+   "hardness": 0.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_sandstone_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_sandstone_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_sandstone_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_sandstone_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_shrub": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:red_shulker_box": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_stained_glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:red_stained_glass_pane": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:red_terracotta": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_wool": {
+   "hardness": 0.8,
+   "effective": "shears"
+  },
+  "minecraft:red_wool_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_wool_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:red_wool_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:redstone_block": {
+   "hardness": 5.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:redstone_ore": {
+   "hardness": 3.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:redstone_torch": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:redstone_wire": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:reinforced_deepslate": {
+   "hardness": 55.0,
+   "effective": null
+  },
+  "minecraft:resin_brick_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:resin_brick_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:resin_brick_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:resin_brick_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:resin_bricks": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:sand": {
+   "hardness": 0.5,
+   "effective": "shovel"
+  },
+  "minecraft:sandstone": {
+   "hardness": 0.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:sandstone_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:sandstone_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:sandstone_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:sandstone_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:sea_lantern": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:sea_pickle": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:shelf_mushroom": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:short_grass": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:shroomlight": {
+   "hardness": 1.0,
+   "effective": "hoe"
+  },
+  "minecraft:silver_glazed_terracotta": {
+   "hardness": 1.4,
+   "effective": "pickaxe"
+  },
+  "minecraft:slime": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:smithing_table": {
+   "hardness": 2.5,
+   "effective": "axe"
+  },
+  "minecraft:smoker": {
+   "hardness": 3.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:smooth_basalt": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:smooth_quartz": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:smooth_quartz_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:smooth_quartz_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:smooth_quartz_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:smooth_red_sandstone": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:smooth_red_sandstone_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:smooth_red_sandstone_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:smooth_red_sandstone_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:smooth_sandstone": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:smooth_sandstone_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:smooth_sandstone_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:smooth_sandstone_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:smooth_stone": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:smooth_stone_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:smooth_stone_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:snow": {
+   "hardness": 0.2,
+   "effective": "shovel"
+  },
+  "minecraft:soul_lantern": {
+   "hardness": 3.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:soul_sand": {
+   "hardness": 0.5,
+   "effective": "shovel"
+  },
+  "minecraft:soul_soil": {
+   "hardness": 0.5,
+   "effective": "shovel"
+  },
+  "minecraft:sponge": {
+   "hardness": 0.6,
+   "effective": null
+  },
+  "minecraft:spore_blossom": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:spruce_door": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:spruce_double_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:spruce_leaves": {
+   "hardness": 0.2,
+   "effective": "shears"
+  },
+  "minecraft:spruce_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:spruce_planks": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:spruce_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:spruce_stairs": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:spruce_trapdoor": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:spruce_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stone": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:stone_brick_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:stone_brick_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:stone_brick_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:stone_brick_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:stone_bricks": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:stone_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:stonecutter_block": {
+   "hardness": 3.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:straw_bed": {
+   "hardness": 0.2,
+   "effective": "hoe"
+  },
+  "minecraft:stripped_acacia_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_acacia_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_birch_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_birch_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_cherry_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_cherry_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_crimson_hyphae": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_crimson_stem": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_dark_oak_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_dark_oak_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_jungle_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_jungle_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_mangrove_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_mangrove_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_oak_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_oak_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_pale_oak_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_pale_oak_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_poplar_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_poplar_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_spruce_log": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_spruce_wood": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_warped_hyphae": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:stripped_warped_stem": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:sulfur": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:sulfur_brick_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:sulfur_brick_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:sulfur_brick_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:sulfur_brick_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:sulfur_bricks": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:sulfur_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:sulfur_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:sulfur_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:sulfur_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:tall_grass": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:tinted_glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:torch": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:tube_coral": {
+   "hardness": 0.0,
+   "effective": null
+  },
+  "minecraft:tube_coral_block": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:tuff": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:tuff_brick_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:tuff_brick_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:tuff_brick_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:tuff_brick_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:tuff_bricks": {
+   "hardness": 1.5,
+   "effective": "pickaxe"
+  },
+  "minecraft:tuff_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:tuff_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:tuff_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:tuff_wall": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:undyed_shulker_box": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:vine": {
+   "hardness": 0.2,
+   "effective": "axe"
+  },
+  "minecraft:warped_door": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:warped_double_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:warped_hyphae": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:warped_planks": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:warped_slab": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:warped_stairs": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:warped_stem": {
+   "hardness": 2.0,
+   "effective": "axe"
+  },
+  "minecraft:warped_trapdoor": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:waxed_cut_copper_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:waxed_cut_copper_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:waxed_double_cut_copper_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:waxed_exposed_cut_copper_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:waxed_exposed_cut_copper_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:waxed_exposed_double_cut_copper_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:waxed_oxidized_cut_copper_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:waxed_oxidized_cut_copper_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:waxed_oxidized_double_cut_copper_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:waxed_weathered_cut_copper_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:waxed_weathered_cut_copper_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:waxed_weathered_double_cut_copper_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:weathered_cut_copper_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:weathered_cut_copper_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:weathered_double_cut_copper_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:white_concrete": {
+   "hardness": 1.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:white_concrete_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:white_concrete_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:white_concrete_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:white_glazed_terracotta": {
+   "hardness": 1.4,
+   "effective": "pickaxe"
+  },
+  "minecraft:white_shulker_box": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:white_stained_glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:white_stained_glass_pane": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:white_terracotta": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:white_wool": {
+   "hardness": 0.8,
+   "effective": "shears"
+  },
+  "minecraft:white_wool_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:white_wool_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:white_wool_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:wooden_door": {
+   "hardness": 3.0,
+   "effective": "axe"
+  },
+  "minecraft:yellow_concrete": {
+   "hardness": 1.8,
+   "effective": "pickaxe"
+  },
+  "minecraft:yellow_concrete_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:yellow_concrete_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:yellow_concrete_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:yellow_glazed_terracotta": {
+   "hardness": 1.4,
+   "effective": "pickaxe"
+  },
+  "minecraft:yellow_poplar_leaves": {
+   "hardness": 0.2,
+   "effective": "shears"
+  },
+  "minecraft:yellow_shulker_box": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:yellow_stained_glass": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:yellow_stained_glass_pane": {
+   "hardness": 0.3,
+   "effective": null
+  },
+  "minecraft:yellow_terracotta": {
+   "hardness": 1.25,
+   "effective": "pickaxe"
+  },
+  "minecraft:yellow_wool": {
+   "hardness": 0.8,
+   "effective": "shears"
+  },
+  "minecraft:yellow_wool_double_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:yellow_wool_slab": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  },
+  "minecraft:yellow_wool_stairs": {
+   "hardness": 2.0,
+   "effective": "pickaxe"
+  }
+ }
+}

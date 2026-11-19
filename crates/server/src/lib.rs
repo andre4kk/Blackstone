@@ -133,6 +133,9 @@ struct Player {
     skin_logs: u8,
     /// Blocco che il giocatore ha cominciato a rompere (Start/Continue) e non ha ancora rotto né abbandonato.
     breaking: Option<[i32; 3]>,
+    /// Il blocco di cui gli spettatori vedono le crepe e la velocita' mandata (`LevelEvent` 3600/3602, dato `65535 / tick`): solo in
+    /// sopravvivenza e avventura. Serve a mandare l'aggiornamento solo se il tempo di rottura cambia e a fermare le crepe a fine rottura.
+    crack: Option<([i32; 3], u32)>,
     /// Rotazione dall'ultimo `PlayerAuthInput` (gradi): 0 = sud, 90 = ovest, -90 = est, 180 = nord. Serve a orientare i blocchi piazzati.
     yaw: f32,
     pitch: f32,
@@ -204,6 +207,7 @@ impl Default for Player {
             action_logs: 0,
             skin_logs: 0,
             breaking: None,
+            crack: None,
             yaw: 0.0,
             pitch: 0.0,
             sneaking: false,
