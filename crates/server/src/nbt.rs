@@ -1,6 +1,6 @@
 //! NBT minimale di Bedrock, in due codifiche: su disco (little-endian, lunghezze fisse) e di rete (little-endian con varint).
 //! Serve a salvare `level.dat`, le palette dei sotto-chunk e le block entity, e a ricavare l'hash di uno stato di blocco.
-use bedrock_protocol::wire::Writer;
+use blackstone_protocol::wire::Writer;
 
 /// Profondità massima di annidamento accettata in lettura (protegge lo stack da dati malevoli o corrotti).
 const MAX_DEPTH: usize = 32;

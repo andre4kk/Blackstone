@@ -7,8 +7,8 @@ use crate::{
     streaming::chunk_of,
     survival, DataState, GameMode, Player, Server,
 };
-use bedrock_net::{debug, log, warn};
-use bedrock_protocol::{
+use blackstone_net::{debug, log, warn};
+use blackstone_protocol::{
     generated::{
         enums::{self, container_enum_name},
         AttributeData, AvailableActorIdentifiers, BlockPos, ChunkRadiusUpdated, CreativeContent, CreativeGroupInfoPayload, CreativeItemEntryPayload,
@@ -377,7 +377,7 @@ impl Server {
         let attributes = self.players.get(&pid).map(|p| spawn_attributes(pid, p).packet());
         packets.extend(attributes);
         if !skip("metadata") {
-            packets.push(bedrock_protocol::actor::set_actor_data(pid, &self.entity_data(pid)));
+            packets.push(blackstone_protocol::actor::set_actor_data(pid, &self.entity_data(pid)));
             // gravità, collisioni, arrampicata: senza, il giocatore non cade
         }
         self.send(pid, &packets);

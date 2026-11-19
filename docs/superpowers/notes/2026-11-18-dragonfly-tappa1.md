@@ -1,4 +1,4 @@
-# Dragonfly -> VersMCBE: note tappa 1 (piazzamento, rottura, creativo)
+# Dragonfly -> Blackstone: note tappa 1 (piazzamento, rottura, creativo)
 
 Fonte: `vendor/dragonfly` (gitignored), MIT (LICENSE verificata: "MIT License, Copyright (c) 2019 Dragonfly Tech").
 Percorsi sotto: `B/` = `vendor/dragonfly/server/block/`, `P/` = `server/player/player.go`, `S/` = `server/session/`.

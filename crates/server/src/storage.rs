@@ -15,7 +15,7 @@ use crate::{
     registry,
     world::{bits_for_palette, block_hash, block_nbt, pack_words, Chunk, State, BIT_WIDTHS, PLAINS},
 };
-use bedrock_net::warn;
+use blackstone_net::warn;
 use rusty_leveldb::{Compressor, CompressorId, CompressorList, Options, Status, StatusCode, WriteBatch, DB};
 use std::{
     collections::{HashMap, HashSet},
@@ -397,13 +397,13 @@ impl World {
 
     fn new_level(name: &str, seed: u64) -> Tag {
         // versione del client come lista di 5 interi, da "1.26.63"
-        let mut version: Vec<i32> = bedrock_protocol::VERSION.split('.').filter_map(|p| p.parse().ok()).collect();
+        let mut version: Vec<i32> = blackstone_protocol::VERSION.split('.').filter_map(|p| p.parse().ok()).collect();
         version.resize(5, 0);
         Tag::Compound(vec![
             ("LevelName".into(), Tag::String(name.into())),
             ("RandomSeed".into(), Tag::Long(seed as i64)),
             ("StorageVersion".into(), Tag::Int(STORAGE_VERSION as i32)),
-            ("NetworkVersion".into(), Tag::Int(bedrock_protocol::PROTOCOL as i32)),
+            ("NetworkVersion".into(), Tag::Int(blackstone_protocol::PROTOCOL as i32)),
             ("Generator".into(), Tag::Int(1)), // infinito
             ("GameType".into(), Tag::Int(0)),
             ("Difficulty".into(), Tag::Int(2)),
@@ -791,7 +791,7 @@ mod tests {
     impl TempDir {
         fn new(name: &str) -> Self {
             static N: AtomicU32 = AtomicU32::new(0);
-            let dir = std::env::temp_dir().join(format!("versmc-test-{name}-{}-{}", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
+            let dir = std::env::temp_dir().join(format!("blackstone-test-{name}-{}-{}", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
             let _ = fs::remove_dir_all(&dir);
             fs::create_dir_all(&dir).unwrap();
             TempDir(dir)

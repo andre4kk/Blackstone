@@ -1,6 +1,6 @@
 # Protocollo tappa 2: pacchetti delle entità
 
-Protocollo 2225. Fonte dei byte: schemi Mojang `vendor/bedrock-protocol-docs/json` (tag v1.26.65), indice `x-ordinal-index`.
+Protocollo 2225. Fonte dei byte: schemi Mojang `vendor/blackstone-protocol-docs/json` (tag v1.26.65), indice `x-ordinal-index`.
 Regole di codifica: `2026-11-18-protocollo-tappa1.md` §1 (interi fissi LE, `Compression` = varint/zigzag, opzionali = 1 byte di presenza,
 array = contatore varuint32). Codice: `crates/protocol/src/entity.rs` (a mano) e `generated.rs` (generato).
 
@@ -158,7 +158,7 @@ perche' la skin era disallineata: il commit c950c80 (PieceType come stringa) cur
 | TakeItemActor (17) | oggetto poi chi raccoglie | stesso | uguale |
 | SetActorMotion (40) | runtime id, vec3, tick varuint64 | stesso | uguale |
 | SetActorData (39) | runtime id, dati, 0 + 0 proprieta', tick varuint64 | stesso | uguale |
-| Animate (44) | generato: origine `Option<u8>`, mano `Option<u8>` (1 byte di presenza + valore) | origine `Optional[string]` (nomi "build", "mine", "attack"...), mano `u8` **sempre presente** | corretto: scritto a mano (`entity::animate`). Con origine e mano assenti i byte erano gia' uguali (`animate_swing` non cambia). Il tipo generato `Animate` resta in `generated.rs` finche' non si rigenera (manca `../bedrock-protocol-docs`); tolto dall'elenco del README |
+| Animate (44) | generato: origine `Option<u8>`, mano `Option<u8>` (1 byte di presenza + valore) | origine `Optional[string]` (nomi "build", "mine", "attack"...), mano `u8` **sempre presente** | corretto: scritto a mano (`entity::animate`). Con origine e mano assenti i byte erano gia' uguali (`animate_swing` non cambia). Il tipo generato `Animate` resta in `generated.rs` finche' non si rigenera (manca `../blackstone-protocol-docs`); tolto dall'elenco del README |
 | Animate dal client | azione u8 + runtime id | stesso, poi dati f32, origine, mano (ignorati) | uguale |
 | MobEquipment (31) | runtime id, oggetto, slot, slot barra, finestra (u8 x3) | stesso | uguale; test aggiunto |
 | MobArmorEquipment (32) | runtime id, 4 pezzi + corpo (vuoto) | stesso | uguale |

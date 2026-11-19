@@ -1,5 +1,5 @@
 [package]
-name = "bedrock-protocol"
+name = "blackstone-protocol"
 version.workspace = true
 edition.workspace = true
 

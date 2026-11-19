@@ -12,8 +12,8 @@ use crate::{
     survival::{MAX_FOOD, MAX_HEALTH, MAX_SATURATION, START_SATURATION},
     DataState, GameMode, Player,
 };
-use bedrock_net::warn;
-use bedrock_protocol::login::PlayerInfo;
+use blackstone_net::warn;
+use blackstone_protocol::login::PlayerInfo;
 
 /// Quanto gli occhi stanno sopra i piedi.
 pub(crate) const EYE_HEIGHT: f32 = 1.62;
@@ -250,8 +250,8 @@ mod tests {
         storage::World,
         Player, Server,
     };
-    use bedrock_net::{Command, Sender};
-    use bedrock_protocol::{generated::StartGame, reader::Reader, wire::ServerPacket, Packet, Session};
+    use blackstone_net::{Command, Sender};
+    use blackstone_protocol::{generated::StartGame, reader::Reader, wire::ServerPacket, Packet, Session};
     use std::path::{Path, PathBuf};
     use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 
@@ -260,7 +260,7 @@ mod tests {
 
     impl TempDir {
         fn new(name: &str) -> Self {
-            let dir = std::env::temp_dir().join(format!("versmc-test-pd-{name}-{}", std::process::id()));
+            let dir = std::env::temp_dir().join(format!("blackstone-test-pd-{name}-{}", std::process::id()));
             let _ = std::fs::remove_dir_all(&dir);
             TempDir(dir)
         }
@@ -285,7 +285,7 @@ mod tests {
             game_version: None,
             authentication_type: None,
             token_claim_keys: Vec::new(),
-            skin: bedrock_protocol::skin::Skin::fallback(),
+            skin: blackstone_protocol::skin::Skin::fallback(),
         }
     }
 
@@ -624,8 +624,8 @@ mod tests {
         let chain = serde_json::json!({"chain": [jwt(serde_json::json!({"extraData": extra}))]});
         let identity = serde_json::json!({"AuthenticationType": 0, "Certificate": chain.to_string(), "Token": ""}).to_string();
         let client_data = jwt(serde_json::json!({}));
-        let login = bedrock_protocol::packets::Login { protocol: bedrock_protocol::PROTOCOL as i32, identity: &identity, client_data: &client_data };
-        Packet::new(bedrock_protocol::id::LOGIN, login.encode())
+        let login = blackstone_protocol::packets::Login { protocol: blackstone_protocol::PROTOCOL as i32, identity: &identity, client_data: &client_data };
+        Packet::new(blackstone_protocol::id::LOGIN, login.encode())
     }
 
     impl Rig {
@@ -663,7 +663,7 @@ mod tests {
         // la stessa persona rientra mentre la vecchia connessione è ancora aperta
         rig.connect(2, "Alice", Some("2535"));
         let (packets, kicks) = rig.traffic();
-        assert!(packets.contains(&(1, bedrock_protocol::id::DISCONNECT)), "la vecchia sessione riceve un Disconnect");
+        assert!(packets.contains(&(1, blackstone_protocol::id::DISCONNECT)), "la vecchia sessione riceve un Disconnect");
         assert_eq!(kicks, vec![1], "e la sua connessione si chiude");
         assert!(!rig.server.players.contains_key(&1), "tolta dalla chiusura normale");
 
@@ -695,7 +695,7 @@ mod tests {
         rig.connect(4, "Carol", None);
         let (packets, kicks) = rig.traffic();
         assert!(kicks.is_empty());
-        assert!(packets.iter().all(|&(_, id)| id != bedrock_protocol::id::DISCONNECT));
+        assert!(packets.iter().all(|&(_, id)| id != blackstone_protocol::id::DISCONNECT));
         assert_eq!(rig.server.players.len(), 4);
         // due senza XUID e con lo stesso nome sono la stessa identità
         rig.connect(5, "Carol", None);

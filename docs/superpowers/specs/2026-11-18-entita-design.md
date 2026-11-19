@@ -1,11 +1,11 @@
 # Tappa 2 "entità e giocatori": design
 
 Data: 18/11/2026. Catalogo e risposte: `docs/brainstorm/catalogo-entita.html`, `docs/brainstorm/stato-entita.md`.
-Riferimenti: Dragonfly 1.26.60 (`vendor/dragonfly`, MIT), schemi Mojang `vendor/bedrock-protocol-docs` (tag v1.26.65, protocollo 2225).
+Riferimenti: Dragonfly 1.26.60 (`vendor/dragonfly`, MIT), schemi Mojang `vendor/blackstone-protocol-docs` (tag v1.26.65, protocollo 2225).
 
 ## Perché
 
-VersMCBE oggi è un mondo per giocatore singolo anche con più persone collegate: nessuno vede gli altri. La sopravvivenza
+Blackstone oggi è un mondo per giocatore singolo anche con più persone collegate: nessuno vede gli altri. La sopravvivenza
 (tappa successiva) ha bisogno degli oggetti a terra, che sono entità. Questa tappa costruisce la base comune: un nucleo
 delle entità, gli altri giocatori visibili e il primo tipo di entità non giocatore (oggetto a terra), in modo che la
 sopravvivenza trovi tutto pronto e provato e che l'API dei plugin, più avanti, abbia un modello di entità semplice da esporre.

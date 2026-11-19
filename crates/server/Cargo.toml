@@ -1,15 +1,15 @@
 [package]
-name = "bedrock-server"
+name = "blackstone-server"
 version.workspace = true
 edition.workspace = true
 
 [[bin]]
-name = "bedrock-server"
+name = "blackstone"
 path = "src/main.rs"
 
 [dependencies]
-bedrock-protocol.workspace = true
-bedrock-net.workspace = true
+blackstone-protocol.workspace = true
+blackstone-net.workspace = true
 tokio.workspace = true
 vgen.workspace = true
 rusty-leveldb.workspace = true

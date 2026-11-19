@@ -2,10 +2,10 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Nel mondo di VersMCBE si costruisce davvero in creativo: menu creativo pieno, rompere e piazzare decisi e
+**Goal:** Nel mondo di Blackstone si costruisce davvero in creativo: menu creativo pieno, rompere e piazzare decisi e
 controllati dal server (con l'orientamento giusto), porte/botole/cancelletti/leve/pulsanti, giocatore salvato, `/gamemode`.
 
-**Architecture:** Il server (crate `bedrock-server`, ciclo unico a 20 tick in `lib.rs`) riceve le azioni del client
+**Architecture:** Il server (crate `blackstone-server`, ciclo unico a 20 tick in `lib.rs`) riceve le azioni del client
 (`PlayerAction`, `PlayerAuthInput`, `InventoryTransaction`, `ItemStackRequest`), le valida, le fa passare da un punto a
 eventi annullabili e cambia i chunk in memoria, mandando `UpdateBlock` a chi vede il chunk. Blocchi e oggetti vengono da
 un registro caricato da dati estratti (Dragonfly 1.26.60). Le regole di piazzamento sono tabelle per stato + eccezioni per
@@ -23,7 +23,7 @@ famiglia + casi speciali tradotti da Dragonfly.
 ## Global Constraints
 
 - Server MIT in `crates/`; il generatore (`generator/`, AGPL) non si tocca.
-- Protocollo 2225 (client 1.26.6x). Schemi Mojang in `vendor/bedrock-protocol-docs` (tag v1.26.65, gitignored, EULA: non
+- Protocollo 2225 (client 1.26.6x). Schemi Mojang in `vendor/blackstone-protocol-docs` (tag v1.26.65, gitignored, EULA: non
   copiarne il contenuto in file tracciati). Dragonfly in `vendor/dragonfly` (commit `0f9a3a5736267db60bf46e92d408f81be1de9a64`, MIT).
 - ID di rete dei blocchi = hash FNV-1a dell'NBT LE `{name, states}` (`world::block_hash`); `minecraft:air` = -604749536.
 - ID degli oggetti solo da `crates/server/data/items.txt`; mai da `required_item_list.json` di BedrockData (sfasato).
@@ -107,7 +107,7 @@ Leggere DT§2-4, D§8.1, `tools/extract_biomes.py` (stile degli script).
 - [ ] **Step 5: Palette di ripiego nel salvataggio.** In `storage.rs` quando un hash non è nella palette ricevuta dal
   generatore si usa `registry::blocks().state(hash).nbt()`. Test `save_and_load_block_not_in_generator_palette`: un
   chunk con `minecraft:oak_stairs` (stato non predefinito) salvato senza palette del generatore si rilegge uguale.
-- [ ] **Step 6:** `cargo test -p bedrock-server` verde; commit `feat(server): registro di blocchi, oggetti e menu creativo (dati Dragonfly 1.26.60)`.
+- [ ] **Step 6:** `cargo test -p blackstone-server` verde; commit `feat(server): registro di blocchi, oggetti e menu creativo (dati Dragonfly 1.26.60)`.
 
 ### Task 2: Codec del protocollo: oggetti, pacchetti nuovi, correzioni del generatore
 
@@ -137,10 +137,10 @@ Leggere P§1, P§2, P§5.4, P§6, P§7.
   `decode_rejects_truncated`. In `generated.rs`/test del protocollo: `creative_category_is_one_byte` (un gruppo con
   categoria 1 e nome "a" codifica la categoria come singolo byte `01`), `item_stack_response_result_is_one_byte`.
 - [ ] **Step 2: Correggere `protocolgen.py`** e rigenerare i pacchetti elencati (comando in testa allo script, schemi in
-  `vendor/bedrock-protocol-docs/json`). Per `NetworkItemStackDescriptor` il generatore può usare `item::ItemStack` come
+  `vendor/blackstone-protocol-docs/json`). Per `NetworkItemStackDescriptor` il generatore può usare `item::ItemStack` come
   tipo esterno.
 - [ ] **Step 3: Implementare `reader.rs` e `item.rs`**; i test di Step 1 e quelli esistenti passano.
-- [ ] **Step 4:** `cargo test -p bedrock-protocol` verde; commit `feat(protocol): ItemStack, Reader e pacchetti di inventario e blocchi`.
+- [ ] **Step 4:** `cargo test -p blackstone-protocol` verde; commit `feat(protocol): ItemStack, Reader e pacchetti di inventario e blocchi`.
 
 ### Task 3: Decoder client→server: input, transazioni, richieste di inventario
 
@@ -174,7 +174,7 @@ Leggere P§3, P§4, P§5.1-5.2, P§7 (PlayerAction, MobEquipment).
   - `truncated_bodies_return_none`: ogni prefisso dei corpi sopra restituisce `None` senza panico.
   - `item_stack_request_with_zero_actions_is_empty`: richiesta con 0 azioni → `actions` vuoto (**Review Focus 1**).
 - [ ] **Step 2: Implementare `input.rs`** secondo P§3-5 (presenza opzionali a 1 byte; flag = lista di id varint).
-- [ ] **Step 3:** `cargo test -p bedrock-protocol` verde; commit `feat(protocol): decoder di input, transazioni e richieste di inventario`.
+- [ ] **Step 3:** `cargo test -p blackstone-protocol` verde; commit `feat(protocol): decoder di input, transazioni e richieste di inventario`.
 
 ### Task 4: Inventario, menu creativo e modalità di gioco al login
 

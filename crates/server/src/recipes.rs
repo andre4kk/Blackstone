@@ -9,8 +9,8 @@
 //! Corrispondenza di un oggetto con un ingrediente (`Ingredient::matches`): per nome e variante, dove la variante 32767
 //! accetta qualunque valore ausiliario; un tag accetta gli oggetti elencati in `Recipes::tag_contains`.
 use crate::registry::{self, state_value, BlockState};
-use bedrock_protocol::crafting::{CraftingData, Descriptor, Ingredient as WireIngredient, RecipeOutput, ShapedRecipe, ShapelessRecipe};
-use bedrock_protocol::{wire::ServerPacket, Packet};
+use blackstone_protocol::crafting::{CraftingData, Descriptor, Ingredient as WireIngredient, RecipeOutput, ShapedRecipe, ShapelessRecipe};
+use blackstone_protocol::{wire::ServerPacket, Packet};
 use serde::Deserialize;
 use std::{collections::HashMap, sync::OnceLock};
 
@@ -222,13 +222,13 @@ fn wire_output(o: &Output) -> RecipeOutput {
 }
 
 /// Il pacchetto `CraftingData` con tutte le ricette (uguale per tutti): come Dragonfly lo manda subito dopo il menu creativo,
-/// con `ClearRecipes` vero. L'ID di ricetta (testo) è `versmcbe:<ID di rete>`, unico.
+/// con `ClearRecipes` vero. L'ID di ricetta (testo) è `blackstone:<ID di rete>`, unico.
 pub(crate) fn crafting_data_packet() -> &'static Packet {
     static PACKET: OnceLock<Packet> = OnceLock::new();
     PACKET.get_or_init(|| {
         let mut data = CraftingData { clear_recipes: true, ..Default::default() };
         for r in recipes().all() {
-            let recipe_id = format!("versmcbe:{}", r.id);
+            let recipe_id = format!("blackstone:{}", r.id);
             let input: Vec<_> = r.input.iter().map(wire_input).collect();
             let output: Vec<_> = r.output.iter().map(wire_output).collect();
             match r.shape {
@@ -336,7 +336,7 @@ mod tests {
         let shaped = recipes().all().iter().filter(|r| matches!(r.shape, Shape::Shaped { .. })).count();
         let shapeless = recipes().all().len() - shaped;
         // la prima lista del pacchetto è quella delle ricette shaped
-        let mut r = bedrock_protocol::reader::Reader(&p.body);
+        let mut r = blackstone_protocol::reader::Reader(&p.body);
         assert_eq!(r.var_u32(), Some(shaped as u32));
         assert!(p.body.len() > shaped + shapeless);
     }

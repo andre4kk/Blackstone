@@ -1,21 +1,21 @@
-# bedrock-server
+# Blackstone
 
 Server Minecraft Bedrock in Rust, su trasporto NetherNet (WebRTC), quello usato dalle versioni 26.60+.
-Il mondo è un Overworld infinito, generato da un processo separato (`versmc-gen`, basato su SteelMC) con le stesse regole di
+Il mondo è un Overworld infinito, generato da un processo separato (`blackstone-gen`, basato su SteelMC) con le stesse regole di
 Java 26.3, e salvato su disco nel formato LevelDB di Bedrock.
 
 ## Architettura
 
 ```
 crates/
-  protocol/  bedrock-protocol  Pacchetti, batch, compressione, lettura del login. Nessun I/O: solo byte <-> struct.
+  protocol/  blackstone-protocol  Pacchetti, batch, compressione, lettura del login. Nessun I/O: solo byte <-> struct.
                                Qui vivono le costanti di versione (PROTOCOL, VERSION).
-  net/       bedrock-net       Trasporto: signaling HTTP, identità, WebRTC. Espone Event::{Open,Message,Close} e
+  net/       blackstone-net       Trasporto: signaling HTTP, identità, WebRTC. Espone Event::{Open,Message,Close} e
                                Sender::{send,kick}. Non sa cosa c'è nei messaggi.
-  server/    bedrock-server    Logica di gioco: un handler per pacchetto (handlers.rs). Contiene l'eseguibile.
+  server/    blackstone-server (eseguibile `blackstone`)Logica di gioco: un handler per pacchetto (handlers.rs). Contiene l'eseguibile.
   vgen/      vgen              Protocollo locale (TCP, solo std) tra il server e il generatore: Hello, palette dei blocchi,
                                Generate (chunk), Spawn. Licenza MIT: lo usano entrambi i lati.
-generator/                      `versmc-gen`: processo che genera i chunk (SteelMC) e li traduce in blocchi e biomi Bedrock.
+generator/                      `blackstone-gen`: processo che genera i chunk (SteelMC) e li traduce in blocchi e biomi Bedrock.
                                Workspace Cargo separato, toolchain nightly, licenza AGPL-3.0-or-later (vedi "Licenze").
 ```
 
@@ -35,12 +35,12 @@ Generatore (cartella `generator/`, Rust nightly scelto da `rust-toolchain.toml`:
 
 ```
 cd generator
-cargo build --release     # produce generator/target/release/versmc-gen(.exe)
+cargo build --release     # produce generator/target/release/blackstone-gen(.exe)
 ```
 
 - La prima compilazione richiede Internet: la build di Steel scarica da Mojang il jar del server Java 26.3 per estrarne i dati.
 - Una compilazione release da zero richiede circa 12 minuti (LTO); le successive sono molto più rapide.
-- Il server cerca il generatore dove dice `generator` in `server.toml` (default `generator/target/release/versmc-gen`, su Windows
+- Il server cerca il generatore dove dice `generator` in `server.toml` (default `generator/target/release/blackstone-gen`, su Windows
   con `.exe`). Se non lo trova scrive l'errore nel log e usa un mondo piatto di ripiego, senza salvarlo.
 - Compilare il generatore NON serve per `cargo test --workspace` alla radice (usa un generatore finto); si prova a parte con
   `cargo test` dentro `generator/`.
@@ -53,12 +53,12 @@ Va nella cartella da cui si avvia il server. Se manca viene scritto con i valori
 |---|---|---|
 | `world` | `"Mondo"` | Nome del mondo; i dati stanno in `worlds/<world>` (LevelDB di Bedrock + `level.dat`). |
 | `seed` | casuale | Seme, usato solo quando il mondo viene creato (poi vale quello salvato in `level.dat`). Massimo 9223372036854775807. |
-| `generator` | `generator/target/release/versmc-gen` | Programma del generatore (`.exe` aggiunto da solo su Windows). |
+| `generator` | `generator/target/release/blackstone-gen` | Programma del generatore (`.exe` aggiunto da solo su Windows). |
 | `view_distance` | `6` | Raggio di chunk inviato a ogni giocatore (1-32). |
 | `port` | `19132` | Porta TCP (signaling) e UDP (gioco). |
 | `keep_inventory` | `false` | Se `true`, chi muore tiene l'inventario (niente oggetti a terra). |
 | `pvp` | `true` | Se `false`, i giocatori non si fanno danno tra loro (i bot si colpiscono comunque). |
-| `log_level` | `"info"` | Quanto parla la console: `warn`, `info` (ingressi, chat, comandi, morti) o `debug` (dettagli di rete e pacchetti). `VERSMC_LOG` ha la precedenza. |
+| `log_level` | `"info"` | Quanto parla la console: `warn`, `info` (ingressi, chat, comandi, morti) o `debug` (dettagli di rete e pacchetti). `BLACKSTONE_LOG` ha la precedenza (si legge ancora anche il vecchio `VERSMC_LOG`). |
 
 Un `server.toml` non valido viene segnalato nel log e il server parte con i valori di default senza modificarlo.
 
@@ -92,7 +92,7 @@ La sequenza segue quella dei server di riferimento (gophertunnel / Dragonfly).
   (`NetworkChunkPublisherUpdate`) e il server manda i chunk mancanti (al massimo 8 per giocatore per tick, dal più vicino).
   I chunk lontani da tutti i giocatori (raggio + 2) si scaricano dalla memoria, salvandoli se modificati.
 - Mondo: `worlds/<world>` in formato LevelDB di Bedrock. I chunk si leggono dal disco (senza bloccare il tick) e, se
-  mancano, si chiedono al generatore `versmc-gen` (processo avviato dal server, vedi `server.toml`); quelli generati si salvano.
+  mancano, si chiedono al generatore `blackstone-gen` (processo avviato dal server, vedi `server.toml`); quelli generati si salvano.
   Il seme è quello salvato nel mondo; `seed` in `server.toml` vale solo alla creazione.
 - Se il generatore manca (programma non trovato) il server lo scrive nel log e usa il mondo piatto di ripiego
   (bedrock a y=-64, terra a -63/-62, erba a -61, spawn in 0,-60,0), senza salvare quei chunk.
@@ -121,8 +121,8 @@ Gli ID di rete dei blocchi sono hash FNV-1a dello stato (`crates/server/src/worl
 `crates/protocol/src/generated.rs` è generato dagli schemi JSON di Mojang: **non modificarlo a mano**.
 
 ```
-git clone --depth 1 --branch v1.26.61 https://github.com/Mojang/bedrock-protocol-docs ../bedrock-protocol-docs
-python tools/protocolgen.py ../bedrock-protocol-docs/json crates/protocol/src/generated.rs \
+git clone --depth 1 --branch v1.26.61 https://github.com/Mojang/blackstone-protocol-docs ../blackstone-protocol-docs
+python tools/protocolgen.py ../blackstone-protocol-docs/json crates/protocol/src/generated.rs \
     StartGame ItemRegistry LevelChunk ChunkRadiusUpdated NetworkChunkPublisherUpdate BiomeDefinitionList \
     AvailableActorIdentifiers CreativeContent VoxelShapes JigsawStructureData InventoryContent InventorySlot \
     MobEquipment PlayerHotbar UpdateBlock SetPlayerGameType UpdatePlayerGameType UpdateAbilities LevelEvent \
@@ -173,7 +173,7 @@ Variabili d'ambiente (PowerShell: `$env:NO_CHUNKS="1"; cargo run`, poi `Remove-I
 - `NO_CHUNKS=1`: dopo PlayerSpawn non invia nessun chunk (serve a capire se i chunk causano la disconnessione).
 - `CHUNKS_EARLY=1`: manda biomi e chunk subito dopo PlayerSpawn, senza aspettare `SetLocalPlayerAsInitialized`.
 - `SKIP=jigsaw,voxel,items,creative,publisher`: non invia i pacchetti elencati (si possono combinare).
-- `VERSMC_DEBUG=nozero,nowater,plains,nobe`: altera o disattiva parti dei chunk (`plains` forza il bioma pianura) per isolare cosa rifiuta il client.
+- `BLACKSTONE_DEBUG=nozero,nowater,plains,nobe`: altera o disattiva parti dei chunk (`plains` forza il bioma pianura) per isolare cosa rifiuta il client.
 - `SEND=biomes`: invia la lista biomi (spenta di default: il client l'ha rifiutata).
 - `SEND=actors`: invia anche `AvailableActorIdentifiers`, spento di default perché con i dati minimi che inventiamo
   (nessuna entità) il client crolla.
@@ -196,7 +196,7 @@ Per giocare da Internet: `$env:PUBLIC_IP="il.tuo.ip"` (PowerShell) e apri TCP+UD
 
 ## Aggiornare a una nuova versione del gioco
 
-1. Cerca la release su github.com/Mojang/bedrock-protocol-docs e leggi "Network protocol version".
+1. Cerca la release su github.com/Mojang/blackstone-protocol-docs e leggi "Network protocol version".
 2. Aggiorna `PROTOCOL` e `VERSION` in `crates/protocol/src/lib.rs`.
 3. Controlla i pacchetti cambiati (gli schemi JSON del repository) e aggiorna `packets.rs`.
 4. `cargo test --workspace`.
@@ -221,7 +221,7 @@ Per giocare da Internet: `$env:PUBLIC_IP="il.tuo.ip"` (PowerShell) e apri TCP+UD
 
 - Server e crate della radice (`crates/*`, compreso `vgen`): MIT (`LICENSE`).
 - Generatore (`generator/`): AGPL-3.0-or-later (`generator/LICENSE`), perché usa SteelMC (AGPL-3.0). Il server lo avvia come
-  programma separato e ci parla via TCP: non lo include. Se distribuisci il binario `versmc-gen` valgono le condizioni dell'AGPL.
+  programma separato e ci parla via TCP: non lo include. Se distribuisci il binario `blackstone-gen` valgono le condizioni dell'AGPL.
 - `generator/data/geyser/` (tabelle di mappatura dei blocchi e dei biomi): GeyserMC/mappings, MIT (`generator/data/geyser/LICENSE`).
 - `crates/server/data/biomes.json`: da pmmp/BedrockData, CC0.
-- Dati e schemi di Mojang (jar del server Java, bedrock-protocol-docs, bedrock-samples): soggetti all'EULA di Minecraft.
+- Dati e schemi di Mojang (jar del server Java, blackstone-protocol-docs, bedrock-samples): soggetti all'EULA di Minecraft.

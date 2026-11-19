@@ -1,7 +1,7 @@
 //! Test della logica di gioco senza rete: i pacchetti inviati si leggono dal `Sender` di prova.
 use crate::{registry, GameMode, Player, Server};
-use bedrock_net::{Command, Sender};
-use bedrock_protocol::{
+use blackstone_net::{Command, Sender};
+use blackstone_protocol::{
     generated::{
         ContainerClose, ContainerOpen, CreativeContent, InventoryContent, MobEquipment, PlayerHotbar, SetPlayerGameType, StartGame, UpdateAbilities,
         UpdateAttributes,
@@ -157,7 +157,7 @@ fn flush_on_shutdown_writes_dirty_chunks() {
     use crate::{storage::World, world::Chunk};
     use vgen::Dim;
 
-    let dir = std::env::temp_dir().join(format!("versmc-test-shutdown-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("blackstone-test-shutdown-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     let (sender, _sent) = Sender::for_tests();
     let (events, _events) = tokio::sync::mpsc::unbounded_channel();
@@ -276,7 +276,7 @@ fn join_sends_the_available_commands_once() {
     let packets = h.packets_to(1);
     let sent: Vec<&Packet> = packets.iter().filter(|p| p.id == 76).collect();
     assert_eq!(sent.len(), 1);
-    assert_eq!(sent[0].body, bedrock_protocol::wire::Encode::to_bytes(&crate::chat::available_commands()));
+    assert_eq!(sent[0].body, blackstone_protocol::wire::Encode::to_bytes(&crate::chat::available_commands()));
 }
 
 #[test]
@@ -536,14 +536,14 @@ fn the_player_gets_speed_health_and_hunger_on_spawn() {
 fn the_player_gets_its_actor_data_with_gravity_on_spawn() {
     let mut h = Harness::new();
     h.join(1, "Alice");
-    let data: Vec<Packet> = h.packets_to(1).into_iter().filter(|p| p.id == bedrock_protocol::actor::SET_ACTOR_DATA).collect();
+    let data: Vec<Packet> = h.packets_to(1).into_iter().filter(|p| p.id == blackstone_protocol::actor::SET_ACTOR_DATA).collect();
     assert_eq!(data.len(), 1, "senza i dati dell'entità il client non applica la gravità al giocatore");
-    assert_eq!(data[0].body, bedrock_protocol::actor::set_actor_data(1, &h.server.entity_data(1)).body);
+    assert_eq!(data[0].body, blackstone_protocol::actor::set_actor_data(1, &h.server.entity_data(1)).body);
     let flags = h.server.entity_data(1).into_iter().find_map(|(k, v)| match v {
-        bedrock_protocol::actor::DataValue::Int64(f) if k == bedrock_protocol::actor::key::FLAGS => Some(f),
+        blackstone_protocol::actor::DataValue::Int64(f) if k == blackstone_protocol::actor::key::FLAGS => Some(f),
         _ => None,
     });
-    let gravity = 1i64 << bedrock_protocol::actor::flag::HAS_GRAVITY;
+    let gravity = 1i64 << blackstone_protocol::actor::flag::HAS_GRAVITY;
     assert_eq!(flags.unwrap() & gravity, gravity, "gravità accesa");
 }
 
@@ -573,9 +573,9 @@ fn pai_with_flag(input_flag: i32) -> Vec<u8> {
 
 /// Il corpo di `UpdateAbilities` che il server manda a `pid` per la modalità e lo stato di volo.
 fn abilities_body(pid: u64, mode: GameMode, flying: bool) -> Vec<u8> {
-    let data = bedrock_protocol::generated::SerializedAbilitiesData {
+    let data = blackstone_protocol::generated::SerializedAbilitiesData {
         target_player_raw_id: pid as i64,
-        player_permissions: bedrock_protocol::generated::enums::player_permission_level::MEMBER,
+        player_permissions: blackstone_protocol::generated::enums::player_permission_level::MEMBER,
         command_permissions: 0,
         layers: crate::join::ability_layers(mode, flying),
     };
@@ -625,7 +625,7 @@ fn item_registry_keeps_vanilla_versions_and_components() {
 /// `Interact` del client: azione e runtime id del bersaglio (la posizione opzionale manca).
 fn interact(action: u8, target: u32) -> Packet {
     let mut body = vec![action];
-    bedrock_protocol::varint::write(&mut body, target);
+    blackstone_protocol::varint::write(&mut body, target);
     body.push(0); // posizione assente
     Packet::new(id::INTERACT, body)
 }
@@ -658,7 +658,7 @@ mod blocks {
         events::{BlockChange, WorldAction},
         world::{block_hash, Chunk, State},
     };
-    use bedrock_protocol::generated::UpdateBlock;
+    use blackstone_protocol::generated::UpdateBlock;
     use vgen::Dim;
 
     pub(super) fn stone() -> i32 {
@@ -805,7 +805,7 @@ mod blocks {
     #[test]
     fn autosave_writes_dirty_chunks_every_1200_ticks() {
         use crate::storage::World;
-        let dir = std::env::temp_dir().join(format!("versmc-test-autosave-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("blackstone-test-autosave-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         let (sender, _sent) = Sender::for_tests();
         let (events, _events) = tokio::sync::mpsc::unbounded_channel();
@@ -869,7 +869,7 @@ mod breaking {
         inventory::Item,
         world::{block_hash, State},
     };
-    use bedrock_protocol::{
+    use blackstone_protocol::{
         generated::{LevelEvent, UpdateBlock},
         input::{player_action, use_item},
     };
@@ -1723,7 +1723,7 @@ mod placing {
     use super::blocks::{air, change, harness_with_chunk, stone, updates};
     use super::*;
     use crate::{events::WorldAction, world::block_hash};
-    use bedrock_protocol::{
+    use blackstone_protocol::{
         generated::{InventorySlot, LevelSoundEvent, UpdateBlock},
         input::{player_action, use_item},
     };
@@ -2060,7 +2060,7 @@ mod placing {
 
     #[test]
     fn bed_sends_block_actor_data_with_the_items_color() {
-        use bedrock_protocol::generated::BlockActorData;
+        use blackstone_protocol::generated::BlockActorData;
         let mut h = setup(GameMode::Creative);
         // la testa, davanti ad Alice (guarda a sud), ha bisogno del suo appoggio
         let support = [3, 10, 5];
@@ -2216,7 +2216,7 @@ mod placing {
 
     #[test]
     fn a_mismatched_hand_resends_the_slot_and_the_selection() {
-        use bedrock_protocol::generated::PlayerHotbar;
+        use blackstone_protocol::generated::PlayerHotbar;
         let mut h = setup(GameMode::Creative);
         // il client crede di avere la mano vuota, il server ha 64 pietre
         h.receive(1, &[place_packet(ROCK, 1, &ItemStack::air())]);
@@ -2242,7 +2242,7 @@ mod interacting {
         events::WorldAction,
         registry::{blocks, StateValue},
     };
-    use bedrock_protocol::generated::{LevelSoundEvent, UpdateBlock};
+    use blackstone_protocol::generated::{LevelSoundEvent, UpdateBlock};
     use vgen::Dim;
 
     /// La metà alta della porta sta sopra `TOP`.
@@ -2777,7 +2777,7 @@ mod entities {
 mod player_list {
     use super::*;
     use crate::{entity::EntityKind, playerdata};
-    use bedrock_protocol::{
+    use blackstone_protocol::{
         entity::{player_list_add, player_list_remove, PlayerListEntry},
         skin::uuid_bytes,
     };
@@ -2919,7 +2919,7 @@ mod player_list {
         let sent = h.packets_by_player();
         let moves: Vec<&Packet> = sent[&2].iter().filter(|p| p.id == id::MOVE_ACTOR_ABSOLUTE).collect();
         assert_eq!(moves.len(), 1);
-        assert_eq!(moves[0].body, bedrock_protocol::entity::move_actor_absolute(1, [3.0, 70.0, 3.0], 0.0, 0.0, 0.0, false, false).body);
+        assert_eq!(moves[0].body, blackstone_protocol::entity::move_actor_absolute(1, [3.0, 70.0, 3.0], 0.0, 0.0, 0.0, false, false).body);
         assert_eq!(count(sent.get(&1).map_or(&[][..], |v| v), id::MOVE_ACTOR_ABSOLUTE), 0, "Alice non vede se stessa");
         assert_eq!(count(sent.get(&3).map_or(&[][..], |v| v), id::MOVE_ACTOR_ABSOLUTE), 0, "Carol è fuori vista");
         h.server.movement_tick();
@@ -2954,14 +2954,14 @@ mod player_list {
         let sent = h.packets_by_player();
         let swings = of_kind(&sent[&2], id::ANIMATE);
         assert_eq!(swings.len(), 1);
-        assert_eq!(swings[0].body, bedrock_protocol::entity::animate_swing(1).body);
+        assert_eq!(swings[0].body, blackstone_protocol::entity::animate_swing(1).body);
         assert!(sent.get(&1).is_none_or(|v| count(v, id::ANIMATE) == 0), "Alice non rivede il proprio colpo");
         assert!(sent.get(&3).is_none_or(|v| count(v, id::ANIMATE) == 0), "Carol è fuori vista");
     }
 
     #[test]
     fn start_sneaking_sends_actor_data_with_the_flag() {
-        use bedrock_protocol::actor::{flag, key, set_actor_data, DataValue};
+        use blackstone_protocol::actor::{flag, key, set_actor_data, DataValue};
         let mut h = three_players();
         h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_flag(27))]);
         let sent = h.packets_by_player();
@@ -2983,22 +2983,22 @@ mod player_list {
             ],
         );
         for pid in [1, 2] {
-            let data = of_kind(&sent[&pid], bedrock_protocol::actor::SET_ACTOR_DATA);
+            let data = of_kind(&sent[&pid], blackstone_protocol::actor::SET_ACTOR_DATA);
             assert_eq!(data.len(), 1, "#{pid}");
             assert_eq!(data[0].body, expected.body, "#{pid}");
         }
-        assert!(sent.get(&3).is_none_or(|v| count(v, bedrock_protocol::actor::SET_ACTOR_DATA) == 0));
+        assert!(sent.get(&3).is_none_or(|v| count(v, blackstone_protocol::actor::SET_ACTOR_DATA) == 0));
         // Lo stesso stato ripetuto non rimanda nulla; lo stop lo toglie.
         h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_flag(27))]);
-        assert!(h.packets_by_player().values().all(|v| count(v, bedrock_protocol::actor::SET_ACTOR_DATA) == 0));
+        assert!(h.packets_by_player().values().all(|v| count(v, blackstone_protocol::actor::SET_ACTOR_DATA) == 0));
         h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_flag(28))]);
-        assert_eq!(count(&h.packets_by_player()[&2], bedrock_protocol::actor::SET_ACTOR_DATA), 1);
+        assert_eq!(count(&h.packets_by_player()[&2], blackstone_protocol::actor::SET_ACTOR_DATA), 1);
         assert!(!h.server.players[&1].sneaking);
     }
 
     #[test]
     fn sprint_swim_and_glide_states_are_tracked() {
-        use bedrock_protocol::actor::{flag, DataValue};
+        use blackstone_protocol::actor::{flag, DataValue};
         let mut h = three_players();
         for (start, stop, bit) in [(25, 26, flag::SPRINTING), (29, 30, flag::SWIMMING), (32, 33, flag::GLIDING)] {
             h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_flag(start))]);
@@ -3008,12 +3008,12 @@ mod player_list {
             let DataValue::Int64(off) = h.server.entity_data(1)[0].1 else { panic!("flag") };
             assert_eq!(off & 1 << bit, 0, "bit {bit} spento");
         }
-        assert_eq!(count(&h.packets_by_player()[&2], bedrock_protocol::actor::SET_ACTOR_DATA), 6);
+        assert_eq!(count(&h.packets_by_player()[&2], blackstone_protocol::actor::SET_ACTOR_DATA), 6);
     }
 
     #[test]
     fn players_and_bots_carry_their_name_over_the_head() {
-        use bedrock_protocol::actor::{flag, key, DataValue};
+        use blackstone_protocol::actor::{flag, key, DataValue};
         let mut h = three_players();
         let data = h.server.entity_data(1);
         let get = |k: u32| data.iter().find(|(id, _)| *id == k).map(|(_, v)| v.clone());
@@ -3040,7 +3040,7 @@ mod player_list {
 
     #[test]
     fn body_box_follows_the_state() {
-        use bedrock_protocol::actor::{key, DataValue};
+        use blackstone_protocol::actor::{key, DataValue};
         let mut h = three_players();
         let height = |h: &Harness| match h.server.entity_data(1).iter().find(|(k, _)| *k == key::BOUNDING_BOX_HEIGHT) {
             Some((_, DataValue::Float(v))) => *v,
@@ -3053,8 +3053,8 @@ mod player_list {
             // sia a sé sia agli spettatori arriva il riquadro dello stato
             let sent = h.packets_by_player();
             for pid in [1, 2] {
-                let data = of_kind(&sent[&pid], bedrock_protocol::actor::SET_ACTOR_DATA);
-                let want = bedrock_protocol::actor::set_actor_data(1, &h.server.entity_data(1));
+                let data = of_kind(&sent[&pid], blackstone_protocol::actor::SET_ACTOR_DATA);
+                let want = blackstone_protocol::actor::set_actor_data(1, &h.server.entity_data(1));
                 assert_eq!(data.last().map(|p| &p.body), Some(&want.body), "#{pid} stato {start}");
             }
             h.receive(1, &[Packet::new(id::PLAYER_AUTH_INPUT, pai_with_flag(stop))]);
@@ -3096,7 +3096,7 @@ mod player_list {
         assert_eq!(armor.len(), 1);
         let expected = crate::entity::armor_of(&h.server.players[&1]);
         assert_eq!(expected[0].id, registry::items().id("minecraft:iron_helmet").unwrap());
-        let packet = bedrock_protocol::entity::mob_armor_equipment(1, &expected);
+        let packet = blackstone_protocol::entity::mob_armor_equipment(1, &expected);
         assert_eq!(armor[0].body, packet.body);
         assert!(sent.get(&3).is_none_or(|v| count(v, id::MOB_ARMOR_EQUIPMENT) == 0));
     }
@@ -3121,7 +3121,7 @@ mod player_list {
 
 mod skin_change {
     use super::*;
-    use bedrock_protocol::skin::{player_skin_packet, PlayerSkinChange, Skin};
+    use blackstone_protocol::skin::{player_skin_packet, PlayerSkinChange, Skin};
 
     fn uuid_of(h: &Harness, pid: u64) -> [u8; 16] {
         match h.server.entities.get(pid).unwrap().kind {
@@ -3451,7 +3451,7 @@ mod ground_items {
         let sent = h.packets_by_player();
         let moves: Vec<_> = sent[&1].iter().filter(|p| p.id == id::MOVE_ACTOR_ABSOLUTE).collect();
         assert!(!moves.is_empty());
-        let last = bedrock_protocol::entity::move_actor_absolute(id, [3.5, 71.125, 4.5], 0.0, 0.0, 0.0, true, false);
+        let last = blackstone_protocol::entity::move_actor_absolute(id, [3.5, 71.125, 4.5], 0.0, 0.0, 0.0, true, false);
         assert_eq!(moves.last().unwrap().body, last.body);
         assert!(sent[&1].iter().any(|p| p.id == id::SET_ACTOR_MOTION), "la caduta cambia la velocità");
     }
@@ -3484,7 +3484,7 @@ mod ground_items {
             assert!(h.server.entities.get(id).is_none(), "{mode:?}");
             assert_eq!(carried(&h, 1), 5, "{mode:?}");
             let sent = h.packets_by_player();
-            let take = bedrock_protocol::entity::take_item_actor(id, 1);
+            let take = blackstone_protocol::entity::take_item_actor(id, 1);
             assert!(sent[&1].iter().any(|p| p.id == take.id && p.body == take.body), "{mode:?}: il raccoglitore vede l'animazione");
             assert!(sent[&2].iter().any(|p| p.id == take.id && p.body == take.body), "{mode:?}: Bob pure");
             assert!(sent[&1].iter().any(|p| p.id == id::INVENTORY_SLOT), "{mode:?}: la casella cambiata");
@@ -3725,7 +3725,7 @@ mod bot {
 mod survival {
     use super::*;
     use crate::{events::WorldAction, inventory::Item, join::vitals_attributes, survival::DamageCause, world::Chunk};
-    use bedrock_protocol::entity::{actor_event, actor_event_type};
+    use blackstone_protocol::entity::{actor_event, actor_event_type};
     use vgen::Dim;
 
     /// Alice (1) in `mode`, Bob (2) che la vede, Carol (3) che non la vede.
@@ -4049,7 +4049,7 @@ mod survival {
     // ---------- morte e rinascita ----------
 
     fn respawn_packet(state: u8, runtime_id: u64) -> Packet {
-        bedrock_protocol::entity::respawn([0.0; 3], state, runtime_id)
+        blackstone_protocol::entity::respawn([0.0; 3], state, runtime_id)
     }
 
     fn give(h: &mut Harness) {
@@ -4119,7 +4119,7 @@ mod survival {
         assert!((0..crate::inventory::MAIN_SLOTS).all(|i| p.inventory.main(i).is_empty()));
         assert!(p.inventory.offhand().is_empty() && (0..4).all(|i| p.inventory.armor(i).is_empty()));
         assert!(sent[&1].iter().any(|p| p.id == InventoryContent::ID), "inventario vuoto al client");
-        assert!(sent[&2].iter().any(|p| p.id == bedrock_protocol::id::MOB_ARMOR_EQUIPMENT), "l'armatura tolta la vedono gli altri");
+        assert!(sent[&2].iter().any(|p| p.id == blackstone_protocol::id::MOB_ARMOR_EQUIPMENT), "l'armatura tolta la vedono gli altri");
     }
 
     #[test]
@@ -4177,7 +4177,7 @@ mod survival {
         (p.food, p.saturation, p.exhaustion, p.pos) = (3, 0.0, 2.0, [40.5, 90.62, 40.5]);
         h.server.hurt(1, 100.0, DamageCause::Kill);
         h.packets_by_player();
-        h.receive(1, &[respawn_packet(bedrock_protocol::input::respawn_state::CLIENT_READY_TO_SPAWN, 1)]);
+        h.receive(1, &[respawn_packet(blackstone_protocol::input::respawn_state::CLIENT_READY_TO_SPAWN, 1)]);
         let p = &h.server.players[&1];
         assert!(!p.dead);
         assert_eq!((p.health, p.food, p.saturation, p.exhaustion), (20.0, 20, 5.0, 0.0));
@@ -4186,12 +4186,12 @@ mod survival {
         assert_eq!(p.pos, eyes);
         let sent = h.packets_by_player();
         assert!(sent[&1].contains(&vitals_packet(&h)));
-        let teleport = bedrock_protocol::entity::move_player_teleport(1, eyes, 0.0, 0.0, 0);
-        let ready = bedrock_protocol::entity::respawn(eyes, 1, 1);
+        let teleport = blackstone_protocol::entity::move_player_teleport(1, eyes, 0.0, 0.0, 0);
+        let ready = blackstone_protocol::entity::respawn(eyes, 1, 1);
         let order: Vec<&Packet> = sent[&1].iter().filter(|p| **p == teleport || **p == ready).collect();
         assert_eq!(order, [&teleport, &ready], "prima il teletrasporto, poi Respawn ReadyToSpawn (come Dragonfly)");
         // chi lo vedeva perde il vecchio corpo, e ne vede uno nuovo al prossimo giro
-        assert!(sent[&2].contains(&bedrock_protocol::entity::remove_actor(1)));
+        assert!(sent[&2].contains(&blackstone_protocol::entity::remove_actor(1)));
         assert!(!h.server.players[&2].visible.contains(&1));
         // di nuovo vulnerabile
         assert!(h.server.hurt(1, 2.0, DamageCause::Fall));
@@ -4203,7 +4203,7 @@ mod survival {
         let p = h.server.players.get_mut(&1).unwrap();
         p.pos = [0.5, -66.38, 0.5];
         h.server.hurt(1, 100.0, DamageCause::Kill);
-        h.receive(1, &[respawn_packet(bedrock_protocol::input::respawn_state::CLIENT_READY_TO_SPAWN, 1)]);
+        h.receive(1, &[respawn_packet(blackstone_protocol::input::respawn_state::CLIENT_READY_TO_SPAWN, 1)]);
         let spawn = h.server.players[&1].pos;
         assert_eq!(h.server.players[&1].teleport_to, Some(spawn));
         h.packets_by_player();
@@ -4225,7 +4225,7 @@ mod survival {
     fn a_teleport_never_reached_stops_blocking_after_five_seconds() {
         let mut h = setup(GameMode::Survival);
         h.server.hurt(1, 100.0, DamageCause::Kill);
-        h.receive(1, &[respawn_packet(bedrock_protocol::input::respawn_state::CLIENT_READY_TO_SPAWN, 1)]);
+        h.receive(1, &[respawn_packet(blackstone_protocol::input::respawn_state::CLIENT_READY_TO_SPAWN, 1)]);
         let spawn = h.server.players[&1].pos;
         let far = [spawn[0] + 50.0, spawn[1], spawn[2]];
         h.server.tick_count += 99;
@@ -4243,9 +4243,9 @@ mod survival {
         h.server.hurt(1, 100.0, DamageCause::Kill);
         h.server.tick_count = 777;
         h.packets_by_player();
-        h.receive(1, &[respawn_packet(bedrock_protocol::input::respawn_state::CLIENT_READY_TO_SPAWN, 1)]);
+        h.receive(1, &[respawn_packet(blackstone_protocol::input::respawn_state::CLIENT_READY_TO_SPAWN, 1)]);
         let eyes = h.server.players[&1].pos;
-        let teleport = bedrock_protocol::entity::move_player_teleport(1, eyes, 0.0, 0.0, 0);
+        let teleport = blackstone_protocol::entity::move_player_teleport(1, eyes, 0.0, 0.0, 0);
         assert!(h.packets_by_player()[&1].contains(&teleport));
     }
 
@@ -4270,7 +4270,7 @@ mod survival {
         h.server.hurt(1, 100.0, DamageCause::Kill);
         let mut w = Writer::default();
         w.var_u64(1);
-        w.var_i32(bedrock_protocol::input::player_action::RESPAWN);
+        w.var_i32(blackstone_protocol::input::player_action::RESPAWN);
         (0..6).for_each(|_| w.var_i32(0));
         w.var_i32(0);
         h.receive(1, &[Packet::new(id::PLAYER_ACTION, w.0)]);
@@ -4301,7 +4301,7 @@ mod survival {
         assert!(h.server.players[&2].visible.contains(&1), "chi lo vedeva lo vede ancora");
         h.server.tick_count += crate::survival::BODY_TICKS;
         h.server.visibility_tick();
-        assert!(h.packets_by_player()[&2].contains(&bedrock_protocol::entity::remove_actor(1)));
+        assert!(h.packets_by_player()[&2].contains(&blackstone_protocol::entity::remove_actor(1)));
         assert!(!h.server.players[&2].visible.contains(&1));
     }
 
@@ -4316,7 +4316,7 @@ mod survival {
         let sent = h.packets_by_player();
         for pid in [2, 3] {
             assert!(h.server.players[&pid].visible.contains(&1), "#{pid} rivede il corpo");
-            assert!(sent[&pid].iter().any(|p| p.id == bedrock_protocol::id::ADD_PLAYER));
+            assert!(sent[&pid].iter().any(|p| p.id == blackstone_protocol::id::ADD_PLAYER));
         }
     }
 
@@ -4364,7 +4364,7 @@ mod survival {
         assert!(h.server.hurt_bot(bot, 100.0));
         assert!(h.server.bots.is_empty() && h.server.entities.get(bot).is_none());
         let sent = h.packets_by_player();
-        assert!(sent[&2].contains(&bedrock_protocol::entity::remove_actor(bot as i64)), "RemoveActor a chi lo vedeva");
+        assert!(sent[&2].contains(&blackstone_protocol::entity::remove_actor(bot as i64)), "RemoveActor a chi lo vedeva");
         assert!(sent[&3].iter().any(|p| p.id == id::PLAYER_LIST), "PlayerList rimossa a tutti");
         assert!(!h.server.hurt_bot(bot, 1.0), "bot inesistente");
     }
@@ -4447,7 +4447,7 @@ mod survival {
         h.server.exhaust(1, 1.0);
         assert_eq!(hunger(&h).0, 6);
         assert!(!h.server.players[&1].sprinting);
-        assert!(h.packets_by_player()[&2].iter().any(|p| p.id == bedrock_protocol::actor::SET_ACTOR_DATA), "chi guarda vede che non corre più");
+        assert!(h.packets_by_player()[&2].iter().any(|p| p.id == blackstone_protocol::actor::SET_ACTOR_DATA), "chi guarda vede che non corre più");
     }
 
     /// `PlayerAuthInput` con gli occhi in `eyes` e i flag di input dati.
@@ -4471,7 +4471,7 @@ mod survival {
 
     #[test]
     fn jumping_costs_exhaustion_more_when_sprinting() {
-        use bedrock_protocol::input::flag;
+        use blackstone_protocol::input::flag;
         let mut h = setup(GameMode::Survival);
         player(&mut h).pos = [0.0, 70.0, 0.0];
         h.receive(1, &[pai_flags([0.0, 70.0, 0.0], &[flag::START_JUMPING as i32])]);
@@ -4484,7 +4484,7 @@ mod survival {
 
     #[test]
     fn sprinting_costs_a_tenth_per_block_and_walking_nothing() {
-        use bedrock_protocol::input::flag;
+        use blackstone_protocol::input::flag;
         let mut h = setup(GameMode::Survival);
         player(&mut h).pos = [0.0, 70.0, 0.0];
         h.receive(1, &[pai_flags([3.0, 70.0, 0.0], &[])]);
@@ -4503,7 +4503,7 @@ mod survival {
 
     #[test]
     fn swimming_costs_a_hundredth_per_block() {
-        use bedrock_protocol::input::flag;
+        use blackstone_protocol::input::flag;
         let mut h = setup(GameMode::Survival);
         player(&mut h).pos = [0.0, 70.0, 0.0];
         h.receive(1, &[pai_flags([2.0, 70.0, 0.0], &[flag::START_SWIMMING as i32, flag::START_SPRINTING as i32])]);
@@ -4717,7 +4717,7 @@ mod survival {
         h.receive(1, &[use_air(1, &bread)]);
         assert!(h.server.players[&1].eating_since.is_some());
         let sent = h.packets_by_player();
-        assert!(sent[&2].iter().any(|p| p.id == bedrock_protocol::actor::SET_ACTOR_DATA), "chi guarda vede che usa l'oggetto");
+        assert!(sent[&2].iter().any(|p| p.id == blackstone_protocol::actor::SET_ACTOR_DATA), "chi guarda vede che usa l'oggetto");
         h.server.tick_count += 30;
         h.receive(1, &[use_air(1, &bread)]);
         assert_eq!((hunger(&h).0, held_count(&h)), (10, 5), "30 tick non bastano");
@@ -4842,8 +4842,8 @@ mod survival {
 
     mod combat {
         use super::*;
-        use bedrock_protocol::entity::set_actor_motion;
-        use bedrock_protocol::input::use_entity;
+        use blackstone_protocol::entity::set_actor_motion;
+        use blackstone_protocol::input::use_entity;
 
         /// `InventoryTransaction` UseItemOnEntity come `UseItemOnEntityTransactionData.Marshal` di gophertunnel: `target`, azione, casella 0, mano
         /// principale, `held` secondo il client, posizione del giocatore e punto cliccato.
@@ -5041,7 +5041,7 @@ mod crafting {
         recipes::{recipes, Ingredient},
         registry::blocks,
     };
-    use bedrock_protocol::generated::{enums::container_enum_name::CURSOR_CONTAINER, InventorySlot};
+    use blackstone_protocol::generated::{enums::container_enum_name::CURSOR_CONTAINER, InventorySlot};
     use vgen::Dim;
 
     fn put_table(h: &mut Harness) {
@@ -5264,7 +5264,7 @@ mod chests {
         inventory::Item,
         registry::{blocks, StateValue},
     };
-    use bedrock_protocol::{
+    use blackstone_protocol::{
         block_event::BlockEvent,
         generated::{
             enums::container_enum_name::{CURSOR_CONTAINER, HOTBAR_CONTAINER, LEVEL_ENTITY_CONTAINER},
@@ -5342,7 +5342,7 @@ mod chests {
         assert_eq!(tag.get("id").and_then(crate::nbt::Tag::as_str), Some("Chest"));
         assert!(tag.get("pairx").is_none());
         assert_eq!(ChestData::parse(&be.nbt), ChestData::empty());
-        assert!(!to(&out, 2, bedrock_protocol::generated::BlockActorData::ID).is_empty(), "Bob riceve il block entity");
+        assert!(!to(&out, 2, blackstone_protocol::generated::BlockActorData::ID).is_empty(), "Bob riceve il block entity");
         assert!(chunk.dirty, "il chunk si salva");
     }
 
@@ -5363,7 +5363,7 @@ mod chests {
         // animazione di apertura: a chi vede il chunk (Alice e Bob), dati 1
         let events: Vec<_> = out.iter().filter(|(_, p)| p.id == id::BLOCK_EVENT).collect();
         assert_eq!(events.len(), 2);
-        let open = BlockEvent { position: bedrock_protocol::generated::BlockPos { x: 3, y: 11, z: 4 }, event_type: 1, event_data: 1 }.packet();
+        let open = BlockEvent { position: blackstone_protocol::generated::BlockPos { x: 3, y: 11, z: 4 }, event_type: 1, event_data: 1 }.packet();
         assert!(events.iter().all(|(_, p)| p.body == open.body));
         // un secondo clic non rimanda ContainerOpen né l'animazione
         let again = click(&mut h, 1, TOP);
@@ -5566,7 +5566,7 @@ mod furnaces {
         inventory::{Item, CONTAINER_TYPE_FURNACE},
         registry::{blocks, StateValue},
     };
-    use bedrock_protocol::{
+    use blackstone_protocol::{
         container_set_data::ContainerSetData,
         generated::enums::container_enum_name::{FURNACE_FUEL_CONTAINER, FURNACE_INGREDIENT_CONTAINER, FURNACE_RESULT_CONTAINER, HOTBAR_CONTAINER},
     };
@@ -5836,7 +5836,7 @@ mod final_fixes {
         inventory::Item,
         registry::{blocks, StateValue},
     };
-    use bedrock_protocol::generated::{
+    use blackstone_protocol::generated::{
         enums::container_enum_name::{CURSOR_CONTAINER, HOTBAR_CONTAINER, LEVEL_ENTITY_CONTAINER},
         InventorySlot,
     };

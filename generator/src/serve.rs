@@ -1,4 +1,4 @@
-//! `versmc-gen serve`: risponde al server Bedrock con il protocollo `vgen` su 127.0.0.1.
+//! `blackstone-gen serve`: risponde al server Bedrock con il protocollo `vgen` su 127.0.0.1.
 //!
 //! Una sola connessione. Dopo l'Hello invia la palette Bedrock, poi esegue `Generate` e `Spawn`
 //! in parallelo su un pool rayon con stack ampio; le risposte escono appena pronte (ordine non garantito).
@@ -58,7 +58,7 @@ pub fn serve(args: &[String]) -> Result<(), String> {
     let port = listener.local_addr().map_err(|e| e.to_string())?.port();
     // Il traduttore serve già all'handshake (palette): si prepara mentre il server si connette.
     let translator =
-        std::thread::Builder::new().name("versmc-gen-traduttore".into()).stack_size(STACK_SIZE).spawn(Translator::new).map_err(|e| e.to_string())?;
+        std::thread::Builder::new().name("blackstone-gen-traduttore".into()).stack_size(STACK_SIZE).spawn(Translator::new).map_err(|e| e.to_string())?;
     println!("READY {port}");
     std::io::stdout().flush().map_err(|e| e.to_string())?;
 
@@ -129,7 +129,7 @@ impl Service {
         let pool = rayon::ThreadPoolBuilder::new()
             .num_threads(threads)
             .stack_size(STACK_SIZE)
-            .thread_name(|i| format!("versmc-gen-richieste-{i}"))
+            .thread_name(|i| format!("blackstone-gen-richieste-{i}"))
             .build()
             .expect("il pool delle richieste deve avviarsi");
         Service { seed, translator, generators: Default::default(), caches: Default::default(), region_done: Condvar::new(), spawns: Default::default(), pool }
@@ -142,7 +142,7 @@ impl Service {
         // Un solo thread possiede il lato di scrittura del socket.
         let writer_stream = stream.try_clone().map_err(|e| e.to_string())?;
         let writer = std::thread::Builder::new()
-            .name("versmc-gen-scrittura".into())
+            .name("blackstone-gen-scrittura".into())
             .spawn(move || {
                 let mut out = BufWriter::new(writer_stream);
                 for msg in rx {

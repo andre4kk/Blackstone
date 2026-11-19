@@ -22,7 +22,7 @@ suo posto. Per ognuna è indicato quanto costa se si rivela sbagliata.
    ma generare a regioni costa circa 10 volte meno per chunk. Costo: memoria.
 8. **Client del generatore con due modalità.** `Launch::Process` avvia il vero programma; `Launch::Connect` si collega
    a un indirizzo e serve ai test con un generatore finto. Costo: il riavvio del vero processo è provato solo dal test
-   `#[ignore]` (`VERSMC_GEN=...`).
+   `#[ignore]` (`BLACKSTONE_GEN=...`).
 9. **Sezioni con un solo tipo di blocco.** Si scrivono senza la dimensione della palette, come fanno gophertunnel e
    Dragonfly e come già facevamo per i biomi verificati col client. Costo se sbagliata: il client rifiuterebbe quelle
    sezioni (va visto nella prova nel gioco).
@@ -53,7 +53,7 @@ suo posto. Per ognuna è indicato quanto costa se si rivela sbagliata.
   - test da irrobustire (timeout, figli orfani);
   - lo spawn di Nether ed End risponde con errore (arriverà con T3).
 - **Client del generatore:** attesa per evento nei test; controllo `tasklist` globale; il test reale si salta in
-  silenzio senza `VERSMC_GEN`.
+  silenzio senza `BLACKSTONE_GEN`.
 - **Chunk:**
   - nessun `debug_assert` su indici di palette fuori range;
   - mancano test per 3, 6 e 16 bit.

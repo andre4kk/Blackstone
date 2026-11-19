@@ -7,7 +7,7 @@ use crate::{
     streaming::chunk_of,
     GameMode, Server,
 };
-use bedrock_protocol::{
+use blackstone_protocol::{
     actor::{flag, key, set_actor_data, DataValue},
     entity::{
         add_item_actor, add_player, mob_armor_equipment, move_actor_absolute, player_list_add, player_list_remove, remove_actor, AddPlayerData, PlayerListEntry,

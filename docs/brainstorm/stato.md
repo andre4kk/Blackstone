@@ -8,7 +8,7 @@ entrando si vede un mondo Minecraft "vero". In futuro arriverà un'API per i plu
 
 ## Decisioni prese
 1. **Integrazione: D, processo separato.** Il server resta MIT e su Rust stable. Il generatore AGPL è isolato: i plugin non sono toccati dall'AGPL.
-2. **Generatore: D1.** `versmc-gen` è un nostro binario (AGPL, nightly) che usa `steel-core` come libreria (`ChunkMap::generate_region`).
+2. **Generatore: D1.** `blackstone-gen` è un nostro binario (AGPL, nightly) che usa `steel-core` come libreria (`ChunkMap::generate_region`).
    Il server lo avvia da solo e gli chiede i chunk su TCP 127.0.0.1. La traduzione Java → Bedrock (mappature GeyserMC per Java 26.3 / Bedrock 1.26.60) avviene nel generatore.
 3. **Salvataggio: S1, LevelDB Bedrock** (`rusty-leveldb` con compressore deflate id 4). Salva il server.
 4. **Traguardo: T1 + T2 + T3.**

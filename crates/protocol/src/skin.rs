@@ -329,7 +329,7 @@ impl Skin {
     /// Steve 64x64 di un solo colore con la geometria standard: per chi non manda una skin valida.
     pub fn fallback() -> Skin {
         Skin {
-            id: "versmcbe:steve".into(),
+            id: "blackstone:steve".into(),
             play_fab_id: String::new(),
             resource_patch: STEVE_RESOURCE_PATCH.into(),
             image: SkinImage { width: 64, height: 64, data: [0xb3, 0x7b, 0x62, 0xff].repeat(64 * 64) },
@@ -339,7 +339,7 @@ impl Skin {
             geometry_engine_version: b"1.14.0".to_vec(),
             animation_data: Vec::new(),
             cape_id: String::new(),
-            full_id: "versmcbe:steve".into(),
+            full_id: "blackstone:steve".into(),
             arm_size: "wide".into(),
             color: [0; 4],
             persona_pieces: Vec::new(),

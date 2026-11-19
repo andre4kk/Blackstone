@@ -1,6 +1,6 @@
 //! Trasporto NetherNet (WebRTC) di Minecraft Bedrock: signaling HTTP + data channel.
 //! Questo crate sa solo trasportare messaggi: connessioni che si aprono, messaggi in arrivo, messaggi da inviare.
-//! Cosa c'è dentro i messaggi (pacchetti, compressione) è compito di `bedrock-protocol`.
+//! Cosa c'è dentro i messaggi (pacchetti, compressione) è compito di `blackstone-protocol`.
 mod identity;
 mod media;
 mod signaling;
@@ -57,12 +57,16 @@ impl Level {
     }
 }
 
-/// Livello minimo mostrato; 255 = non ancora deciso (si legge `VERSMC_LOG`, altrimenti info).
+/// Livello minimo mostrato; 255 = non ancora deciso (si legge `BLACKSTONE_LOG`, altrimenti info).
 static LEVEL: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(255);
 
-/// Imposta il livello minimo dalla configurazione. La variabile d'ambiente `VERSMC_LOG` ha la precedenza.
+/// Imposta il livello minimo dalla configurazione. La variabile d'ambiente `BLACKSTONE_LOG` ha la precedenza.
 pub fn set_level(configured: Level) {
-    let level = std::env::var("VERSMC_LOG").ok().and_then(|v| Level::parse(&v)).unwrap_or(configured);
+    let level = std::env::var("BLACKSTONE_LOG")
+        .or_else(|_| std::env::var("VERSMC_LOG"))
+        .ok() /* VERSMC_LOG: vecchio nome, ancora letto */
+        .and_then(|v| Level::parse(&v))
+        .unwrap_or(configured);
     LEVEL.store(level as u8, std::sync::atomic::Ordering::Relaxed);
 }
 
@@ -243,6 +247,7 @@ mod log_tests {
     #[test]
     fn filtering_follows_the_minimum_level() {
         // Unico test che tocca il livello globale (i test girano in parallelo).
+        std::env::remove_var("BLACKSTONE_LOG");
         std::env::remove_var("VERSMC_LOG");
         set_level(Level::Info);
         assert!(!enabled(Level::Debug) && enabled(Level::Info) && enabled(Level::Warn));

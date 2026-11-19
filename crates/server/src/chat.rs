@@ -1,7 +1,7 @@
 //! Chat e comandi.
 use crate::{entity::EntityKind, survival::DamageCause, GameMode, Server};
-use bedrock_net::{debug, log, warn};
-use bedrock_protocol::{
+use blackstone_net::{debug, log, warn};
+use blackstone_protocol::{
     commands::{AvailableCommands, CommandSpec, Param, ParamKind},
     generated::UpdatePlayerGameType,
     id,

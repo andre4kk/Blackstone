@@ -18,7 +18,7 @@ pub mod key {
 }
 
 /// Bit della chiave `FLAGS` (`ActorFlags`). Dal protocollo 560 CAN_DASH(46) ha spostato di uno tutti i successivi
-/// (changelog_560 di bedrock-protocol-docs): gravità 49, collisioni 48. Con 48 il giocatore restava senza gravità.
+/// (changelog_560 di blackstone-protocol-docs): gravità 49, collisioni 48. Con 48 il giocatore restava senza gravità.
 pub mod flag {
     pub const SNEAKING: u32 = 1;
     pub const SPRINTING: u32 = 3;

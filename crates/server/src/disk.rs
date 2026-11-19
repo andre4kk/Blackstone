@@ -1,7 +1,7 @@
 //! Il mondo su disco fuori dal tick: un thread possiede il `World` e riceve comandi in ordine (letture, scritture, flush).
 //! Le letture dei chunk tornano al ciclo di gioco come `DiskEvent`, così il tick non aspetta mai LevelDB.
 use crate::{storage::World, world::Chunk};
-use bedrock_net::warn;
+use blackstone_net::warn;
 use std::{
     sync::mpsc,
     thread::{self, JoinHandle},

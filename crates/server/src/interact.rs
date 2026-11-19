@@ -14,8 +14,8 @@ use crate::{
     registry::{blocks, BlockState, StateValue},
     GameMode, Server,
 };
-use bedrock_net::debug;
-use bedrock_protocol::{
+use blackstone_net::debug;
+use blackstone_protocol::{
     generated::{enums::container_enum_name::CURSOR_CONTAINER, BlockPos, ContainerOpen, LevelSoundEvent, Vec3},
     input::UseItem,
     wire::ServerPacket,

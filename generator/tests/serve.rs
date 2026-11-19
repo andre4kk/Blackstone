@@ -1,4 +1,4 @@
-//! Test del comando `versmc-gen serve`: lanciano il binario vero e parlano `vgen` su TCP.
+//! Test del comando `blackstone-gen serve`: lanciano il binario vero e parlano `vgen` su TCP.
 
 use std::collections::{HashMap, HashSet};
 use std::io::{BufRead, BufReader, Read};
@@ -24,7 +24,7 @@ impl Drop for Server {
 
 /// Avvia `serve --port 0`, legge `READY <porta>` e si connette.
 fn start() -> Server {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_versmc-gen"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_blackstone-gen"))
         .args(["serve", "--port", "0", "--seed", &SEED.to_string()])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

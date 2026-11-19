@@ -29,12 +29,12 @@ mod tables;
 mod tests;
 mod world;
 
-use bedrock_net::{debug, log, warn, Config, Event, Sender};
-use bedrock_protocol::{
+use blackstone_net::{debug, log, warn, Config, Event, Sender};
+use blackstone_protocol::{
     generated::{BlockActorData, BlockPos, UpdateBlock},
     wire::ServerPacket,
 };
-use bedrock_protocol::{login::PlayerInfo, Packet, Session};
+use blackstone_protocol::{login::PlayerInfo, Packet, Session};
 use disk::{Disk, DiskEvent};
 use events::{BlockChange, Hook, WorldAction};
 use gen_client::{GenClient, GenConfig, GenEvent, Launch};
@@ -54,10 +54,10 @@ use vgen::Dim;
 pub fn config(port: u16) -> Config {
     Config {
         port,
-        name: "Rust NetherNet Server".into(),
+        name: "Blackstone".into(),
         level: "Mondo".into(),
-        version: bedrock_protocol::VERSION.into(),
-        protocol: bedrock_protocol::PROTOCOL,
+        version: blackstone_protocol::VERSION.into(),
+        protocol: blackstone_protocol::PROTOCOL,
         max_players: 100,
         public_ip: std::env::var("PUBLIC_IP").ok().and_then(|v| v.parse().ok()),
     }
@@ -673,9 +673,9 @@ async fn next_gen_event(rx: &mut Option<UnboundedReceiver<GenEvent>>) -> Option<
 async fn serve(cfg: Config, world: Option<storage::World>, generator: Option<GenConfig>, max_radius: i32, keep_inventory: bool, pvp: bool) -> io::Result<()> {
     // Gli stati dei blocchi e il menu creativo si costruiscono ora, non al pacchetto del primo giocatore.
     join::warm_up();
-    let address = bedrock_net::lan_ip().map_or_else(|| "localhost".to_owned(), |ip| ip.to_string());
+    let address = blackstone_net::lan_ip().map_or_else(|| "localhost".to_owned(), |ip| ip.to_string());
     log!("Blackstone v{} - Minecraft Bedrock {} (protocollo {}) su {address}:{}", env!("CARGO_PKG_VERSION"), cfg.version, cfg.protocol, cfg.port);
-    let mut net = bedrock_net::start(cfg).await?;
+    let mut net = blackstone_net::start(cfg).await?;
     let mut server = Server::new(net.sender.clone());
     server.max_radius = max_radius;
     server.keep_inventory = keep_inventory;

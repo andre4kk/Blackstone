@@ -143,7 +143,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
 
 [[package]]
-name = "bedrock-net"
+name = "bit-vec"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b71798fca2c1fe1086445a7258a4bc81e6e49dcd24c8d0dd9a1e57395b603f51"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "blackstone-net"
 version = "0.1.0"
 dependencies = [
  "base64",
@@ -155,7 +164,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "bedrock-protocol"
+name = "blackstone-protocol"
 version = "0.1.0"
 dependencies = [
  "base64",
@@ -165,12 +174,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "bedrock-server"
+name = "blackstone-server"
 version = "0.1.0"
 dependencies = [
  "base64",
- "bedrock-net",
- "bedrock-protocol",
+ "blackstone-net",
+ "blackstone-protocol",
  "getrandom 0.3.4",
  "miniz_oxide",
  "p384 0.13.1",
@@ -181,15 +190,6 @@ dependencies = [
  "tokio",
  "toml",
  "vgen",
-]
-
-[[package]]
-name = "bit-vec"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b71798fca2c1fe1086445a7258a4bc81e6e49dcd24c8d0dd9a1e57395b603f51"
-dependencies = [
- "serde",
 ]
 
 [[package]]

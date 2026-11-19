@@ -1,9 +1,9 @@
-//! Client del generatore del mondo: avvia (o raggiunge) `versmc-gen`, parla il protocollo `vgen` su TCP locale
+//! Client del generatore del mondo: avvia (o raggiunge) `blackstone-gen`, parla il protocollo `vgen` su TCP locale
 //! e riavvia/riconnette il generatore se cade, rimandando le richieste rimaste senza risposta.
 
 #![allow(dead_code)] // `Launch::Connect` serve ai test
 
-use bedrock_net::{log, warn};
+use blackstone_net::{log, warn};
 use std::{
     collections::{HashMap, VecDeque},
     io,
@@ -522,8 +522,8 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn real_generator_process_serves_chunk_0_0() {
-        let Ok(bin) = std::env::var("VERSMC_GEN") else {
-            println!("VERSMC_GEN non impostata: test saltato");
+        let Ok(bin) = std::env::var("BLACKSTONE_GEN").or_else(|_| std::env::var("VERSMC_GEN")) else {
+            println!("BLACKSTONE_GEN non impostata: test saltato");
             return;
         };
         let cfg = GenConfig {
@@ -548,9 +548,9 @@ mod tests {
         sleep(Duration::from_secs(2)).await;
         #[cfg(windows)]
         {
-            let out = std::process::Command::new("tasklist").args(["/FI", "IMAGENAME eq versmc-gen.exe"]).output().unwrap();
+            let out = std::process::Command::new("tasklist").args(["/FI", "IMAGENAME eq blackstone-gen.exe"]).output().unwrap();
             let out = String::from_utf8_lossy(&out.stdout).to_lowercase();
-            assert!(!out.contains("versmc-gen.exe"), "processo del generatore ancora vivo: {out}");
+            assert!(!out.contains("blackstone-gen.exe"), "processo del generatore ancora vivo: {out}");
         }
     }
 

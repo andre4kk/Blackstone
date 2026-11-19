@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VersMCBE generazione mondo</title>
+<title>Blackstone generazione mondo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@500&family=Bricolage+Grotesque:wght@700&display=swap" rel="stylesheet">
 <style>
@@ -72,7 +72,7 @@ a { color: var(--accent); }
 <main>
 
 <header style="display:grid;gap:8px">
-  <h1>Generazione del mondo per VersMCBE</h1>
+  <h1>Generazione del mondo per Blackstone</h1>
   <p class="lead">Catalogo delle opzioni prima delle domande. Obiettivo: entrando dal client Bedrock 1.26.60 si vede un mondo Minecraft "vero", generato con l'algoritmo Java Edition.</p>
 </header>
 
@@ -80,10 +80,10 @@ a { color: var(--accent); }
   <h2>Cosa ho trovato</h2>
   <div class="facts">
     <div class="fact"><span>SteelMC</span><span>Server Java in Rust, mira a <b>Java 26.3</b>. Il generatore confronta 7.500 chunk a caso con vanilla: tutti identici blocco per blocco. 10.201 chunk in circa 4 secondi su un Ryzen 9 9950X.</span></div>
-    <div class="fact"><span>Mappature Geyser</span><span>Tabelle Java → Bedrock di blocchi (<code>blocks.nbt</code>) e biomi (<code>biomes.json</code>, 67 biomi). Generate per <b>Java 26.3 e Bedrock 1.26.60</b>: le stesse versioni di SteelMC e di VersMCBE. Licenza MIT.</span></div>
+    <div class="fact"><span>Mappature Geyser</span><span>Tabelle Java → Bedrock di blocchi (<code>blocks.nbt</code>) e biomi (<code>biomes.json</code>, 67 biomi). Generate per <b>Java 26.3 e Bedrock 1.26.60</b>: le stesse versioni di SteelMC e di Blackstone. Licenza MIT.</span></div>
     <div class="fact"><span>BedrockData (pmmp)</span><span>Definizioni complete dei biomi Bedrock e altri dati. Licenza CC0 (libera). Servono a sbloccare <code>BiomeDefinitionList</code>, che oggi fa chiudere il client.</span></div>
     <div class="fact"><span>Codice di Steel</span><span>Generatore: circa 70mila righe (29k in <code>steel-worldgen</code>, 41k in <code>steel-core/worldgen</code>). Dipende da <code>steel-registry</code> (79k), <code>steel-utils</code> (18k), <code>steel-math</code>. Esiste già <code>ChunkMap::generate_region</code>: genera un rettangolo di chunk fino allo stato finale.</span></div>
-    <div class="fact"><span>Toolchain</span><span>Steel usa Rust <b>nightly</b> fissato (<code>nightly-2026-10-14</code>) per SIMD e parking_lot. VersMCBE oggi è stable.</span></div>
+    <div class="fact"><span>Toolchain</span><span>Steel usa Rust <b>nightly</b> fissato (<code>nightly-2026-10-14</code>) per SIMD e parking_lot. Blackstone oggi è stable.</span></div>
     <div class="fact"><span>Salvataggio Steel</span><span>Formato proprio "STLR", non Anvil né LevelDB Bedrock.</span></div>
   </div>
 </section>
@@ -92,7 +92,7 @@ a { color: var(--accent); }
   <h2>Trappole da sapere subito</h2>
   <div class="card bad">
     <h3>AGPL + API per plugin</h3>
-    <p>Copiando Steel, VersMCBE diventa AGPL-3.0. Hai detto che va bene. Però i plugin caricati dentro il server sono molto probabilmente "opere derivate": anche loro dovrebbero essere AGPL, e chi gestisce un server con plugin modificati deve offrirne il codice ai giocatori. PocketMine-MP usa LGPL proprio per lasciare liberi i plugin. Soluzioni:</p>
+    <p>Copiando Steel, Blackstone diventa AGPL-3.0. Hai detto che va bene. Però i plugin caricati dentro il server sono molto probabilmente "opere derivate": anche loro dovrebbero essere AGPL, e chi gestisce un server con plugin modificati deve offrirne il codice ai giocatori. PocketMine-MP usa LGPL proprio per lasciare liberi i plugin. Soluzioni:</p>
     <ul>
       <li><b>Plugin fuori processo</b> (WASM o processo separato con protocollo): l'isolamento rende più difendibile la libertà di licenza dei plugin.</li>
       <li><b>Accettare plugin AGPL</b>: semplice, ma scoraggia plugin commerciali.</li>
@@ -116,7 +116,7 @@ a { color: var(--accent); }
   <div class="card good">
     <span class="tag good">Consigliata</span>
     <h3>A. Steel come libreria, con un adattatore nostro</h3>
-    <p>Dipendenza git da <code>steel-core</code> fissata a un commit. Un nostro crate <code>versmc-worldgen</code> chiama <code>generate_region</code> e restituisce i blocchi Java già tradotti in Bedrock. Il resto di VersMCBE non vede Steel.</p>
+    <p>Dipendenza git da <code>steel-core</code> fissata a un commit. Un nostro crate <code>blackstone-worldgen</code> chiama <code>generate_region</code> e restituisce i blocchi Java già tradotti in Bedrock. Il resto di Blackstone non vede Steel.</p>
     <div class="pc">
       <div><b>Pro</b>Tutto incluso subito: terreno, grotte, acquiferi, alberi, minerali, strutture, villaggi, luce. Per aggiornare basta cambiare commit. Parità già verificata da loro.</div>
       <div><b>Contro</b>Si compila tutto steel-core (circa 380k righe, anche la loro rete Java). Le loro API interne cambiano e l'adattatore va sistemato. Serve nightly.</div>
@@ -125,7 +125,7 @@ a { color: var(--accent); }
   </div>
 
   <div class="card warn">
-    <h3>B. Copiare solo il generatore dentro VersMCBE</h3>
+    <h3>B. Copiare solo il generatore dentro Blackstone</h3>
     <p>Si copiano <code>steel-worldgen</code>, <code>steel-registry</code>, <code>steel-utils</code>, <code>steel-math</code> e la cartella <code>worldgen</code> di steel-core, staccandola dal loro chunk, mondo ed entità.</p>
     <div class="pc">
       <div><b>Pro</b>Solo il codice che serve, controllo totale, compilazione più leggera.</div>
@@ -145,7 +145,7 @@ a { color: var(--accent); }
 
   <div class="card warn">
     <h3>D. Generatore in un processo separato</h3>
-    <p>Un piccolo programma basato su Steel (oppure un server Java vanilla con Chunky) genera i chunk. VersMCBE li riceve o li legge da disco.</p>
+    <p>Un piccolo programma basato su Steel (oppure un server Java vanilla con Chunky) genera i chunk. Blackstone li riceve o li legge da disco.</p>
     <div class="pc">
       <div><b>Pro</b>Il server resta MIT e stable: i plugin non sono toccati dall'AGPL. Si possono anche importare mondi Java veri.</div>
       <div><b>Contro</b>Due programmi da avviare, un protocollo tra loro, latenza in più. Con vanilla Java serve Java installato e il mondo va pregenerato.</div>
@@ -155,12 +155,12 @@ a { color: var(--accent); }
 
 <section id="domanda-2">
   <h2>Domanda 2: quale generatore gira nel processo separato</h2>
-  <p class="lead">Hai scelto D. In tutte le varianti il server VersMCBE resta MIT e su Rust stable. Se Steel aggiorna, cambia solo il generatore.</p>
+  <p class="lead">Hai scelto D. In tutte le varianti il server Blackstone resta MIT e su Rust stable. Se Steel aggiorna, cambia solo il generatore.</p>
 
   <div class="card good">
     <span class="tag good">Consigliata</span>
     <h3>D1. Un nostro piccolo generatore basato su Steel, su richiesta</h3>
-    <p>Un programma <code>versmc-gen</code> (AGPL, nightly) usa <code>steel-core</code> come libreria. VersMCBE lo avvia da solo all'accensione e gli chiede i chunk ("dimensione, x, z") su un canale locale. Riceve i chunk già tradotti in blocchi e biomi Bedrock, con le mappature Geyser.</p>
+    <p>Un programma <code>blackstone-gen</code> (AGPL, nightly) usa <code>steel-core</code> come libreria. Blackstone lo avvia da solo all'accensione e gli chiede i chunk ("dimensione, x, z") su un canale locale. Riceve i chunk già tradotti in blocchi e biomi Bedrock, con le mappature Geyser.</p>
     <div class="pc">
       <div><b>Pro</b>Mondo infinito, generato mentre cammini. Seed scelto dal server. Un solo comando per avviare. Il protocollo tra i due è nostro e stabile, quindi aggiornare Steel non tocca il server.</div>
       <div><b>Contro</b>Due binari da compilare (uno nightly). La compilazione del generatore è pesante. Un piccolo ritardo per ogni chunk nuovo, coperto da una coda e dalla cache.</div>
@@ -170,7 +170,7 @@ a { color: var(--accent); }
 
   <div class="card warn">
     <h3>D2. Server Java vanilla + Chunky, poi leggiamo i file Anvil</h3>
-    <p>Un server Java ufficiale con il plugin Chunky pregenera un'area. VersMCBE legge i file <code>.mca</code>, un formato stabile da anni.</p>
+    <p>Un server Java ufficiale con il plugin Chunky pregenera un'area. Blackstone legge i file <code>.mca</code>, un formato stabile da anni.</p>
     <div class="pc">
       <div><b>Pro</b>È il generatore originale di Mojang, quindi parità garantita. Il lettore Anvil serve comunque per importare mondi Java esistenti.</div>
       <div><b>Contro</b>Area finita: oltre il bordo non c'è niente. Richiede Java e il server di Mojang (EULA da accettare). Pregenerare richiede tempo: indicativamente minuti per 1.000 blocchi di raggio, ore per raggi grandi.</div>
@@ -184,7 +184,7 @@ a { color: var(--accent); }
   </div>
 
   <div class="card bad">
-    <h3>D4. VersMCBE si collega a SteelMC come un client Java</h3>
+    <h3>D4. Blackstone si collega a SteelMC come un client Java</h3>
     <p>Scartata: servirebbe tutto il protocollo Java (in pratica un Geyser), e i chunk arrivano solo attorno a un "giocatore" finto.</p>
   </div>
 
@@ -217,7 +217,7 @@ a { color: var(--accent); }
     <p>File regione 32×32 chunk, ognuno salvato con i byte che già mandiamo al client.</p>
     <div class="pc">
       <div><b>Pro</b>Velocissimo da scrivere (1 sessione) e da caricare: il chunk salvato è già pronto da inviare.</div>
-      <div><b>Contro</b>Solo VersMCBE lo legge. Per aprire il mondo nel gioco servirà poi un convertitore.</div>
+      <div><b>Contro</b>Solo Blackstone lo legge. Per aprire il mondo nel gioco servirà poi un convertitore.</div>
     </div>
   </div>
 

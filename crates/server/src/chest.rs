@@ -14,8 +14,8 @@ use crate::{
     registry::{blocks, StateValue},
     GameMode, Server,
 };
-use bedrock_net::debug;
-use bedrock_protocol::{
+use blackstone_net::debug;
+use blackstone_protocol::{
     block_event::{BlockEvent, CHANGE_CHEST_STATE},
     generated::{BlockPos, ContainerClose, ContainerOpen},
     wire::ServerPacket,

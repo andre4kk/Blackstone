@@ -8,8 +8,8 @@ use crate::{
     playerdata::{self, EYE_HEIGHT},
     registry, survival, GameMode, Player, Server, HEX_LOGS,
 };
-use bedrock_net::{debug, log, warn};
-use bedrock_protocol::{
+use blackstone_net::{debug, log, warn};
+use blackstone_protocol::{
     entity::animate_swing,
     generated::{BlockPos, ContainerClose, ContainerOpen, MobEquipment},
     id,

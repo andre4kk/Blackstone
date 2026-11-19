@@ -1,8 +1,8 @@
-//! versmc-gen: generatore di mondi Java Edition per VersMCBE, basato su SteelMC.
+//! blackstone-gen: generatore di mondi Java Edition per Blackstone, basato su SteelMC.
 //!
 //! Comandi:
-//! - `versmc-gen serve --port <p> --seed <s>`: servizio `vgen` su 127.0.0.1 per il server Bedrock;
-//! - `versmc-gen probe --seed 13579 --x 0 --z 0 [--size N] [--dim overworld|nether|end] [--repeat K]`: prova e misure.
+//! - `blackstone-gen serve --port <p> --seed <s>`: servizio `vgen` su 127.0.0.1 per il server Bedrock;
+//! - `blackstone-gen probe --seed 13579 --x 0 --z 0 [--size N] [--dim overworld|nether|end] [--repeat K]`: prova e misure.
 
 mod bedrock_hash;
 mod nbt;
@@ -24,8 +24,8 @@ fn main() -> ExitCode {
         Some("serve") => run_with_big_stack(move || serve::serve(&args[1..])),
         _ => {
             eprintln!(
-                "uso: versmc-gen serve --port <u16> --seed <u64>\n     \
-                 versmc-gen probe --seed <u64> --x <i32> --z <i32> [--size <N>] [--dim overworld|nether|end] [--repeat <K>]"
+                "uso: blackstone-gen serve --port <u16> --seed <u64>\n     \
+                 blackstone-gen probe --seed <u64> --x <i32> --z <i32> [--size <N>] [--dim overworld|nether|end] [--repeat <K>]"
             );
             return ExitCode::FAILURE;
         }
@@ -171,7 +171,7 @@ fn peak_memory_mib() -> Option<f64> {
 /// Esegue `f` in un thread con stack ampio: in debug la costruzione del generatore supera lo stack del thread principale.
 fn run_with_big_stack<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> T {
     std::thread::Builder::new()
-        .name("versmc-gen-main".into())
+        .name("blackstone-gen-main".into())
         .stack_size(64 * 1024 * 1024)
         .spawn(f)
         .expect("il thread principale deve avviarsi")

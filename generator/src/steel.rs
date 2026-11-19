@@ -109,7 +109,7 @@ impl Generator {
             rayon::ThreadPoolBuilder::new()
                 .num_threads(threads)
                 .stack_size(STACK_SIZE)
-                .thread_name(|i| format!("versmc-gen-{i}"))
+                .thread_name(|i| format!("blackstone-gen-{i}"))
                 .build()
                 .expect("il pool di generazione deve avviarsi"),
         );
@@ -189,7 +189,7 @@ impl Generator {
             .runtime
             .block_on(World::new_with_config(
                 Arc::clone(&self.runtime),
-                Identifier::new_static("versmc_gen", name),
+                Identifier::new_static("blackstone_gen", name),
                 dim_type,
                 self.seed as i64,
                 config,

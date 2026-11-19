@@ -8,8 +8,8 @@ use crate::{
     world::{block_hash, State},
     GameMode, Server,
 };
-use bedrock_net::debug;
-use bedrock_protocol::{
+use blackstone_net::debug;
+use blackstone_protocol::{
     generated::{LevelEvent, Vec3},
     input::player_action,
     wire::ServerPacket,

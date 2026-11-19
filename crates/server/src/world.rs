@@ -2,7 +2,7 @@
 //!
 //! Dalla 1.26 l'ID di rete di un blocco (`block_network_ids_are_hashes`) è l'hash FNV-1a a 32 bit dell'NBT
 //! little-endian `{name, states}`: si calcola, senza bisogno di una tabella dei blocchi.
-use bedrock_protocol::wire::Writer;
+use blackstone_protocol::wire::Writer;
 use vgen::{BlockEntity, ChunkData, Dim, Section};
 
 /// Valore di uno stato di blocco. `Int` e `Str` serviranno ai blocchi con più stati.
@@ -79,7 +79,7 @@ pub(crate) fn pack_words(bits: u8, index_at: impl Fn(usize) -> usize) -> Vec<u32
 /// Con una sola voce (0 bit) non si scrivono né parole né numero di voci: segue la voce unica
 /// (come nel vecchio mondo piatto, verificato col client).
 fn write_storage(w: &mut Writer, palette: &[i32], index_at: impl Fn(usize) -> usize) {
-    // Diagnostica (VERSMC_DEBUG=nozero): niente storage a 0 bit, la voce unica si duplica e si usa 1 bit.
+    // Diagnostica (BLACKSTONE_DEBUG=nozero): niente storage a 0 bit, la voce unica si duplica e si usa 1 bit.
     let doubled: Vec<i32>;
     let palette = if palette.len() == 1 && debug_flag("nozero") {
         doubled = vec![palette[0], palette[0]];
@@ -96,12 +96,17 @@ fn write_storage(w: &mut Writer, palette: &[i32], index_at: impl Fn(usize) -> us
     palette.iter().for_each(|&id| w.var_i32(id));
 }
 
-/// Interruttori di diagnostica per capire cosa rifiuta il client: variabile `VERSMC_DEBUG` con nomi separati da virgola
+/// Interruttori di diagnostica per capire cosa rifiuta il client: variabile `BLACKSTONE_DEBUG` con nomi separati da virgola
 /// (`nozero`, `nowater`, `plains`, `nobe`). Senza la variabile non cambia nulla.
 pub(crate) fn debug_flag(name: &str) -> bool {
     static FLAGS: std::sync::OnceLock<Vec<String>> = std::sync::OnceLock::new();
     FLAGS
-        .get_or_init(|| std::env::var("VERSMC_DEBUG").map(|v| v.split(',').map(|s| s.trim().to_string()).collect()).unwrap_or_default())
+        .get_or_init(|| {
+            std::env::var("BLACKSTONE_DEBUG")
+                .or_else(|_| std::env::var("VERSMC_DEBUG")) /* VERSMC_DEBUG: vecchio nome */
+                .map(|v| v.split(',').map(|s| s.trim().to_string()).collect())
+                .unwrap_or_default()
+        })
         .iter()
         .any(|f| f == name)
 }
@@ -453,14 +458,14 @@ mod tests {
 
     /// Decodifica i blocchi (strato 0) della prima sezione presente di `network_bytes`: 4096 hash, ordine (x*16 + z)*16 + y.
     fn decode_layer0(bytes: &[u8]) -> Vec<i32> {
-        let mut r = bedrock_protocol::reader::Reader(bytes);
+        let mut r = blackstone_protocol::reader::Reader(bytes);
         assert_eq!(r.u8(), Some(9), "sotto-chunk v9");
         r.u8().unwrap(); // numero di strati
         r.i8().unwrap(); // indice della sezione
         decode_storage(&mut r)
     }
 
-    fn decode_storage(r: &mut bedrock_protocol::reader::Reader) -> Vec<i32> {
+    fn decode_storage(r: &mut blackstone_protocol::reader::Reader) -> Vec<i32> {
         let head = r.u8().unwrap();
         let bits = (head >> 1) as usize;
         if bits == 0 {

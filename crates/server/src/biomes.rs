@@ -1,6 +1,6 @@
 //! Definizione dei biomi (`BiomeDefinitionList`), costruita da `data/biomes.json` (vedi `tools/extract_biomes.py`).
-use bedrock_protocol::wire::ServerPacket;
-use bedrock_protocol::{
+use blackstone_protocol::wire::ServerPacket;
+use blackstone_protocol::{
     generated::{BiomeDefinitionData, BiomeDefinitionList, BiomeStringList, BiomeTagsData},
     Packet,
 };

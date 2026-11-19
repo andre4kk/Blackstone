@@ -1,7 +1,7 @@
 //! Streaming dei chunk col movimento del giocatore, ingresso dei chunk dal generatore e dal disco, scaricamento.
 use crate::{disk::DiskEvent, gen_client::GenEvent, world::Chunk, ChunkKey, Server};
-use bedrock_net::{debug, warn};
-use bedrock_protocol::{
+use blackstone_net::{debug, warn};
+use blackstone_protocol::{
     generated::{ChunkPos, LevelChunk},
     wire::ServerPacket,
     Packet,
@@ -356,8 +356,8 @@ mod tests {
         world::Chunk,
         Player,
     };
-    use bedrock_net::{Command, Sender};
-    use bedrock_protocol::{generated::NetworkChunkPublisherUpdate, varint, Session};
+    use blackstone_net::{Command, Sender};
+    use blackstone_protocol::{generated::NetworkChunkPublisherUpdate, varint, Session};
     use std::{collections::HashSet, path::PathBuf, time::Duration};
     use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 
@@ -376,7 +376,7 @@ mod tests {
 
     impl TempDir {
         fn new(name: &str) -> Self {
-            let dir = std::env::temp_dir().join(format!("versmc-test-{name}-{}", std::process::id()));
+            let dir = std::env::temp_dir().join(format!("blackstone-test-{name}-{}", std::process::id()));
             let _ = std::fs::remove_dir_all(&dir);
             TempDir(dir)
         }
@@ -658,7 +658,7 @@ mod tests {
         assert!(rig.server.waiting_start.is_empty());
         let Ok(Command::Send(1, data)) = rig.sent.try_recv() else { panic!("StartGame atteso") };
         let packets = Session::default().decode(&data).unwrap();
-        assert!(packets.iter().any(|p| p.id == bedrock_protocol::generated::StartGame::ID));
+        assert!(packets.iter().any(|p| p.id == blackstone_protocol::generated::StartGame::ID));
         let p = &rig.server.players[&1];
         assert_eq!((p.pos[0], p.pos[1], p.pos[2]), (10.5, 71.62, -4.5), "occhi = piedi + 1.62");
         assert_eq!(p.last_chunk, (0, -1));
@@ -733,7 +733,7 @@ mod tests {
         assert_eq!(rig.server.spawn, Some(FALLBACK_SPAWN));
         assert!(rig.server.waiting_start.is_empty());
         let Ok(Command::Send(1, data)) = rig.sent.try_recv() else { panic!("StartGame atteso") };
-        assert!(Session::default().decode(&data).unwrap().iter().any(|p| p.id == bedrock_protocol::generated::StartGame::ID));
+        assert!(Session::default().decode(&data).unwrap().iter().any(|p| p.id == blackstone_protocol::generated::StartGame::ID));
         assert_eq!(rig.server.players[&1].pos, [0.5, 101.62, 0.5]);
     }
 

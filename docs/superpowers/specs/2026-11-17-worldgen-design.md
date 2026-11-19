@@ -1,4 +1,4 @@
-# Generazione del mondo Java per VersMCBE: design
+# Generazione del mondo Java per Blackstone: design
 
 Data: 2026-11-17. Stato: bozza da approvare.
 Catalogo delle opzioni valutate: `docs/brainstorm/catalogo-worldgen.html` (pubblicato come artifact).
@@ -6,7 +6,7 @@ Stato delle decisioni: `docs/brainstorm/stato.md`.
 
 ## Intento
 
-VersMCBE vuole diventare un server Bedrock in stile PocketMine-MP, ma migliore. In futuro avrà un'API per i plugin.
+Blackstone vuole diventare un server Bedrock in stile PocketMine-MP, ma migliore. In futuro avrà un'API per i plugin.
 Entrando dal client Bedrock (1.26.6x, NetherNet) il giocatore deve trovare un mondo Minecraft "vero", generato con
 l'algoritmo di **Java Edition**: stesso seed, stesso mondo di Java 26.3. Oggi il mondo è un unico chunk piatto ripetuto.
 
@@ -57,8 +57,8 @@ mentre T2 è gameplay e poggia su un mondo già stabile.
 ## Vincoli
 
 - **Licenze.**
-  - `bedrock-protocol`, `bedrock-net` e `bedrock-server` restano MIT su Rust stable.
-  - Il generatore `versmc-gen` è AGPL-3.0-or-later perché collega `steel-core`.
+  - `blackstone-protocol`, `blackstone-net` e `blackstone-server` restano MIT su Rust stable.
+  - Il generatore `blackstone-gen` è AGPL-3.0-or-later perché collega `steel-core`.
   - I due comunicano solo tramite un protocollo su socket. Il codice di Steel non entra mai nel server.
 - **Toolchain del generatore:** nightly fissato alla stessa data di Steel (oggi `nightly-2026-10-14`), con un suo
   `rust-toolchain.toml` nella cartella del generatore. Il generatore va **fuori dal workspace principale**: un
@@ -100,16 +100,16 @@ Salvataggio:
 
 ```
                   TCP 127.0.0.1 (protocollo "vgen")
-bedrock-server  <---------------------------------->  versmc-gen (AGPL, nightly, workspace separato)
+blackstone-server  <---------------------------------->  blackstone-gen (AGPL, nightly, workspace separato)
   (MIT, stable)     richiesta: dim, x, z                 steel-core: ChunkMap::generate_region
   - avvia/riavvia   risposta: chunk Bedrock               + traduzione blocchi/biomi (mappature Geyser)
   - cache + LevelDB  (sezioni con palette di hash Bedrock,
   - streaming          biomi 3D, block entity minime)
 ```
 
-### Generatore `versmc-gen` (cartella `generator/`, workspace a parte)
+### Generatore `blackstone-gen` (cartella `generator/`, workspace a parte)
 
-- Si avvia con `versmc-gen --port N --seed S`. Accetta una sola connessione: quella del server.
+- Si avvia con `blackstone-gen --port N --seed S`. Accetta una sola connessione: quella del server.
 - Tiene una `ChunkMap` di Steel per ciascuna delle tre dimensioni. Per ogni richiesta genera fino allo stato Full.
   - Nota per chi implementa: `generate_region` richiede una mappa vuota. Va capito nella fase di prova se generare a
     regioni (es. 8×8 chunk) con una mappa nuova ogni volta, pagando la fascia di dipendenze, oppure usare il
@@ -215,7 +215,7 @@ bedrock-server  <---------------------------------->  versmc-gen (AGPL, nightly,
 
 ## Prima cosa da fare: una prova usa e getta
 
-Compilare `versmc-gen` contro un commit fissato di Steel su Windows e generare il chunk (0,0) con un seed noto.
+Compilare `blackstone-gen` contro un commit fissato di Steel su Windows e generare il chunk (0,0) con un seed noto.
 Tradurlo e stamparlo. Misurare:
 
 - tempo di compilazione;

@@ -10,8 +10,8 @@ use crate::{
     survival::{IMMUNITY_TICKS, MAX_HEALTH},
     Server,
 };
-use bedrock_net::log;
-use bedrock_protocol::{
+use blackstone_net::log;
+use blackstone_protocol::{
     actor::set_actor_data,
     entity::{actor_event, actor_event_type, animate_swing, player_list_remove},
     generated::MobEquipment,
@@ -75,7 +75,7 @@ fn held_item(n: usize) -> Item {
 /// L'UUID del bot, stabile: ricavato dal suo ID di entità.
 pub(crate) fn bot_uuid(id: u64) -> [u8; 16] {
     let mut uuid = [0u8; 16];
-    uuid[..8].copy_from_slice(b"VersMCBE");
+    uuid[..8].copy_from_slice(b"BLKSTONE");
     uuid[8..].copy_from_slice(&id.to_be_bytes());
     uuid
 }

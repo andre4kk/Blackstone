@@ -6,12 +6,12 @@ Riferimento per decoder/encoder a mano. Protocollo 2225 (client 1.26.6x).
 
 | Fonte | Versione usata |
 |---|---|
-| Mojang `bedrock-protocol-docs` (clonato in `vendor/bedrock-protocol-docs`, ignorato da git, EULA: non copiare nulla di tracciato) | tag **v1.26.65**, commit `b0c990c8536910755aa975baae673c7bc6130f89` (checkout detached). Il branch `main` e' piu' nuovo (1.26.70-preview.26): NON usarlo. I tag v1.26.61/62/65 hanno tutti `x-protocol-version: 2225`; gli schemi dei pacchetti qui trattati sono identici tra v1.26.61 e v1.26.65 (git diff vuoto). I JSON dicono ancora `x-minecraft-version: 1.26.60-beta.0`. |
+| Mojang `blackstone-protocol-docs` (clonato in `vendor/blackstone-protocol-docs`, ignorato da git, EULA: non copiare nulla di tracciato) | tag **v1.26.65**, commit `b0c990c8536910755aa975baae673c7bc6130f89` (checkout detached). Il branch `main` e' piu' nuovo (1.26.70-preview.26): NON usarlo. I tag v1.26.61/62/65 hanno tutti `x-protocol-version: 2225`; gli schemi dei pacchetti qui trattati sono identici tra v1.26.61 e v1.26.65 (git diff vuoto). I JSON dicono ancora `x-minecraft-version: 1.26.60-beta.0`. |
 | gophertunnel (MIT) | HEAD `e2251a60` (2026-11-12), `CurrentProtocol = 2225`, `CurrentVersion = "1.26.60"`. Storia utile: `b36ddad` (1.26.40: PAI input flags a lista, ItemStackRequest a varianti), `7a556a0` (1.26.50: presenza opzionali a 1 byte invece di 2). |
 | Mojang `additional_docs/BlockBreakingOverview.md`, `ServerAuthInventory/*` | flusso block breaking (parafrasato qui). |
 | PMMP BedrockProtocol (solo 1.26.30, per cross-check storico) e Dragonfly (usa gophertunnel 1.63) | solo per slot 50 e per i pacchetti che il server manda. |
 
-Percorsi schemi: `vendor/bedrock-protocol-docs/json/<Nome>PacketPayload.json` (+ tipi referenziati). gophertunnel: `minecraft/protocol/packet/*.go`, `minecraft/protocol/*.go`.
+Percorsi schemi: `vendor/blackstone-protocol-docs/json/<Nome>PacketPayload.json` (+ tipi referenziati). gophertunnel: `minecraft/protocol/packet/*.go`, `minecraft/protocol/*.go`.
 
 ## 1. Regole di codifica (come le legge `tools/protocolgen.py`)
 

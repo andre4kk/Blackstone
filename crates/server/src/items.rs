@@ -8,8 +8,8 @@ use crate::{
     placement::{neighbors::solid_face, UP},
     GameMode, Server,
 };
-use bedrock_net::debug;
-use bedrock_protocol::{
+use blackstone_net::debug;
+use blackstone_protocol::{
     entity::{set_actor_motion, take_item_actor},
     Packet,
 };

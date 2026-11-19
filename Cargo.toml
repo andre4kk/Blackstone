@@ -8,8 +8,8 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace.dependencies]
-bedrock-protocol = { path = "crates/protocol" }
-bedrock-net = { path = "crates/net" }
+blackstone-protocol = { path = "crates/protocol" }
+blackstone-net = { path = "crates/net" }
 vgen = { path = "crates/vgen" }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "io-util", "time", "sync", "process", "signal"] }
 str0m = { version = "0.25", default-features = false, features = ["rust-crypto"] }

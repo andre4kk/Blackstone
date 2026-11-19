@@ -8,7 +8,7 @@ use crate::{
     recipes::{recipes, Ingredient, Recipe},
     registry::{self, CreativeItem},
 };
-use bedrock_protocol::{
+use blackstone_protocol::{
     generated::{
         enums::container_enum_name::{
             ARMOR_CONTAINER, COMBINED_HOTBAR_AND_INVENTORY_CONTAINER, CRAFTING_INPUT_CONTAINER, CREATED_OUTPUT_CONTAINER, CURSOR_CONTAINER,
@@ -1140,7 +1140,7 @@ fn referenced(req: &StackRequest) -> Vec<(u8, u8)> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bedrock_protocol::id;
+    use blackstone_protocol::id;
 
     /// ID di rete (1-based) di una voce del menu creativo.
     fn creative_id(name: &str) -> u32 {
@@ -1373,7 +1373,7 @@ mod tests {
         assert_eq!(packets[0].id, id::ITEM_STACK_RESPONSE);
         let net_id = inv.contents.main[2].stack_id;
         let mut zigzag = Vec::new();
-        bedrock_protocol::varint::write_signed(&mut zigzag, net_id);
+        blackstone_protocol::varint::write_signed(&mut zigzag, net_id);
         let body = &packets[0].body;
         // 1 risposta, esito 0, ID richiesta (-1 -> 1), contenitori presenti, 2 contenitori (creato per primo: è la prima azione)
         assert_eq!(&body[..5], [1, 0, 1, 1, 2]);
@@ -1515,7 +1515,7 @@ mod tests {
     /// del contenitore `CraftingInput` (griglia 2x2).
     #[test]
     fn real_client_grid_requests_are_accepted() {
-        use bedrock_protocol::input::ItemStackRequestPacket;
+        use blackstone_protocol::input::ItemStackRequestPacket;
         let take = [
             0x01, 0x3d, 0x01, 0x00, 0x00, 0x40, 0x1c, 0x00, 0x01, 0x03, 0x00, 0x00, 0x00, 0x3b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff,
             0xff,

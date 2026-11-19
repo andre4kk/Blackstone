@@ -1,8 +1,8 @@
-# VersMCBE: presentazione del progetto
+# Blackstone: presentazione del progetto
 
 ## 1. Cos'è e perché esiste
 
-VersMCBE è un server per **Minecraft Bedrock** (la versione per Windows, console e telefoni) scritto in **Rust**. Segue l'idea di
+Blackstone è un server per **Minecraft Bedrock** (la versione per Windows, console e telefoni) scritto in **Rust**. Segue l'idea di
 PocketMine-MP, il server Bedrock più noto, ma punta a essere più veloce e più ordinato.
 
 Il mondo è **infinito** e viene creato con le **stesse regole di Minecraft Java 26.3** (montagne, grotte, biomi), anche se
@@ -15,7 +15,7 @@ giochi con Bedrock. In futuro avrà un'**API per i plugin**, così chiunque potr
 | Rete | Collega il gioco al server. Usa **NetherNet** (WebRTC), il sistema delle versioni 26.60 in poi: si entra dalla scheda Amici/LAN. Prima c'è una "stretta di mano" via HTTP (signaling). | `crates/net` |
 | Protocollo | Traduce i pacchetti del gioco (versione di protocollo 2225, client 1.26.6x) da byte a dati e viceversa. Non fa input/output. | `crates/protocol` |
 | Server | La logica di gioco: giocatori, blocchi, inventario, chat, comandi, 20 aggiornamenti al secondo. | `crates/server` |
-| Generatore | Programma **separato** (`versmc-gen`) basato su **SteelMC** che crea i chunk. Il server lo avvia da solo e gli parla via TCP in locale; se cade, lo riavvia. | `generator/` + `crates/vgen` |
+| Generatore | Programma **separato** (`blackstone-gen`) basato su **SteelMC** che crea i chunk. Il server lo avvia da solo e gli parla via TCP in locale; se cade, lo riavvia. | `generator/` + `crates/vgen` |
 | Salvataggio | Il mondo sta in `worlds/<nome>` nel formato **LevelDB di Bedrock**, con `level.dat`. Si salvano anche inventario, modalità, vita e fame di ogni giocatore. | dentro il server |
 
 Perché il generatore è separato: SteelMC ha licenza AGPL e richiede una versione sperimentale di Rust. Tenendolo a parte, il
@@ -70,7 +70,7 @@ Impostazioni di `server.toml`:
 |---|---|---|
 | `world` | `Mondo` | nome del mondo (cartella in `worlds/`) |
 | `seed` | casuale | seme, vale solo alla creazione del mondo |
-| `generator` | `generator/target/release/versmc-gen` | dove si trova il generatore |
+| `generator` | `generator/target/release/blackstone-gen` | dove si trova il generatore |
 | `view_distance` | 6 | raggio di chunk per giocatore (1-32) |
 | `port` | 19132 | porta TCP e UDP |
 | `keep_inventory` | false | chi muore tiene l'inventario |
@@ -89,10 +89,10 @@ Non cancellare né condividere `identity.key`: è l'identità del server.
 | **gophertunnel** | riferimento per i byte dei pacchetti (la sequenza di ingresso segue quella) | MIT, solo consultato |
 | **PocketMine-MP** | modello di riferimento per lo stile del server | LGPL-3.0, solo come ispirazione (nessun codice copiato) |
 | **SteelMC** | motore di generazione del mondo, dentro `generator/` | AGPL-3.0 |
-| Generatore `versmc-gen` | processo separato, parla col server solo via TCP | AGPL-3.0-or-later |
+| Generatore `blackstone-gen` | processo separato, parla col server solo via TCP | AGPL-3.0-or-later |
 | Mappature **GeyserMC** (blocchi e biomi) | traduzione Java -> Bedrock | MIT |
 | **pmmp/BedrockData** | dati dei biomi | CC0 |
-| Dati e schemi **Mojang** (jar Java, bedrock-protocol-docs, bedrock-samples) | pacchetti e dati | EULA di Minecraft |
+| Dati e schemi **Mojang** (jar Java, blackstone-protocol-docs, bedrock-samples) | pacchetti e dati | EULA di Minecraft |
 
 Prima di distribuire il server va verificato cosa dell'EULA permette di includere e cosa invece l'utente deve scaricare.
 Se si distribuisce il binario del generatore valgono le condizioni dell'AGPL.

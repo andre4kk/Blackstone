@@ -15,7 +15,7 @@ creativo (`CreativeContent`), nell'ordine giusto.
 
 ## Prova a vuoto del server (senza client)
 
-Avviato `bedrock-server` in una cartella temporanea (seme 13579, porta 19141, generatore reale in release), 25 s, poi fermato
+Avviato `blackstone-server` in una cartella temporanea (seme 13579, porta 19141, generatore reale in release), 25 s, poi fermato
 (nessun processo rimasto). Il log mostra: mondo aperto, server in ascolto, `[gen] generatore pronto`, palette di 17793 voci,
 spawn calcolato -96, 66, 32. Alla chiusura forzata il generatore segnala la connessione chiusa: atteso.
 
@@ -66,10 +66,10 @@ Per partire puliti cancella `worlds/Mondo`. Il log è l'output a terminale.
 
 ## Interruttori di diagnostica
 
-- `VERSMC_DEBUG=nozero,nowater,plains,nobe` (separati da virgola): parti dei chunk (storage a 0 bit, acqua, biomi, block entity).
+- `BLACKSTONE_DEBUG=nozero,nowater,plains,nobe` (separati da virgola): parti dei chunk (storage a 0 bit, acqua, biomi, block entity).
 - `SEND=biomes`: invia la lista biomi (spenta di default: il client la rifiutava). `SEND=actors` come in README.
 - `SKIP=jigsaw,voxel,items,creative,publisher`, `NO_CHUNKS=1`, `CHUNKS_EARLY=1`.
-- PowerShell: `$env:VERSMC_DEBUG="nozero"; cargo run`, poi `Remove-Item Env:VERSMC_DEBUG`.
+- PowerShell: `$env:BLACKSTONE_DEBUG="nozero"; cargo run`, poi `Remove-Item Env:BLACKSTONE_DEBUG`.
 
 ## Limiti noti
 

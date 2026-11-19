@@ -1,4 +1,4 @@
-# Configurazione di VersMCBE. Copia questo file in `server.toml` (nella cartella da cui avvii il server):
+# Configurazione di Blackstone. Copia questo file in `server.toml` (nella cartella da cui avvii il server):
 # se `server.toml` manca, il server lo crea da solo con questi valori.
 
 # Nome del mondo: i dati stanno in `worlds/<world>`.
@@ -9,7 +9,7 @@ world = "Mondo"
 # seed = 12345
 
 # Programma del generatore. Su Windows il suffisso `.exe` si aggiunge da solo se manca.
-generator = "generator/target/release/versmc-gen"
+generator = "generator/target/release/blackstone-gen"
 
 # Raggio di chunk inviato a ogni giocatore.
 view_distance = 6
@@ -24,5 +24,5 @@ keep_inventory = false
 pvp = true
 
 # Quanto parla la console: "warn" (solo avvisi ed errori), "info" (ingressi, chat, comandi, morti) o "debug"
-# (anche i dettagli tecnici di rete e pacchetti). La variabile d'ambiente `VERSMC_LOG` ha la precedenza.
+# (anche i dettagli tecnici di rete e pacchetti). La variabile d'ambiente `BLACKSTONE_LOG` ha la precedenza.
 log_level = "info"

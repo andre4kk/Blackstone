@@ -53,7 +53,7 @@ Il jar del server Java viene scaricato ed estratto dallo script di build di `ste
 il checkout git di cargo (`src/generated`); dopo il primo download una build da zero non lo
 riscarica, quindi i 12 min 19 s sono solo compilazione (dominata da LTO con codegen-units 1).
 
-Output della prova (`versmc-gen probe --seed 13579 --x 0 --z 0 --repeat 3`):
+Output della prova (`blackstone-gen probe --seed 13579 --x 0 --z 0 --repeat 3`):
 
 ```
 prova: seme 13579 dimensione Overworld chunk (0, 0) regione 1x1
@@ -75,7 +75,7 @@ memoria di picco: 57 MiB
   `pub(crate)`. Pubblici: il metodo di trait `ChunkGenerator::initial_spawn_search_origin`
   (`worldgen/generator/mod.rs:48`) e `OverworldClimateSampler::find_spawn_position` in `steel-worldgen`
   (`biomes/climate_sampler.rs:108`).
-- Con `lto = true` e `codegen-units = 1` anche una ricompilazione del solo crate `versmc-gen`
+- Con `lto = true` e `codegen-units = 1` anche una ricompilazione del solo crate `blackstone-gen`
   in release richiede circa 10 min (rilevato: 10 min 09 s), perché LTO rielabora tutto
   steel-core. Per iterare conviene un profilo senza LTO (come `cicd` di Steel) o il profilo dev.
 - Il tempo per chunk scende molto con regioni grandi (le dipendenze condivise si generano una

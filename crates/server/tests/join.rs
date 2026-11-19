@@ -5,7 +5,7 @@ use base64::{
     engine::general_purpose::{STANDARD as B64, URL_SAFE_NO_PAD as B64U},
     Engine,
 };
-use bedrock_protocol::{
+use blackstone_protocol::{
     generated::{
         BiomeDefinitionList, ChunkRadiusUpdated, CreativeContent, InventoryContent, ItemRegistry, JigsawStructureData, LevelChunk, NetworkChunkPublisherUpdate,
         PlayerHotbar, SetPlayerGameType, StartGame, UpdateAbilities, UpdateAttributes, VoxelShapes,
@@ -16,7 +16,7 @@ use bedrock_protocol::{
     wire::ServerPacket,
     Packet, Session, PROTOCOL,
 };
-use bedrock_server::config::ServerConfig;
+use blackstone_server::config::ServerConfig;
 use p384::ecdsa::{signature::Verifier, Signature, VerifyingKey};
 use std::{
     collections::HashSet,
@@ -134,7 +134,7 @@ fn client(port: u16, mode: Mode) {
     assert_eq!(info["protocol"], PROTOCOL);
 
     // 2. Offerta con i due data channel di Minecraft. Il candidato è l'IP della LAN, come per il vero client.
-    let ip = bedrock_net::lan_ip().unwrap_or_else(|| "127.0.0.1".parse().unwrap());
+    let ip = blackstone_net::lan_ip().unwrap_or_else(|| "127.0.0.1".parse().unwrap());
     let sock = UdpSocket::bind((ip, 0)).unwrap();
     let local = sock.local_addr().unwrap();
     let mut rtc = Rtc::new(Instant::now());
@@ -211,10 +211,10 @@ fn client(port: u16, mode: Mode) {
                                 ChunkRadiusUpdated::ID,
                                 id::PLAY_STATUS,
                                 CreativeContent::ID,
-                                bedrock_protocol::crafting::CraftingData::ID,
-                                bedrock_protocol::commands::AvailableCommands::ID,
+                                blackstone_protocol::crafting::CraftingData::ID,
+                                blackstone_protocol::commands::AvailableCommands::ID,
                                 UpdateAttributes::ID,
-                                bedrock_protocol::actor::SET_ACTOR_DATA,
+                                blackstone_protocol::actor::SET_ACTOR_DATA,
                             ] =>
                     {
                         assert_eq!(packets[0].body, [(RADIUS * 2) as u8], "raggio concesso (ZigZag)");
@@ -411,7 +411,7 @@ impl Drop for TempWorld {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn client_joins_the_world_and_receives_chunks() {
-    tokio::spawn(bedrock_server::run(bedrock_server::config(PORT)));
+    tokio::spawn(blackstone_server::run(blackstone_server::config(PORT)));
     tokio::task::spawn_blocking(|| client(PORT, Mode::Flat)).await.unwrap();
 }
 
@@ -423,6 +423,6 @@ async fn generated_world_streams_chunks_while_the_player_moves() {
     let world = TempWorld(std::env::temp_dir().join(format!("vgen-e2e-{}", std::process::id())));
     let server_cfg = ServerConfig { seed: Some(13579), view_distance: 4, port: GEN_PORT, ..ServerConfig::default() };
     let dir = world.0.clone();
-    tokio::spawn(async move { bedrock_server::run_with_generator_at(bedrock_server::config(GEN_PORT), &server_cfg, &dir, gen_addr).await });
+    tokio::spawn(async move { blackstone_server::run_with_generator_at(blackstone_server::config(GEN_PORT), &server_cfg, &dir, gen_addr).await });
     tokio::task::spawn_blocking(|| client(GEN_PORT, Mode::Generated)).await.unwrap();
 }

@@ -1,5 +1,5 @@
 [package]
-name = "bedrock-net"
+name = "blackstone-net"
 version.workspace = true
 edition.workspace = true
 

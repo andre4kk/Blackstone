@@ -1,5 +1,5 @@
 //! Configurazione del server (`server.toml`).
-use bedrock_net::{log, warn};
+use blackstone_net::{log, warn};
 use serde::Deserialize;
 use std::{
     fs,
@@ -25,7 +25,7 @@ pub struct ServerConfig {
     pub keep_inventory: bool,
     /// Se falso, i giocatori non si fanno danno tra loro (i bot si colpiscono sempre).
     pub pvp: bool,
-    /// Livello minimo dei messaggi in console: "debug", "info" o "warn". La variabile d'ambiente `VERSMC_LOG` ha la precedenza.
+    /// Livello minimo dei messaggi in console: "debug", "info" o "warn". La variabile d'ambiente `BLACKSTONE_LOG` ha la precedenza.
     pub log_level: String,
 }
 
@@ -34,7 +34,7 @@ impl Default for ServerConfig {
         ServerConfig {
             world: "Mondo".into(),
             seed: None,
-            generator: PathBuf::from(format!("generator/target/release/versmc-gen{}", std::env::consts::EXE_SUFFIX)),
+            generator: PathBuf::from(format!("generator/target/release/blackstone-gen{}", std::env::consts::EXE_SUFFIX)),
             view_distance: 6,
             port: 19132,
             keep_inventory: false,
@@ -52,6 +52,13 @@ impl ServerConfig {
             let mut name = self.generator.into_os_string();
             name.push(suffix);
             self.generator = name.into();
+        }
+        // Vecchio nome del generatore (`versmc-gen`): se il nuovo eseguibile non esiste ma il vecchio sì, si usa il vecchio.
+        if !self.generator.exists() {
+            let old = self.generator.with_file_name(format!("versmc-gen{suffix}"));
+            if self.generator.file_name().and_then(|n| n.to_str()) == Some(&format!("blackstone-gen{suffix}")) && old.exists() {
+                self.generator = old;
+            }
         }
         self
     }
@@ -88,7 +95,7 @@ mod tests {
 
     impl TempDir {
         fn new(name: &str) -> Self {
-            let dir = std::env::temp_dir().join(format!("versmc-test-{name}-{}", std::process::id()));
+            let dir = std::env::temp_dir().join(format!("blackstone-test-{name}-{}", std::process::id()));
             let _ = fs::remove_dir_all(&dir);
             fs::create_dir_all(&dir).unwrap();
             TempDir(dir)
@@ -110,7 +117,7 @@ mod tests {
         assert_eq!((cfg.world.as_str(), cfg.seed, cfg.view_distance, cfg.port), ("Mondo", None, 6, 19132));
         assert!(!cfg.keep_inventory);
         assert!(cfg.pvp);
-        assert!(cfg.generator.to_string_lossy().starts_with("generator/target/release/versmc-gen"));
+        assert!(cfg.generator.to_string_lossy().starts_with("generator/target/release/blackstone-gen"));
         assert_eq!(fs::read_to_string(&path).unwrap(), EXAMPLE, "scritto l'esempio");
         assert_eq!(ServerConfig::load(&path), cfg, "l'esempio riletto dà gli stessi valori");
     }

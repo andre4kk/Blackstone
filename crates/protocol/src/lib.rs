@@ -20,7 +20,7 @@ pub mod varint;
 pub mod wire;
 pub use packets::id;
 
-/// Versione di gioco e numero di protocollo supportati (github.com/Mojang/bedrock-protocol-docs).
+/// Versione di gioco e numero di protocollo supportati (github.com/Mojang/blackstone-protocol-docs).
 pub const PROTOCOL: u32 = 2225;
 pub const VERSION: &str = "1.26.63";
 /// Sotto questa dimensione i batch non vengono compressi.

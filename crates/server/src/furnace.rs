@@ -15,8 +15,8 @@ use crate::{
     smelting::{tables, COOK_TICKS},
     GameMode, Server,
 };
-use bedrock_net::debug;
-use bedrock_protocol::{
+use blackstone_net::debug;
+use blackstone_protocol::{
     container_set_data::{ContainerSetData, FURNACE_LIT_DURATION, FURNACE_LIT_TIME, FURNACE_TICK_COUNT},
     generated::{BlockPos, ContainerOpen},
     wire::ServerPacket,

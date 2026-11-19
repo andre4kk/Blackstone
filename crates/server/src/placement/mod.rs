@@ -10,8 +10,8 @@ use crate::{
     registry::{self, blocks},
     GameMode, Server,
 };
-use bedrock_net::debug;
-use bedrock_protocol::input::UseItem;
+use blackstone_net::debug;
+use blackstone_protocol::input::UseItem;
 use vgen::Dim;
 
 pub(crate) mod neighbors;

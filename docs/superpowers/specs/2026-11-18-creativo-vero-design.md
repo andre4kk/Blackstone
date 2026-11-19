@@ -4,7 +4,7 @@ Data: 18/11/2026. Brainstorming: `docs/brainstorm/stato-gameplay.md`, catalogo `
 
 ## Perché
 
-VersMCBE deve diventare un server stile PocketMine-MP ma migliore, con un'API dei plugin in futuro. Dopo il mondo
+Blackstone deve diventare un server stile PocketMine-MP ma migliore, con un'API dei plugin in futuro. Dopo il mondo
 generato (T1) l'utente vuole i comportamenti normali di Minecraft. Questa tappa è il primo pezzo: un creativo in cui si
 costruisce davvero, con tutto controllato dal server e salvato. Serve a portare presto nel gioco le parti di protocollo
 più rischiose (input completo del giocatore, inventario `ItemStackRequest`, aggiornamento dei blocchi) su un pezzo
@@ -47,7 +47,7 @@ vuoto (`CreativeContent::default()`), le rotture e i piazzamenti del client sono
 
 - Server MIT in `crates/`; il generatore (AGPL) non si tocca in questa tappa.
 - Protocollo 2225 (client 1.26.6x). I pacchetti server → client si generano con `tools/protocolgen.py` dagli schemi
-  Mojang (bedrock-protocol-docs), che vanno **riscaricati** (EULA: non entrano nel repository). I decoder client →
+  Mojang (blackstone-protocol-docs), che vanno **riscaricati** (EULA: non entrano nel repository). I decoder client →
   server si scrivono a mano, come quelli esistenti in `crates/protocol/src/packets.rs`.
 - ID di rete dei blocchi: hash FNV-1a dell'NBT `{name, states}` (`world::block_hash`), come oggi.
 - Dati liberi: pmmp/BedrockData (CC0) per oggetti creativi, stati canonici dei blocchi e associazione oggetto → blocco.

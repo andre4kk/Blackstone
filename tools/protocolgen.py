@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Genera gli encoder dei pacchetti server -> client dagli schemi JSON di Mojang.
 
-Uso:  python tools/protocolgen.py <cartella json di bedrock-protocol-docs> <file .rs di output> <Pacchetto>...
-Esempio: python tools/protocolgen.py ../bedrock-protocol-docs/json crates/protocol/src/generated.rs StartGame ItemRegistry
+Uso:  python tools/protocolgen.py <cartella json di blackstone-protocol-docs> <file .rs di output> <Pacchetto>...
+Esempio: python tools/protocolgen.py ../blackstone-protocol-docs/json crates/protocol/src/generated.rs StartGame ItemRegistry
 
-Gli schemi sono soggetti all'EULA di Minecraft (github.com/Mojang/bedrock-protocol-docs): non vanno copiati nel repository.
+Gli schemi sono soggetti all'EULA di Minecraft (github.com/Mojang/blackstone-protocol-docs): non vanno copiati nel repository.
 Si genera solo la codifica. Regole di codifica:
   - interi: fissi little-endian; con l'opzione "Compression" varint (con segno = ZigZag); "Big Endian" big-endian
   - proprietà non elencate in "required": opzionali, scritte come un byte di presenza + valore

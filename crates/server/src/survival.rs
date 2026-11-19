@@ -7,8 +7,8 @@ use crate::{
     playerdata::EYE_HEIGHT,
     registry, tables, GameMode, Player, Server,
 };
-use bedrock_net::{debug, log};
-use bedrock_protocol::{
+use blackstone_net::{debug, log};
+use blackstone_protocol::{
     actor::set_actor_data,
     entity::{actor_event, actor_event_type, move_player_teleport, remove_actor, respawn, set_actor_motion},
     generated::UpdateAttributes,
