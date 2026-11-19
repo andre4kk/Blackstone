@@ -1,6 +1,6 @@
 //! Streaming dei chunk col movimento del giocatore, ingresso dei chunk dal generatore e dal disco, scaricamento.
 use crate::{disk::DiskEvent, gen_client::GenEvent, world::Chunk, ChunkKey, Server};
-use bedrock_net::log;
+use bedrock_net::{debug, warn};
 use bedrock_protocol::{
     generated::{ChunkPos, LevelChunk},
     wire::ServerPacket,
@@ -224,17 +224,17 @@ impl Server {
             GenEvent::Ready => {
                 self.gen_ready = true;
                 self.gen_downs = 0;
-                log!("[gen] generatore pronto");
+                debug!("[gen] generatore pronto");
             }
             GenEvent::Palette(entries) => {
-                log!("[gen] palette dei blocchi ricevuta: {} voci", entries.len());
+                debug!("[gen] palette dei blocchi ricevuta: {} voci", entries.len());
                 if let Some(disk) = &self.disk {
                     disk.set_palette(entries);
                 }
             }
             GenEvent::Chunk(data) => self.on_chunk(data),
             GenEvent::Spawn(Dim::Overworld, x, y, z) => {
-                log!("[mondo] spawn calcolato dal generatore e salvato: {x}, {y}, {z}");
+                debug!("[mondo] spawn calcolato dal generatore e salvato: {x}, {y}, {z}");
                 self.spawn = Some((x, y, z));
                 self.spawn_retry_at = None;
                 if let Some(disk) = &self.disk {
@@ -242,33 +242,33 @@ impl Server {
                 }
                 self.resume_waiting_logins();
             }
-            GenEvent::Spawn(dim, ..) => log!("[gen] spawn di {dim:?} ignorato"),
+            GenEvent::Spawn(dim, ..) => debug!("[gen] spawn di {dim:?} ignorato"),
             GenEvent::ChunkFailed(dim, x, z, reason) => self.on_chunk_failed(dim, x, z, &reason),
             GenEvent::SpawnFailed(Dim::Overworld, reason) => {
                 self.spawn_fails += 1;
                 if self.spawn_fails >= GEN_MAX_ATTEMPTS {
-                    log!("[gen] spawn non calcolabile dopo {} tentativi ({reason}): uso {FALLBACK_SPAWN:?} senza salvarlo", self.spawn_fails);
+                    warn!("[gen] spawn non calcolabile dopo {} tentativi ({reason}): uso {FALLBACK_SPAWN:?} senza salvarlo", self.spawn_fails);
                     self.spawn = Some(FALLBACK_SPAWN);
                     self.spawn_retry_at = None;
                     self.resume_waiting_logins();
                 } else {
-                    log!("[gen] spawn non calcolabile ({reason}): riprovo tra {} s", GEN_RETRY_DELAY.as_secs());
+                    warn!("[gen] spawn non calcolabile ({reason}): riprovo tra {} s", GEN_RETRY_DELAY.as_secs());
                     self.spawn_retry_at = Some(Instant::now() + GEN_RETRY_DELAY);
                 }
             }
-            GenEvent::SpawnFailed(dim, reason) => log!("[gen] errore per lo spawn di {dim:?} ignorato: {reason}"),
+            GenEvent::SpawnFailed(dim, reason) => debug!("[gen] errore per lo spawn di {dim:?} ignorato: {reason}"),
             GenEvent::Down(reason) if !self.gen_ready && !self.flat => {
-                log!("[gen] generatore assente ({reason}): uso il mondo piatto di ripiego; riavvia il server dopo aver sistemato il generatore");
+                warn!("[gen] generatore assente ({reason}): uso il mondo piatto di ripiego; riavvia il server dopo aver sistemato il generatore");
                 self.fall_back_to_flat();
             }
-            GenEvent::Down(reason) if self.flat => log!("[gen] generatore caduto ({reason}), ma il mondo è già piatto"),
+            GenEvent::Down(reason) if self.flat => warn!("[gen] generatore caduto ({reason}), ma il mondo è già piatto"),
             GenEvent::Down(reason) => {
                 self.gen_downs += 1;
                 if self.gen_downs >= GEN_MAX_DOWNS {
-                    log!("[gen] generatore caduto {} volte di fila senza tornare ({reason}): uso il mondo piatto di ripiego; riavvia il server dopo aver sistemato il generatore", self.gen_downs);
+                    warn!("[gen] generatore caduto {} volte di fila senza tornare ({reason}): uso il mondo piatto di ripiego; riavvia il server dopo aver sistemato il generatore", self.gen_downs);
                     self.fall_back_to_flat();
                 } else {
-                    log!("[gen] generatore caduto ({reason}): il client lo riavvia e rimanda le richieste");
+                    warn!("[gen] generatore caduto ({reason}): il client lo riavvia e rimanda le richieste");
                 }
             }
         }
@@ -281,11 +281,11 @@ impl Server {
         let fails = self.chunk_fails.entry(key).or_insert(0);
         *fails += 1;
         if *fails >= GEN_MAX_ATTEMPTS {
-            log!("[gen] chunk {x},{z} ({dim:?}) fallito {GEN_MAX_ATTEMPTS} volte ({reason}): uso il chunk piatto, non salvato");
+            warn!("[gen] chunk {x},{z} ({dim:?}) fallito {GEN_MAX_ATTEMPTS} volte ({reason}): uso il chunk piatto, non salvato");
             self.chunk_fails.remove(&key);
             self.chunks.entry(key).or_insert_with(|| Chunk::flat(dim, x, z));
         } else {
-            log!("[gen] chunk {x},{z} ({dim:?}) fallito ({reason}): riprovo tra {} s", GEN_RETRY_DELAY.as_secs());
+            warn!("[gen] chunk {x},{z} ({dim:?}) fallito ({reason}): riprovo tra {} s", GEN_RETRY_DELAY.as_secs());
             self.retry_after.insert(key, Instant::now() + GEN_RETRY_DELAY);
         }
     }

@@ -112,13 +112,13 @@ fn join(shared: &Shared, new_clients: &UnboundedSender<Client>, local: SocketAdd
     let answer = match rtc.sdp_api().accept_offer(SdpOffer::from_sdp_string(&offer).ok()?) {
         Ok(a) => a.to_sdp_string(),
         Err(e) => {
-            crate::log!("signaling: offerta rifiutata: {e}");
+            crate::warn!("signaling: offerta rifiutata: {e}");
             return None;
         }
     };
     let id = shared.next_id.fetch_add(1, Relaxed);
     new_clients.send(Client::new(id, rtc, addr)).ok()?;
-    crate::log!("[#{id}] signaling OK, candidato {addr}");
+    crate::debug!("[#{id}] signaling OK, candidato {addr}");
     Some(shared.identity.sign_answer(&answer))
 }
 

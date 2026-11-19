@@ -1,5 +1,5 @@
 //! Configurazione del server (`server.toml`).
-use bedrock_net::log;
+use bedrock_net::{log, warn};
 use serde::Deserialize;
 use std::{
     fs,
@@ -25,6 +25,8 @@ pub struct ServerConfig {
     pub keep_inventory: bool,
     /// Se falso, i giocatori non si fanno danno tra loro (i bot si colpiscono sempre).
     pub pvp: bool,
+    /// Livello minimo dei messaggi in console: "debug", "info" o "warn". La variabile d'ambiente `VERSMC_LOG` ha la precedenza.
+    pub log_level: String,
 }
 
 impl Default for ServerConfig {
@@ -37,6 +39,7 @@ impl Default for ServerConfig {
             port: 19132,
             keep_inventory: false,
             pvp: true,
+            log_level: "info".into(),
         }
     }
 }
@@ -58,18 +61,18 @@ impl ServerConfig {
     pub fn load(path: &Path) -> ServerConfig {
         match fs::read_to_string(path) {
             Ok(text) => toml::from_str::<ServerConfig>(&text).map(ServerConfig::with_exe_suffix).unwrap_or_else(|e| {
-                log!("[config] {} non valido, uso i valori di default: {}", path.display(), e.message());
+                warn!("[config] {} non valido, uso i valori di default: {}", path.display(), e.message());
                 ServerConfig::default()
             }),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
                 match fs::write(path, EXAMPLE) {
                     Ok(()) => log!("[config] {} non trovato: scritto l'esempio, uso i valori di default", path.display()),
-                    Err(e) => log!("[config] impossibile scrivere {}: {e}", path.display()),
+                    Err(e) => warn!("[config] impossibile scrivere {}: {e}", path.display()),
                 }
                 ServerConfig::default()
             }
             Err(e) => {
-                log!("[config] impossibile leggere {}, uso i valori di default: {e}", path.display());
+                warn!("[config] impossibile leggere {}, uso i valori di default: {e}", path.display());
                 ServerConfig::default()
             }
         }

@@ -14,7 +14,7 @@ use crate::{
     registry::{blocks, StateValue},
     GameMode, Server,
 };
-use bedrock_net::log;
+use bedrock_net::debug;
 use bedrock_protocol::{
     block_event::{BlockEvent, CHANGE_CHEST_STATE},
     generated::{BlockPos, ContainerClose, ContainerOpen},
@@ -213,7 +213,7 @@ impl Server {
         }
         let Some(p) = self.players.get_mut(&pid) else { return };
         let window = p.inventory.open_chest(parts.clone(), items);
-        log!("[#{pid}] apre il forziere {pos:?} ({} blocchi, finestra {window})", parts.len());
+        debug!("[#{pid}] apre il forziere {pos:?} ({} blocchi, finestra {window})", parts.len());
         let position = BlockPos { x: pos[0], y: pos[1], z: pos[2] };
         let mut packets = vec![ContainerOpen { container_id: window, container_type: CONTAINER_TYPE_CONTAINER, position, target_actor_id: -1 }.packet()];
         packets.extend(p.inventory.chest_content_packet());
@@ -266,7 +266,7 @@ impl Server {
             .map(|(&pid, _)| pid)
             .collect();
         for pid in viewers {
-            log!("[#{pid}] il blocco {pos:?} è sparito: finestra chiusa");
+            debug!("[#{pid}] il blocco {pos:?} è sparito: finestra chiusa");
             self.close_window(pid);
         }
     }
@@ -328,7 +328,7 @@ impl Server {
     /// Il giocatore preme sul forziere in `pos`: lo apre se può (modalità, portata, niente di solido sopra); altrimenti il clic è comunque consumato.
     pub(crate) fn use_chest(&mut self, pid: u64, pos: [i32; 3], mode: GameMode, eyes: [f32; 3]) {
         if mode == GameMode::Spectator || !in_reach(eyes, pos, mode == GameMode::Creative) {
-            return log!("[#{pid}] apertura del forziere {pos:?} rifiutata: modalità o portata");
+            return debug!("[#{pid}] apertura del forziere {pos:?} rifiutata: modalità o portata");
         }
         let parts = self.chest_parts(pos);
         let covered = |at: &[i32; 3]| {
@@ -336,7 +336,7 @@ impl Server {
             self.block_at(Dim::Overworld, above).is_some_and(|(hash, _)| neighbors::solid_face(hash, DOWN))
         };
         if parts.iter().any(covered) {
-            return log!("[#{pid}] forziere {pos:?} coperto: non si apre");
+            return debug!("[#{pid}] forziere {pos:?} coperto: non si apre");
         }
         self.open_chest(pid, pos);
     }

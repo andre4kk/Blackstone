@@ -12,7 +12,7 @@ use crate::{
     survival::{MAX_FOOD, MAX_HEALTH, MAX_SATURATION, START_SATURATION},
     DataState, GameMode, Player,
 };
-use bedrock_net::log;
+use bedrock_net::warn;
 use bedrock_protocol::login::PlayerInfo;
 
 /// Quanto gli occhi stanno sopra i piedi.
@@ -83,7 +83,7 @@ pub(crate) fn stack_to_tag(item: &Item, slot: Option<u8>) -> Option<Tag> {
         return None;
     }
     let Some(name) = registry::items().name(item.id) else {
-        log!("[mondo] oggetto con ID {} senza nome: non salvato", item.id);
+        warn!("[mondo] oggetto con ID {} senza nome: non salvato", item.id);
         return None;
     };
     let mut fields = Vec::new();
@@ -100,7 +100,7 @@ pub(crate) fn stack_to_tag(item: &Item, slot: Option<u8>) -> Option<Tag> {
     if let Some(nbt) = &item.nbt {
         match Reader::new(nbt, Enc::Disk).root() {
             Some((_, tag @ Tag::Compound(_))) => fields.push(("tag".into(), tag)),
-            _ => log!("[mondo] NBT di un oggetto illeggibile: salvato senza"),
+            _ => warn!("[mondo] NBT di un oggetto illeggibile: salvato senza"),
         }
     }
     Some(Tag::Compound(fields))
@@ -127,7 +127,7 @@ pub(crate) fn stack_from_tag(tag: &Tag) -> Option<Item> {
         return None;
     }
     let Some(id) = registry::items().id(name) else {
-        log!("[mondo] oggetto {name} sconosciuto nei dati salvati: saltato");
+        warn!("[mondo] oggetto {name} sconosciuto nei dati salvati: saltato");
         return None;
     };
     let aux = tag.get("Damage").and_then(int).map_or(0, |d| d as u16 as u32);

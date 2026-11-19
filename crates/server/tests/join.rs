@@ -211,6 +211,8 @@ fn client(port: u16, mode: Mode) {
                                 ChunkRadiusUpdated::ID,
                                 id::PLAY_STATUS,
                                 CreativeContent::ID,
+                                bedrock_protocol::crafting::CraftingData::ID,
+                                bedrock_protocol::commands::AvailableCommands::ID,
                                 UpdateAttributes::ID,
                                 bedrock_protocol::actor::SET_ACTOR_DATA,
                             ] =>

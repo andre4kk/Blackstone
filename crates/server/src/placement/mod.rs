@@ -10,7 +10,7 @@ use crate::{
     registry::{self, blocks},
     GameMode, Server,
 };
-use bedrock_net::log;
+use bedrock_net::debug;
 use bedrock_protocol::input::UseItem;
 use vgen::Dim;
 
@@ -359,7 +359,7 @@ impl Server {
     pub(crate) fn place_item(&mut self, pid: u64, u: &UseItem) {
         let Some(p) = self.players.get_mut(&pid).filter(|p| p.spawned) else { return };
         if u.face > EAST {
-            return log!("[#{pid}] piazzamento con la faccia {} inesistente: ignorato", u.face);
+            return debug!("[#{pid}] piazzamento con la faccia {} inesistente: ignorato", u.face);
         }
         if (0..HOTBAR_SLOTS as i32).contains(&u.hotbar_slot) {
             p.inventory.selected = u.hotbar_slot as u8;
@@ -453,7 +453,7 @@ impl Server {
     /// Piazzamento rifiutato: si dice perché nel log e si rimanda all'autore lo stato vero del blocco cliccato, di quello accanto
     /// e dei loro vicini (il client prevede anche le seconde metà di porte, letti e piante alte).
     fn refuse_place(&self, pid: u64, u: &UseItem, why: &str) {
-        log!("[#{pid}] piazzamento su {:?} (faccia {}) rifiutato: {why}", u.pos, u.face);
+        debug!("[#{pid}] piazzamento su {:?} (faccia {}) rifiutato: {why}", u.pos, u.face);
         self.resend_around(pid, Dim::Overworld, &[u.pos, side(u.pos, u.face)]);
     }
 }

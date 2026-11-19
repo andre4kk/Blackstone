@@ -8,7 +8,7 @@ use crate::{
     placement::{neighbors::solid_face, UP},
     GameMode, Server,
 };
-use bedrock_net::log;
+use bedrock_net::debug;
 use bedrock_protocol::{
     entity::{set_actor_motion, take_item_actor},
     Packet,
@@ -111,7 +111,7 @@ impl Server {
         let pos = [p.pos[0], p.pos[1] - THROW_DROP, p.pos[2]];
         let what = format!("{} x{}", item.id, item.count);
         let id = self.spawn_item(item, pos, look.map(|c| c * THROW_SPEED), THROW_PICKUP_DELAY);
-        log!("[#{pid}] butta {what}: oggetto a terra #{id} in [{:.1}, {:.1}, {:.1}]", pos[0], pos[1], pos[2]);
+        debug!("[#{pid}] butta {what}: oggetto a terra #{id} in [{:.1}, {:.1}, {:.1}]", pos[0], pos[1], pos[2]);
     }
 
     /// Crea un oggetto a terra in `pos` (i piedi) con `velocity`; si può raccogliere dopo `pickup_delay` tick e sparisce dopo `LIFETIME`.
@@ -219,7 +219,7 @@ impl Server {
         let (held, armor) = (p.inventory.held().stack(0), armor_of(p));
         let what = format!("{} x{}", item.id, item.count);
         let (rest, changed) = p.inventory.add(item);
-        log!("[#{pid}] raccoglie {what} dall'oggetto a terra #{id} (resto {})", rest.count);
+        debug!("[#{pid}] raccoglie {what} dall'oggetto a terra #{id} (resto {})", rest.count);
         let slots: Vec<Packet> = changed.iter().filter_map(|&(container, slot)| p.inventory.slot_packet_at(container, slot)).collect();
         self.send(pid, &slots);
         self.send_equipment_changes(pid, &held, &armor);

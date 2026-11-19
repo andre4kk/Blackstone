@@ -7,7 +7,7 @@ use crate::{
     playerdata::EYE_HEIGHT,
     registry, tables, GameMode, Player, Server,
 };
-use bedrock_net::log;
+use bedrock_net::{debug, log};
 use bedrock_protocol::{
     actor::set_actor_data,
     entity::{actor_event, actor_event_type, move_player_teleport, remove_actor, respawn, set_actor_motion},
@@ -574,7 +574,7 @@ impl Server {
         (p.sneaking, p.sprinting, p.swimming, p.gliding) = (false, false, false, false);
         let state_changed = before != (false, false, false, false);
         let (mode, feet) = (p.mode, [p.pos[0], p.pos[1] - EYE_HEIGHT, p.pos[2]]);
-        log!("[#{pid}] morto: {cause:?}");
+        log!("[morte] {}: {cause:?}", self.name(pid));
         // solo osservazione: la morte non si annulla e la vedono tutti i ganci (`allow` si fermerebbe al primo che risponde no)
         for hook in &mut self.hooks {
             hook(&WorldAction::Death { pid });
@@ -628,7 +628,7 @@ impl Server {
         let Some(p) = self.players.get_mut(&pid).filter(|p| p.dead) else { return };
         settle_dead(p, self.spawn);
         let (eyes, pitch, yaw) = (p.pos, p.pitch, p.yaw);
-        log!("[#{pid}] rinasce in [{:.1}, {:.1}, {:.1}]", eyes[0], eyes[1], eyes[2]);
+        debug!("[#{pid}] rinasce in [{:.1}, {:.1}, {:.1}]", eyes[0], eyes[1], eyes[2]);
         self.on_move(pid, eyes);
         // finché il client non è arrivato qui, il suo movimento (partito da prima del teletrasporto) non vale
         let now = self.tick_count;

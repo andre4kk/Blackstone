@@ -15,7 +15,7 @@ use crate::{
     registry,
     world::{bits_for_palette, block_hash, block_nbt, pack_words, Chunk, State, BIT_WIDTHS, PLAINS},
 };
-use bedrock_net::log;
+use bedrock_net::warn;
 use rusty_leveldb::{Compressor, CompressorId, CompressorList, Options, Status, StatusCode, WriteBatch, DB};
 use std::{
     collections::{HashMap, HashSet},
@@ -320,7 +320,7 @@ fn save_plan(identity: &str, lookup: Result<Lookup, String>, new_uuid: &mut dyn 
         Lookup::Missing => format!("{SERVER_PREFIX}{}", new_uuid()),
         Lookup::Unreadable(bytes) => {
             let backup = format!("{SERVER_PREFIX}{}_illeggibile", new_uuid());
-            log!("[mondo] record di {identity} illeggibile: copia in {backup}, poi lo rifaccio");
+            warn!("[mondo] record di {identity} illeggibile: copia in {backup}, poi lo rifaccio");
             ops.push((backup.into_bytes(), Some(bytes)));
             format!("{SERVER_PREFIX}{}", new_uuid())
         }
@@ -452,7 +452,7 @@ impl World {
             self.level.set(key, Tag::Int(v));
         }
         if let Err(e) = self.write_level() {
-            log!("[mondo] impossibile salvare level.dat: {e}");
+            warn!("[mondo] impossibile salvare level.dat: {e}");
         }
     }
 
@@ -472,7 +472,7 @@ impl World {
                 }
                 self.palette.insert(hash, nbt::write_root("", &tag, Enc::Disk));
             }
-            _ => log!("[mondo] voce di palette {hash} non valida, ignorata"),
+            _ => warn!("[mondo] voce di palette {hash} non valida, ignorata"),
         }
     }
 
@@ -487,7 +487,7 @@ impl World {
         }
         let known = self.palette.contains_key(&hash);
         if !known && self.warned.insert(hash) {
-            log!("[mondo] blocco sconosciuto (hash {hash}): salvato come minecraft:info_update");
+            warn!("[mondo] blocco sconosciuto (hash {hash}): salvato come minecraft:info_update");
         }
         &self.palette[&if known { hash } else { info_update() }]
     }
@@ -527,7 +527,7 @@ impl World {
             Lookup::Unreadable(_) => Err("record del giocatore illeggibile o senza ServerId valido".into()),
         });
         result.unwrap_or_else(|e| {
-            log!("[mondo] dati di {identity} illeggibili, si parte da capo: {e}");
+            warn!("[mondo] dati di {identity} illeggibili, si parte da capo: {e}");
             None
         })
     }
@@ -628,7 +628,7 @@ impl World {
         for be in &chunk.block_entities {
             match Reader::new(&be.nbt, Enc::Network).root() {
                 Some((name, tag)) => out.extend(nbt::write_root(&name, &tag, Enc::Disk)),
-                None => log!("[mondo] block entity in {},{},{} con NBT illeggibile: non salvata", be.x, be.y, be.z),
+                None => warn!("[mondo] block entity in {},{},{} con NBT illeggibile: non salvata", be.x, be.y, be.z),
             }
         }
         out
@@ -769,7 +769,7 @@ impl World {
     /// Carica un chunk salvato. `None` se manca o è illeggibile (in quel caso con una riga di log).
     pub fn load(&mut self, dim: Dim, x: i32, z: i32) -> Option<Chunk> {
         self.try_load(dim, x, z).unwrap_or_else(|e| {
-            log!("[mondo] chunk {x},{z} ({dim:?}) illeggibile, verrà rigenerato: {e}");
+            warn!("[mondo] chunk {x},{z} ({dim:?}) illeggibile, verrà rigenerato: {e}");
             None
         })
     }

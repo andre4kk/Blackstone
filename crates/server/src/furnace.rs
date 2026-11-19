@@ -15,7 +15,7 @@ use crate::{
     smelting::{tables, COOK_TICKS},
     GameMode, Server,
 };
-use bedrock_net::log;
+use bedrock_net::debug;
 use bedrock_protocol::{
     container_set_data::{ContainerSetData, FURNACE_LIT_DURATION, FURNACE_LIT_TIME, FURNACE_TICK_COUNT},
     generated::{BlockPos, ContainerOpen},
@@ -216,7 +216,7 @@ impl Server {
         let data = self.furnace_data(pos);
         let Some(p) = self.players.get_mut(&pid) else { return };
         let window = p.inventory.open_furnace(pos, data.items.clone());
-        log!("[#{pid}] apre la fornace {pos:?} (finestra {window})");
+        debug!("[#{pid}] apre la fornace {pos:?} (finestra {window})");
         let position = BlockPos { x: pos[0], y: pos[1], z: pos[2] };
         let mut packets = vec![ContainerOpen { container_id: window, container_type: CONTAINER_TYPE_FURNACE, position, target_actor_id: -1 }.packet()];
         packets.extend(p.inventory.chest_content_packet());
@@ -228,7 +228,7 @@ impl Server {
     /// Il giocatore preme sulla fornace in `pos`: la apre se può (modalità, portata); altrimenti il clic è comunque consumato.
     pub(crate) fn use_furnace(&mut self, pid: u64, pos: [i32; 3], mode: GameMode, eyes: [f32; 3]) {
         if mode == GameMode::Spectator || !in_reach(eyes, pos, mode == GameMode::Creative) {
-            return log!("[#{pid}] apertura della fornace {pos:?} rifiutata: modalità o portata");
+            return debug!("[#{pid}] apertura della fornace {pos:?} rifiutata: modalità o portata");
         }
         self.open_furnace(pid, pos);
     }

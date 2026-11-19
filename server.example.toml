@@ -22,3 +22,7 @@ keep_inventory = false
 
 # Se `false`, i giocatori non si fanno danno tra loro (i bot si colpiscono comunque).
 pvp = true
+
+# Quanto parla la console: "warn" (solo avvisi ed errori), "info" (ingressi, chat, comandi, morti) o "debug"
+# (anche i dettagli tecnici di rete e pacchetti). La variabile d'ambiente `VERSMC_LOG` ha la precedenza.
+log_level = "info"

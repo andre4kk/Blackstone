@@ -91,13 +91,13 @@ impl Client {
                 }
                 Ok(None) => {}
                 Err(TooLarge) => {
-                    crate::log!("[#{}] messaggio oltre {MAX_MESSAGE} byte: disconnetto", self.id);
+                    crate::warn!("[#{}] messaggio oltre {MAX_MESSAGE} byte: disconnetto", self.id);
                     self.rtc.disconnect();
                 }
             },
-            RtcEvent::ChannelClose(_) => crate::log!("[#{}] data channel chiuso", self.id),
+            RtcEvent::ChannelClose(_) => crate::debug!("[#{}] data channel chiuso", self.id),
             RtcEvent::IceConnectionStateChange(state) => {
-                crate::log!("[#{}] ICE: {state:?}", self.id);
+                crate::debug!("[#{}] ICE: {state:?}", self.id);
                 if state == IceConnectionState::Disconnected {
                     self.rtc.disconnect();
                 }
@@ -112,17 +112,17 @@ impl Client {
         let chunks: Vec<_> = data.chunks(FRAGMENT).collect();
         if data.len() > MAX_MESSAGE {
             // L'header conta al massimo 256 frammenti: è un errore del chiamante, che deve dividere i batch.
-            return crate::log!("[#{}] messaggio di {} byte non inviato: il limite è {MAX_MESSAGE}", self.id, data.len());
+            return crate::warn!("[#{}] messaggio di {} byte non inviato: il limite è {MAX_MESSAGE}", self.id, data.len());
         }
         for (i, c) in chunks.iter().enumerate() {
             let msg = [&[(chunks.len() - 1 - i) as u8][..], c].concat();
             match self.rtc.channel(ch) {
                 Some(mut ch) => {
                     if let Err(e) = ch.write(true, &msg) {
-                        return crate::log!("[#{}] scrittura sul data channel fallita ({} byte): {e}", self.id, msg.len());
+                        return crate::warn!("[#{}] scrittura sul data channel fallita ({} byte): {e}", self.id, msg.len());
                     }
                 }
-                None => return crate::log!("[#{}] data channel non più disponibile", self.id),
+                None => return crate::warn!("[#{}] data channel non più disponibile", self.id),
             }
         }
     }

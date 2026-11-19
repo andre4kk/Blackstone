@@ -58,6 +58,7 @@ Va nella cartella da cui si avvia il server. Se manca viene scritto con i valori
 | `port` | `19132` | Porta TCP (signaling) e UDP (gioco). |
 | `keep_inventory` | `false` | Se `true`, chi muore tiene l'inventario (niente oggetti a terra). |
 | `pvp` | `true` | Se `false`, i giocatori non si fanno danno tra loro (i bot si colpiscono comunque). |
+| `log_level` | `"info"` | Quanto parla la console: `warn`, `info` (ingressi, chat, comandi, morti) o `debug` (dettagli di rete e pacchetti). `VERSMC_LOG` ha la precedenza. |
 
 Un `server.toml` non valido viene segnalato nel log e il server parte con i valori di default senza modificarlo.
 

@@ -8,7 +8,7 @@ use crate::{
     playerdata::{self, EYE_HEIGHT},
     registry, survival, GameMode, Player, Server, HEX_LOGS,
 };
-use bedrock_net::log;
+use bedrock_net::{debug, log, warn};
 use bedrock_protocol::{
     entity::animate_swing,
     generated::{BlockPos, ContainerClose, ContainerOpen, MobEquipment},
@@ -35,13 +35,16 @@ const TELEPORT_TIMEOUT: u64 = 100;
 
 impl Server {
     pub(crate) fn open(&mut self, pid: u64) {
-        log!("[#{pid}] connesso");
+        debug!("[#{pid}] connesso");
         self.players.insert(pid, Player::default());
     }
 
     pub(crate) fn close(&mut self, pid: u64) {
-        log!("[#{pid}] disconnesso");
+        debug!("[#{pid}] disconnesso");
         let name = self.name(pid);
+        if self.players.get(&pid).is_some_and(|p| p.spawned) {
+            log!("[giocatore] {name} ha lasciato il gioco (#{pid})");
+        }
         self.waiting_start.retain(|&w| w != pid);
         self.close_chest_view(pid); // l'animazione del forziere si chiude se era l'ultimo a guardarlo
         self.return_ui_items(pid); // la griglia di crafting aperta non si perde
@@ -60,7 +63,7 @@ impl Server {
         match player.session.decode(data) {
             Some(packets) => packets.into_iter().for_each(|p| self.handle(pid, p)),
             None => {
-                log!("[#{pid}] batch non valido, lo disconnetto");
+                warn!("[#{pid}] batch non valido, lo disconnetto");
                 self.sender.kick(pid);
             }
         }
@@ -87,7 +90,7 @@ impl Server {
             _ => true,
         };
         if !allowed {
-            return log!("[#{pid}] pacchetto {} fuori sequenza (login: {logged_in}, nel mondo: {spawned}): ignorato", packet.id);
+            return debug!("[#{pid}] pacchetto {} fuori sequenza (login: {logged_in}, nel mondo: {spawned}): ignorato", packet.id);
         }
         match packet.id {
             id::REQUEST_NETWORK_SETTINGS => self.request_network_settings(pid, &packet.body),
@@ -124,7 +127,7 @@ impl Server {
                 if self.players.get_mut(&pid).is_some_and(|p| p.unknown_logged.insert(other)) {
                     let body = &packet.body;
                     let hex = if body.len() <= 80 { format!(": {body:02x?}") } else { String::new() };
-                    log!("[#{pid}] pacchetto {other} non gestito ({} byte, i prossimi non si registrano){hex}", body.len());
+                    debug!("[#{pid}] pacchetto {other} non gestito ({} byte, i prossimi non si registrano){hex}", body.len());
                 }
             }
         }
@@ -154,7 +157,7 @@ impl Server {
                 let has_actions = [flag::PERFORM_ITEM_INTERACTION, flag::PERFORM_BLOCK_ACTIONS, flag::PERFORM_ITEM_STACK_REQUEST].iter().any(|&f| input.has(f));
                 if has_actions && player.action_logs < HEX_LOGS {
                     player.action_logs += 1;
-                    log!("[#{pid}] PlayerAuthInput con azioni (flag {:#x}, {} byte): {:02x?}", input.flags, body.len(), &body[..body.len().min(400)]);
+                    debug!("[#{pid}] PlayerAuthInput con azioni (flag {:#x}, {} byte): {:02x?}", input.flags, body.len(), &body[..body.len().min(400)]);
                 }
                 // la rotazione e l'accovacciamento servono a orientare i blocchi che il giocatore piazza
                 if input.pitch.is_finite() && input.yaw.is_finite() {
@@ -185,7 +188,7 @@ impl Server {
             None => {
                 if !std::mem::replace(&mut player.pai_logged, true) {
                     let head = &body[..body.len().min(64)];
-                    log!("[#{pid}] PlayerAuthInput illeggibile ({} byte): {head:02x?}", body.len());
+                    warn!("[#{pid}] PlayerAuthInput illeggibile ({} byte): {head:02x?}", body.len());
                 }
                 let Some((pitch, yaw, position)) = PlayerAuthInput::decode_rotation_position(body) else { return };
                 if pitch.is_finite() && yaw.is_finite() {
@@ -252,7 +255,7 @@ impl Server {
             Some(a) if a.action == player_action::RESPAWN => {}
             Some(_) if self.players.get(&pid).is_some_and(|p| p.dead) => {}
             Some(a) => self.block_action(pid, a.action, a.pos),
-            None => log!("[#{pid}] PlayerAction illeggibile ({} byte): ignorato", body.len()),
+            None => warn!("[#{pid}] PlayerAction illeggibile ({} byte): ignorato", body.len()),
         }
     }
 
@@ -264,26 +267,26 @@ impl Server {
             return;
         }
         let Some(transaction) = InventoryTransaction::decode(body) else {
-            return log!("[#{pid}] InventoryTransaction illeggibile ({} byte): ignorata", body.len());
+            return warn!("[#{pid}] InventoryTransaction illeggibile ({} byte): ignorata", body.len());
         };
         // gli usi nell'aria (ClickAir: si comincia o si finisce di mangiare) e i rilasci: i primi si loggano in esadecimale per vedere cosa manda il client vero
         let click_air = transaction.use_item.as_ref().is_some_and(|u| u.action == use_item::USE);
         if let Some(p) = self.players.get_mut(&pid).filter(|p| p.use_logs < HEX_LOGS && (click_air || transaction.release.is_some())) {
             p.use_logs += 1;
             let what = if click_air { "uso nell'aria" } else { "rilascio" };
-            log!("[#{pid}] InventoryTransaction di {what} ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
+            debug!("[#{pid}] InventoryTransaction di {what} ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
         }
         match transaction.kind {
             // Come Dragonfly: con le transazioni Normal e Mismatch si rimanda sempre l'inventario, così client e server restano allineati
             0 => {
                 if let Some(p) = self.players.get_mut(&pid).filter(|p| p.drop_logs < HEX_LOGS) {
                     p.drop_logs += 1;
-                    log!("[#{pid}] InventoryTransaction Normal ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
+                    debug!("[#{pid}] InventoryTransaction Normal ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
                 }
                 if let Err(why) = self.drop_from_transaction(pid, &transaction.actions) {
                     if let Some(p) = self.players.get_mut(&pid).filter(|p| !p.drop_rejected_logged) {
                         p.drop_rejected_logged = true;
-                        log!("[#{pid}] InventoryTransaction Normal rifiutata ({why}), {} byte: {:02x?}", body.len(), &body[..body.len().min(400)]);
+                        debug!("[#{pid}] InventoryTransaction Normal rifiutata ({why}), {} byte: {:02x?}", body.len(), &body[..body.len().min(400)]);
                     }
                 }
                 self.send_inventory(pid);
@@ -294,7 +297,7 @@ impl Server {
         if let Some(u) = &transaction.use_entity {
             if let Some(p) = self.players.get_mut(&pid).filter(|p| p.attack_logs < HEX_LOGS && u.action == use_entity::ATTACK) {
                 p.attack_logs += 1;
-                log!("[#{pid}] InventoryTransaction di attacco ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
+                debug!("[#{pid}] InventoryTransaction di attacco ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
             }
             self.use_item_on_entity(pid, u);
         }
@@ -363,10 +366,10 @@ impl Server {
         }
         if let Some(p) = self.players.get_mut(&pid).filter(|p| p.stack_logs < HEX_LOGS) {
             p.stack_logs += 1;
-            log!("[#{pid}] ItemStackRequest ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
+            debug!("[#{pid}] ItemStackRequest ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
         }
         let Some(packet) = ItemStackRequestPacket::decode(body) else {
-            return log!("[#{pid}] ItemStackRequest illeggibile ({} byte): ignorato", body.len());
+            return warn!("[#{pid}] ItemStackRequest illeggibile ({} byte): ignorato", body.len());
         };
         // Le richieste di crafting si loggano a parte (le prime `HEX_LOGS`): la loro codifica non è ancora confermata nel gioco.
         let crafts = packet
@@ -375,7 +378,7 @@ impl Server {
             .any(|r| r.actions.iter().any(|a| matches!(a, StackAction::CraftRecipe { .. } | StackAction::CraftRecipeAuto { .. } | StackAction::Create { .. })));
         if let Some(p) = self.players.get_mut(&pid).filter(|p| crafts && p.craft_logs < HEX_LOGS) {
             p.craft_logs += 1;
-            log!("[#{pid}] ItemStackRequest di crafting ({} byte): {:02x?} -> {:?}", body.len(), &body[..body.len().min(400)], packet.requests);
+            debug!("[#{pid}] ItemStackRequest di crafting ({} byte): {:02x?} -> {:?}", body.len(), &body[..body.len().min(400)], packet.requests);
         }
         for request in &packet.requests {
             self.stack_request(pid, request);
@@ -395,7 +398,7 @@ impl Server {
             }
         }
         if let Some(error) = &result.error {
-            log!("[#{pid}] richiesta di pila {} rifiutata: {error}", request.request_id);
+            debug!("[#{pid}] richiesta di pila {} rifiutata: {error}", request.request_id);
         }
         // Gli oggetti buttati diventano oggetti a terra, a meno che un gancio non lo impedisca: allora tornano nella casella.
         for (item, (container, slot)) in result.dropped.iter().cloned().zip(result.dropped_from.iter().copied()) {
@@ -416,13 +419,13 @@ impl Server {
     fn respawn_packet(&mut self, pid: u64, body: &[u8]) {
         if let Some(p) = self.players.get_mut(&pid).filter(|p| p.respawn_logs < HEX_LOGS) {
             p.respawn_logs += 1;
-            log!("[#{pid}] Respawn ({} byte): {:02x?}", body.len(), &body[..body.len().min(64)]);
+            debug!("[#{pid}] Respawn ({} byte): {:02x?}", body.len(), &body[..body.len().min(64)]);
         }
         let Some(r) = Respawn::decode(body) else {
-            return log!("[#{pid}] Respawn illeggibile ({} byte): ignorato", body.len());
+            return warn!("[#{pid}] Respawn illeggibile ({} byte): ignorato", body.len());
         };
         if r.runtime_id != pid || r.state != respawn_state::CLIENT_READY_TO_SPAWN {
-            return log!("[#{pid}] Respawn con stato {} e ID {}: ignorato", r.state, r.runtime_id);
+            return debug!("[#{pid}] Respawn con stato {} e ID {}: ignorato", r.state, r.runtime_id);
         }
         self.respawn(pid);
     }
@@ -433,7 +436,7 @@ impl Server {
             return;
         }
         let Some(a) = Animate::decode(body) else {
-            return log!("[#{pid}] Animate illeggibile ({} byte): ignorato", body.len());
+            return warn!("[#{pid}] Animate illeggibile ({} byte): ignorato", body.len());
         };
         if a.action == 1 {
             self.broadcast_to_viewers(pid, &[animate_swing(pid)]);
@@ -445,23 +448,23 @@ impl Server {
     fn player_skin(&mut self, pid: u64, body: &[u8]) {
         if let Some(p) = self.players.get_mut(&pid).filter(|p| p.skin_logs < HEX_LOGS) {
             p.skin_logs += 1;
-            log!("[#{pid}] PlayerSkin ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
+            debug!("[#{pid}] PlayerSkin ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
             // Corpo completo su file, per confrontare la struttura offline (`captures/` e' ignorata da git). Solo nel server vero: i test non scrivono file.
             #[cfg(not(test))]
             {
                 let path = format!("captures/playerskin-{pid}-{}.bin", p.skin_logs);
                 match std::fs::create_dir_all("captures").and_then(|()| std::fs::write(&path, body)) {
-                    Ok(()) => log!("[#{pid}] PlayerSkin: corpo completo salvato in {path}"),
-                    Err(e) => log!("[#{pid}] PlayerSkin: salvataggio di {path} non riuscito: {e}"),
+                    Ok(()) => debug!("[#{pid}] PlayerSkin: corpo completo salvato in {path}"),
+                    Err(e) => debug!("[#{pid}] PlayerSkin: salvataggio di {path} non riuscito: {e}"),
                 }
             }
         }
         let Some(change) = PlayerSkinChange::decode(body) else {
-            return log!("[#{pid}] PlayerSkin illeggibile ({} byte): ignorato", body.len());
+            return warn!("[#{pid}] PlayerSkin illeggibile ({} byte): ignorato", body.len());
         };
         let Some(EntityKind::Player { uuid, .. }) = self.entities.get(pid).map(|e| &e.kind) else { return };
         if change.uuid != *uuid {
-            return log!("[#{pid}] PlayerSkin con l'UUID di un altro giocatore: ignorato");
+            return warn!("[#{pid}] PlayerSkin con l'UUID di un altro giocatore: ignorato");
         }
         let Some(info) = self.players.get_mut(&pid).and_then(|p| p.info.as_mut()) else { return };
         info.skin = change.skin.clone();
@@ -477,7 +480,7 @@ impl Server {
     /// Il client chiede di aprire il proprio inventario: senza `ContainerOpen` (finestra 0, tipo inventario) non si apre. Come Dragonfly.
     fn interact_packet(&mut self, pid: u64, body: &[u8]) {
         let Some(i) = Interact::decode(body) else {
-            return log!("[#{pid}] Interact illeggibile ({} byte): ignorato", body.len());
+            return warn!("[#{pid}] Interact illeggibile ({} byte): ignorato", body.len());
         };
         if i.action != interact_action::OPEN_INVENTORY {
             return;
@@ -494,7 +497,7 @@ impl Server {
     /// Il client ha chiuso una finestra: si conferma, altrimenti il client non la riapre più. 0xff arriva quando si apre la chat con l'inventario aperto.
     fn container_close(&mut self, pid: u64, body: &[u8]) {
         let Some(c) = ContainerClose::decode(body) else {
-            return log!("[#{pid}] ContainerClose illeggibile ({} byte): ignorato", body.len());
+            return warn!("[#{pid}] ContainerClose illeggibile ({} byte): ignorato", body.len());
         };
         let Some(p) = self.players.get_mut(&pid) else { return };
         p.inventory_open = false;
@@ -535,7 +538,7 @@ impl Server {
             return;
         }
         let Some(equipment) = MobEquipment::decode(body) else {
-            return log!("[#{pid}] MobEquipment illeggibile ({} byte): ignorato", body.len());
+            return warn!("[#{pid}] MobEquipment illeggibile ({} byte): ignorato", body.len());
         };
         if equipment.container_id != window::INVENTORY as u8 {
             return; // la mano secondaria (finestra 119) e le altre finestre non cambiano la casella in mano
@@ -550,7 +553,7 @@ impl Server {
                 self.stop_eating(pid); // cambiare casella interrompe il pasto (Dragonfly `SetHeldSlot`)
             }
         } else {
-            log!("[#{pid}] MobEquipment con la casella {} fuori dalla barra: ignorato", equipment.selected_slot);
+            debug!("[#{pid}] MobEquipment con la casella {} fuori dalla barra: ignorato", equipment.selected_slot);
         }
     }
 
@@ -559,7 +562,7 @@ impl Server {
     /// creativo lo prende (`Inventory::pick`).
     fn block_pick(&mut self, pid: u64, body: &[u8]) {
         let Some(request) = BlockPickRequest::decode(body) else {
-            return log!("[#{pid}] BlockPickRequest illeggibile ({} byte): ignorato", body.len());
+            return warn!("[#{pid}] BlockPickRequest illeggibile ({} byte): ignorato", body.len());
         };
         let Some(p) = self.players.get(&pid).filter(|p| p.spawned && !p.dead && p.mode != GameMode::Spectator) else { return };
         let creative = p.mode == GameMode::Creative;
@@ -585,9 +588,9 @@ impl Server {
 
     fn request_network_settings(&mut self, pid: u64, body: &[u8]) {
         let Some(req) = RequestNetworkSettings::decode(body) else { return };
-        log!("[#{pid}] RequestNetworkSettings: protocollo client = {}", req.protocol);
+        debug!("[#{pid}] RequestNetworkSettings: protocollo client = {}", req.protocol);
         if req.protocol != PROTOCOL as i32 {
-            log!("[#{pid}] attenzione: il server supporta il protocollo {PROTOCOL}");
+            warn!("[#{pid}] attenzione: il server supporta il protocollo {PROTOCOL}");
             // TODO: PlayStatus di versione errata
         }
         self.send(pid, &[Packet::new(id::NETWORK_SETTINGS, NetworkSettings::default().encode())]);
@@ -599,24 +602,21 @@ impl Server {
 
     fn login(&mut self, pid: u64, body: &[u8]) {
         let Some(request) = Login::decode(body) else {
-            log!("[#{pid}] login malformato, lo disconnetto");
+            warn!("[#{pid}] login malformato, lo disconnetto");
             return self.sender.kick(pid);
         };
-        log!("[#{pid}] LOGIN ricevuto: protocollo {}", request.protocol);
+        debug!("[#{pid}] LOGIN ricevuto: protocollo {}", request.protocol);
         if request.protocol != PROTOCOL as i32 {
             return self.disconnect(pid, "Versione del gioco non supportata da questo server");
         }
         match login::parse(&request) {
             Ok(info) => {
-                log!(
+                debug!(
                     "[#{pid}] giocatore {} (XUID {:?}, autenticazione {:?}, dispositivo {:?}, NON verificato)",
-                    info.name,
-                    info.xuid,
-                    info.authentication_type,
-                    info.device_os
+                    info.name, info.xuid, info.authentication_type, info.device_os
                 );
                 if info.xuid.is_none() {
-                    log!("[#{pid}] XUID non trovato: chiavi del Token = {:?}", info.token_claim_keys);
+                    debug!("[#{pid}] XUID non trovato: chiavi del Token = {:?}", info.token_claim_keys);
                 }
                 self.kick_same_identity(pid, &info);
                 if let Some(p) = self.players.get_mut(&pid) {
@@ -632,7 +632,7 @@ impl Server {
                 );
             }
             Err(e) => {
-                log!("[#{pid}] login non leggibile: {e}");
+                warn!("[#{pid}] login non leggibile: {e}");
                 self.disconnect(pid, "Login non valido");
             }
         }
@@ -661,34 +661,31 @@ impl Server {
     fn packet_violation(&self, pid: u64, body: &[u8]) {
         match PacketViolationWarning::decode(body) {
             Some(w) => {
-                log!(
+                debug!(
                     "[#{pid}] !! IL CLIENT SEGNALA UN PACCHETTO MALFORMATO: id {} (tipo {}, gravità {}), contesto: {:?}",
-                    w.packet_id,
-                    w.violation_type,
-                    w.severity,
-                    w.context
+                    w.packet_id, w.violation_type, w.severity, w.context
                 )
             }
-            None => log!("[#{pid}] !! violazione segnalata dal client, ma illeggibile: {body:02x?}"),
+            None => warn!("[#{pid}] !! violazione segnalata dal client, ma illeggibile: {body:02x?}"),
         }
     }
 
     /// Il client risponde ai resource pack: "ho tutto" -> si manda la pila; "completato" -> pronto per StartGame.
     fn resource_pack_response(&mut self, pid: u64, body: &[u8]) {
         let Some(response) = ResourcePackClientResponse::decode(body) else {
-            return log!("[#{pid}] resource pack: risposta illeggibile ({body:02x?})");
+            return warn!("[#{pid}] resource pack: risposta illeggibile ({body:02x?})");
         };
-        log!("[#{pid}] resource pack: {} (tag {})", response.response_type, response.tag);
+        debug!("[#{pid}] resource pack: {} (tag {})", response.response_type, response.tag);
         match response.tag {
             pack_response::DOWNLOADING_FINISHED => {
-                log!("[#{pid}] resource pack: il client ha tutto, mando la pila");
+                debug!("[#{pid}] resource pack: il client ha tutto, mando la pila");
                 self.send(pid, &[Packet::new(id::RESOURCE_PACK_STACK, ResourcePackStack { must_accept: false, base_game_version: VERSION }.encode())]);
             }
             pack_response::STACK_FINISHED => {
-                log!("[#{pid}] resource pack completati: entro nel mondo");
+                debug!("[#{pid}] resource pack completati: entro nel mondo");
                 self.start_game(pid);
             }
-            other => log!("[#{pid}] resource pack: tag {other} non gestito ({} id)", response.pack_ids.len()),
+            other => debug!("[#{pid}] resource pack: tag {other} non gestito ({} id)", response.pack_ids.len()),
         }
     }
 

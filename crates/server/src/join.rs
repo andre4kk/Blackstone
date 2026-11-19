@@ -7,7 +7,7 @@ use crate::{
     streaming::chunk_of,
     survival, DataState, GameMode, Player, Server,
 };
-use bedrock_net::log;
+use bedrock_net::{debug, log, warn};
 use bedrock_protocol::{
     generated::{
         enums::{self, container_enum_name},
@@ -239,19 +239,19 @@ impl Server {
     /// Il disco ha risposto con i dati salvati del giocatore (o senza): si applicano e il login riprende da `StartGame`.
     pub(crate) fn on_player_loaded(&mut self, pid: u64, data: Option<Vec<u8>>) {
         let Some(p) = self.players.get_mut(&pid).filter(|p| p.data == DataState::Loading) else {
-            return log!("[#{pid}] dati del giocatore arrivati per chi non li aspetta più: scartati");
+            return debug!("[#{pid}] dati del giocatore arrivati per chi non li aspetta più: scartati");
         };
         p.data = DataState::Loaded;
         match data.as_deref().map(PlayerData::from_nbt) {
-            None => log!("[#{pid}] nessun dato salvato: giocatore nuovo"),
-            Some(None) => log!("[#{pid}] dati salvati illeggibili: si parte da capo"),
+            None => debug!("[#{pid}] nessun dato salvato: giocatore nuovo"),
+            Some(None) => warn!("[#{pid}] dati salvati illeggibili: si parte da capo"),
             Some(Some(d)) => {
-                log!("[#{pid}] dati salvati caricati: modalità {:?}, posizione {:?}", d.mode, d.feet);
+                debug!("[#{pid}] dati salvati caricati: modalità {:?}, posizione {:?}", d.mode, d.feet);
                 // un'altra dimensione o una posizione impossibile non si possono usare: si parte dallo spawn, il resto resta
                 if d.dim == 0 && d.feet.iter().all(|v| v.abs() <= 30_000_000.0) {
                     p.saved_feet = Some(d.feet);
                 } else {
-                    log!("[#{pid}] posizione salvata non utilizzabile (dimensione {}): parte dallo spawn", d.dim);
+                    warn!("[#{pid}] posizione salvata non utilizzabile (dimensione {}): parte dallo spawn", d.dim);
                 }
                 (p.mode, p.yaw, p.pitch, p.inventory) = (d.mode, d.yaw, d.pitch, d.inventory);
                 (p.health, p.food, p.saturation, p.exhaustion) = (d.health, d.food, d.saturation, d.exhaustion);
@@ -268,7 +268,7 @@ impl Server {
             (DataState::Loaded, ..) => true,
             (DataState::Loading, ..) => false, // già chiesti: arriveranno
             (DataState::Unrequested, Some(disk), Some(info)) => {
-                log!("[#{pid}] StartGame aspetta i dati salvati del giocatore");
+                debug!("[#{pid}] StartGame aspetta i dati salvati del giocatore");
                 disk.load_player(pid, playerdata::identity(info));
                 p.data = DataState::Loading;
                 false
@@ -286,7 +286,7 @@ impl Server {
             return;
         }
         let Some((sx, sy, sz)) = self.spawn else {
-            log!("[#{pid}] lo spawn non è ancora noto: StartGame aspetta il generatore");
+            debug!("[#{pid}] lo spawn non è ancora noto: StartGame aspetta il generatore");
             self.waiting_start.push(pid);
             return;
         };
@@ -334,7 +334,7 @@ impl Server {
             block_network_ids_are_hashes: true,
             ..Default::default()
         };
-        log!("[#{pid}] invio StartGame e registro oggetti");
+        debug!("[#{pid}] invio StartGame e registro oggetti");
         // Come i server di riferimento (gophertunnel/Dragonfly): dati di struttura e forme, StartGame, oggetti.
         // Biomi e identificatori arrivano dopo che il client si è inizializzato (`initialized`).
         let mut packets = Vec::new();
@@ -358,7 +358,7 @@ impl Server {
     pub(crate) fn request_chunk_radius(&mut self, pid: u64, body: &[u8]) {
         let Some(request) = RequestChunkRadius::decode(body) else { return };
         let radius = request.chunk_radius.clamp(1, self.max_radius);
-        log!("[#{pid}] chunk richiesti: raggio {} -> concesso {radius}", request.chunk_radius);
+        debug!("[#{pid}] chunk richiesti: raggio {} -> concesso {radius}", request.chunk_radius);
         if let Some(p) = self.players.get_mut(&pid) {
             p.radius = radius;
         }
@@ -389,12 +389,13 @@ impl Server {
     /// Il client ha finito di caricare ed è nel mondo: ora si mandano biomi, identificatori e chunk.
     pub(crate) fn initialized(&mut self, pid: u64) {
         if self.players.get(&pid).is_some_and(|p| p.spawned) {
-            return log!("[#{pid}] SetLocalPlayerAsInitialized ripetuto: ignorato");
+            return debug!("[#{pid}] SetLocalPlayerAsInitialized ripetuto: ignorato");
         }
         let Some(radius) = self.players.get(&pid).filter(|p| p.info.is_some()).map(|p| p.radius).filter(|&r| r > 0) else {
-            return log!("[#{pid}] SetLocalPlayerAsInitialized prima della richiesta del raggio: ignorato");
+            return debug!("[#{pid}] SetLocalPlayerAsInitialized prima della richiesta del raggio: ignorato");
         };
-        log!("[#{pid}] il client è inizializzato: invio i chunk");
+        debug!("[#{pid}] il client è inizializzato: invio i chunk");
+        log!("[giocatore] {} è entrato nel mondo (#{pid})", self.name(pid));
         let streaming = !flag("NO_CHUNKS");
         let Some(p) = self.players.get_mut(&pid) else { return };
         p.spawned = true;
@@ -421,7 +422,7 @@ impl Server {
         }
         self.send(pid, &packets);
         if !streaming {
-            log!("[#{pid}] NO_CHUNKS attivo: non invio chunk");
+            debug!("[#{pid}] NO_CHUNKS attivo: non invio chunk");
         }
         // I chunk partono dal tick successivo (`stream_tick`), dal più vicino, al massimo CHUNKS_PER_TICK per tick.
     }

@@ -3,7 +3,7 @@
 
 #![allow(dead_code)] // `Launch::Connect` serve ai test
 
-use bedrock_net::log;
+use bedrock_net::{log, warn};
 use std::{
     collections::{HashMap, VecDeque},
     io,
@@ -186,7 +186,7 @@ impl State {
         give_up.sort_unstable();
         for id in give_up {
             if let Some(e) = self.inflight.remove(&id) {
-                log!("[gen] la richiesta {:?} ha fatto cadere il generatore {} volte: la do per fallita", e.p, e.crashes);
+                warn!("[gen] la richiesta {:?} ha fatto cadere il generatore {} volte: la do per fallita", e.p, e.crashes);
                 fail(ev, e.p, format!("il generatore è caduto {} volte con questa richiesta", e.crashes));
             }
         }
@@ -224,7 +224,7 @@ impl State {
         late.sort_unstable();
         for id in late {
             if let Some(e) = self.inflight.remove(&id) {
-                log!("[gen] nessuna risposta alla richiesta {:?} dopo {:.1} s: la do per fallita", e.p, limit.as_secs_f32());
+                warn!("[gen] nessuna risposta alla richiesta {:?} dopo {:.1} s: la do per fallita", e.p, limit.as_secs_f32());
                 fail(ev, e.p, format!("nessuna risposta dal generatore entro {:.1} s", limit.as_secs_f32()));
             }
         }
@@ -246,7 +246,7 @@ async fn run(cfg: GenConfig, mut rx: mpsc::UnboundedReceiver<Pending>, ev: mpsc:
             Ok(()) => return, // il client è stato lasciato cadere
             Err(e) => e.to_string(),
         };
-        log!("[gen] generatore non disponibile: {reason}");
+        warn!("[gen] generatore non disponibile: {reason}");
         st.end_session(&ev);
         if ev.send(GenEvent::Down(reason)).is_err() {
             return;
@@ -374,7 +374,7 @@ fn handle(msg: FromGen, st: &mut State, ev: &mpsc::UnboundedSender<GenEvent>) {
         }
         FromGen::Error { req, message } => {
             let what = st.inflight.remove(&req).map(|e| e.p);
-            log!("[gen] errore dal generatore (richiesta {req}, {what:?}): {message}");
+            warn!("[gen] errore dal generatore (richiesta {req}, {what:?}): {message}");
             match what {
                 Some(Pending::Chunk(dim, x, z)) => {
                     let _ = ev.send(GenEvent::ChunkFailed(dim, x, z, message));

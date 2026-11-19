@@ -29,7 +29,7 @@ mod tables;
 mod tests;
 mod world;
 
-use bedrock_net::{log, Config, Event, Sender};
+use bedrock_net::{debug, log, warn, Config, Event, Sender};
 use bedrock_protocol::{
     generated::{BlockActorData, BlockPos, UpdateBlock},
     wire::ServerPacket,
@@ -428,6 +428,7 @@ impl Server {
             disk.flush_blocking();
         }
         log!("[mondo] chiusura: {saved} chunk salvati");
+        log!("[server] spento");
     }
 
     /// Codifica i pacchetti per quel giocatore (con la sua compressione) e li invia in un solo messaggio.
@@ -455,7 +456,7 @@ impl Server {
         if self.tick_count.is_multiple_of(AUTOSAVE_TICKS) {
             let saved = self.save_dirty();
             if saved > 0 {
-                log!("[mondo] salvataggio automatico: {saved} chunk");
+                debug!("[mondo] salvataggio automatico: {saved} chunk");
             }
         }
         self.mspt = self.mspt * 0.9 + start.elapsed().as_secs_f64() * 1000.0 * 0.1;
@@ -531,7 +532,7 @@ impl Server {
                 // versione generata la prossima volta. La modifica resta in memoria ma il chunk non si salva, in qualunque modalità.
                 chunk.dirty = false;
                 if !std::mem::replace(&mut self.flat_warned, true) {
-                    log!("[mondo] chunk di ripiego (mondo piatto o generazione fallita): le modifiche non si salvano");
+                    warn!("[mondo] chunk di ripiego (mondo piatto o generazione fallita): le modifiche non si salvano");
                 }
             }
             applied.push(((cx, cz), *c));
@@ -634,7 +635,7 @@ async fn run_world(mut cfg: Config, server_cfg: &config::ServerConfig, world_dir
     let world = storage::World::open_with(world_dir, &server_cfg.world, server_cfg.seed)?;
     log!("[mondo] \"{}\" aperto, seme {}", server_cfg.world, world.seed());
     if let Some(seed) = server_cfg.seed.filter(|&s| s != world.seed()) {
-        log!("[mondo] il seme di server.toml ({seed}) è diverso da quello del mondo esistente: vale quello del mondo ({})", world.seed());
+        warn!("[mondo] il seme di server.toml ({seed}) è diverso da quello del mondo esistente: vale quello del mondo ({})", world.seed());
     }
     let generator = GenConfig { launch, seed: world.seed(), restart_delay: Duration::from_secs(2), request_timeout: gen_client::REQUEST_TIMEOUT };
     serve(cfg, Some(world), Some(generator), server_cfg.view_distance.clamp(1, 32), server_cfg.keep_inventory, server_cfg.pvp).await
@@ -657,6 +658,8 @@ async fn next_gen_event(rx: &mut Option<UnboundedReceiver<GenEvent>>) -> Option<
 async fn serve(cfg: Config, world: Option<storage::World>, generator: Option<GenConfig>, max_radius: i32, keep_inventory: bool, pvp: bool) -> io::Result<()> {
     // Gli stati dei blocchi e il menu creativo si costruiscono ora, non al pacchetto del primo giocatore.
     join::warm_up();
+    let address = bedrock_net::lan_ip().map_or_else(|| "localhost".to_owned(), |ip| ip.to_string());
+    log!("Blackstone v{} - Minecraft Bedrock {} (protocollo {}) su {address}:{}", env!("CARGO_PKG_VERSION"), cfg.version, cfg.protocol, cfg.port);
     let mut net = bedrock_net::start(cfg).await?;
     let mut server = Server::new(net.sender.clone());
     server.max_radius = max_radius;
@@ -701,7 +704,7 @@ async fn serve(cfg: Config, world: Option<storage::World>, generator: Option<Gen
             Some(event) = disk_rx.recv() => server.on_disk_event(event),
             _ = ticker.tick() => server.tick(),
             _ = tokio::signal::ctrl_c() => {
-                log!("Ctrl+C: chiusura del server");
+                log!("[server] Ctrl+C: chiusura in corso");
                 server.shutdown();
                 return Ok(());
             }

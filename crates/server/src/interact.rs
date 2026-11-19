@@ -14,7 +14,7 @@ use crate::{
     registry::{blocks, BlockState, StateValue},
     GameMode, Server,
 };
-use bedrock_net::log;
+use bedrock_net::debug;
 use bedrock_protocol::{
     generated::{BlockPos, ContainerOpen, LevelSoundEvent, Vec3},
     input::UseItem,
@@ -179,7 +179,7 @@ impl Server {
             if mode != GameMode::Spectator && in_reach(eyes, u.pos, mode == GameMode::Creative) {
                 self.open_crafting_table(pid, u.pos);
             } else {
-                log!("[#{pid}] apertura del banco {:?} rifiutata: modalità o portata", u.pos);
+                debug!("[#{pid}] apertura del banco {:?} rifiutata: modalità o portata", u.pos);
             }
             return true;
         }
@@ -197,7 +197,7 @@ impl Server {
         let creative = mode == GameMode::Creative;
         let others: Vec<[i32; 3]> = changes.iter().map(|c| c.pos).filter(|&p| p != u.pos).collect();
         if mode == GameMode::Spectator || !in_reach(eyes, u.pos, creative) || changes.iter().any(|c| !in_reach(eyes, c.pos, creative)) {
-            log!("[#{pid}] uso di {:?} rifiutato: modalità o portata", u.pos);
+            debug!("[#{pid}] uso di {:?} rifiutato: modalità o portata", u.pos);
             self.resend_blocks(pid, dim, &[&[u.pos], others.as_slice()].concat());
             return true;
         }
@@ -206,7 +206,7 @@ impl Server {
             return true;
         }
         if !self.allow(&WorldAction::Interact { pid, changes: changes.clone() }) {
-            log!("[#{pid}] uso di {:?} annullato da un gancio", u.pos);
+            debug!("[#{pid}] uso di {:?} annullato da un gancio", u.pos);
             self.resend_blocks(pid, dim, &[&[u.pos], others.as_slice()].concat());
             return true;
         }
@@ -236,7 +236,7 @@ impl Server {
         self.return_ui_items(pid);
         let Some(p) = self.players.get_mut(&pid) else { return };
         let window = p.inventory.open_table(pos);
-        log!("[#{pid}] apre il banco da lavoro {pos:?} (finestra {window})");
+        debug!("[#{pid}] apre il banco da lavoro {pos:?} (finestra {window})");
         let position = BlockPos { x: pos[0], y: pos[1], z: pos[2] };
         self.send(pid, &[ContainerOpen { container_id: window, container_type: CONTAINER_TYPE_WORKBENCH, position, target_actor_id: -1 }.packet()]);
     }

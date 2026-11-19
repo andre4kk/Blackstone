@@ -1,6 +1,6 @@
 //! Chat e comandi.
 use crate::{entity::EntityKind, survival::DamageCause, GameMode, Server};
-use bedrock_net::log;
+use bedrock_net::{debug, log, warn};
 use bedrock_protocol::{
     commands::{AvailableCommands, CommandSpec, Param, ParamKind},
     generated::UpdatePlayerGameType,
@@ -81,7 +81,7 @@ impl Server {
     /// Un messaggio scritto in chat: si ritrasmette a tutti con il nome del mittente.
     pub(crate) fn chat(&self, pid: u64, body: &[u8]) {
         let Some(text) = Text::decode(body) else {
-            return log!("[#{pid}] messaggio di chat illeggibile: {body:02x?}");
+            return warn!("[#{pid}] messaggio di chat illeggibile: {body:02x?}");
         };
         let message = text.message.trim();
         if text.kind != text_type::CHAT || message.is_empty() {
@@ -91,7 +91,7 @@ impl Server {
             return self.tell(pid, &format!("§cMessaggio troppo lungo (massimo {MAX_CHAT_LEN} caratteri)."));
         }
         let name = self.name(pid);
-        log!("[chat] {name}: {message}");
+        log!("[chat] <{name}> {message}");
         let xuid = self.players.get(&pid).and_then(|p| p.info.as_ref()).and_then(|i| i.xuid.clone()).unwrap_or_default();
         self.broadcast(Text { kind: text_type::CHAT, source: name, message: message.into(), xuid, platform_id: String::new() });
     }
@@ -101,7 +101,7 @@ impl Server {
         let Some(p) = self.players.get_mut(&pid) else { return };
         p.mode = mode;
         p.flying &= mode == GameMode::Creative; // fuori dalla creativa non si vola (lo spettatore vola col suo livello)
-        log!("[#{pid}] modalità di gioco: {mode:?}");
+        debug!("[#{pid}] modalità di gioco: {mode:?}");
         self.send_abilities(pid);
         self.tell(pid, &format!("Modalità di gioco impostata a {}.", mode.name()));
     }
@@ -109,20 +109,20 @@ impl Server {
     /// Il client ha chiesto di cambiare modalità (dal menu di pausa): non si accetta, si rimanda quella vera.
     pub(crate) fn client_game_type(&self, pid: u64, body: &[u8]) {
         let mut r = Reader(body);
-        let Some(requested) = r.var_i32() else { return log!("[#{pid}] SetPlayerGameType illeggibile: {body:02x?}") };
+        let Some(requested) = r.var_i32() else { return warn!("[#{pid}] SetPlayerGameType illeggibile: {body:02x?}") };
         let Some(p) = self.players.get(&pid) else { return };
-        log!("[#{pid}] il client chiede la modalità {requested}: resta {:?}", p.mode);
+        debug!("[#{pid}] il client chiede la modalità {requested}: resta {:?}", p.mode);
         self.send(pid, &[UpdatePlayerGameType { player_game_type: p.mode as i32, target_player: pid as i64, tick: self.tick_count }.packet()]);
     }
 
     /// Un comando (`/help`...): si esegue e si risponde a chi l'ha scritto.
     pub(crate) fn command(&mut self, pid: u64, body: &[u8]) {
         let Some(request) = CommandRequest::decode(body) else {
-            return log!("[#{pid}] comando illeggibile: {body:02x?}");
+            return warn!("[#{pid}] comando illeggibile: {body:02x?}");
         };
         let line = request.command.trim().trim_start_matches('/');
         let (name, args) = line.split_once(' ').unwrap_or((line, ""));
-        log!("[#{pid}] comando: /{line}");
+        log!("[comando] {}: /{line}", self.name(pid));
         match name.to_lowercase().as_str() {
             "help" => {
                 let list: Vec<_> = COMMANDS.iter().map(|(c, d)| format!("§e/{c}§r - {d}")).collect();

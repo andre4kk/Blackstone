@@ -1,7 +1,7 @@
 //! Il mondo su disco fuori dal tick: un thread possiede il `World` e riceve comandi in ordine (letture, scritture, flush).
 //! Le letture dei chunk tornano al ciclo di gioco come `DiskEvent`, così il tick non aspetta mai LevelDB.
 use crate::{storage::World, world::Chunk};
-use bedrock_net::log;
+use bedrock_net::warn;
 use std::{
     sync::mpsc,
     thread::{self, JoinHandle},
@@ -47,7 +47,7 @@ impl Disk {
                         }
                         Cmd::Save(chunk) => {
                             if let Err(e) = world.save(&chunk) {
-                                log!("[mondo] salvataggio del chunk {},{} fallito: {e}", chunk.x, chunk.z);
+                                warn!("[mondo] salvataggio del chunk {},{} fallito: {e}", chunk.x, chunk.z);
                             }
                         }
                         Cmd::LoadPlayer(pid, identity) => {
@@ -56,14 +56,14 @@ impl Disk {
                         }
                         Cmd::SavePlayer(identity, nbt) => {
                             if let Err(e) = world.save_player(&identity, &nbt) {
-                                log!("[mondo] salvataggio dei dati di {identity} fallito: {e}");
+                                warn!("[mondo] salvataggio dei dati di {identity} fallito: {e}");
                             }
                         }
                         Cmd::Palette(entries) => world.set_palette(entries),
                         Cmd::Spawn(x, y, z) => world.set_spawn(x, y, z),
                         Cmd::Flush(reply) => {
                             if let Err(e) = world.flush() {
-                                log!("[mondo] flush fallito: {e}");
+                                warn!("[mondo] flush fallito: {e}");
                             }
                             let _ = reply.send(());
                         }

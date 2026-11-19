@@ -8,7 +8,7 @@ use crate::{
     world::{block_hash, State},
     GameMode, Server,
 };
-use bedrock_net::log;
+use bedrock_net::debug;
 use bedrock_protocol::{
     generated::{LevelEvent, Vec3},
     input::player_action,
@@ -176,7 +176,7 @@ impl Server {
             }
             player_action::CREATIVE_DESTROY if p.mode == GameMode::Creative => self.break_block(pid, pos),
             player_action::CREATIVE_DESTROY => {
-                log!("[#{pid}] rottura creativa fuori dalla modalità creativa: rifiutata");
+                debug!("[#{pid}] rottura creativa fuori dalla modalità creativa: rifiutata");
                 self.resend_around(pid, Dim::Overworld, &[pos]);
             }
             _ => {}
@@ -272,7 +272,7 @@ impl Server {
         let creative = mode == GameMode::Creative;
         let editable = matches!(mode, GameMode::Creative | GameMode::Survival);
         if !editable || !in_reach(eyes, pos, creative) || hand_proof(old, creative) || !self.allow(&WorldAction::Break { pid, pos, old }) {
-            log!("[#{pid}] rottura in {pos:?} rifiutata");
+            debug!("[#{pid}] rottura in {pos:?} rifiutata");
             return self.resend_around(pid, dim, &[pos]);
         }
         self.set_blocks(dim, &[BlockChange { pos, hash: block_hash("minecraft:air", &[]), water }]);
