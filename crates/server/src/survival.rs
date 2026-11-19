@@ -37,7 +37,7 @@ const DEATH_PICKUP_DELAY: u64 = 10;
 /// Quanto resta visibile il corpo di chi è morto: 1,1 s come Dragonfly (`finishDying`).
 pub(crate) const BODY_TICKS: u64 = 22;
 
-/// Quanto serve per mangiare: 32 tick (Dragonfly `DefaultConsumeDuration`, 1,61 s). L'alga secca metà, la bottiglia di miele un quarto in più (come Dragonfly).
+/// Durata del pasto: 32 tick (Dragonfly `DefaultConsumeDuration`, 1,61 s; vedi `meal_done` per il tick di tolleranza). L'alga secca metà, la bottiglia di miele un quarto in più (come Dragonfly).
 const CONSUME_TICKS: u64 = 32;
 /// Ogni quanti tick di uso compaiono le particelle del cibo (Dragonfly: `current%4 == 0`).
 const EAT_EFFECT_TICKS: u64 = 4;
@@ -49,6 +49,12 @@ fn consume_ticks(name: &str) -> u64 {
         "minecraft:honey_bottle" => CONSUME_TICKS * 5 / 4,
         _ => CONSUME_TICKS,
     }
+}
+
+/// Il pasto e' finito dopo `elapsed` tick di uso? Come Dragonfly (`useDuration`, player.go:1762) conta anche un tick in piu' del trascorso
+/// (`time.Since(usingSince) + time.Second/20`): con 32 tick di durata bastano 31 tick trascorsi, 30 no.
+fn meal_done(elapsed: u64, name: &str) -> bool {
+    elapsed + 1 >= consume_ticks(name)
 }
 
 /// Cosa resta in mano dopo aver mangiato `name` (le zuppe lasciano la ciotola, il miele la bottiglia: `Consume` di Dragonfly).
@@ -360,7 +366,7 @@ impl Server {
             }
             return self.send_entity_state(pid);
         };
-        if self.tick_count.saturating_sub(since) >= consume_ticks(name) {
+        if meal_done(self.tick_count.saturating_sub(since), name) {
             self.finish_eating(pid);
         }
     }
@@ -380,7 +386,7 @@ impl Server {
         }
         let Some(p) = self.players.get(&pid) else { return };
         if let (Some(since), Some((name, _)), true) = (p.eating_since, edible(p.inventory.held()), p.mode != GameMode::Spectator) {
-            if self.tick_count.saturating_sub(since) >= consume_ticks(name) {
+            if meal_done(self.tick_count.saturating_sub(since), name) {
                 self.finish_eating(pid);
             }
         }

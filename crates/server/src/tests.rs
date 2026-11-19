@@ -4275,9 +4275,9 @@ mod survival {
         assert!(h.server.players[&1].eating_since.is_some());
         let sent = h.packets_by_player();
         assert!(sent[&2].iter().any(|p| p.id == bedrock_protocol::actor::SET_ACTOR_DATA), "chi guarda vede che usa l'oggetto");
-        h.server.tick_count += 31;
+        h.server.tick_count += 30;
         h.receive(1, &[use_air(1, &bread)]);
-        assert_eq!((hunger(&h).0, held_count(&h)), (10, 5), "31 tick non bastano");
+        assert_eq!((hunger(&h).0, held_count(&h)), (10, 5), "30 tick non bastano");
         h.server.tick_count += 1;
         h.receive(1, &[use_air(1, &bread)]);
         assert_eq!(hunger(&h), (15, 6.0, 0.0));
@@ -4302,7 +4302,7 @@ mod survival {
     fn releasing_early_cancels_and_releasing_in_time_finishes() {
         let (mut h, bread) = hungry(GameMode::Survival, "minecraft:bread", 3, 10, 0.0);
         h.receive(1, &[use_air(1, &bread)]);
-        h.server.tick_count += 31;
+        h.server.tick_count += 30;
         h.receive(1, &[release(&bread)]);
         assert_eq!((hunger(&h).0, held_count(&h), h.server.players[&1].eating_since), (10, 3, None));
         h.receive(1, &[use_air(1, &bread)]);
