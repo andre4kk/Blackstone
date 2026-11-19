@@ -20,7 +20,7 @@
 - Ogni azione nuova su mondo o giocatore passa da `Server::allow(&WorldAction)`; se un gancio dice no, nulla cambia.
 - Creativo: nessun danno tranne il vuoto, nessuna fame, nessun oggetto dai blocchi. Spettatore: nessun danno. Sopravvivenza e avventura: tutto attivo.
 - Ciclo unico a 20 Hz (`Server::tick`), nessun thread nuovo. Commenti e log in italiano; rustfmt 160; `cargo clippy --workspace --all-targets -- -D warnings` pulito; `cargo test --workspace` verde (se `target/debug/blackstone-server.exe` è bloccato dal server dell'utente, almeno `cargo test -p blackstone-protocol` e `cargo test -p blackstone-server --lib`, e dirlo nel report).
-- Commit che finiscono con `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>` (o il modello che lavora). Nessun push.
+- Nessun push.
 - Licenze: server MIT; tabelle e numeri da Dragonfly (MIT) citati nei commenti; nessun codice dal generatore AGPL.
 
 ## Review Focus

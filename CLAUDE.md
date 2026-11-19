@@ -15,6 +15,7 @@ Leggi prima `AGENTS.md`: struttura, comandi, regole e stato valgono anche qui. S
 - Ogni tappa: design in `docs/superpowers/specs/`, piano in `docs/superpowers/plans/`, lista di prova nel gioco in
   `docs/superpowers/notes/`. Lavoro su un ramo `feat/*`, unione in `main` solo a tappa revisionata.
 - Push solo con il suo consenso esplicito, ogni volta.
+- Commit e pull request **senza** `Co-Authored-By`, "Generated with Claude Code" o altre firme di Claude (lo ha chiesto il proprietario). Vale anche per i subagenti: diglielo nel brief.
 
 ## Lezioni imparate
 - I bug veri li trova il client: un pacchetto con un byte sbagliato non dà errori nei test ma disconnette o fa sparire oggetti.
