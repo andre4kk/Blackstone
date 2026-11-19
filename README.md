@@ -56,6 +56,8 @@ Va nella cartella da cui si avvia il server. Se manca viene scritto con i valori
 | `generator` | `generator/target/release/versmc-gen` | Programma del generatore (`.exe` aggiunto da solo su Windows). |
 | `view_distance` | `6` | Raggio di chunk inviato a ogni giocatore (1-32). |
 | `port` | `19132` | Porta TCP (signaling) e UDP (gioco). |
+| `keep_inventory` | `false` | Se `true`, chi muore tiene l'inventario (niente oggetti a terra). |
+| `pvp` | `true` | Se `false`, i giocatori non si fanno danno tra loro (i bot si colpiscono comunque). |
 
 Un `server.toml` non valido viene segnalato nel log e il server parte con i valori di default senza modificarlo.
 
@@ -102,7 +104,14 @@ La sequenza segue quella dei server di riferimento (gophertunnel / Dragonfly).
   finto con la tua skin che gira in cerchio (raggio 3), salta, agita il braccio, si accovaccia, cambia oggetto e lancia pietre
   (create dal nulla): serve a provare tutto con un solo account. I bot restano anche se chi li ha creati esce; `/bot rimuovi` li toglie.
   Lista di prova nel gioco: `docs/superpowers/notes/2026-11-19-verifica-tappa2.md`.
-- Ancora NON gestiti: sopravvivenza (danni, fame), mob. Limiti noti della tappa 1: `docs/superpowers/notes/2026-11-19-verifica-tappa1.md`.
+- Tappa 3 (sopravvivenza base): in sopravvivenza i blocchi lasciano gli oggetti (tabelle ricavate da Dragonfly, strumento e livello
+  giusti), vita (20 punti, 10 tick di invulnerabilità), danno da caduta e dal vuoto (sotto la quota -64), fame con esaurimento e
+  rigenerazione, mangiare (1,6 s), morte con schermata, inventario a terra e rinascita al punto di partenza, `/kill`, combattimento
+  corpo a corpo (danno secondo l'oggetto, spinta, portata) contro giocatori e bot (che hanno vita e muoiono). Vita e fame sono
+  salvate nei dati del giocatore. Creativo e spettatore non prendono danno (il vuoto colpisce anche in creativo). Lista di prova
+  nel gioco: `docs/superpowers/notes/2026-11-20-verifica-tappa3.md`.
+  Manca: crafting, armature che riducono il danno, usura degli strumenti, incantesimi, effetti, mob (e lava, fuoco, annegamento).
+- Ancora NON gestiti: crafting, armature, usura, mob. Limiti noti della tappa 1: `docs/superpowers/notes/2026-11-19-verifica-tappa1.md`.
 
 Gli ID di rete dei blocchi sono hash FNV-1a dello stato (`crates/server/src/world.rs`): non serve nessuna tabella dei blocchi.
 
