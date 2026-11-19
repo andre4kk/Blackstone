@@ -4134,6 +4134,22 @@ mod survival {
     }
 
     #[test]
+    fn a_teleport_never_reached_stops_blocking_after_five_seconds() {
+        let mut h = setup(GameMode::Survival);
+        h.server.hurt(1, 100.0, DamageCause::Kill);
+        h.receive(1, &[respawn_packet(bedrock_protocol::input::respawn_state::CLIENT_READY_TO_SPAWN, 1)]);
+        let spawn = h.server.players[&1].pos;
+        let far = [spawn[0] + 50.0, spawn[1], spawn[2]];
+        h.server.tick_count += 99;
+        h.receive(1, &[pai_flags(far, &[])]);
+        assert_eq!(h.server.players[&1].pos, spawn, "prima dei 5 s si ignora");
+        h.server.tick_count += 1;
+        h.receive(1, &[pai_flags(far, &[])]);
+        let p = &h.server.players[&1];
+        assert_eq!((p.pos, p.teleport_to), (far, None), "dopo 5 s il movimento torna valido");
+    }
+
+    #[test]
     fn respawn_teleport_carries_tick_zero_like_dragonfly() {
         let mut h = setup(GameMode::Survival);
         h.server.hurt(1, 100.0, DamageCause::Kill);

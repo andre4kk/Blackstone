@@ -179,6 +179,8 @@ struct Player {
     /// Il punto (occhi) a cui il server ha teletrasportato il client e che il client non ha ancora raggiunto: i `PlayerAuthInput` lontani da lì
     /// partono da prima del teletrasporto e si ignorano (Dragonfly `teleportPos`). `None` se non c'è un teletrasporto in attesa.
     teleport_to: Option<[f32; 3]>,
+    /// Il tick del teletrasporto in attesa: dopo `TELEPORT_TIMEOUT` tick il movimento torna valido comunque (vedi `player_auth_input`).
+    teleport_at: u64,
     /// Il tick in cui ha cominciato a mangiare il cibo in mano (Dragonfly `usingItem`/`usingSince`); `None` se non mangia.
     eating_since: Option<u64>,
     /// Quanti usi e rilasci di oggetti (`InventoryTransaction` ClickAir e ReleaseItem) sono già stati loggati in esadecimale (al massimo `HEX_LOGS`).
@@ -236,6 +238,7 @@ impl Default for Player {
             respawn_logs: 0,
             fall_start_y: None,
             teleport_to: None,
+            teleport_at: 0,
             eating_since: None,
             use_logs: 0,
             attack_logs: 0,

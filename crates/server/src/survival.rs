@@ -630,8 +630,9 @@ impl Server {
         log!("[#{pid}] rinasce in [{:.1}, {:.1}, {:.1}]", eyes[0], eyes[1], eyes[2]);
         self.on_move(pid, eyes);
         // finché il client non è arrivato qui, il suo movimento (partito da prima del teletrasporto) non vale
+        let now = self.tick_count;
         if let Some(p) = self.players.get_mut(&pid) {
-            p.teleport_to = Some(eyes);
+            (p.teleport_to, p.teleport_at) = (Some(eyes), now);
         }
         // il vecchio corpo sparisce a chi lo vedeva; il `visibility_tick` mostra quello nuovo
         let watchers: Vec<u64> = self.players.iter().filter(|(&other, p)| other != pid && p.visible.contains(&pid)).map(|(&other, _)| other).collect();

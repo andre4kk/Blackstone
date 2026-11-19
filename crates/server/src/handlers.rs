@@ -28,6 +28,9 @@ use bedrock_protocol::{
 /// Tipo di contenitore dell'inventario del giocatore in `ContainerOpen` (-1 nel protocollo).
 const CONTAINER_TYPE_INVENTORY: u8 = 0xff;
 
+/// Dopo quanti tick (5 s) un teletrasporto non raggiunto smette di bloccare il movimento.
+const TELEPORT_TIMEOUT: u64 = 100;
+
 impl Server {
     pub(crate) fn open(&mut self, pid: u64) {
         log!("[#{pid}] connesso");
@@ -185,7 +188,10 @@ impl Server {
         let mut stale = false;
         if let Some(target) = player.teleport_to {
             let squared: f32 = (0..3).map(|i| (position[i] - target[i]).powi(2)).sum();
-            if squared <= 1.0 {
+            // Uscita di sicurezza (Dragonfly non ce l'ha): se il client non arriva mai al punto, dopo 5 s il movimento torna valido,
+            // così un teletrasporto perso non lascia il giocatore bloccato per sempre.
+            let expired = self.tick_count.saturating_sub(player.teleport_at) >= TELEPORT_TIMEOUT;
+            if squared <= 1.0 || expired {
                 (player.teleport_to, player.fall_start_y) = (None, None);
             } else {
                 stale = true; // con un NaN il confronto è falso: resta in attesa
