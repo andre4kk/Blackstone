@@ -12,8 +12,8 @@ use bedrock_protocol::{
     generated::{BlockPos, ContainerClose, ContainerOpen, MobEquipment},
     id,
     input::{
-        flag, interact_action, player_action, respawn_state, use_entity, use_item, Animate, Interact, InventoryTransaction, ItemStackRequestPacket,
-        LegacySlots, PlayerAction, PlayerAuthInput, Respawn, StackRequest,
+        action_source, flag, interact_action, player_action, respawn_state, use_entity, use_item, Animate, Interact, InventoryAction, InventoryTransaction,
+        ItemStackRequestPacket, LegacySlots, PlayerAction, PlayerAuthInput, Respawn, StackRequest,
     },
     login,
     packets::{
@@ -254,6 +254,24 @@ impl Server {
             let what = if click_air { "uso nell'aria" } else { "rilascio" };
             log!("[#{pid}] InventoryTransaction di {what} ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
         }
+        match transaction.kind {
+            // Come Dragonfly: con le transazioni Normal e Mismatch si rimanda sempre l'inventario, così client e server restano allineati
+            0 => {
+                if let Some(p) = self.players.get_mut(&pid).filter(|p| p.drop_logs < HEX_LOGS) {
+                    p.drop_logs += 1;
+                    log!("[#{pid}] InventoryTransaction Normal ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
+                }
+                if let Err(why) = self.drop_from_transaction(pid, &transaction.actions) {
+                    if let Some(p) = self.players.get_mut(&pid).filter(|p| !p.drop_rejected_logged) {
+                        p.drop_rejected_logged = true;
+                        log!("[#{pid}] InventoryTransaction Normal rifiutata ({why}), {} byte: {:02x?}", body.len(), &body[..body.len().min(400)]);
+                    }
+                }
+                self.send_inventory(pid);
+            }
+            1 => self.send_inventory(pid),
+            _ => {}
+        }
         if let Some(u) = &transaction.use_entity {
             if let Some(p) = self.players.get_mut(&pid).filter(|p| p.attack_logs < HEX_LOGS && u.action == use_entity::ATTACK) {
                 p.attack_logs += 1;
@@ -271,6 +289,40 @@ impl Server {
             self.release_item(pid, r);
         }
         self.resend_legacy_slots(pid, &transaction.legacy_slots);
+    }
+
+    /// Q (o Ctrl+Q) con l'inventario chiuso: il client manda una transazione Normal con due azioni, una sul mondo (con in `new_item` la quantità
+    /// buttata) e una sull'inventario (casella e oggetto che c'era), come `handleNormalTransaction` di Dragonfly. L'oggetto si toglie dalla casella
+    /// solo se i ganci permettono di buttarlo; l'errore dice perché la transazione non è valida (nulla è stato buttato).
+    fn drop_from_transaction(&mut self, pid: u64, actions: &[InventoryAction]) -> Result<(), String> {
+        let [a, b] = actions else {
+            return Err(format!("servono due azioni per buttare un oggetto, ce ne sono {}", actions.len()));
+        };
+        let (mut slot, mut count, mut expected) = (0, 0, None);
+        for action in [a, b] {
+            if action.source_type == action_source::WORLD && action.slot == 0 {
+                if action.old_item.id != 0 && action.old_item.count > 0 {
+                    return Err("l'azione sul mondo ha un oggetto vecchio non vuoto".into());
+                }
+                count = action.new_item.count as u32;
+            } else if action.source_type == action_source::CONTAINER && action.window_id == Some(window::INVENTORY as i8) {
+                if action.old_item.id == 0 || action.old_item.count == 0 {
+                    return Err("l'azione sull'inventario ha un oggetto vecchio vuoto".into());
+                }
+                (slot, expected) = (action.slot, Some(&action.old_item));
+            } else {
+                return Err("azione inattesa nella transazione per buttare un oggetto".into());
+            }
+        }
+        let expected = expected.ok_or("manca l'azione sull'inventario")?;
+        let player = self.players.get_mut(&pid).ok_or("giocatore sconosciuto")?;
+        let item = player.inventory.take_dropped(slot, expected, count)?;
+        if self.allow(&WorldAction::DropItem { pid, item: item.clone() }) {
+            self.drop_item(pid, item);
+        } else if let Some(p) = self.players.get_mut(&pid) {
+            p.inventory.restore_main(slot, item);
+        }
+        Ok(())
     }
 
     /// Rimanda le caselle che il client ha chiesto con `LegacySetItemSlots` (al più 2 contenitori x 2 caselle, come Dragonfly), anche

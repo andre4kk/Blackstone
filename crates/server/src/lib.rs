@@ -185,6 +185,10 @@ struct Player {
     use_logs: u8,
     /// Quanti colpi (`InventoryTransaction` UseItemOnEntity) sono già stati loggati in esadecimale (al massimo `HEX_LOGS`).
     attack_logs: u8,
+    /// Quante transazioni Normal (Q per buttare un oggetto) sono già state loggate in esadecimale (al massimo `HEX_LOGS`).
+    drop_logs: u8,
+    /// Se si è già loggata una transazione Normal non valida (si logga una volta sola per giocatore).
+    drop_rejected_logged: bool,
 }
 
 impl Default for Player {
@@ -235,6 +239,8 @@ impl Default for Player {
             eating_since: None,
             use_logs: 0,
             attack_logs: 0,
+            drop_logs: 0,
+            drop_rejected_logged: false,
         }
     }
 }

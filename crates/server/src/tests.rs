@@ -3201,6 +3201,86 @@ mod ground_items {
         assert!(items(&h).is_empty());
     }
 
+    /// `InventoryTransaction` Normal di Q: azione sul mondo con `count` in `new_item` e azione sull'inventario (finestra 0) con `old` nella casella `slot`.
+    fn q_drop(slot: u32, old: &crate::inventory::Item, count: u16) -> Packet {
+        let mut w = Writer::default();
+        w.var_i32(0); // id legacy
+        w.u8(0); // niente slot legacy
+        w.var_u32(0); // tipo Normal
+        w.var_u32(2); // due azioni
+        w.var_u32(2); // sorgente mondo
+        w.u8(0); // niente id finestra
+        w.u8(0); // niente flag
+        w.var_u32(0); // casella
+        ItemStack::air().encode(&mut w);
+        crate::inventory::Item { count, ..old.clone() }.stack(0).encode(&mut w);
+        w.var_u32(0); // sorgente contenitore
+        w.u8(1);
+        w.u8(0); // finestra 0
+        w.u8(0); // niente flag
+        w.var_u32(slot);
+        old.stack(1).encode(&mut w);
+        ItemStack::air().encode(&mut w);
+        Packet::new(id::INVENTORY_TRANSACTION, w.0)
+    }
+
+    fn stone_in(h: &mut Harness, slot: usize) -> crate::inventory::Item {
+        let item = crate::inventory::Item::from_name("minecraft:stone", 64).unwrap();
+        h.server.players.get_mut(&1).unwrap().inventory.set_main(slot, item.clone());
+        item
+    }
+
+    #[test]
+    fn q_drops_one_from_hotbar_slot_two() {
+        for mode in [GameMode::Survival, GameMode::Creative] {
+            let mut h = setup(mode);
+            let stone = stone_in(&mut h, 2);
+            h.packets_to(1);
+            h.receive(1, &[q_drop(2, &stone, 1)]);
+            assert_eq!(h.server.players[&1].inventory.main(2).count, 63);
+            let dropped = items(&h);
+            assert_eq!(dropped.len(), 1);
+            assert_eq!(dropped[0].1, 1);
+            assert!(h.packets_to(1).iter().any(|p| p.id == id::INVENTORY_CONTENT), "l'inventario torna al client");
+        }
+    }
+
+    #[test]
+    fn ctrl_q_drops_the_whole_stack() {
+        let mut h = setup(GameMode::Survival);
+        let stone = stone_in(&mut h, 2);
+        h.receive(1, &[q_drop(2, &stone, 64)]);
+        assert!(h.server.players[&1].inventory.main(2).is_empty());
+        assert_eq!(items(&h).iter().map(|i| i.1).collect::<Vec<_>>(), vec![64]);
+    }
+
+    #[test]
+    fn invalid_q_drops_nothing_and_resends_the_inventory() {
+        let dirt = crate::inventory::Item::from_name("minecraft:dirt", 64).unwrap();
+        let mut h = setup(GameMode::Survival);
+        let stone = stone_in(&mut h, 2);
+        let mut cases = vec![("oggetto diverso", q_drop(2, &dirt, 1)), ("troppi", q_drop(2, &stone, 65)), ("casella sbagliata", q_drop(3, &stone, 1))];
+        cases.push(("casella fuori", q_drop(36, &stone, 1)));
+        cases.push(("zero", q_drop(2, &stone, 0)));
+        for (what, packet) in cases {
+            h.packets_to(1);
+            h.receive(1, &[packet]);
+            assert_eq!(h.server.players[&1].inventory.main(2).count, 64, "{what}");
+            assert!(items(&h).is_empty(), "{what}");
+            assert!(h.packets_to(1).iter().any(|p| p.id == id::INVENTORY_CONTENT), "{what}: inventario rimandato");
+        }
+    }
+
+    #[test]
+    fn q_drop_refused_by_a_hook_removes_nothing() {
+        let mut h = setup(GameMode::Survival);
+        h.server.hooks.push(Box::new(|a| !matches!(a, WorldAction::DropItem { .. })));
+        let stone = stone_in(&mut h, 2);
+        h.receive(1, &[q_drop(2, &stone, 5)]);
+        assert_eq!(h.server.players[&1].inventory.main(2).count, 64);
+        assert!(items(&h).is_empty());
+    }
+
     #[test]
     fn item_falls_and_rests_on_stone() {
         let (mut h, id) = item_over_stone();

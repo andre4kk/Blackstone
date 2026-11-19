@@ -593,6 +593,38 @@ impl Inventory {
         Ok(a.with_count(count))
     }
 
+    /// Il giocatore butta `count` oggetti dalla casella `slot` (0-35) con Q (`handleNormalTransaction` di Dragonfly): la casella deve avere un
+    /// oggetto uguale a `expected` (quello che il client dice di buttare) e almeno `count` pezzi. Si toglie e si restituisce ciò che è uscito;
+    /// la casella resta com'è se qualcosa non torna. Dell'oggetto del client si usa solo il genere (e l'NBT, se l'oggetto vero ne ha): mai la quantità.
+    pub fn take_dropped(&mut self, slot: u32, expected: &ItemStack, count: u32) -> Result<Item, String> {
+        if slot as usize >= MAIN_SLOTS {
+            return Err(format!("casella {slot} fuori dall'inventario"));
+        }
+        let loc = Loc::Main(slot as u8);
+        let actual = self.contents.get(loc).item.clone();
+        if count < 1 {
+            return Err(format!("si butta almeno un oggetto, non {count}"));
+        }
+        if actual.is_empty() || count > actual.count as u32 {
+            return Err(format!("si buttano {count} oggetti ma la casella {slot} ne ha {}", if actual.is_empty() { 0 } else { actual.count }));
+        }
+        let declared = Item::kind_of(expected);
+        let nbt_differs = actual.nbt.is_some() && actual.stack(0).user_data != expected.user_data;
+        if expected.id == 0 || !actual.same_kind(&declared) || nbt_differs {
+            return Err(format!("si butta un oggetto diverso da quello nella casella {slot}"));
+        }
+        let count = count as u16;
+        let id = self.new_id();
+        let left = actual.with_count(actual.count - count);
+        *self.contents.get_mut(loc) = if left.is_empty() { Slot::default() } else { Slot { item: left, stack_id: id } };
+        Ok(actual.with_count(count))
+    }
+
+    /// Rimette nella casella `slot` dell'inventario ciò che un gancio ha impedito di buttare (vedi `restore`).
+    pub fn restore_main(&mut self, slot: u32, item: Item) {
+        self.restore(INVENTORY_CONTAINER, slot as u8, item);
+    }
+
     /// Vero se `add` metterebbe almeno un oggetto di `item` nell'inventario (una pila uguale non piena o una casella vuota).
     pub fn accepts(&self, item: &Item) -> bool {
         !item.is_empty() && self.contents.main.iter().any(|s| s.item.is_empty() || (s.item.stacks_with(item) && s.item.count < item.max_stack()))

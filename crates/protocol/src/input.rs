@@ -141,18 +141,41 @@ fn read_legacy_slots(r: &mut Reader) -> Option<LegacySlots> {
     Some(slots.unwrap_or_default())
 }
 
-/// Salta le `InventoryAction`: il server non le usa, l'inventario passa dalle richieste di pila.
-fn skip_inventory_actions(r: &mut Reader) -> Option<()> {
+/// Tipi di sorgente di una `InventoryAction` (`InventoryActionSource*` di gophertunnel).
+pub mod action_source {
+    pub const CONTAINER: u32 = 0;
+    pub const WORLD: u32 = 2;
+    pub const CREATIVE: u32 = 3;
+}
+
+/// Un'azione di una transazione (`InventoryAction.Marshal` di gophertunnel): per buttare un oggetto con Q sono due, una sul mondo e una sull'inventario.
+#[derive(Clone, Debug, PartialEq)]
+pub struct InventoryAction {
+    /// Uno di [`action_source`].
+    pub source_type: u32,
+    pub window_id: Option<i8>,
+    pub source_flags: Option<u32>,
+    pub slot: u32,
+    pub old_item: ItemStack,
+    pub new_item: ItemStack,
+}
+
+fn read_inventory_actions(r: &mut Reader) -> Option<Vec<InventoryAction>> {
     list(r, |r| {
-        r.var_u32()?; // tipo di sorgente
-        r.optional(|r| r.i8())?; // id contenitore
-        r.optional(|r| r.var_u32())?; // flag
-        r.var_u32()?; // slot
-        ItemStack::decode(r)?; // da
-        ItemStack::decode(r)?; // a
-        Some(())
-    })?;
-    Some(())
+        Some(InventoryAction {
+            source_type: r.var_u32()?,
+            window_id: r.optional(|r| r.i8())?,
+            source_flags: r.optional(|r| r.var_u32())?,
+            slot: r.var_u32()?,
+            old_item: ItemStack::decode(r)?,
+            new_item: ItemStack::decode(r)?,
+        })
+    })
+}
+
+/// Salta le `InventoryAction` (dentro `PlayerAuthInput` non servono: l'inventario passa dalle richieste di pila).
+fn skip_inventory_actions(r: &mut Reader) -> Option<()> {
+    read_inventory_actions(r).map(|_| ())
 }
 
 /// Rilascio dell'oggetto usato a lungo (tipo 4 di `InventoryTransaction`, `ReleaseItemTransactionData` di gophertunnel): il client smette di
@@ -221,6 +244,8 @@ pub struct InventoryTransaction {
     pub legacy_request_id: i32,
     pub legacy_slots: LegacySlots,
     pub kind: u32,
+    /// Le azioni (per il tipo Normal: buttare un oggetto con Q).
+    pub actions: Vec<InventoryAction>,
     pub use_item: Option<UseItem>,
     pub use_entity: Option<UseItemOnEntity>,
     pub release: Option<ReleaseItem>,
@@ -232,11 +257,11 @@ impl InventoryTransaction {
         let legacy_request_id = r.var_i32()?;
         let legacy_slots = read_legacy_slots(r)?;
         let kind = r.var_u32()?;
-        skip_inventory_actions(r)?;
+        let actions = read_inventory_actions(r)?;
         let use_item = if kind == 2 { Some(UseItem::read(r)?) } else { None };
         let use_entity = if kind == 3 { Some(UseItemOnEntity::read(r)?) } else { None };
         let release = if kind == 4 { Some(ReleaseItem::read(r)?) } else { None };
-        Some(Self { legacy_request_id, legacy_slots, kind, use_item, use_entity, release })
+        Some(Self { legacy_request_id, legacy_slots, kind, actions, use_item, use_entity, release })
     }
 }
 
