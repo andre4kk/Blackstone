@@ -270,6 +270,16 @@ fn join_sends_crafting_data_after_the_creative_menu() {
 }
 
 #[test]
+fn join_sends_the_available_commands_once() {
+    let mut h = Harness::new();
+    h.join(1, "Alice");
+    let packets = h.packets_to(1);
+    let sent: Vec<&Packet> = packets.iter().filter(|p| p.id == 76).collect();
+    assert_eq!(sent.len(), 1);
+    assert_eq!(sent[0].body, bedrock_protocol::wire::Encode::to_bytes(&crate::chat::available_commands()));
+}
+
+#[test]
 fn join_sends_inventory_game_type_and_abilities() {
     let mut h = Harness::new();
     h.join(1, "Alice");

@@ -2,6 +2,7 @@
 use crate::{entity::EntityKind, survival::DamageCause, GameMode, Server};
 use bedrock_net::log;
 use bedrock_protocol::{
+    commands::{AvailableCommands, CommandSpec, Param, ParamKind},
     generated::UpdatePlayerGameType,
     id,
     packets::{text_type, CommandRequest, Text},
@@ -20,6 +21,38 @@ const COMMANDS: &[(&str, &str)] = &[
     ("gamemode <modalità>", "cambia la tua modalità di gioco"),
     ("kill", "ti uccide"),
 ];
+
+/// Valori di `/gamemode` che il client suggerisce: tutti e soli quelli che `GameMode::parse` accetta.
+pub(crate) const GAMEMODE_VALUES: [&str; 12] = ["survival", "creative", "adventure", "spectator", "s", "c", "a", "sp", "0", "1", "2", "6"];
+
+/// Descrizione di un comando, presa dall'elenco di /help.
+fn describe(name: &str) -> String {
+    COMMANDS.iter().find(|(usage, _)| usage.split(' ').next() == Some(name)).map_or(String::new(), |(_, d)| (*d).to_owned())
+}
+
+/// `AvailableCommands`: i comandi che il server esegue davvero, con i loro argomenti, perché il client li suggerisca mentre si scrive
+/// (comportamento di Dragonfly `sendAvailableCommands`). Va tenuto d'accordo con `Server::command`.
+pub(crate) fn available_commands() -> AvailableCommands {
+    let spec = |name: &str, aliases: &[&str], overloads: Vec<Vec<Param>>| CommandSpec {
+        name: name.into(),
+        description: describe(name),
+        aliases: aliases.iter().map(|a| (*a).to_owned()).collect(),
+        overloads,
+    };
+    let sub = |name: &str| Param::new(name, ParamKind::Enum { name: format!("SubCommand{name}"), options: vec![name.into()] }, false);
+    let mode = ParamKind::Enum { name: "GameMode".into(), options: GAMEMODE_VALUES.iter().map(|v| (*v).to_owned()).collect() };
+    AvailableCommands {
+        commands: vec![
+            spec("help", &[], vec![vec![]]),
+            spec("list", &[], vec![vec![]]),
+            spec("tps", &[], vec![vec![]]),
+            spec("bot", &[], vec![vec![], vec![sub("rimuovi")], vec![Param::new("nome", ParamKind::Text, false)]]),
+            spec("say", &[], vec![vec![Param::new("testo", ParamKind::RawText, false)]]),
+            spec("gamemode", &["gm"], vec![vec![Param::new("modalità", mode, false)]]),
+            spec("kill", &[], vec![vec![]]),
+        ],
+    }
+}
 
 /// Lunghezza massima di un messaggio di chat (come in vanilla).
 pub(crate) const MAX_CHAT_LEN: usize = 512;
@@ -132,5 +165,23 @@ impl Server {
             },
             _ => self.tell(pid, &format!("§cComando sconosciuto: /{name}§r. Scrivi /help.")),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_listed_command_is_offered_and_gamemode_values_all_parse() {
+        let offered = available_commands();
+        let names: Vec<&str> = offered.commands.iter().map(|c| c.name.as_str()).collect();
+        for (usage, _) in COMMANDS {
+            assert!(names.contains(&usage.split(' ').next().unwrap()), "{usage}");
+        }
+        assert!(offered.commands.iter().all(|c| !c.description.is_empty()));
+        assert!(GAMEMODE_VALUES.iter().all(|v| GameMode::parse(v).is_some()));
+        let gamemode = offered.commands.iter().find(|c| c.name == "gamemode").unwrap();
+        assert_eq!(gamemode.aliases, ["gm"]);
     }
 }

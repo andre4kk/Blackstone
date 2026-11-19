@@ -5,6 +5,7 @@ use std::borrow::Cow;
 
 pub mod actor;
 pub mod block_event;
+pub mod commands;
 pub mod crafting;
 pub mod entity;
 pub mod generated;

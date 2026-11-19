@@ -371,6 +371,9 @@ impl Server {
             // come Dragonfly: le ricette subito dopo il menu creativo
             packets.push(crate::recipes::crafting_data_packet().clone());
         }
+        if !skip("commands") {
+            packets.push(crate::chat::available_commands().packet()); // suggerimenti dei comandi nella chat
+        }
         let attributes = self.players.get(&pid).map(|p| spawn_attributes(pid, p).packet());
         packets.extend(attributes);
         if !skip("metadata") {
