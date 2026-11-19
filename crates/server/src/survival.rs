@@ -9,7 +9,7 @@ use crate::{
 use bedrock_net::log;
 use bedrock_protocol::{
     actor::set_actor_data,
-    entity::{actor_event, actor_event_type, move_player_teleport, remove_actor, respawn},
+    entity::{actor_event, actor_event_type, move_player_teleport, remove_actor, respawn, set_actor_motion},
     generated::UpdateAttributes,
     input::respawn_state,
     packets::{text_type, Text},
@@ -27,6 +27,8 @@ pub(crate) const START_SATURATION: f32 = 5.0;
 pub(crate) const IMMUNITY_TICKS: u64 = 10;
 /// Tick prima che gli oggetti lasciati da chi muore si possano raccogliere (mezzo secondo).
 const DEATH_PICKUP_DELAY: u64 = 10;
+/// Quanto resta visibile il corpo di chi è morto: 1,1 s come Dragonfly (`finishDying`).
+pub(crate) const BODY_TICKS: u64 = 22;
 
 /// Da cosa viene un danno.
 #[derive(Clone, Debug, PartialEq)]
@@ -198,14 +200,20 @@ impl Server {
     pub(crate) fn die(&mut self, pid: u64, cause: DamageCause) {
         let Some(p) = self.players.get_mut(&pid) else { return };
         p.dead = true;
+        p.death_tick = self.tick_count;
         p.health = 0.0;
         p.breaking = None;
         p.fall_start_y = None;
         p.flying = false;
+        let before = (p.sneaking, p.sprinting, p.swimming, p.gliding);
         (p.sneaking, p.sprinting, p.swimming, p.gliding) = (false, false, false, false);
+        let state_changed = before != (false, false, false, false);
         let (mode, feet) = (p.mode, [p.pos[0], p.pos[1] - EYE_HEIGHT, p.pos[2]]);
         log!("[#{pid}] morto: {cause:?}");
         self.allow(&WorldAction::Death { pid }); // solo osservazione: la morte non si annulla
+        if state_changed {
+            self.send_entity_state(pid); // come Dragonfly `StopSneaking`/`StopSprinting`: `updateState`
+        }
         let event = actor_event(pid, actor_event_type::DEATH, 0);
         self.send(pid, std::slice::from_ref(&event));
         self.broadcast_to_viewers(pid, std::slice::from_ref(&event));
@@ -263,7 +271,10 @@ impl Server {
         self.send_vitals(pid);
         self.send_only_abilities(pid);
         self.send(pid, &[set_actor_data(pid, &self.entity_data(pid))]);
-        self.send(pid, &[move_player_teleport(pid, eyes, pitch, yaw, self.tick_count), respawn(eyes, respawn_state::READY_TO_SPAWN, pid)]);
+        self.send(
+            pid,
+            &[set_actor_motion(pid, [0.0; 3]), move_player_teleport(pid, eyes, pitch, yaw, self.tick_count), respawn(eyes, respawn_state::READY_TO_SPAWN, pid)],
+        );
     }
 }
 

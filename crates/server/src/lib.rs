@@ -165,6 +165,8 @@ struct Player {
     last_damage: f32,
     /// Vero da quando la vita è arrivata a 0 e finché il giocatore non rinasce.
     dead: bool,
+    /// Il tick della morte: dopo `survival::BODY_TICKS` il corpo sparisce a chi lo vedeva.
+    death_tick: u64,
     /// Quanti `Respawn` ricevuti sono già stati loggati in esadecimale (al massimo `HEX_LOGS`).
     respawn_logs: u8,
     /// Altezza dei piedi da cui è iniziata la caduta in corso (il punto più alto prima della discesa); `None` se non sta cadendo.
@@ -210,6 +212,7 @@ impl Default for Player {
             invulnerable_until: 0,
             last_damage: 0.0,
             dead: false,
+            death_tick: 0,
             respawn_logs: 0,
             fall_start_y: None,
         }

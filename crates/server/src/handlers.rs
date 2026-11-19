@@ -211,12 +211,9 @@ impl Server {
     /// Pacchetto `PlayerAction`: inizio, fine e abbandono della rottura di un blocco, e rottura creativa.
     fn player_action(&mut self, pid: u64, body: &[u8]) {
         match PlayerAction::decode(body) {
-            // Il client morto che preme "Rinasci" manda questa azione: si rinasce subito, come per `Respawn` (vedi `respawn_packet`).
-            Some(a) if a.action == player_action::RESPAWN => {
-                if self.players.get(&pid).is_some_and(|p| p.dead) {
-                    self.respawn(pid);
-                }
-            }
+            // Come Dragonfly (`handlePlayerAction`: "Don't do anything for these actions"), `PlayerActionRespawn` non fa nulla: si rinasce solo
+            // con `Respawn(ClientReadyToSpawn)` (vedi `respawn_packet`).
+            Some(a) if a.action == player_action::RESPAWN => {}
             Some(_) if self.players.get(&pid).is_some_and(|p| p.dead) => {}
             Some(a) => self.block_action(pid, a.action, a.pos),
             None => log!("[#{pid}] PlayerAction illeggibile ({} byte): ignorato", body.len()),

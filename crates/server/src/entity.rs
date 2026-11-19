@@ -110,10 +110,20 @@ impl Server {
         let pids: Vec<u64> = self.players.iter().filter(|(_, p)| p.spawned).map(|(&pid, _)| pid).collect();
         for pid in pids {
             let p = &self.players[&pid];
+            // Il corpo di chi è morto lo vede solo chi già lo vedeva, e solo per `BODY_TICKS` (come Dragonfly `finishDying`); alla rinascita torna.
+            let tick = self.tick_count;
+            let hidden = |e: &Entity| match e.kind {
+                EntityKind::Player { pid: Some(other), .. } => {
+                    self.players.get(&other).is_some_and(|o| o.dead && (!p.visible.contains(&e.id) || tick >= o.death_tick + crate::survival::BODY_TICKS))
+                }
+                _ => false,
+            };
             let should: HashSet<u64> = self
                 .entities
                 .iter()
-                .filter(|e| !matches!(e.kind, EntityKind::Player { pid: Some(own), .. } if own == pid) && p.sent.contains(&chunk_of(e.pos[0], e.pos[2])))
+                .filter(|e| {
+                    !hidden(e) && !matches!(e.kind, EntityKind::Player { pid: Some(own), .. } if own == pid) && p.sent.contains(&chunk_of(e.pos[0], e.pos[2]))
+                })
                 .map(|e| e.id)
                 .collect();
             let mut out: Vec<Packet> = Vec::new();

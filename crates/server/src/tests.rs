@@ -3822,7 +3822,7 @@ mod survival {
     }
 
     #[test]
-    fn player_action_respawn_also_respawns_a_dead_player() {
+    fn player_action_respawn_does_nothing_like_dragonfly() {
         let mut h = setup(GameMode::Survival);
         h.server.hurt(1, 100.0, DamageCause::Kill);
         let mut w = Writer::default();
@@ -3831,7 +3831,50 @@ mod survival {
         (0..6).for_each(|_| w.var_i32(0));
         w.var_i32(0);
         h.receive(1, &[Packet::new(id::PLAYER_ACTION, w.0)]);
-        assert!(!h.server.players[&1].dead);
+        assert!(h.server.players[&1].dead, "si rinasce solo con Respawn(ClientReadyToSpawn)");
+    }
+
+    /// Alice (1) morta; Bob (2) la vede già, Carol (3) arriva dopo. Entrambi hanno il chunk 0,0.
+    fn body_setup() -> Harness {
+        let mut h = setup(GameMode::Survival);
+        for pid in [1, 2, 3] {
+            h.server.players.get_mut(&pid).unwrap().sent.insert((0, 0));
+        }
+        h.server.entities.get_mut(1).unwrap().pos = [1.0, 31.0, 1.0];
+        h.server.visibility_tick();
+        assert!(h.server.players[&2].visible.contains(&1) && h.server.players[&3].visible.contains(&1));
+        h.server.players.get_mut(&3).unwrap().visible.clear();
+        h.server.hurt(1, 100.0, DamageCause::Kill);
+        h.packets_by_player();
+        h
+    }
+
+    #[test]
+    fn dead_body_is_never_shown_to_late_viewers_and_vanishes_for_current_ones_after_the_delay() {
+        let mut h = body_setup();
+        h.server.visibility_tick();
+        h.packets_by_player();
+        assert!(!h.server.players[&3].visible.contains(&1), "chi arriva dopo non vede il morto");
+        assert!(h.server.players[&2].visible.contains(&1), "chi lo vedeva lo vede ancora");
+        h.server.tick_count += crate::survival::BODY_TICKS;
+        h.server.visibility_tick();
+        assert!(h.packets_by_player()[&2].contains(&bedrock_protocol::entity::remove_actor(1)));
+        assert!(!h.server.players[&2].visible.contains(&1));
+    }
+
+    #[test]
+    fn body_comes_back_after_respawn() {
+        let mut h = body_setup();
+        h.server.tick_count += crate::survival::BODY_TICKS;
+        h.server.visibility_tick();
+        h.packets_by_player();
+        h.receive(1, &[respawn_packet(2, 1)]);
+        h.server.visibility_tick();
+        let sent = h.packets_by_player();
+        for pid in [2, 3] {
+            assert!(h.server.players[&pid].visible.contains(&1), "#{pid} rivede il corpo");
+            assert!(sent[&pid].iter().any(|p| p.id == bedrock_protocol::id::ADD_PLAYER));
+        }
     }
 
     #[test]
