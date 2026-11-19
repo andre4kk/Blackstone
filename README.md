@@ -1,5 +1,10 @@
 # Blackstone
 
+[![CI](https://github.com/andre4kk/Blackstone/actions/workflows/ci.yml/badge.svg)](https://github.com/andre4kk/Blackstone/actions/workflows/ci.yml)
+[![License: MIT (server) / AGPL-3.0 (generator)](https://img.shields.io/badge/license-MIT%20%2F%20AGPL--3.0-blue)](#licenze)
+
+**Download:** binaries for Windows and Linux are on the [Releases](https://github.com/andre4kk/Blackstone/releases) page.
+
 Server Minecraft Bedrock in Rust, su trasporto NetherNet (WebRTC), quello usato dalle versioni 26.60+.
 Il mondo è un Overworld infinito, generato da un processo separato (`blackstone-gen`, basato su SteelMC) con le stesse regole di
 Java 26.3, e salvato su disco nel formato LevelDB di Bedrock.
@@ -225,3 +230,7 @@ Per giocare da Internet: `$env:PUBLIC_IP="il.tuo.ip"` (PowerShell) e apri TCP+UD
 - `generator/data/geyser/` (tabelle di mappatura dei blocchi e dei biomi): GeyserMC/mappings, MIT (`generator/data/geyser/LICENSE`).
 - `crates/server/data/biomes.json`: da pmmp/BedrockData, CC0.
 - Dati e schemi di Mojang (jar del server Java, blackstone-protocol-docs, bedrock-samples): soggetti all'EULA di Minecraft.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and the starter tasks in `docs/good-first-issues.md`. Project site: https://andre4kk.github.io/Blackstone/

@@ -1,0 +1,75 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+env:
+  CARGO_TERM_COLOR: always
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: windows-x86_64
+            exe: .exe
+          - os: ubuntu-latest
+            name: linux-x86_64
+            exe: ''
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: server
+      - name: Build server (MIT)
+        run: cargo build --release -p blackstone-server
+      # Il generatore usa il toolchain nightly fissato da generator/rust-toolchain.toml
+      # (rustup lo scarica da solo); la build scarica da Mojang i dati di Java 26.3.
+      - name: Install generator toolchain
+        working-directory: generator
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: generator
+          key: generator
+      - name: Build generator (AGPL-3.0-or-later)
+        working-directory: generator
+        run: cargo build --release
+      - name: Package
+        shell: bash
+        run: |
+          d="blackstone-${{ github.ref_name }}-${{ matrix.name }}"
+          mkdir -p "$d/licenses"
+          cp "target/release/blackstone${{ matrix.exe }}" "$d/"
+          mkdir -p "$d/generator/target/release"
+          cp "generator/target/release/blackstone-gen${{ matrix.exe }}" "$d/generator/target/release/"
+          cp server.example.toml README.md "$d/"
+          cp LICENSE "$d/licenses/LICENSE-server-MIT"
+          cp generator/LICENSE "$d/licenses/LICENSE-generator-AGPL"
+          cat > "$d/GENERATOR-AGPL.txt" <<'EOT'
+          The generator (blackstone-gen) is licensed under AGPL-3.0-or-later.
+          The server (blackstone) is MIT and only runs the generator as a separate program.
+          Source code of the generator: https://github.com/andre4kk/Blackstone/tree/main/generator
+          EOT
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            7z a "$d.zip" "$d" > /dev/null
+            echo "ASSET=$d.zip" >> "$GITHUB_ENV"
+          else
+            tar czf "$d.tar.gz" "$d"
+            echo "ASSET=$d.tar.gz" >> "$GITHUB_ENV"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ env.ASSET }}
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ASSET }}
+          generate_release_notes: true

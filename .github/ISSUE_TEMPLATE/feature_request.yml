@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest a feature or missing vanilla behaviour
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What would you like?
+    validations:
+      required: true
+  - type: textarea
+    id: ref
+    attributes:
+      label: Vanilla behaviour / references
+      description: Links to the wiki, Dragonfly or gophertunnel code that does it.
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contribution
+      options:
+        - label: I would like to implement this myself
