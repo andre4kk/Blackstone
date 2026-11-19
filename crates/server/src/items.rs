@@ -183,7 +183,7 @@ impl Server {
     /// Gli spettatori non raccolgono. Si procede per giocatore (ID crescente) e per oggetto (ID crescente), togliendo o riducendo l'oggetto
     /// prima di passare oltre: lo stesso oggetto non va mai a due giocatori. Un oggetto che non ci sta resta a terra con il resto.
     pub(crate) fn pickup_tick(&mut self) {
-        let mut pids: Vec<u64> = self.players.iter().filter(|(_, p)| p.spawned && p.mode != GameMode::Spectator).map(|(&pid, _)| pid).collect();
+        let mut pids: Vec<u64> = self.players.iter().filter(|(_, p)| p.spawned && !p.dead && p.mode != GameMode::Spectator).map(|(&pid, _)| pid).collect();
         pids.sort_unstable();
         let mut ids: Vec<u64> = self.entities.iter().filter(|e| matches!(e.kind, EntityKind::Item { .. })).map(|e| e.id).collect();
         ids.sort_unstable();

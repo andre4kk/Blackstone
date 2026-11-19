@@ -15,6 +15,8 @@ pub mod id {
     pub const INTERACT: u32 = 33;
     pub const CONTAINER_CLOSE: u32 = 47;
     pub const PLAYER_ACTION: u32 = 36;
+    pub const MOVE_PLAYER: u32 = 19;
+    pub const RESPAWN: u32 = 45;
     pub const ANIMATE: u32 = 44;
     pub const ACTOR_EVENT: u32 = 27;
     pub const EMOTE_LIST: u32 = 152;

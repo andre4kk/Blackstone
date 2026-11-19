@@ -4,7 +4,7 @@ use crate::{
     events::WorldAction,
     inventory::{window, HOTBAR_SLOTS},
     playerdata::{self, EYE_HEIGHT},
-    GameMode, Player, Server, HEX_LOGS,
+    survival, GameMode, Player, Server, HEX_LOGS,
 };
 use bedrock_net::log;
 use bedrock_protocol::{
@@ -12,8 +12,8 @@ use bedrock_protocol::{
     generated::{BlockPos, ContainerClose, ContainerOpen, MobEquipment},
     id,
     input::{
-        flag, interact_action, use_item, Animate, Interact, InventoryTransaction, ItemStackRequestPacket, LegacySlots, PlayerAction, PlayerAuthInput,
-        StackRequest,
+        flag, interact_action, player_action, respawn_state, use_item, Animate, Interact, InventoryTransaction, ItemStackRequestPacket, LegacySlots,
+        PlayerAction, PlayerAuthInput, Respawn, StackRequest,
     },
     login,
     packets::{
@@ -39,6 +39,7 @@ impl Server {
         let name = self.name(pid);
         self.waiting_start.retain(|&w| w != pid);
         if let Some(mut p) = self.players.remove(&pid) {
+            survival::settle_dead(&mut p, self.spawn);
             playerdata::persist(self.disk.as_ref(), &mut p);
             if p.spawned {
                 self.broadcast(Text::new(text_type::RAW, format!("§e{name} ha lasciato il gioco")));
@@ -73,6 +74,7 @@ impl Server {
             | id::ANIMATE
             | id::PLAYER_SKIN
             | id::PLAYER_ACTION
+            | id::RESPAWN
             | id::INVENTORY_TRANSACTION => spawned,
             _ => true,
         };
@@ -98,6 +100,7 @@ impl Server {
             id::INTERACT => self.interact_packet(pid, &packet.body),
             id::CONTAINER_CLOSE => self.container_close(pid, &packet.body),
             id::PLAYER_ACTION => self.player_action(pid, &packet.body),
+            id::RESPAWN => self.respawn_packet(pid, &packet.body),
             id::INVENTORY_TRANSACTION => self.inventory_transaction(pid, &packet.body),
             // 307 SetPlayerInventoryOptions (schede del menu), 358 ServerboundCursorItemDrag: solo interfaccia del client.
             id::EMOTE_LIST | 307 | 358 => {}
@@ -127,7 +130,8 @@ impl Server {
     /// Se il corpo non si legge per intero (il layout dopo la posizione non è verificato sul client reale) si logga
     /// la prima volta e si usa comunque la posizione: il movimento non deve dipendere dal resto del pacchetto.
     fn player_auth_input(&mut self, pid: u64, body: &[u8]) {
-        let Some(player) = self.players.get_mut(&pid).filter(|p| p.spawned) else { return };
+        // Chi è morto non si muove e non agisce finché non rinasce (il client mostra la schermata della morte).
+        let Some(player) = self.players.get_mut(&pid).filter(|p| p.spawned && !p.dead) else { return };
         let mut state_changed = false;
         let (position, request, input) = match PlayerAuthInput::decode(body) {
             Some(input) => {
@@ -207,6 +211,13 @@ impl Server {
     /// Pacchetto `PlayerAction`: inizio, fine e abbandono della rottura di un blocco, e rottura creativa.
     fn player_action(&mut self, pid: u64, body: &[u8]) {
         match PlayerAction::decode(body) {
+            // Il client morto che preme "Rinasci" manda questa azione: si rinasce subito, come per `Respawn` (vedi `respawn_packet`).
+            Some(a) if a.action == player_action::RESPAWN => {
+                if self.players.get(&pid).is_some_and(|p| p.dead) {
+                    self.respawn(pid);
+                }
+            }
+            Some(_) if self.players.get(&pid).is_some_and(|p| p.dead) => {}
             Some(a) => self.block_action(pid, a.action, a.pos),
             None => log!("[#{pid}] PlayerAction illeggibile ({} byte): ignorato", body.len()),
         }
@@ -215,6 +226,9 @@ impl Server {
     /// Pacchetto `InventoryTransaction`: l'uso di un oggetto con azione Destroy rompe un blocco, con azione Place attiva il blocco
     /// cliccato (porta, leva...) o ne piazza uno. Gli altri usi e gli altri tipi di transazione non servono ancora.
     fn inventory_transaction(&mut self, pid: u64, body: &[u8]) {
+        if self.players.get(&pid).is_some_and(|p| p.dead) {
+            return;
+        }
         let Some(transaction) = InventoryTransaction::decode(body) else {
             return log!("[#{pid}] InventoryTransaction illeggibile ({} byte): ignorata", body.len());
         };
@@ -240,6 +254,9 @@ impl Server {
 
     /// Pacchetto `ItemStackRequest`: ogni richiesta ha la sua risposta.
     fn item_stack_request(&mut self, pid: u64, body: &[u8]) {
+        if self.players.get(&pid).is_some_and(|p| p.dead) {
+            return;
+        }
         if let Some(p) = self.players.get_mut(&pid).filter(|p| p.stack_logs < HEX_LOGS) {
             p.stack_logs += 1;
             log!("[#{pid}] ItemStackRequest ({} byte): {:02x?}", body.len(), &body[..body.len().min(400)]);
@@ -274,8 +291,27 @@ impl Server {
         self.send_equipment_changes(pid, &held, &armor);
     }
 
+    /// `Respawn` dal client: con lo stato `ClientReadyToSpawn` e il proprio ID di runtime, chi è morto rinasce (come `RespawnHandler` di Dragonfly,
+    /// che però rifiuta gli altri stati con un errore: qui si ignorano). I primi `HEX_LOGS` pacchetti si loggano in esadecimale per vedere cosa manda il client vero.
+    fn respawn_packet(&mut self, pid: u64, body: &[u8]) {
+        if let Some(p) = self.players.get_mut(&pid).filter(|p| p.respawn_logs < HEX_LOGS) {
+            p.respawn_logs += 1;
+            log!("[#{pid}] Respawn ({} byte): {:02x?}", body.len(), &body[..body.len().min(64)]);
+        }
+        let Some(r) = Respawn::decode(body) else {
+            return log!("[#{pid}] Respawn illeggibile ({} byte): ignorato", body.len());
+        };
+        if r.runtime_id != pid || r.state != respawn_state::CLIENT_READY_TO_SPAWN {
+            return log!("[#{pid}] Respawn con stato {} e ID {}: ignorato", r.state, r.runtime_id);
+        }
+        self.respawn(pid);
+    }
+
     /// `Animate`: solo l'oscillazione del braccio (azione 1) si ripete agli spettatori; l'ID di runtime del pacchetto non si usa, vale quello del mittente.
     fn animate(&mut self, pid: u64, body: &[u8]) {
+        if self.players.get(&pid).is_some_and(|p| p.dead) {
+            return;
+        }
         let Some(a) = Animate::decode(body) else {
             return log!("[#{pid}] Animate illeggibile ({} byte): ignorato", body.len());
         };
@@ -350,6 +386,9 @@ impl Server {
     }
 
     fn mob_equipment(&mut self, pid: u64, body: &[u8]) {
+        if self.players.get(&pid).is_some_and(|p| p.dead) {
+            return;
+        }
         let Some(equipment) = MobEquipment::decode(body) else {
             return log!("[#{pid}] MobEquipment illeggibile ({} byte): ignorato", body.len());
         };

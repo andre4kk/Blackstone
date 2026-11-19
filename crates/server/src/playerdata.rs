@@ -494,6 +494,44 @@ mod tests {
         assert_eq!((p.health, p.food, p.saturation, p.exhaustion), (7.0, 9, 1.5, 2.25));
     }
 
+    /// Alice muore lontano dallo spawn, con una pietra in tasca, ed esce senza rinascere.
+    fn die_and_quit(rig: &mut Rig) {
+        rig.login(1, "Alice", "2535");
+        rig.pump();
+        let p = rig.server.players.get_mut(&1).unwrap();
+        (p.mode, p.pos, p.food) = (GameMode::Survival, [100.5, 71.62, -20.5], 3);
+        p.inventory.set_main(2, item("minecraft:stone", 10));
+        assert!(rig.server.hurt(1, 100.0, crate::survival::DamageCause::Kill));
+        rig.server.close(1);
+    }
+
+    #[test]
+    fn quitting_dead_rejoins_alive_at_spawn_with_an_empty_inventory() {
+        let dir = TempDir::new("dead-quit");
+        let mut rig = Rig::new(&dir.0);
+        die_and_quit(&mut rig);
+        rig.login(2, "Alice", "2535");
+        rig.pump();
+        let p = &rig.server.players[&2];
+        let (x, y, z) = crate::world::FLAT_SPAWN;
+        assert!(near(p.pos, [x as f32 + 0.5, y as f32 + EYE_HEIGHT, z as f32 + 0.5]));
+        assert_eq!((p.health, p.food, p.saturation, p.exhaustion, p.dead), (20.0, 20, 5.0, 0.0, false));
+        assert!(p.inventory.main(2).is_empty(), "gli oggetti sono rimasti a terra dove è morto");
+    }
+
+    #[test]
+    fn quitting_dead_with_keep_inventory_keeps_it() {
+        let dir = TempDir::new("dead-quit-keep");
+        let mut rig = Rig::new(&dir.0);
+        rig.server.keep_inventory = true;
+        die_and_quit(&mut rig);
+        rig.login(2, "Alice", "2535");
+        rig.pump();
+        let p = &rig.server.players[&2];
+        assert_eq!(p.inventory.main(2).count, 10);
+        assert_eq!(p.health, 20.0);
+    }
+
     #[test]
     fn first_login_without_data_starts_at_spawn() {
         let dir = TempDir::new("fresh");

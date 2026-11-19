@@ -376,6 +376,14 @@ impl Inventory {
         *self.contents.get_mut(loc) = Slot { item: if stack_id == 0 { Item::default() } else { item }, stack_id };
     }
 
+    /// Svuota inventario, mano secondaria, armatura e oggetto sul cursore (non quello creato dal menu creativo) e restituisce ciò che c'era.
+    pub fn take_all(&mut self) -> Vec<Item> {
+        let locs = (0..MAIN_SLOTS as u8).map(Loc::Main).chain([Loc::Offhand]).chain((0..ARMOR_SLOTS as u8).map(Loc::Armor)).chain([Loc::Cursor]);
+        let items = locs.map(|loc| std::mem::take(self.contents.get_mut(loc))).map(|slot| slot.item).filter(|item| !item.is_empty()).collect();
+        self.contents.created = Slot::default();
+        items
+    }
+
     pub fn set_main(&mut self, i: usize, item: Item) {
         if i < MAIN_SLOTS {
             self.fill(Loc::Main(i as u8), item);

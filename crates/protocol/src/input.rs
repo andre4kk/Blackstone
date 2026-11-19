@@ -43,6 +43,8 @@ pub mod player_action {
     pub const START_BREAK: i32 = 0;
     pub const ABORT_BREAK: i32 = 1;
     pub const STOP_BREAK: i32 = 2;
+    /// Il client morto chiede di rinascere (`PlayerActionRespawn` di gophertunnel).
+    pub const RESPAWN: i32 = 7;
     pub const CREATIVE_DESTROY: i32 = 13;
     pub const CRACK: i32 = 18;
     pub const PREDICT_DESTROY: i32 = 26;
@@ -200,6 +202,30 @@ impl PlayerAction {
     pub fn decode(body: &[u8]) -> Option<Self> {
         let r = &mut Reader(body);
         Some(Self { runtime_id: r.var_u64()?, action: r.var_i32()?, pos: r.block_pos()?, result_pos: r.block_pos()?, face: r.var_i32()? })
+    }
+}
+
+/// Stati di `Respawn` (`packet/respawn.go` di gophertunnel v1.63.0, `iota` da 0).
+pub mod respawn_state {
+    pub const SEARCHING_FOR_SPAWN: u8 = 0;
+    /// Server -> client: la rinascita è pronta.
+    pub const READY_TO_SPAWN: u8 = 1;
+    /// Client -> server: il client ha finito e vuole rinascere.
+    pub const CLIENT_READY_TO_SPAWN: u8 = 2;
+}
+
+/// `Respawn` (45) dal client: posizione (vec3 f32), stato (u8) e ID di runtime (varint u64), come `Respawn.Marshal` di gophertunnel.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Respawn {
+    pub position: [f32; 3],
+    pub state: u8,
+    pub runtime_id: u64,
+}
+
+impl Respawn {
+    pub fn decode(body: &[u8]) -> Option<Self> {
+        let r = &mut Reader(body);
+        Some(Self { position: r.vec3()?, state: r.u8()?, runtime_id: r.var_u64()? })
     }
 }
 
@@ -510,6 +536,16 @@ impl ContainerClose {
 mod tests {
     use super::*;
     use crate::wire::Writer;
+
+    #[test]
+    fn respawn_decodes_like_gophertunnel_marshal() {
+        let mut w = Writer::default();
+        [1.0f32, 2.0, 3.0].iter().for_each(|&v| w.f32(v));
+        w.u8(respawn_state::CLIENT_READY_TO_SPAWN);
+        w.var_u64(300);
+        assert_eq!(Respawn::decode(&w.0), Some(Respawn { position: [1.0, 2.0, 3.0], state: 2, runtime_id: 300 }));
+        assert_eq!(Respawn::decode(&w.0[..13]), None);
+    }
 
     /// Presa dal menu creativo catturata nel gioco (1.26.6x): CraftCreative, CraftResults, Take.
     #[test]

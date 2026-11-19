@@ -21,6 +21,8 @@ pub struct ServerConfig {
     /// Raggio di chunk inviato a ogni giocatore.
     pub view_distance: i32,
     pub port: u16,
+    /// Se vero, chi muore tiene l'inventario (niente oggetti a terra).
+    pub keep_inventory: bool,
 }
 
 impl Default for ServerConfig {
@@ -31,6 +33,7 @@ impl Default for ServerConfig {
             generator: PathBuf::from(format!("generator/target/release/versmc-gen{}", std::env::consts::EXE_SUFFIX)),
             view_distance: 6,
             port: 19132,
+            keep_inventory: false,
         }
     }
 }
@@ -99,6 +102,7 @@ mod tests {
         let cfg = ServerConfig::load(&path);
         assert_eq!(cfg, ServerConfig::default());
         assert_eq!((cfg.world.as_str(), cfg.seed, cfg.view_distance, cfg.port), ("Mondo", None, 6, 19132));
+        assert!(!cfg.keep_inventory);
         assert!(cfg.generator.to_string_lossy().starts_with("generator/target/release/versmc-gen"));
         assert_eq!(fs::read_to_string(&path).unwrap(), EXAMPLE, "scritto l'esempio");
         assert_eq!(ServerConfig::load(&path), cfg, "l'esempio riletto dà gli stessi valori");
@@ -112,6 +116,19 @@ mod tests {
         let cfg = ServerConfig::load(&path);
         assert_eq!((cfg.world.as_str(), cfg.seed, cfg.port), ("Prova", Some(777), 25565));
         assert_eq!(cfg.view_distance, 6);
+    }
+
+    #[test]
+    fn config_reads_keep_inventory() {
+        let dir = TempDir::new("config-keep");
+        let path = dir.0.join("server.toml");
+        fs::write(
+            &path,
+            "keep_inventory = true
+",
+        )
+        .unwrap();
+        assert!(ServerConfig::load(&path).keep_inventory);
     }
 
     #[test]

@@ -1,5 +1,5 @@
 //! Chat e comandi.
-use crate::{entity::EntityKind, GameMode, Server};
+use crate::{entity::EntityKind, survival::DamageCause, GameMode, Server};
 use bedrock_net::log;
 use bedrock_protocol::{
     generated::UpdatePlayerGameType,
@@ -18,6 +18,7 @@ const COMMANDS: &[(&str, &str)] = &[
     ("bot [nome|rimuovi]", "crea un giocatore finto che si muove, o li toglie tutti"),
     ("say <testo>", "messaggio a tutti"),
     ("gamemode <modalità>", "cambia la tua modalità di gioco"),
+    ("kill", "ti uccide"),
 ];
 
 /// Lunghezza massima di un messaggio di chat (come in vanilla).
@@ -117,6 +118,12 @@ impl Server {
                     Err(message) => self.tell(pid, &message),
                 },
             },
+            // come in vanilla colpisce anche in creativa; lo spettatore non può subire danno
+            "kill" => {
+                if !self.hurt(pid, f32::MAX, DamageCause::Kill) {
+                    self.tell(pid, "§cNon puoi morire ora.");
+                }
+            }
             "say" if !args.trim().is_empty() => self.broadcast(Text::new(text_type::RAW, format!("§d[Server] {}", args.trim()))),
             "say" => self.tell(pid, "Uso: /say <testo>"),
             "gamemode" | "gm" => match GameMode::parse(args.trim()) {

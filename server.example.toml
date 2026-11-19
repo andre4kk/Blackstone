@@ -16,3 +16,6 @@ view_distance = 6
 
 # Porta TCP (signaling) e UDP (gioco).
 port = 19132
+
+# Se `true`, chi muore tiene l'inventario (niente oggetti a terra). Come la regola `keepInventory` del gioco.
+keep_inventory = false

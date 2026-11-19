@@ -1228,6 +1228,16 @@ mod breaking {
     }
 
     #[test]
+    fn dead_player_breaks_nothing() {
+        let mut h = setup(GameMode::Survival);
+        h.server.players.get_mut(&1).unwrap().dead = true;
+        h.receive(1, &[action(player_action::START_BREAK, ROCK), action(player_action::STOP_BREAK, ROCK)]);
+        h.receive(1, &[pai(NEAR, None, &[(player_action::START_BREAK, ROCK), (player_action::STOP_BREAK, ROCK)])]);
+        h.receive(1, &[transaction(use_item::DESTROY, ROCK)]);
+        assert_untouched(&h);
+    }
+
+    #[test]
     fn stop_break_without_start_or_after_abort_or_elsewhere_breaks_nothing() {
         let mut h = setup(GameMode::Survival);
         let elsewhere = [ROCK[0] + 1, ROCK[1], ROCK[2]];
@@ -3332,7 +3342,7 @@ mod bot {
 
 mod survival {
     use super::*;
-    use crate::{events::WorldAction, join::vitals_attributes, survival::DamageCause, world::Chunk};
+    use crate::{events::WorldAction, inventory::Item, join::vitals_attributes, survival::DamageCause, world::Chunk};
     use bedrock_protocol::entity::{actor_event, actor_event_type};
     use vgen::Dim;
 
@@ -3652,6 +3662,225 @@ mod survival {
         h.server.players.get_mut(&1).unwrap().health = 10.0;
         h.server.heal(1, 5.0);
         assert_eq!(health(&h), 10.0);
+    }
+
+    // ---------- morte e rinascita ----------
+
+    fn respawn_packet(state: u8, runtime_id: u64) -> Packet {
+        bedrock_protocol::entity::respawn([0.0; 3], state, runtime_id)
+    }
+
+    fn give(h: &mut Harness) {
+        let p = h.server.players.get_mut(&1).unwrap();
+        p.inventory.set_main(0, Item::from_name("minecraft:stone", 10).unwrap());
+        p.inventory.set_main(20, Item::from_name("minecraft:apple", 3).unwrap());
+        p.inventory.set_armor(0, Item::from_name("minecraft:diamond_helmet", 1).unwrap());
+        p.inventory.set_offhand(Item::from_name("minecraft:arrow", 5).unwrap());
+    }
+
+    fn items_on_ground(h: &Harness) -> Vec<(u16, [f32; 3])> {
+        let mut v: Vec<_> = h
+            .server
+            .entities
+            .iter()
+            .filter_map(|e| match &e.kind {
+                crate::entity::EntityKind::Item { item, .. } => Some((item.count, e.pos)),
+                _ => None,
+            })
+            .collect();
+        v.sort_by_key(|(count, _)| *count);
+        v
+    }
+
+    #[test]
+    fn death_announces_a_message_per_cause_to_everyone() {
+        let causes = [
+            (DamageCause::Fall, "Alice è caduto da troppo in alto"),
+            (DamageCause::Void, "Alice è caduto fuori dal mondo"),
+            (DamageCause::Starvation, "Alice è morto di fame"),
+            (DamageCause::Attack { attacker: 2 }, "Alice è stato ucciso da Bob"),
+            (DamageCause::Kill, "Alice è morto"),
+        ];
+        for (cause, expected) in causes {
+            let mut h = setup(GameMode::Survival);
+            h.server.hurt(1, 100.0, cause);
+            let sent = h.packets_by_player();
+            let texts =
+                |pid: u64| -> Vec<String> { sent[&pid].iter().filter(|p| p.id == id::TEXT).filter_map(|p| Text::decode(&p.body)).map(|t| t.message).collect() };
+            for pid in [1, 2, 3] {
+                assert!(texts(pid).contains(&expected.to_string()), "{expected} a #{pid}: {:?}", texts(pid));
+            }
+            // niente di tutto questo si ripete
+            assert!(!h.server.hurt(1, 5.0, DamageCause::Fall));
+            assert!(h.packets_by_player().values().all(|v| v.is_empty()));
+        }
+    }
+
+    #[test]
+    fn death_sends_event_and_zero_health_and_drops_the_whole_inventory() {
+        let mut h = setup(GameMode::Survival);
+        give(&mut h);
+        h.server.players.get_mut(&1).unwrap().pos = [5.5, 31.62, 7.5];
+        h.packets_by_player();
+        h.server.hurt(1, 100.0, DamageCause::Kill);
+        let sent = h.packets_by_player();
+        let death = actor_event(1, actor_event_type::DEATH, 0);
+        assert!(sent[&1].contains(&death) && sent[&2].contains(&death), "ActorEvent DEATH a sé e agli spettatori");
+        assert!(!sent.get(&3).is_some_and(|v| v.contains(&death)));
+        assert!(sent[&1].contains(&vitals_packet(&h)));
+        assert_eq!(health_attribute(&h), 0.0);
+        // un oggetto a terra per casella non vuota (inventario, armatura, mano secondaria), ai piedi di chi è morto
+        let ground = items_on_ground(&h);
+        assert_eq!(ground.iter().map(|(c, _)| *c).collect::<Vec<_>>(), [1, 3, 5, 10]);
+        assert!(ground.iter().all(|(_, pos)| *pos == [5.5, 30.0, 7.5]));
+        let p = &h.server.players[&1];
+        assert!((0..crate::inventory::MAIN_SLOTS).all(|i| p.inventory.main(i).is_empty()));
+        assert!(p.inventory.offhand().is_empty() && (0..4).all(|i| p.inventory.armor(i).is_empty()));
+        assert!(sent[&1].iter().any(|p| p.id == InventoryContent::ID), "inventario vuoto al client");
+        assert!(sent[&2].iter().any(|p| p.id == bedrock_protocol::id::MOB_ARMOR_EQUIPMENT), "l'armatura tolta la vedono gli altri");
+    }
+
+    #[test]
+    fn keep_inventory_keeps_everything() {
+        let mut h = setup(GameMode::Survival);
+        h.server.keep_inventory = true;
+        give(&mut h);
+        h.server.hurt(1, 100.0, DamageCause::Kill);
+        assert!(items_on_ground(&h).is_empty());
+        let p = &h.server.players[&1];
+        assert_eq!(p.inventory.main(0).count, 10);
+        assert_eq!(p.inventory.armor(0).count, 1);
+        assert!(p.dead);
+    }
+
+    #[test]
+    fn spectator_drops_nothing() {
+        let mut h = setup(GameMode::Spectator);
+        give(&mut h);
+        h.server.die(1, DamageCause::Kill);
+        assert!(items_on_ground(&h).is_empty());
+    }
+
+    #[test]
+    fn hooks_only_observe_death() {
+        use std::sync::{Arc, Mutex};
+        let mut h = setup(GameMode::Survival);
+        let seen = Arc::new(Mutex::new(Vec::new()));
+        let log = seen.clone();
+        h.server.hooks.push(Box::new(move |a| {
+            if matches!(a, WorldAction::Death { .. }) {
+                log.lock().unwrap().push(a.clone());
+                return false; // il rifiuto non conta
+            }
+            true
+        }));
+        h.server.hurt(1, 100.0, DamageCause::Kill);
+        assert_eq!(seen.lock().unwrap().as_slice(), [WorldAction::Death { pid: 1 }]);
+        assert!(h.server.players[&1].dead, "la morte non si annulla");
+    }
+
+    #[test]
+    fn client_respawn_restores_vitals_and_moves_to_world_spawn() {
+        let mut h = setup(GameMode::Survival);
+        let p = h.server.players.get_mut(&1).unwrap();
+        (p.food, p.saturation, p.exhaustion, p.pos) = (3, 0.0, 2.0, [40.5, 90.62, 40.5]);
+        h.server.hurt(1, 100.0, DamageCause::Kill);
+        h.packets_by_player();
+        h.receive(1, &[respawn_packet(bedrock_protocol::input::respawn_state::CLIENT_READY_TO_SPAWN, 1)]);
+        let p = &h.server.players[&1];
+        assert!(!p.dead);
+        assert_eq!((p.health, p.food, p.saturation, p.exhaustion), (20.0, 20, 5.0, 0.0));
+        let (x, y, z) = crate::world::FLAT_SPAWN;
+        let eyes = [x as f32 + 0.5, y as f32 + 1.62, z as f32 + 0.5];
+        assert_eq!(p.pos, eyes);
+        let sent = h.packets_by_player();
+        assert!(sent[&1].contains(&vitals_packet(&h)));
+        let teleport = bedrock_protocol::entity::move_player_teleport(1, eyes, 0.0, 0.0, 0);
+        let ready = bedrock_protocol::entity::respawn(eyes, 1, 1);
+        let order: Vec<&Packet> = sent[&1].iter().filter(|p| **p == teleport || **p == ready).collect();
+        assert_eq!(order, [&teleport, &ready], "prima il teletrasporto, poi Respawn ReadyToSpawn (come Dragonfly)");
+        // chi lo vedeva perde il vecchio corpo, e ne vede uno nuovo al prossimo giro
+        assert!(sent[&2].contains(&bedrock_protocol::entity::remove_actor(1)));
+        assert!(!h.server.players[&2].visible.contains(&1));
+        // di nuovo vulnerabile
+        assert!(h.server.hurt(1, 2.0, DamageCause::Fall));
+    }
+
+    #[test]
+    fn respawn_is_ignored_when_alive_or_wrongly_asked() {
+        let mut h = setup(GameMode::Survival);
+        h.server.hurt(1, 5.0, DamageCause::Fall);
+        h.packets_by_player();
+        h.receive(1, &[respawn_packet(2, 1)]);
+        assert_eq!(health(&h), 15.0, "da vivo non rinasce");
+        h.server.hurt(1, 100.0, DamageCause::Kill);
+        h.receive(1, &[respawn_packet(1, 1)]); // ReadyToSpawn lo manda il server, non il client
+        h.receive(1, &[respawn_packet(2, 99)]); // ID che non è il suo
+        h.receive(1, &[Packet::new(id::RESPAWN, vec![1, 2])]); // illeggibile
+        assert!(h.server.players[&1].dead);
+        assert_eq!(h.server.players[&1].respawn_logs, 3, "si logga in esadecimale al massimo HEX_LOGS pacchetti");
+    }
+
+    #[test]
+    fn player_action_respawn_also_respawns_a_dead_player() {
+        let mut h = setup(GameMode::Survival);
+        h.server.hurt(1, 100.0, DamageCause::Kill);
+        let mut w = Writer::default();
+        w.var_u64(1);
+        w.var_i32(bedrock_protocol::input::player_action::RESPAWN);
+        (0..6).for_each(|_| w.var_i32(0));
+        w.var_i32(0);
+        h.receive(1, &[Packet::new(id::PLAYER_ACTION, w.0)]);
+        assert!(!h.server.players[&1].dead);
+    }
+
+    #[test]
+    fn dead_player_does_not_move_and_cannot_pick_up() {
+        let mut h = setup(GameMode::Survival);
+        h.server.hurt(1, 100.0, DamageCause::Kill);
+        for other in [2, 3] {
+            h.server.players.get_mut(&other).unwrap().pos = [500.0; 3]; // lontani: raccoglierebbero loro l'oggetto
+        }
+        let at = h.server.players[&1].pos;
+        feet_at(&mut h, 50.0, false);
+        assert_eq!(h.server.players[&1].pos, at, "il morto non si muove");
+        let item = h.server.spawn_item(Item::from_name("minecraft:stone", 1).unwrap(), [at[0], at[1] - 1.62, at[2]], [0.0; 3], 0);
+        h.server.tick_count += 5;
+        h.server.pickup_tick();
+        assert!(h.server.entities.get(item).is_some(), "il morto non raccoglie");
+    }
+
+    #[test]
+    fn kill_command_kills_the_sender_even_in_creative() {
+        for mode in [GameMode::Survival, GameMode::Creative, GameMode::Adventure] {
+            let mut h = setup(mode);
+            h.receive(1, &[command("/kill")]);
+            assert!(h.server.players[&1].dead, "{mode:?}");
+            assert!(h.texts_to(2).iter().any(|t| t.message == "Alice è morto"));
+        }
+        let mut h = setup(GameMode::Spectator);
+        h.receive(1, &[command("/kill")]);
+        assert!(!h.server.players[&1].dead, "lo spettatore non può morire");
+    }
+
+    #[test]
+    fn bot_dies_and_disappears_with_its_list_entry() {
+        let mut h = setup(GameMode::Survival);
+        h.receive(1, &[command("/bot Prova")]);
+        let bot = h.server.bots[0].id;
+        h.server.players.get_mut(&2).unwrap().visible.insert(bot);
+        h.packets_by_player();
+        assert!(h.server.hurt_bot(bot, 6.0));
+        assert_eq!(h.server.bots[0].health, 14.0);
+        assert!(h.packets_by_player()[&2].contains(&actor_event(bot, actor_event_type::HURT, 0)));
+        assert!(!h.server.hurt_bot(bot, 6.0), "dentro l'invulnerabilità nulla di più");
+        h.server.tick_count += 10;
+        assert!(h.server.hurt_bot(bot, 100.0));
+        assert!(h.server.bots.is_empty() && h.server.entities.get(bot).is_none());
+        let sent = h.packets_by_player();
+        assert!(sent[&2].contains(&bedrock_protocol::entity::remove_actor(bot as i64)), "RemoveActor a chi lo vedeva");
+        assert!(sent[&3].iter().any(|p| p.id == id::PLAYER_LIST), "PlayerList rimossa a tutti");
+        assert!(!h.server.hurt_bot(bot, 1.0), "bot inesistente");
     }
 
     #[test]

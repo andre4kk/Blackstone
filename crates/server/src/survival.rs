@@ -1,11 +1,18 @@
 //! Vita, danno e cura del giocatore, sul modello di Dragonfly (`player.go`: `Hurt`, `Heal`, `addHealth`).
-// finché i task successivi (morte, fame, combattimento) non lo chiamano, è usato solo dai test
-#![allow(dead_code)]
-use crate::{events::WorldAction, join::vitals_attributes, playerdata::EYE_HEIGHT, GameMode, Server};
+use crate::{
+    entity::{armor_of, EntityKind},
+    events::WorldAction,
+    join::vitals_attributes,
+    playerdata::EYE_HEIGHT,
+    GameMode, Player, Server,
+};
 use bedrock_net::log;
 use bedrock_protocol::{
-    entity::{actor_event, actor_event_type},
+    actor::set_actor_data,
+    entity::{actor_event, actor_event_type, move_player_teleport, remove_actor, respawn},
     generated::UpdateAttributes,
+    input::respawn_state,
+    packets::{text_type, Text},
     wire::ServerPacket,
 };
 use vgen::Dim;
@@ -17,7 +24,9 @@ pub(crate) const MAX_FOOD: u8 = 20;
 pub(crate) const MAX_SATURATION: f32 = 20.0;
 pub(crate) const START_SATURATION: f32 = 5.0;
 /// Dopo un colpo si è invulnerabili per mezzo secondo (Dragonfly: `immunity := time.Second / 2`).
-const IMMUNITY_TICKS: u64 = 10;
+pub(crate) const IMMUNITY_TICKS: u64 = 10;
+/// Tick prima che gli oggetti lasciati da chi muore si possano raccogliere (mezzo secondo).
+const DEATH_PICKUP_DELAY: u64 = 10;
 
 /// Da cosa viene un danno.
 #[derive(Clone, Debug, PartialEq)]
@@ -26,9 +35,11 @@ pub(crate) enum DamageCause {
     Fall,
     /// Fuori dal mondo (sotto il fondo).
     Void,
-    /// Fame a zero.
+    /// Fame a zero (la userà la fame, Task 6).
+    #[allow(dead_code)]
     Starvation,
-    /// Colpito dall'entità `attacker`.
+    /// Colpito dall'entità `attacker` (la userà il combattimento, Task 8; per ora i test).
+    #[allow(dead_code)]
     Attack { attacker: u64 },
     /// Comando `/kill`.
     Kill,
@@ -157,6 +168,7 @@ impl Server {
 
     /// Cura `pid` di `amount` (senza superare la vita massima). Come Dragonfly `Heal`: nulla per i morti, per chi non può subire
     /// danno (creativa, spettatore) e per quantità negative o NaN; i ganci non vedono la cura (non c'è un'azione dedicata).
+    #[allow(dead_code)] // la useranno la rigenerazione e il cibo (Task 6)
     pub(crate) fn heal(&mut self, pid: u64, amount: f32) {
         let Some(p) = self.players.get_mut(&pid) else { return };
         if p.dead || !matches!(p.mode, GameMode::Survival | GameMode::Adventure) || amount.is_nan() || amount < 0.0 {
@@ -176,10 +188,95 @@ impl Server {
         self.send(pid, &[packet]);
     }
 
-    /// La vita di `pid` è arrivata a 0. Per ora segna solo che è morto: il resto (messaggio, oggetti a terra, rinascita) è del Task 5.
+    /// La vita di `pid` è arrivata a 0 (da [`Server::hurt`]). Sul modello di Dragonfly `kill`: animazione di morte a chi lo vede, fine di corsa e
+    /// accovacciamento, inventario (armatura e mano secondaria comprese) a terra salvo `keep_inventory` e salvo lo spettatore, messaggio in chat per tutti.
+    /// Il giocatore resta morto (non si muove, non agisce, non subisce danno) finché il client non chiede di rinascere (vedi [`Server::respawn`]).
+    ///
+    /// La morte non si annulla: i ganci vedono solo `WorldAction::Death` e la loro risposta è ignorata (a vita 0 non c'è un valore sensato a cui
+    /// tornare; Dragonfly lascia ai ganci solo `keepInv`). Dragonfly toglie anche il corpo dopo 1,1 s; qui il client fa da solo la sua
+    /// animazione e il corpo sparisce a chi lo guarda alla rinascita.
     pub(crate) fn die(&mut self, pid: u64, cause: DamageCause) {
         let Some(p) = self.players.get_mut(&pid) else { return };
         p.dead = true;
+        p.health = 0.0;
+        p.breaking = None;
+        p.fall_start_y = None;
+        p.flying = false;
+        (p.sneaking, p.sprinting, p.swimming, p.gliding) = (false, false, false, false);
+        let (mode, feet) = (p.mode, [p.pos[0], p.pos[1] - EYE_HEIGHT, p.pos[2]]);
         log!("[#{pid}] morto: {cause:?}");
+        self.allow(&WorldAction::Death { pid }); // solo osservazione: la morte non si annulla
+        let event = actor_event(pid, actor_event_type::DEATH, 0);
+        self.send(pid, std::slice::from_ref(&event));
+        self.broadcast_to_viewers(pid, std::slice::from_ref(&event));
+        if !self.keep_inventory && mode != GameMode::Spectator {
+            self.drop_inventory(pid, feet);
+        }
+        let name = self.name(pid);
+        let message = match cause {
+            DamageCause::Fall => format!("{name} è caduto da troppo in alto"),
+            DamageCause::Void => format!("{name} è caduto fuori dal mondo"),
+            DamageCause::Starvation => format!("{name} è morto di fame"),
+            DamageCause::Attack { attacker } => {
+                let killer = match self.entities.get(attacker).map(|e| &e.kind) {
+                    Some(EntityKind::Player { name, .. }) => name.clone(),
+                    _ => "qualcosa".to_string(),
+                };
+                format!("{name} è stato ucciso da {killer}")
+            }
+            DamageCause::Kill => format!("{name} è morto"),
+        };
+        self.broadcast(Text::new(text_type::RAW, message));
+    }
+
+    /// Svuota inventario, armatura e mano secondaria di `pid` e ne fa oggetti a terra in `feet` (uno per casella non vuota, con una piccola
+    /// spinta casuale come Dragonfly `dropItems`: `[rand*0.2-0.1, 0.2, rand*0.2-0.1]`). Poi rimanda il contenuto vuoto a lui e l'armatura tolta a chi lo vede.
+    fn drop_inventory(&mut self, pid: u64, feet: [f32; 3]) {
+        let Some(p) = self.players.get_mut(&pid) else { return };
+        let (held, armor) = (p.inventory.held().stack(0), armor_of(p));
+        for item in p.inventory.take_all() {
+            let velocity = [self.roll() * 0.2 - 0.1, 0.2, self.roll() * 0.2 - 0.1];
+            self.spawn_item(item, feet, velocity, DEATH_PICKUP_DELAY);
+        }
+        self.send_inventory(pid);
+        self.send_equipment_changes(pid, &held, &armor);
+    }
+
+    /// Il client morto chiede di rinascere. Sul modello di Dragonfly `Respawn`: vita, fame e saturazione di partenza (20, 20, 5, esaurimento 0),
+    /// posizione al punto di partenza del mondo (lo stesso di `StartGame`: non ci sono letti), teletrasporto del client e poi `Respawn`
+    /// con lo stato `ReadyToSpawn` (`SendRespawn`). Chi lo vedeva perde il vecchio corpo e ne vede uno nuovo al prossimo `visibility_tick`.
+    /// Chi non è morto non fa nulla.
+    pub(crate) fn respawn(&mut self, pid: u64) {
+        let Some(p) = self.players.get_mut(&pid).filter(|p| p.dead) else { return };
+        settle_dead(p, self.spawn);
+        let (eyes, pitch, yaw) = (p.pos, p.pitch, p.yaw);
+        log!("[#{pid}] rinasce in [{:.1}, {:.1}, {:.1}]", eyes[0], eyes[1], eyes[2]);
+        self.on_move(pid, eyes);
+        // il vecchio corpo sparisce a chi lo vedeva; il `visibility_tick` mostra quello nuovo
+        let watchers: Vec<u64> = self.players.iter().filter(|(&other, p)| other != pid && p.visible.contains(&pid)).map(|(&other, _)| other).collect();
+        for other in watchers {
+            self.send(other, &[remove_actor(pid as i64)]);
+            if let Some(p) = self.players.get_mut(&other) {
+                p.visible.remove(&pid);
+            }
+        }
+        self.send_vitals(pid);
+        self.send_only_abilities(pid);
+        self.send(pid, &[set_actor_data(pid, &self.entity_data(pid))]);
+        self.send(pid, &[move_player_teleport(pid, eyes, pitch, yaw, self.tick_count), respawn(eyes, respawn_state::READY_TO_SPAWN, pid)]);
+    }
+}
+
+/// Dopo la morte il giocatore riparte dal punto di partenza del mondo con vita, fame e saturazione di partenza. Vale alla rinascita e a chi
+/// esce da morto (rientra vivo: il suo inventario è già a terra, o intero con `keep_inventory`). Chi non è morto non cambia.
+pub(crate) fn settle_dead(p: &mut Player, spawn: Option<(i32, i32, i32)>) {
+    if !p.dead {
+        return;
+    }
+    p.dead = false;
+    (p.health, p.food, p.saturation, p.exhaustion) = (MAX_HEALTH, MAX_FOOD, START_SATURATION, 0.0);
+    (p.invulnerable_until, p.last_damage, p.fall_start_y) = (0, 0.0, None);
+    if let Some((x, y, z)) = spawn {
+        p.pos = [x as f32 + 0.5, y as f32 + EYE_HEIGHT, z as f32 + 0.5];
     }
 }

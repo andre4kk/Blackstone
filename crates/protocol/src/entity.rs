@@ -212,6 +212,35 @@ pub fn animate_swing(runtime_id: u64) -> Packet {
     animate(1, runtime_id, 0.0, None, 0)
 }
 
+/// `Respawn` (45) server -> client come `Respawn.Marshal` di gophertunnel v1.63.0: posizione (occhi), stato u8, ID di runtime varint.
+/// Dragonfly (`SendRespawn`) lo manda con lo stato `READY_TO_SPAWN` dopo il teletrasporto.
+pub fn respawn(position: [f32; 3], state: u8, runtime_id: u64) -> Packet {
+    let mut w = Writer::default();
+    write_vec3(&mut w, position);
+    w.u8(state);
+    w.var_u64(runtime_id);
+    Packet::new(id::RESPAWN, w.0)
+}
+
+/// `MovePlayer` (19) di teletrasporto come `MovePlayer.Marshal` di gophertunnel v1.63.0 (modo `Teleport` = 2, `TeleportData` presente con
+/// causa `Unknown` = 0 e tipo di entità 0), come fa Dragonfly in `ViewEntityTeleport`. `position` è la posizione degli occhi.
+pub fn move_player_teleport(runtime_id: u64, position: [f32; 3], pitch: f32, yaw: f32, tick: u64) -> Packet {
+    let mut w = Writer::default();
+    w.var_u64(runtime_id);
+    write_vec3(&mut w, position);
+    w.f32(pitch);
+    w.f32(yaw);
+    w.f32(yaw); // head yaw
+    w.u8(2); // MoveModeTeleport
+    w.bool(false); // a terra
+    w.var_u64(0); // nessuna cavalcatura
+    w.bool(true); // TeleportData presente
+    w.i32(0); // TeleportCauseUnknown
+    w.i32(0); // tipo dell'entità sorgente
+    w.var_u64(tick);
+    Packet::new(id::MOVE_PLAYER, w.0)
+}
+
 /// Eventi di `ActorEvent` (`packet/actor_event.go` di gophertunnel v1.63.0, `ActorEventJump = iota + 1`).
 pub mod actor_event_type {
     /// L'entità subisce un colpo (animazione di danno, rossore).
@@ -349,6 +378,25 @@ mod tests {
         let t = move_actor_absolute(7, [0.0; 3], 0.0, -90.0, 360.0, false, true);
         assert_eq!(t.body[1], 2);
         assert_eq!(t.body[14..], [0, 192, 0]);
+    }
+
+    #[test]
+    fn respawn_layout() {
+        let p = respawn([1.0, 2.0, 3.0], 1, 300);
+        assert_eq!(p.id, id::RESPAWN);
+        let mut expected = f32s(&[1.0, 2.0, 3.0]);
+        expected.extend([1, 0xAC, 0x02]);
+        assert_eq!(p.body, expected);
+    }
+
+    #[test]
+    fn move_player_teleport_layout() {
+        let p = move_player_teleport(7, [1.0, 2.0, 3.0], 10.0, 20.0, 5);
+        assert_eq!(p.id, id::MOVE_PLAYER);
+        let mut expected = vec![7];
+        expected.extend(f32s(&[1.0, 2.0, 3.0, 10.0, 20.0, 20.0]));
+        expected.extend([2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 5]);
+        assert_eq!(p.body, expected);
     }
 
     #[test]

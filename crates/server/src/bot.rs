@@ -6,12 +6,14 @@
 use crate::{
     entity::{Entity, EntityKind},
     inventory::{window, Item},
-    registry, Server,
+    registry,
+    survival::{IMMUNITY_TICKS, MAX_HEALTH},
+    Server,
 };
 use bedrock_net::log;
 use bedrock_protocol::{
     actor::set_actor_data,
-    entity::{animate_swing, player_list_remove},
+    entity::{actor_event, actor_event_type, animate_swing, player_list_remove},
     generated::MobEquipment,
     skin::Skin,
     wire::ServerPacket,
@@ -55,6 +57,11 @@ pub(crate) struct Bot {
     born: u64,
     pub sneaking: bool,
     pub held: Item,
+    /// Vita (0..=20): a 0 il bot sparisce come con `/bot rimuovi`.
+    pub health: f32,
+    /// Fino a questo tick (escluso) il bot è invulnerabile dopo un colpo; `last_damage` è il danno di quel colpo (come i giocatori).
+    invulnerable_until: u64,
+    last_damage: f32,
 }
 
 fn held_item(n: usize) -> Item {
@@ -111,7 +118,17 @@ impl Server {
             on_ground: true,
             moved: false,
         });
-        self.bots.push(Bot { id, skin, center, born: self.tick_count, sneaking: false, held: held_item(0) });
+        self.bots.push(Bot {
+            id,
+            skin,
+            center,
+            born: self.tick_count,
+            sneaking: false,
+            held: held_item(0),
+            health: MAX_HEALTH,
+            invulnerable_until: 0,
+            last_damage: 0.0,
+        });
         if let Some(list) = self.player_list_add_packet(&[], &[id]) {
             self.send_to_spawned(&list);
         }
@@ -131,6 +148,42 @@ impl Server {
         let uuids: Vec<[u8; 16]> = bots.iter().map(|b| bot_uuid(b.id)).collect();
         self.send_to_spawned(&player_list_remove(&uuids));
         log!("[bot] rimossi {} bot", bots.len());
+    }
+
+    /// Il bot `id` subisce `amount` di danno. Restituisce `true` se il colpo è andato a segno (`false` se il bot non esiste, la quantità non è
+    /// positiva o è dentro l'invulnerabilità: come per i giocatori, 10 tick dopo un colpo conta solo la parte che supera l'ultimo danno).
+    /// Chi lo vede riceve l'animazione del colpo; a vita 0 il bot sparisce (corpo e voce nella `PlayerList`) come con `/bot rimuovi`, senza oggetti a terra.
+    #[allow(dead_code)] // lo userà il combattimento (Task 8)
+    pub(crate) fn hurt_bot(&mut self, id: u64, amount: f32) -> bool {
+        let tick = self.tick_count;
+        let Some(bot) = self.bots.iter_mut().find(|b| b.id == id) else { return false };
+        if amount.is_nan() || amount <= 0.0 {
+            return false;
+        }
+        let mut left = amount;
+        if tick < bot.invulnerable_until {
+            left -= bot.last_damage;
+            if left <= 0.0 {
+                return false;
+            }
+        }
+        bot.invulnerable_until = tick + IMMUNITY_TICKS;
+        bot.last_damage = amount;
+        bot.health = (bot.health - left).max(0.0);
+        let dead = bot.health <= f32::EPSILON;
+        self.broadcast_to_viewers(id, &[actor_event(id, actor_event_type::HURT, 0)]);
+        if dead {
+            self.remove_bot(id);
+        }
+        true
+    }
+
+    /// Toglie il bot `id`: sparisce a chi lo vedeva e dalla `PlayerList` di tutti.
+    fn remove_bot(&mut self, id: u64) {
+        self.bots.retain(|b| b.id != id);
+        self.despawn(id);
+        self.send_to_spawned(&player_list_remove(&[bot_uuid(id)]));
+        log!("[bot] #{id} morto");
     }
 
     fn send_to_spawned(&self, packet: &Packet) {
