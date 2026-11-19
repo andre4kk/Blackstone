@@ -2,7 +2,7 @@
 # se `server.toml` manca, il server lo crea da solo con questi valori.
 
 # Nome del mondo: i dati stanno in `worlds/<world>`.
-world = "Mondo"
+world = "world"
 
 # Seme del mondo. Se manca viene scelto a caso alla prima creazione e salvato in `level.dat`;
 # per un mondo già esistente vale sempre il seme salvato. Valore massimo: 9223372036854775807.
